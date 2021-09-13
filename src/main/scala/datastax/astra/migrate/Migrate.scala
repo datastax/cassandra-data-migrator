@@ -1,15 +1,21 @@
-package com.datastax.astra
+package datastax.astra.migrate
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import datastax.astra.migrate.CassUtil
+import datastax.astra.migrate.{CassUtil, CopyJobSession, SplitPartitions}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.cassandra._
 
+import scala.collection.JavaConversions._
+import java.lang.Long
+import java.math.BigInteger
 import collection.JavaConversions._
+
+
+// http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
 object Migrate extends App {
 
@@ -32,6 +38,15 @@ object Migrate extends App {
 
   val sc = spark.sparkContext
 
+  val sourceKeyspaceName = sc.getConf.get("spark.migrate.source.keyspace")
+  val sourceTableName = sc.getConf.get("spark.migrate.source.tableName")
+  val ttlColumnName = sc.getConf.get("spark.migrate.source.ttlColumnName")
+  val ttlColumnAlias = sc.getConf.get("spark.migrate.source.ttlColumnAlias")
+
+  val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+  val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+
+
   val astraConnection = CassandraConnector(sc.getConf
     .set("spark.cassandra.connection.config.cloud.path", scbPath)
     .set("spark.cassandra.auth.username", astraUsername)
@@ -46,23 +61,36 @@ object Migrate extends App {
 
   val astraKeyspaceName = getAstraKeyspaceIfOnlyOne
 
-  val (tableAndKeyspaceNames, createTableStatements) = tablesAndStatementsFromSource
-
-  createAstraTables
-
-  tableAndKeyspaceNames.foreach(tableAndKeyspaceName => {
-    val nameArray = tableAndKeyspaceName.split("\\.")
-    val sourceKeyspaceName = nameArray(0)
-    val tableName = nameArray(1)
-    migrateTable(tableName, sourceKeyspaceName)
-  })
+  migrateTable(sourceConnection,astraConnection,sourceTableName, sourceKeyspaceName,ttlColumnName,ttlColumnAlias, minPartition, maxPartition)
 
   exitSpark
 
-  private def migrateTable(tableName:String, keyspaceName:String) = {
+  private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector,tableName:String, keyspaceName:String, ttlColumn:String, ttlColumnAlias:String, minPartition:BigInteger, maxPartition:BigInteger) = {
+
+    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("10")), minPartition, maxPartition)
+
+
+    partitions.foreach(partition => {
+      val subPartitions =
+        SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("1000")), BigInteger.valueOf(partition.getMin()), BigInteger.valueOf(partition.getMax()));
+      val parts = sc.parallelize(subPartitions.toSeq,subPartitions.size);
+
+        parts.foreach(part => {
+          sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
+
+
+      })
+
+      println(parts.collect.tail)
+
+    })
+
+
     val df = spark
       .read
+
       .format("org.apache.spark.sql.cassandra")
+      .option("ttl."+ttlColumn, ttlColumnAlias)
       .options(Map(
         "keyspace" -> keyspaceName,
         "table" -> tableName,
@@ -72,6 +100,12 @@ object Migrate extends App {
       ))
       .load
 
+    val ds = df.filter(df("token(col1)") > "1000000")
+    //filter(df(ttlColumnAlias) > 1000)
+
+    ds.show()
+
+    /*
     df.write
       .format("org.apache.spark.sql.cassandra")
       .options(Map(
@@ -82,6 +116,8 @@ object Migrate extends App {
         "spark.cassandra.auth.username" -> astraUsername
       ))
       .save
+
+     */
   }
 
 
@@ -106,50 +142,18 @@ object Migrate extends App {
     }
   }
 
-  private def tablesAndStatementsFromSource : (Iterable[String], Iterable[String])  = {
-    sourceConnection.withSessionDo { session =>
-      val keyspaces = session.getMetadata().getKeyspaces()
-      val userKeyspaces = keyspaces.filterKeys(x => !x.toString.startsWith("system"))
-
-      val statementStrings: Iterable[String] = userKeyspaces.map((keyspaceTuple) => {
-        val keyspaceName = if (astraKeyspaceName == null) {
-          keyspaceTuple._1.toString
-        } else {
-          astraKeyspaceName
-        }
-
-        val tables = mapAsScalaMap(keyspaceTuple._2.getTables)
-        tables.map(tableTuple => CassUtil.metadataToStatement(tableTuple._2, keyspaceName))
-      }).toList.flatten
-
-      val tableAndKeyspaceNames: Iterable[String] = userKeyspaces.flatMap((keyspaceTuple) => {
-        val keyspaceName = keyspaceTuple._1.toString
-        val tables = mapAsScalaMap(keyspaceTuple._2.getTables)
-        val result = tables.map(tableTuple => (keyspaceName + "." + tableTuple._2.getName().toString))
-        result
-      })
-
-      (tableAndKeyspaceNames, statementStrings)
-    }
-  }
-
-  private def createAstraTables = {
-    astraConnection.withSessionDo { session =>
-
-      createTableStatements.map(createStatement => {
-        val rs = session.execute(createStatement.toString)
-
-        if (!rs.wasApplied()){
-          print("Something went wrong creating statements")
-          print("rs: " +rs.all())
-
-          exitSpark
-        }
-      })
-
-    }
-  }
 
 
 
 }
+
+
+
+//val df = spark.read.format("org.apache.spark.sql.cassandra").options(Map("keyspace" -> "test","table" -> "tbl1")).load
+// val ds = df.filter(df(token("key1,key2") > "1000000"))
+
+
+//.option("ttl."+ttlColumn, ttlColumnAlias)
+
+
+
