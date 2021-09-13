@@ -48,10 +48,10 @@ public class CopyJobSession {
         this.sourceSession = sourceSession;
         this.astraSession=astraSession;
         insertStatement = astraSession.prepare(
-                "insert into keyspace.table (col1,col2,col3) values (?,?,?)");
+                "insert into test.sample (key,value) values (?,?)");
 
         selectStatement = sourceSession.prepare(
-                "select col1, col2, col3 from keyspace.table where token(parition_key) >= ? and token(partition_key) <= ? and clustering_key=? ALLOW FILTERING");
+                "select key, value from test.sample where token(key) >= ? and token(key) <= ? ALLOW FILTERING");
     }
 
     public void getDataAndInsert(Long min, Long max) {
@@ -63,11 +63,11 @@ public class CopyJobSession {
 
             for (Row row : resultSet) {
                 try {
-                    readLimiter.acquire();
-                    writeLimiter.acquire();
+//                    readLimiter.acquire(1);
+//                    writeLimiter.acquire(1);
 
                     //Sample insert query, fill it in with own details
-                    CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(insertStatement.bind(row.getString(0)));
+                    CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(insertStatement.bind(row.getString(0),row.getString(1)));
                     writeResults.add(writeResultSet);
 
                 } catch (Exception e) {

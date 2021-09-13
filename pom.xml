@@ -100,6 +100,11 @@
   </dependencies>
 
   <build>
+    <resources>
+       <resource>
+           <directory>src/resources</directory>
+       </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>net.alchim31.maven</groupId>
@@ -112,8 +117,7 @@
               <goal>compile</goal>
               <goal>testCompile</goal>
             </goals>
-            <configuration>
-            </configuration>
+
           </execution>
         </executions>
       </plugin>
@@ -123,17 +127,24 @@
         <version>2.4.3</version>
         <executions>
           <execution>
+
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
+
             <configuration>
-              <!--<relocations>-->
-                <!--<relocation>-->
-                <!--<pattern>org.apache.commons.csv</pattern>-->
-                <!--<shadedPattern>shaded.org.apache.commons.csv</shadedPattern>-->
-                <!--</relocation>-->
-              <!--</relocations>-->
+              <filters>
+                <filter>
+                  <!-- filter out signature files from signed dependencies, else repackaging fails with security ex -->
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>

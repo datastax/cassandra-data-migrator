@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="astra-spark-migration" target="1.5" />
+      <module name="astra-spark-migration" target="8" />
     </bytecodeTargetLevel>
   </component>
 </project>

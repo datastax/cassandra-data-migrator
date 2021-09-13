@@ -19,14 +19,18 @@ import collection.JavaConversions._
 
 object Migrate extends App {
 
-  val sourceUsername = "cassandra"
-  val sourcePassword = "cassandra"
+  val sourceUsername = "awSImgpvKitycEFFzRfhWDvC"
+  val sourcePassword = "a0zDnbivYdiGvqjKwO4ZcN6d0U4j15kfnXz.tLt6JyqMwgrcG6+pEkBEXdbnJWGlk-TfEGzNyLtlbFQ3yZ-D8ZjlQOUrc+6ASDw6_x3PSiaMmg17Aw8ouZKsRADdrDBq"
   val sourceHost = "localhost"
 
-  val astraUsername = "datastax"
-  val astraPassword = "datastax"
+  val astraUsername = "awSImgpvKitycEFFzRfhWDvC"
+  val astraPassword = "a0zDnbivYdiGvqjKwO4ZcN6d0U4j15kfnXz.tLt6JyqMwgrcG6+pEkBEXdbnJWGlk-TfEGzNyLtlbFQ3yZ-D8ZjlQOUrc+6ASDw6_x3PSiaMmg17Aw8ouZKsRADdrDBq"
 
-  val scbPath = "file:///home/tato/Downloads/secure-connect-free.zip"
+  val srcScbPath = "file:///Users/ankitpatel/Documents/Clients/Astra/clusters/secure-connect-enterprise-azure.zip"
+  val astraScbPath = "file:///Users/ankitpatel/Documents/Clients/Astra/clusters/secure-connect-enterprise.zip"
+
+
+  println("Started Migration App")
 
   val spark = SparkSession.builder
     .master("local")
@@ -40,32 +44,31 @@ object Migrate extends App {
 
   val sourceKeyspaceName = sc.getConf.get("spark.migrate.source.keyspace")
   val sourceTableName = sc.getConf.get("spark.migrate.source.tableName")
-  val ttlColumnName = sc.getConf.get("spark.migrate.source.ttlColumnName")
-  val ttlColumnAlias = sc.getConf.get("spark.migrate.source.ttlColumnAlias")
 
   val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
   val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
 
 
   val astraConnection = CassandraConnector(sc.getConf
-    .set("spark.cassandra.connection.config.cloud.path", scbPath)
+    .set("spark.cassandra.connection.config.cloud.path", srcScbPath)
     .set("spark.cassandra.auth.username", astraUsername)
     .set("spark.cassandra.auth.password", astraPassword))
 
   val sourceConnection = CassandraConnector(
     sc.getConf
-      .set("spark.cassandra.connection.host", sourceHost)
+      .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
+//      .set("spark.cassandra.connection.host", sourceHost)
       .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword))
 
 
   val astraKeyspaceName = getAstraKeyspaceIfOnlyOne
 
-  migrateTable(sourceConnection,astraConnection,sourceTableName, sourceKeyspaceName,ttlColumnName,ttlColumnAlias, minPartition, maxPartition)
+  migrateTable(sourceConnection,astraConnection, minPartition, maxPartition)
 
   exitSpark
 
-  private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector,tableName:String, keyspaceName:String, ttlColumn:String, ttlColumnAlias:String, minPartition:BigInteger, maxPartition:BigInteger) = {
+  private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
 
     val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("10")), minPartition, maxPartition)
 
@@ -86,38 +89,9 @@ object Migrate extends App {
     })
 
 
-    val df = spark
-      .read
 
-      .format("org.apache.spark.sql.cassandra")
-      .option("ttl."+ttlColumn, ttlColumnAlias)
-      .options(Map(
-        "keyspace" -> keyspaceName,
-        "table" -> tableName,
-        "spark.cassandra.connection.host" -> sourceHost,
-        "spark.cassandra.auth.password" -> sourcePassword,
-        "spark.cassandra.auth.username" -> sourceUsername
-      ))
-      .load
 
-    val ds = df.filter(df("token(col1)") > "1000000")
-    //filter(df(ttlColumnAlias) > 1000)
 
-    ds.show()
-
-    /*
-    df.write
-      .format("org.apache.spark.sql.cassandra")
-      .options(Map(
-        "keyspace" -> astraKeyspaceName,
-        "table" -> tableName,
-        "spark.cassandra.connection.config.cloud.path" -> scbPath,
-        "spark.cassandra.auth.password" -> astraPassword,
-        "spark.cassandra.auth.username" -> astraUsername
-      ))
-      .save
-
-     */
   }
 
 
