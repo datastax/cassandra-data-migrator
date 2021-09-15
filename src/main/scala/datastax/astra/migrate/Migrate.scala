@@ -1,6 +1,6 @@
 package datastax.astra.migrate
 
-import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession}
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -33,7 +33,6 @@ object Migrate extends App {
   println("Started Migration App")
 
   val spark = SparkSession.builder
-    .master("local")
     .appName("Datastax Scala example")
     //.enableHiveSupport()
     .getOrCreate()
@@ -42,11 +41,8 @@ object Migrate extends App {
 
   val sc = spark.sparkContext
 
-  val sourceKeyspaceName = sc.getConf.get("spark.migrate.source.keyspace")
-  val sourceTableName = sc.getConf.get("spark.migrate.source.tableName")
-
-  val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
-  val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+   val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+  val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
 
 
   val astraConnection = CassandraConnector(sc.getConf
@@ -61,8 +57,6 @@ object Migrate extends App {
       .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword))
 
-
-  val astraKeyspaceName = getAstraKeyspaceIfOnlyOne
 
   migrateTable(sourceConnection,astraConnection, minPartition, maxPartition)
 
@@ -80,8 +74,6 @@ object Migrate extends App {
 
         parts.foreach(part => {
           sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
-
-
       })
 
       println(parts.collect.tail)
@@ -100,21 +92,6 @@ object Migrate extends App {
     sys.exit(0)
   }
 
-  private def getAstraKeyspaceIfOnlyOne = {
-    astraConnection.withSessionDo { session =>
-      val keyspaces = session.getMetadata().getKeyspaces()
-      val userKeyspaces = keyspaces.filterKeys(x => !x.toString.startsWith("system"))
-
-      val keyspaceNames = userKeyspaces.map(keyspaceTuple => keyspaceTuple._2.getName())
-
-      if (keyspaceNames.size > 1) {
-        null
-      } else {
-        keyspaceNames.head.toString
-      }
-
-    }
-  }
 
 
 
