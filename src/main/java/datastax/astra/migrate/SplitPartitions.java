@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class SplitPartitions {
@@ -44,7 +45,8 @@ public class SplitPartitions {
                 break;
             }
         }
-
+        Collections.shuffle(partitions);
+        Collections.shuffle(partitions);
         return partitions;
     }
 
