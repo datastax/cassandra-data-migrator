@@ -80,6 +80,18 @@ public class CopyJobSession {
                         //Sample insert query, fill it in with own details
                         CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(insertStatement.bind(row.getString(0),row.getString(1)));
                         writeResults.add(writeResultSet);
+
+                        if(writeResults.size()>1000){
+                            for(CompletionStage<AsyncResultSet> writeResult: writeResults){
+                                //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
+                                writeResult.toCompletableFuture().get().one();
+                                if(writeCounter.incrementAndGet()%1000==0){
+                                    logger.info("Write Record Count: " + writeCounter.get());
+                                }
+                            }
+                            //clear results
+                            writeResults.clear();
+                        }
                 }
 
 
