@@ -41,8 +41,11 @@ object Migrate extends App {
 
   val sc = spark.sparkContext
 
-   val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
-  val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
+val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
+
+//  val minPartition = SplitPartitions.MIN_PARTITION
+//  val maxPartition = SplitPartitions.MAX_PARTITION
 
 
   val astraConnection = CassandraConnector(sc.getConf
@@ -64,13 +67,18 @@ object Migrate extends App {
 
   private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
 
-    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("10")), minPartition, maxPartition)
+    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("100000")), minPartition, maxPartition)
+    val parts = sc.parallelize(partitions.toSeq,partitions.size);
+    parts.foreach(part => {
+      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
+    })
 
+    println(parts.collect.tail)
 
     partitions.foreach(partition => {
       val subPartitions =
         SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("1000")), BigInteger.valueOf(partition.getMin()), BigInteger.valueOf(partition.getMax()));
-      val parts = sc.parallelize(subPartitions.toSeq,subPartitions.size);
+
 
         parts.foreach(part => {
           sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
