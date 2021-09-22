@@ -19,15 +19,14 @@ import collection.JavaConversions._
 
 object Migrate extends App {
 
-  val sourceUsername = "awSImgpvKitycEFFzRfhWDvC"
-  val sourcePassword = "a0zDnbivYdiGvqjKwO4ZcN6d0U4j15kfnXz.tLt6JyqMwgrcG6+pEkBEXdbnJWGlk-TfEGzNyLtlbFQ3yZ-D8ZjlQOUrc+6ASDw6_x3PSiaMmg17Aw8ouZKsRADdrDBq"
-  val sourceHost = "localhost"
+  val sourceUsername = ""
+  val sourcePassword = ""
 
-  val astraUsername = "awSImgpvKitycEFFzRfhWDvC"
-  val astraPassword = "a0zDnbivYdiGvqjKwO4ZcN6d0U4j15kfnXz.tLt6JyqMwgrcG6+pEkBEXdbnJWGlk-TfEGzNyLtlbFQ3yZ-D8ZjlQOUrc+6ASDw6_x3PSiaMmg17Aw8ouZKsRADdrDBq"
+  val destUsername = ""
+  val destPassword = ""
 
-  val srcScbPath = "file:///Users/ankitpatel/Documents/Clients/Astra/clusters/secure-connect-enterprise-azure.zip"
-  val astraScbPath = "file:///Users/ankitpatel/Documents/Clients/Astra/clusters/secure-connect-enterprise.zip"
+  val srcScbPath = "file:///home/cj/secure-connect-xrpl-reporting-full-history.zip"
+  val destScbPath = "file:///home/cj/secure-connect-xrpl-reporting-full-history-eu.zip"
 
 
   println("Started Migration App")
@@ -41,44 +40,45 @@ object Migrate extends App {
 
   val sc = spark.sparkContext
 
-   val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+  val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
   val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
 
 
-  val astraConnection = CassandraConnector(sc.getConf
-    .set("spark.cassandra.connection.config.cloud.path", srcScbPath)
-    .set("spark.cassandra.auth.username", astraUsername)
-    .set("spark.cassandra.auth.password", astraPassword))
+  val destConnection = CassandraConnector(sc.getConf
+    .set("spark.cassandra.connection.config.cloud.path", destScbPath)
+    .set("spark.cassandra.auth.username", destUsername)
+    .set("spark.cassandra.auth.password", destPassword))
 
   val sourceConnection = CassandraConnector(
     sc.getConf
-      .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
-//      .set("spark.cassandra.connection.host", sourceHost)
+      .set("spark.cassandra.connection.config.cloud.path", srcScbPath)
       .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword))
 
 
-  migrateTable(sourceConnection,astraConnection, minPartition, maxPartition)
+
+  migrateTable(sourceConnection,destConnection, minPartition, maxPartition)
+  println("Called migrateTable")
 
   exitSpark
 
-  private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
+  private def migrateTable(sourceConnection: CassandraConnector, destConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
+    println(minPartition)
+    println(maxPartition)
 
-    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("10")), minPartition, maxPartition)
+    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("100000")), minPartition, maxPartition)
 
 
-    partitions.foreach(partition => {
-      val subPartitions =
-        SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("1000")), BigInteger.valueOf(partition.getMin()), BigInteger.valueOf(partition.getMax()));
-      val parts = sc.parallelize(subPartitions.toSeq,subPartitions.size);
+    val parts = sc.parallelize(partitions.toSeq,partitions.size);
 
-        parts.foreach(part => {
-          sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
-      })
+    parts.foreach(part => {
+        sourceConnection.withSessionDo(sourceSession => destConnection.withSessionDo(destSession =>   CopyJobSession.getInstance(sourceSession,destSession).getDataAndInsert(part.getMin, part.getMax)))
 
-      println(parts.collect.tail)
 
     })
+
+    println(parts.collect.tail)
+
 
 
 

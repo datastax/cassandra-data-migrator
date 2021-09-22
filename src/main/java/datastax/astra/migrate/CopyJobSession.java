@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
@@ -27,13 +28,13 @@ public class CopyJobSession {
     // Determine the total throughput for the entire cluster in terms of wries/sec, reads/sec
     // then do the following to set the values as they are only applicable per JVM (hence spark Executor)...
     //  Rate = Total Throughput (write/read per sec) / Total Executors
-    private RateLimiter readLimiter = RateLimiter.create(20000);
-    private RateLimiter writeLimiter = RateLimiter.create(40000);
+    private RateLimiter readLimiter = RateLimiter.create(5000);
+    private RateLimiter writeLimiter = RateLimiter.create(10000);
 
     private AtomicLong readCounter = new AtomicLong(0);
     private AtomicLong writeCounter = new AtomicLong(0);
     private CqlSession sourceSession;
-    private CqlSession astraSession;
+    private CqlSession destSession;
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession) {
 
         if (copyJobSession == null) {
@@ -46,15 +47,15 @@ public class CopyJobSession {
         return copyJobSession;
     }
 
-    private CopyJobSession(CqlSession sourceSession, CqlSession astraSession) {
+    private CopyJobSession(CqlSession sourceSession, CqlSession destSession) {
 
         this.sourceSession = sourceSession;
-        this.astraSession=astraSession;
-        insertStatement = astraSession.prepare(
-                "insert into test.sample (key,value) values (?,?)");
+        this.destSession=destSession;
+        insertStatement = destSession.prepare(
+                "insert into xrplreporting.full_history (hash,object) values (?,?)");
 
         selectStatement = sourceSession.prepare(
-                "select key, value from test.sample where token(key) >= ? and token(key) <= ? ALLOW FILTERING");
+                "select hash, object from xrplreporting.full_history where token(hash) >= ? and token(hash) <= ? ALLOW FILTERING");
     }
     public static void test(Long min, Long max) {
         logger.error("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
@@ -63,52 +64,60 @@ public class CopyJobSession {
         logger.error("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
     }
     public void getDataAndInsert(Long min, Long max) {
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
-        int maxAttempts = 5;
-        for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
+        RateLimiter errorLimiter = RateLimiter.create(100);
 
+        while(true)
+        {
+            int numReadFailures = 0;
             try {
                 ResultSet resultSet = sourceSession.execute(selectStatement.bind(min, max));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 for (Row row : resultSet) {
                     readLimiter.acquire(1);
-                    writeLimiter.acquire(1);
-                        if(readCounter.incrementAndGet()%1000==0){
-                            logger.info("Read Record Count: " + readCounter.get());
-                        }
-                        //Sample insert query, fill it in with own details
-                        CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(insertStatement.bind(row.getString(0),row.getString(1)));
-                        writeResults.add(writeResultSet);
-
-                        if(writeResults.size()>1000){
-                            for(CompletionStage<AsyncResultSet> writeResult: writeResults){
-                                //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
-                                writeResult.toCompletableFuture().get().one();
-                                if(writeCounter.incrementAndGet()%1000==0){
-                                    logger.info("Write Record Count: " + writeCounter.get());
-                                }
+                    if(readCounter.incrementAndGet()%1000==0){
+                        logger.info("Read Record Count: " + readCounter.get());
+                    }
+                    int numFailures = 0;
+                    while(true)
+                    {
+                        try
+                        {
+                            writeLimiter.acquire(1);
+                            if(numFailures > 0) {
+                                errorLimiter.acquire(Math.min(99,numFailures));
                             }
-                            //clear results
-                            writeResults.clear();
+                            //Sample insert query, fill it in with own details
+                            CompletionStage<AsyncResultSet> writeResultSet = destSession.executeAsync(insertStatement.bind(row.getByteBuffer(0),row.getByteBuffer(1)));
+                            writeResults.add(writeResultSet);
+
+                            if(writeResults.size()>1000){
+                                for(CompletionStage<AsyncResultSet> writeResult: writeResults){
+                                    //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
+                                    writeResult.toCompletableFuture().get().one();
+                                    if(writeCounter.incrementAndGet()%1000==0){
+                                        logger.info("Write Record Count: " + writeCounter.get());
+                                    }
+                                }
+                                //clear results
+                                writeResults.clear();
+                            }
+                            break;
+                        } catch (Exception e) {
+                            numFailures++;
+                            logger.error("Write error occurred with partition range " + min + " - " + max + " . num failures = " + numFailures, e);
+                            continue;
                         }
-                }
-
-
-                for(CompletionStage<AsyncResultSet> writeResult: writeResults){
-                    //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
-                    writeResult.toCompletableFuture().get().one();
-                    if(writeCounter.incrementAndGet()%1000==0){
-                        logger.info("Write Record Count: " + writeCounter.get());
                     }
                 }
-
-                retryCount = maxAttempts;
+                break;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: " + retryCount,e);
-                logger.error("Error with PartitionRange -- TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                ++numReadFailures;
+                logger.error("Read error occurred with partition range " + min + " - " + max + " . num read failures = " + numReadFailures, e);
+                continue;
             }
         }
+        logger.info("Finished partition range " + min + " - " + max);
 
 
 
