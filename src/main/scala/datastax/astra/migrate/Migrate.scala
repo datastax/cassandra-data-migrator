@@ -75,22 +75,6 @@ val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartit
 
     println(parts.collect.tail)
 
-    partitions.foreach(partition => {
-      val subPartitions =
-        SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("1000")), BigInteger.valueOf(partition.getMin()), BigInteger.valueOf(partition.getMax()));
-
-
-        parts.foreach(part => {
-          sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
-      })
-
-      println(parts.collect.tail)
-
-    })
-
-
-
-
 
   }
 
