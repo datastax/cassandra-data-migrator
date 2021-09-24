@@ -67,7 +67,7 @@ val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartit
 
   private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
 
-    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("100000")), minPartition, maxPartition)
+    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("100")), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))

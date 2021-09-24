@@ -103,6 +103,7 @@ public class CopyJobSession {
                     }
                 }
 
+                logger.info("Write Record Count: " + writeCounter.get());
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount,e);
