@@ -1,5 +1,7 @@
 package datastax.astra.migrate;
 
+import org.apache.log4j.Logger;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -9,18 +11,28 @@ import java.util.List;
 
 public class SplitPartitions {
 
+    public static Logger logger = Logger.getLogger(SplitPartitions.class);
     public final static Long MIN_PARTITION = Long.MIN_VALUE;
     public final static Long MAX_PARTITION  = Long.MAX_VALUE;
 
 
     public static void main(String[] args){
-        Collection<Partition> partitions = getSubPartitions(new BigInteger(args[0]), BigInteger.valueOf(MIN_PARTITION), BigInteger.valueOf(MAX_PARTITION));
+        Collection<Partition> partitions = getSubPartitions(new BigInteger("10"), BigInteger.valueOf(MIN_PARTITION), BigInteger.valueOf(MAX_PARTITION));
         for(Partition partition: partitions){
             System.out.println(partition);
         }
     }
+    public static Collection<Partition> getRandomSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max){
 
-    public static Collection<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max){
+        logger.info("TreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
+        List<Partition> partitions = getSubPartitions(splitSize,min,max);
+        Collections.shuffle(partitions);
+        Collections.shuffle(partitions);
+        Collections.shuffle(partitions);
+        Collections.shuffle(partitions);
+        return partitions;
+    }
+    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max){
         long curMax = min.longValueExact();
         long partitionSize =  max.subtract(min).divide(splitSize).longValueExact();
         List<Partition> partitions = new ArrayList<Partition>();
@@ -45,8 +57,7 @@ public class SplitPartitions {
                 break;
             }
         }
-        Collections.shuffle(partitions);
-        Collections.shuffle(partitions);
+
         return partitions;
     }
 
@@ -72,7 +83,7 @@ public class SplitPartitions {
         }
 
         public String toString(){
-            return "min: "+ min + " max:" + max;
+            return "--conf spark.migrate.source.minPartition="+ min + " --conf spark.migrate.source.maxPartition=" + max;
         }
     }
 }

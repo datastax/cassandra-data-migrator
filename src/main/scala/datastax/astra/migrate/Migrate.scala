@@ -15,50 +15,51 @@ import java.math.BigInteger
 import collection.JavaConversions._
 
 
+
 // http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
 object Migrate extends App {
-
-  val sourceUsername = "awSImgpvKitycEFFzRfhWDvC"
-  val sourcePassword = "a0zDnbivYdiGvqjKwO4ZcN6d0U4j15kfnXz.tLt6JyqMwgrcG6+pEkBEXdbnJWGlk-TfEGzNyLtlbFQ3yZ-D8ZjlQOUrc+6ASDw6_x3PSiaMmg17Aw8ouZKsRADdrDBq"
-  val sourceHost = "localhost"
-
-  val astraUsername = "awSImgpvKitycEFFzRfhWDvC"
-  val astraPassword = "a0zDnbivYdiGvqjKwO4ZcN6d0U4j15kfnXz.tLt6JyqMwgrcG6+pEkBEXdbnJWGlk-TfEGzNyLtlbFQ3yZ-D8ZjlQOUrc+6ASDw6_x3PSiaMmg17Aw8ouZKsRADdrDBq"
-
-  val srcScbPath = "file:///Users/ankitpatel/Documents/Clients/Astra/clusters/secure-connect-enterprise-azure.zip"
-  val astraScbPath = "file:///Users/ankitpatel/Documents/Clients/Astra/clusters/secure-connect-enterprise.zip"
-
-
-  println("Started Migration App")
-
   val spark = SparkSession.builder
-    .appName("Datastax Scala example")
-    //.enableHiveSupport()
+    .appName("Datastax Data Migration")
     .getOrCreate()
 
   import spark.implicits._
 
   val sc = spark.sparkContext
 
-val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
-val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
 
-//  val minPartition = SplitPartitions.MIN_PARTITION
-//  val maxPartition = SplitPartitions.MAX_PARTITION
+  val sourceUsername = sc.getConf.get("spark.migrate.source.username")
+  val sourcePassword = sc.getConf.get("spark.migrate.source.password")
+  val sourceHost = sc.getConf.get("spark.migrate.source.host")
 
 
-  val astraConnection = CassandraConnector(sc.getConf
-    .set("spark.cassandra.connection.config.cloud.path", srcScbPath)
-    .set("spark.cassandra.auth.username", astraUsername)
-    .set("spark.cassandra.auth.password", astraPassword))
+  val astraUsername = sc.getConf.get("spark.migrate.astra.username")
+  val astraPassword = sc.getConf.get("spark.migrate.astra.password")
+
+  val astraScbPath = sc.getConf.get("spark.migrate.astra.scb")
+
+  val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
+  val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
+
+  val splitSize = sc.getConf.get("spark.migrate.splitSize","10000")
+
+
+  println("Started Migration App")
+
 
   val sourceConnection = CassandraConnector(
     sc.getConf
-      .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
-//      .set("spark.cassandra.connection.host", sourceHost)
+      .set("spark.cassandra.connection.host", sourceHost)
       .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword))
+
+
+  val astraConnection = CassandraConnector(sc.getConf
+    .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
+    .set("spark.cassandra.auth.username", astraUsername)
+    .set("spark.cassandra.auth.password", astraPassword))
+
+
 
 
   migrateTable(sourceConnection,astraConnection, minPartition, maxPartition)
@@ -67,10 +68,10 @@ val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartit
 
   private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
 
-    val partitions = SplitPartitions.getSubPartitions(BigInteger.valueOf(Long.parseLong("10000")), minPartition, maxPartition)
+    val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
     parts.foreach(part => {
-      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession).getDataAndInsert(part.getMin, part.getMax)))
+      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndInsert(part.getMin, part.getMax)))
     })
 
     println(parts.collect.tail)
@@ -78,25 +79,12 @@ val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartit
 
   }
 
-
   private def exitSpark = {
     spark.stop()
     sys.exit(0)
   }
 
-
-
-
-
 }
-
-
-
-//val df = spark.read.format("org.apache.spark.sql.cassandra").options(Map("keyspace" -> "test","table" -> "tbl1")).load
-// val ds = df.filter(df(token("key1,key2") > "1000000"))
-
-
-//.option("ttl."+ttlColumn, ttlColumnAlias)
 
 
 

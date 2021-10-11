@@ -1,3 +1,3 @@
- ./spark-submit --verbose --master "local[8]" --conf spark.migrate.source.keyspace=test --conf spark.migrate.source.tableName=sample --conf spark.migrate.source.minPartition=-8910172594085141869 --class datastax.astra.migrate.Migrate /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.1.jar
+ ./spark-submit --properties-file /Users/ankitpatel/Documents/spark-astra-migrator-ranges/src/resources/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=-9038904596117680292 --class datastax.astra.migrate.Migrate /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.1.jar
 
 
