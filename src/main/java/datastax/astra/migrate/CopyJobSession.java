@@ -1,5 +1,6 @@
 package datastax.astra.migrate;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
@@ -11,51 +12,7 @@ import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.spark.SparkConf;
 
 
-/*
 
-
-CREATE TABLE test.user_activity_details_summary_2019_3 (
-    id text,
-    id_type text,
-    month int,
-    category text,
-    sub_category text,
-    field_value frozen<map<text, text>>,
-    sub_field_value frozen<map<text, text>>,
-    "01" counter,
-    "02" counter,
-    "03" counter,
-    "04" counter,
-    "05" counter,
-    "06" counter,
-    "07" counter,
-    "08" counter,
-    "09" counter,
-    "10" counter,
-    "11" counter,
-    "12" counter,
-    "13" counter,
-    "14" counter,
-    "15" counter,
-    "16" counter,
-    "17" counter,
-    "18" counter,
-    "19" counter,
-    "20" counter,
-    "21" counter,
-    "22" counter,
-    "23" counter,
-    "24" counter,
-    "25" counter,
-    "26" counter,
-    "27" counter,
-    "28" counter,
-    "29" counter,
-    "30" counter,
-    "31" counter,
-    total counter,
-    PRIMARY KEY (id, id_type, month, category, sub_category, field_value, sub_field_value)
- */
 public class CopyJobSession {
 
     public static Logger logger = Logger.getLogger(CopyJobSession.class);
@@ -72,15 +29,19 @@ public class CopyJobSession {
     //  Rate = Total Throughput (write/read per sec) / Total Executors
     private final RateLimiter readLimiter;
     private final RateLimiter writeLimiter;
-
+    private Integer  maxRetries = 10;
     private AtomicLong readCounter = new AtomicLong(0);
     private AtomicLong writeCounter = new AtomicLong(0);
     private CqlSession sourceSession;
     private CqlSession astraSession;
-    private List<String> dataTypesFromQuery = new ArrayList<String>();
+    private List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
+    private List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
 
     private Integer batchSize = 1;
     private long writeTimeStampFilter = 0;
+    private List<Integer> writeTimeStampCols = new ArrayList<Integer>();
+    private Boolean isCounterTable;
+    private Integer deltaRowMaxIndex;
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
 
@@ -104,6 +65,7 @@ public class CopyJobSession {
 
         readLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.migrate.readRateLimit","20000")));
         writeLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.migrate.writeRateLimit","40000")));
+        maxRetries = Integer.parseInt(sparkConf.get("spark.migrate.maxRetries","10"));
 
         String sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
         String astraKeyspaceTable = sparkConf.get("spark.migrate.astra.keyspaceTable");
@@ -122,34 +84,83 @@ public class CopyJobSession {
         logger.info(" DEFAULT -- WriteTimestampFilter: " + writeTimeStampFilter);
 
 
+        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable","false"));
+        deltaRowMaxIndex =  Integer.parseInt(sparkConf.get("spark.migrate.query.cols.counter.deltaRowMaxIndex","0"));
+
+        String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
+        for(String writeTimeStampCol:writeTimestampColsStr.split(",")){
+            writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
+
+        }
+
+
+        insertColTypes =  getTypes(sparkConf.get("spark.migrate.query.cols.insert.types"));
+        String partionKey =  sparkConf.get("spark.migrate.query.cols.partitionKey");
+        String idCols =  sparkConf.get("spark.migrate.query.cols.id");
+        idColTypes =  getTypes(sparkConf.get("spark.migrate.query.cols.id.types"));
+
+
+        String selectCols =  sparkConf.get("spark.migrate.query.cols.select");
+        String insertCols =  sparkConf.get("spark.migrate.query.cols.insert");
+
+        String insertBinds = "";
+        int count = 1;
+        for(String str: insertCols.split(",")){
+            if(count>1){
+                insertBinds = insertBinds + ",?";
+            }else {
+                insertBinds = insertBinds + "?";
+            }
+            count++;
+        }
+
+        String idBinds = "";
+        count = 1;
+        for(String str: idCols.split(",")){
+            if(count>1){
+                idBinds = idBinds + " and " + str + "= ?";
+            }else {
+                idBinds = str + "= ?";
+            }
+            count++;
+        }
+
+        System.out.println("Ankit " + idBinds);
+
         sourceSelectStatement = sourceSession.prepare(
-                "select id, id_type, month, category, sub_category, field_value, sub_field_value, \"01\",\"02\",\"03\",\"04\",\"05\",\"06\",\"07\",\"08\",\"09\",\"10\","
-                        + "\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\","
-                        + "\"21\",\"22\",\"23\",\"24\",\"25\",\"26\",\"27\",\"28\",\"29\",\"30\","
-                        +"\"31\", total, writetime(total) from " + sourceKeyspaceTable + " where token(id) >= ? and token(id) <= ? ALLOW FILTERING");
+                "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim() + ") >= ? and token(" + partionKey.trim() + ") <= ? ALLOW FILTERING");
 
 
         astraSelectStatement = astraSession.prepare(
-                "select id, id_type, month, category, sub_category, field_value, sub_field_value, \"01\",\"02\",\"03\",\"04\",\"05\",\"06\",\"07\",\"08\",\"09\",\"10\","
-                        + "\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\","
-                        + "\"21\",\"22\",\"23\",\"24\",\"25\",\"26\",\"27\",\"28\",\"29\",\"30\","
-                        +"\"31\", total, writetime(total) from " + astraKeyspaceTable
-                        + " where id = ? and id_type=? and month=? and category=? and sub_category=? and field_value=? and sub_field_value=?");
+                "select " + selectCols + " from " + astraKeyspaceTable
+                        + " where " + idBinds);
 
 
-        astraInsertStatement = astraSession.prepare(
-                "update " + astraKeyspaceTable + " set \"01\"+=? , \"02\"+=? , \"03\"+=? , \"04\"+=? , \"05\"+=? , \"06\"+=? , \"07\"+=? , \"08\"+=? , \"09\"+=? , \"10\"+=? , "
-                        + "\"11\"+=? , \"12\"+=? , \"13\"+=? , \"14\"+=? , \"15\"+=? , \"16\"+=? , \"17\"+=? , \"18\"+=? , \"19\"+=? , \"20\"+=? , "
-                        + "\"21\"+=? , \"22\"+=? , \"23\"+=? , \"24\"+=? , \"25\"+=? , \"26\"+=? , \"27\"+=? , \"28\"+=? , \"29\"+=? , \"30\"+=? , "
-                        +"\"31\"+=? ,  total+=? where id=? and id_type=? and month=? and category=? and sub_category=? and field_value=? and sub_field_value=? ");
+        astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
+
+//        astraInsertStatement = astraSession.prepare(
+//                "update " + astraKeyspaceTable + " set \"01\"+=? , \"02\"+=? , \"03\"+=? , \"04\"+=? , \"05\"+=? , \"06\"+=? , \"07\"+=? , \"08\"+=? , \"09\"+=? , \"10\"+=? , "
+//                        + "\"11\"+=? , \"12\"+=? , \"13\"+=? , \"14\"+=? , \"15\"+=? , \"16\"+=? , \"17\"+=? , \"18\"+=? , \"19\"+=? , \"20\"+=? , "
+//                        + "\"21\"+=? , \"22\"+=? , \"23\"+=? , \"24\"+=? , \"25\"+=? , \"26\"+=? , \"27\"+=? , \"28\"+=? , \"29\"+=? , \"30\"+=? , "
+//                        +"\"31\"+=? ,  total+=? where id=? and id_type=? and month=? and category=? and sub_category=? and field_value=? and sub_field_value=? ");
 
 
     }
 
 
+
+    public List<MigrateDataType> getTypes(String types){
+        List<MigrateDataType> dataTypes= new ArrayList<MigrateDataType>();
+        for(String type:types.split(",")){
+            dataTypes.add(new MigrateDataType(type));
+        }
+
+        return dataTypes;
+
+    }
     public void getDataAndInsert(Long min, Long max) {
         logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
-        int maxAttempts = 5;
+        int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
@@ -161,7 +172,7 @@ public class CopyJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         //only process rows greater than writeTimeStampFilter
-                        if(sourceRow.getLong(39)<writeTimeStampFilter){
+                        if(writeTimeStampFilter>0 && getLargestWriteTimeStamp(sourceRow)<writeTimeStampFilter){
                             continue;
                         }
 
@@ -170,8 +181,13 @@ public class CopyJobSession {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
                         if(writeTimeStampFilter>0l){
-                            ResultSet astraReadResultSet = astraSession.execute(selectFromAstra(astraSelectStatement,sourceRow));
-                            Row astraRow = astraReadResultSet.one();
+                            Row astraRow = null;
+                            if(isCounterTable) {
+                                ResultSet astraReadResultSet = astraSession.execute(selectFromAstra(astraSelectStatement, sourceRow));
+                                astraRow = astraReadResultSet.one();
+                            }
+
+
 
                             CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession.executeAsync(bindInsert(astraInsertStatement,sourceRow, astraRow));
                             writeResults.add(astraWriteResultSet);
@@ -244,6 +260,14 @@ public class CopyJobSession {
 
     }
 
+
+    private long getLargestWriteTimeStamp(Row sourceRow){
+        long writeTimestamp = 0;
+        for(Integer writeTimeStampCol: writeTimeStampCols){
+            writeTimestamp = Math.max(writeTimestamp,sourceRow.getLong(writeTimeStampCol));
+        }
+        return writeTimestamp;
+    }
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception{
         for(CompletionStage<AsyncResultSet> writeResult: writeResults){
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
@@ -256,36 +280,39 @@ public class CopyJobSession {
     }
 
     private BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow){
-        return insertStatement.bind(
-                sourceRow.getLong(7), sourceRow.getLong(8), sourceRow.getLong(9), sourceRow.getLong(10), sourceRow.getLong(11),
-                sourceRow.getLong(12), sourceRow.getLong(13), sourceRow.getLong(14), sourceRow.getLong(15), sourceRow.getLong(16),
-                sourceRow.getLong(17), sourceRow.getLong(18), sourceRow.getLong(19), sourceRow.getLong(20), sourceRow.getLong(21),
-                sourceRow.getLong(22), sourceRow.getLong(23), sourceRow.getLong(24), sourceRow.getLong(25), sourceRow.getLong(26),
-                sourceRow.getLong(27), sourceRow.getLong(28), sourceRow.getLong(29), sourceRow.getLong(30), sourceRow.getLong(31),
-                sourceRow.getLong(32), sourceRow.getLong(33), sourceRow.getLong(34), sourceRow.getLong(35), sourceRow.getLong(36),
-                sourceRow.getLong(37), sourceRow.getLong(38),
-                sourceRow.getString(0), sourceRow.getString(1), sourceRow.getInt(2), sourceRow.getString(3),
-                sourceRow.getString(4), sourceRow.getMap(5, String.class, String.class), sourceRow.getMap(6, String.class, String.class));
+        BoundStatement boundInsertStatement = insertStatement.bind();
+        for(int index=0;index<insertColTypes.size();index++){
+            MigrateDataType dataType = insertColTypes.get(index);
+            boundInsertStatement = boundInsertStatement.set(index,getData(dataType, index, sourceRow),dataType.typeClass);
+        }
+        return boundInsertStatement;
     }
 
     private BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow){
-        if(astraRow==null){
-            return bindInsert(insertStatement,sourceRow);
+        if(astraRow==null) {
+            return bindInsert(insertStatement, sourceRow);
+        }else{
+
+            BoundStatement boundInsertStatement = insertStatement.bind();
+            for(int index=0;index<insertColTypes.size();index++){
+                MigrateDataType dataType = insertColTypes.get(index);
+                if(index<=deltaRowMaxIndex){
+                    boundInsertStatement = boundInsertStatement.set(index,getDelta(index,sourceRow,astraRow),Long.class);
+                }else {
+                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, index, sourceRow), dataType.typeClass);
+                }
+            }
+
+            return boundInsertStatement;
+
+
         }
-        return insertStatement.bind(
-                getDelta(7, sourceRow,astraRow), getDelta(8, sourceRow,astraRow), getDelta(9, sourceRow,astraRow), getDelta(10, sourceRow,astraRow), getDelta(11, sourceRow,astraRow),
-                getDelta(12, sourceRow,astraRow), getDelta(13, sourceRow,astraRow), getDelta(14, sourceRow,astraRow), getDelta(15, sourceRow,astraRow), getDelta(16, sourceRow,astraRow),
-                getDelta(17, sourceRow,astraRow), getDelta(18, sourceRow,astraRow), getDelta(19, sourceRow,astraRow), getDelta(20, sourceRow,astraRow), getDelta(21, sourceRow,astraRow),
-                getDelta(22, sourceRow,astraRow), getDelta(23, sourceRow,astraRow), getDelta(24, sourceRow,astraRow), getDelta(25, sourceRow,astraRow), getDelta(26, sourceRow,astraRow),
-                getDelta(27, sourceRow,astraRow), getDelta(28, sourceRow,astraRow), getDelta(29, sourceRow,astraRow), getDelta(30, sourceRow,astraRow), getDelta(31, sourceRow,astraRow),
-                getDelta(32, sourceRow,astraRow), getDelta(33, sourceRow,astraRow), getDelta(34, sourceRow,astraRow), getDelta(35, sourceRow,astraRow), getDelta(36, sourceRow,astraRow),
-                getDelta(37, sourceRow,astraRow), getDelta(38, sourceRow,astraRow),
-                sourceRow.getString(0), sourceRow.getString(1), sourceRow.getInt(2), sourceRow.getString(3),
-                sourceRow.getString(4), sourceRow.getMap(5, String.class, String.class), sourceRow.getMap(6, String.class, String.class));
     }
+
 
     private Long getDelta (int index, Row sourceRow, Row astraRow){
         return sourceRow.getLong(index) - astraRow.getLong(index);
+
     }
 
     private BoundStatement selectFromAstra(PreparedStatement selectStatement, Row row){
@@ -294,5 +321,81 @@ public class CopyJobSession {
                 row.getString(4), row.getMap(5, String.class, String.class), row.getMap(6, String.class, String.class));
     }
 
+
+
+    /*
+
+    TYPES
+
+    0 - String
+    1 - Int
+    2 - Long
+    3 - Double
+    4 - Datetime
+    5 - Map (Type1, Type2)
+    6 - List (Type1)
+    -1 : Blob
+
+     */
+    private Object getData(MigrateDataType dataType, int index, Row sourceRow){
+
+        if(dataType.typeClass == Map.class){
+            return sourceRow.getMap(index,dataType.subTypes.get(0),dataType.subTypes.get(1));
+        }else if(dataType.typeClass== List.class){
+            return sourceRow.getList(index,dataType.subTypes.get(0));
+        }
+        return sourceRow.get(index,dataType.typeClass);
+    }
+
+    private class MigrateDataType {
+        Class typeClass = Object.class;
+        List<Class> subTypes = new ArrayList<Class>();
+
+        public MigrateDataType(String dataType){
+            if(dataType.contains("%")){
+                int count =1 ;
+                for(String type: dataType.split("%")){
+                    if(count==1){
+                        typeClass = getType(Integer.parseInt(type));
+                    }else{
+                        subTypes.add(getType(Integer.parseInt(type)));
+                    }
+                    count++;
+                }
+            }else {
+                int type = Integer.parseInt(dataType);
+                typeClass = getType(type);
+            }
+        }
+
+
+        private Class getType(int type){
+            switch(type) {
+                case 0:
+                    return String.class;
+
+                case 1:
+                    return Integer.class;
+
+                case 2:
+                    return Long.class;
+
+                case 3:
+                    return Double.class;
+
+                case 4:
+                    return LocalDate.class;
+
+                case 5:
+                    return Map.class;
+                case 6:
+                    return List.class;
+
+            }
+
+            return Object.class;
+        }
+
+    }
 
 }

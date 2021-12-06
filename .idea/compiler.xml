@@ -7,10 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="astra-spark-migration" />
+        <module name="migrate" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="astra-spark-migration" target="8" />
+      <module name="migrate" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

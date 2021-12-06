@@ -4,7 +4,7 @@ import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession}
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import datastax.astra.migrate.{CassUtil, CopyJobSession, SplitPartitions}
+import datastax.astra.migrate.{CassUtil, DiffJobSession, SplitPartitions}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.cassandra._
@@ -14,11 +14,10 @@ import java.lang.Long
 import java.math.BigInteger
 import collection.JavaConversions._
 
+import java.math.BigInteger
 
+object DiffData extends App {
 
-// http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
-
-object Migrate extends App {
   val spark = SparkSession.builder
     .appName("Datastax Data Migration")
     .getOrCreate()
@@ -44,15 +43,12 @@ object Migrate extends App {
   val splitSize = sc.getConf.get("spark.migrate.splitSize","10000")
 
 
-  println("Started Migration App")
+  println("Started Difference App")
 
 
-  val sourceConnection = CassandraConnector(
-    sc.getConf
-//      .set("spark.cassandra.connection.host", sourceHost)
-      .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
+  val sourceConnection = CassandraConnector(sc.getConf
+    .set("spark.cassandra.connection.host", sourceHost)
       .set("spark.cassandra.auth.username", sourceUsername)
-
       .set("spark.cassandra.auth.password", sourcePassword))
 
 
@@ -64,16 +60,16 @@ object Migrate extends App {
 
 
 
-  migrateTable(sourceConnection,astraConnection, minPartition, maxPartition)
+  diffTable(sourceConnection,astraConnection, minPartition, maxPartition)
 
   exitSpark
 
-  private def migrateTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
+  private def diffTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
 
     val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
     parts.foreach(part => {
-      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndInsert(part.getMin, part.getMax)))
+      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   DiffJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndDiff(part.getMin, part.getMax)))
     })
 
     println(parts.collect.tail)
@@ -87,6 +83,3 @@ object Migrate extends App {
   }
 
 }
-
-
-

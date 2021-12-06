@@ -1,3 +1,10 @@
- ./spark-submit --properties-file /Users/ankitpatel/Documents/spark-astra-migrator-ranges/src/resources/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=-9038904596117680292 --class datastax.astra.migrate.Migrate /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.1.jar
+ wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.6.tgz
+
+  ~/Documents/Astra/spark-2.4.8-bin-hadoop2.7/bin//spark-submit --properties-file /Users/ankitpatel/Documents/spark-astra-migrator-ranges/src/resources/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=9223372036854775807 --class datastax.astra.migrate.Migrate /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.1.jar
 
 
+
+
+//Diff Data
+
+~/Documents/Astra/spark-2.4.8-bin-hadoop2.7/bin//spark-submit --properties-file /Users/ankitpatel/Documents/spark-astra-migrator-ranges/src/resources/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=9223372036854775807 --class datastax.astra.migrate.DiffData /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.1.jar

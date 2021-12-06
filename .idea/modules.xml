@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/astra-spark-migration.iml" filepath="$PROJECT_DIR$/astra-spark-migration.iml" />
+      <module fileurl="file://$PROJECT_DIR$/migrate.iml" filepath="$PROJECT_DIR$/migrate.iml" />
     </modules>
   </component>
 </project>
