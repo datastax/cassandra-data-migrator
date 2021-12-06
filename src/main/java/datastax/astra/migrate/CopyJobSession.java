@@ -1,5 +1,6 @@
 package datastax.astra.migrate;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
@@ -86,6 +87,7 @@ public class CopyJobSession {
 
 
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable","false"));
+        String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update");
         deltaRowMaxIndex =  Integer.parseInt(sparkConf.get("spark.migrate.query.cols.counter.deltaRowMaxIndex","0"));
 
         String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
@@ -135,8 +137,11 @@ public class CopyJobSession {
                 "select " + selectCols + " from " + astraKeyspaceTable
                         + " where " + idBinds);
 
-
-        astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
+        if(isCounterTable){
+            astraInsertStatement = astraSession.prepare( counterTableUpdate);
+        }else {
+            astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
+        }
 
     }
 
@@ -383,6 +388,8 @@ public class CopyJobSession {
                     return Map.class;
                 case 6:
                     return List.class;
+                case 7:
+                    return ByteBuffer.class;
 
             }
 
