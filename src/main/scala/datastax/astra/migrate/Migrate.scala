@@ -48,11 +48,11 @@ object Migrate extends App {
 
 
   val sourceConnection = CassandraConnector(
-    sc.getConf
-//      .set("spark.cassandra.connection.host", sourceHost)
-      .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
-      .set("spark.cassandra.auth.username", sourceUsername)
 
+
+    sc.getConf
+      .set("spark.cassandra.connection.host", sourceHost)
+      .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword))
 
 

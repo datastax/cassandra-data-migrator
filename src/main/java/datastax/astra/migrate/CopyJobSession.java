@@ -1,5 +1,6 @@
 package datastax.astra.migrate;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
@@ -125,7 +126,6 @@ public class CopyJobSession {
             count++;
         }
 
-        System.out.println("Ankit " + idBinds);
 
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim() + ") >= ? and token(" + partionKey.trim() + ") <= ? ALLOW FILTERING");
@@ -137,13 +137,6 @@ public class CopyJobSession {
 
 
         astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
-
-//        astraInsertStatement = astraSession.prepare(
-//                "update " + astraKeyspaceTable + " set \"01\"+=? , \"02\"+=? , \"03\"+=? , \"04\"+=? , \"05\"+=? , \"06\"+=? , \"07\"+=? , \"08\"+=? , \"09\"+=? , \"10\"+=? , "
-//                        + "\"11\"+=? , \"12\"+=? , \"13\"+=? , \"14\"+=? , \"15\"+=? , \"16\"+=? , \"17\"+=? , \"18\"+=? , \"19\"+=? , \"20\"+=? , "
-//                        + "\"21\"+=? , \"22\"+=? , \"23\"+=? , \"24\"+=? , \"25\"+=? , \"26\"+=? , \"27\"+=? , \"28\"+=? , \"29\"+=? , \"30\"+=? , "
-//                        +"\"31\"+=? ,  total+=? where id=? and id_type=? and month=? and category=? and sub_category=? and field_value=? and sub_field_value=? ");
-
 
     }
 
@@ -384,7 +377,7 @@ public class CopyJobSession {
                     return Double.class;
 
                 case 4:
-                    return LocalDate.class;
+                    return Instant.class;
 
                 case 5:
                     return Map.class;
