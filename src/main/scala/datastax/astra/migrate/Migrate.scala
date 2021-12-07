@@ -43,6 +43,9 @@ object Migrate extends App {
 
   val splitSize = sc.getConf.get("spark.migrate.splitSize","10000")
 
+  val sourceReadConsistencyLevel = sc.getConf.get("spark.cassandra.source.read.consistency.level","LOCAL_QUORUM")
+  val astraReadConsistencyLevel = sc.getConf.get("spark.cassandra.astra.read.consistency.level","LOCAL_QUORUM")
+
 
   println("Started Migration App")
 
@@ -52,7 +55,8 @@ object Migrate extends App {
     sc.getConf
       .set("spark.cassandra.connection.host", sourceHost)
       .set("spark.cassandra.auth.username", sourceUsername)
-      .set("spark.cassandra.auth.password", sourcePassword))
+      .set("spark.cassandra.auth.password", sourcePassword)
+      .set("spark.cassandra.input.consistency.level", sourceReadConsistencyLevel))
 
 
   if("true".equals(isBeta)){
@@ -60,7 +64,9 @@ object Migrate extends App {
       sc.getConf
         .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
         .set("spark.cassandra.auth.username", astraUsername)
-        .set("spark.cassandra.auth.password", astraPassword))
+        .set("spark.cassandra.auth.password", astraPassword)
+        .set("spark.cassandra.input.consistency.level", sourceReadConsistencyLevel)
+    )
 
   }
 
@@ -68,7 +74,8 @@ object Migrate extends App {
   val astraConnection = CassandraConnector(sc.getConf
     .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
     .set("spark.cassandra.auth.username", astraUsername)
-    .set("spark.cassandra.auth.password", astraPassword))
+    .set("spark.cassandra.auth.password", astraPassword)
+    .set("spark.cassandra.input.consistency.level", astraReadConsistencyLevel))
 
 
 
