@@ -46,14 +46,23 @@ object Migrate extends App {
 
   println("Started Migration App")
 
+  val isBeta = sc.getConf.get("spark.migrate.beta","false")
 
-  val sourceConnection = CassandraConnector(
-
-
+  var sourceConnection = CassandraConnector(
     sc.getConf
       .set("spark.cassandra.connection.host", sourceHost)
       .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword))
+
+
+  if("true".equals(isBeta)){
+    sourceConnection = CassandraConnector(
+      sc.getConf
+        .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
+        .set("spark.cassandra.auth.username", astraUsername)
+        .set("spark.cassandra.auth.password", astraPassword))
+
+  }
 
 
   val astraConnection = CassandraConnector(sc.getConf

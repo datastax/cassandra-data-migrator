@@ -42,8 +42,11 @@ public class CopyJobSession {
     private Integer batchSize = 1;
     private long writeTimeStampFilter = 0;
     private List<Integer> writeTimeStampCols = new ArrayList<Integer>();
+    private List<Integer> ttlCols = new ArrayList<Integer>();
     private Boolean isCounterTable;
     private Integer deltaRowMaxIndex;
+
+    private Boolean isPreserveTTLWritetime = Boolean.FALSE;
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
 
@@ -87,12 +90,19 @@ public class CopyJobSession {
 
 
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable","false"));
-        String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update");
+
         deltaRowMaxIndex =  Integer.parseInt(sparkConf.get("spark.migrate.query.cols.counter.deltaRowMaxIndex","0"));
 
         String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
         for(String writeTimeStampCol:writeTimestampColsStr.split(",")){
             writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
+
+        }
+
+
+        String ttlColsStr = sparkConf.get("spark.migrate.source.ttl.cols");
+        for(String ttlCol:ttlColsStr.split(",")){
+            ttlCols.add(Integer.parseInt(ttlCol));
 
         }
 
@@ -138,9 +148,15 @@ public class CopyJobSession {
                         + " where " + idBinds);
 
         if(isCounterTable){
+            String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
             astraInsertStatement = astraSession.prepare( counterTableUpdate);
         }else {
-            astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
+            isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime","false"));
+            if(isPreserveTTLWritetime) {
+                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ") using TTL ? and TIMESTAMP ?");
+            }else{
+                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
+            }
         }
 
     }
@@ -259,6 +275,14 @@ public class CopyJobSession {
     }
 
 
+    private int getLargestTTL(Row sourceRow){
+        int ttl = 0;
+        for(Integer ttlCol: ttlCols){
+            ttl = Math.max(ttl,sourceRow.getInt(ttlCol));
+        }
+        return ttl;
+    }
+
     private long getLargestWriteTimeStamp(Row sourceRow){
         long writeTimestamp = 0;
         for(Integer writeTimeStampCol: writeTimeStampCols){
@@ -279,9 +303,16 @@ public class CopyJobSession {
 
     private BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow){
         BoundStatement boundInsertStatement = insertStatement.bind();
-        for(int index=0;index<insertColTypes.size();index++){
+        int index= 0;
+        for(index=0;index<insertColTypes.size();index++){
             MigrateDataType dataType = insertColTypes.get(index);
             boundInsertStatement = boundInsertStatement.set(index,getData(dataType, index, sourceRow),dataType.typeClass);
+        }
+
+        if(isPreserveTTLWritetime){
+            boundInsertStatement = boundInsertStatement.set(index,getLargestTTL(sourceRow),Integer.class);
+            index++;
+            boundInsertStatement = boundInsertStatement.set(index,getLargestWriteTimeStamp(sourceRow),Long.class);
         }
         return boundInsertStatement;
     }
