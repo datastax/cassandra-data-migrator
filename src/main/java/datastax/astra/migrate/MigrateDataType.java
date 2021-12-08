@@ -28,11 +28,14 @@ public class MigrateDataType {
     }
 
     public boolean diff(Object source, Object astra){
-        if(source==null && astra!=null){
+        if(source==null && astra==null){
+            return false;
+        }if(source==null && astra!=null){
             return true;
         }else if(source!=null && astra==null){
             return true;
         }
+
 
         return !source.equals(astra);
     }

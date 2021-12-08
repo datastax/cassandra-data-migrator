@@ -6,12 +6,7 @@ import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
 
 public abstract class AbstractJobSession {
 
@@ -38,9 +33,9 @@ public abstract class AbstractJobSession {
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
-    protected Integer deltaRowMaxIndex;
+    protected Integer counterDeltaMaxIndex = 0;
 
-    protected Boolean isPreserveTTLWritetime = Boolean.FALSE;
+
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
 
@@ -74,7 +69,8 @@ public abstract class AbstractJobSession {
 
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable", "false"));
 
-        deltaRowMaxIndex = Integer.parseInt(sparkConf.get("spark.migrate.query.cols.counter.deltaRowMaxIndex", "0"));
+        counterDeltaMaxIndex = Integer.parseInt(sparkConf.get("spark.migrate.source.counterTable.update.max.counter.index","0"));
+
 
         String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
         for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
@@ -149,12 +145,11 @@ public abstract class AbstractJobSession {
     }
 
 
-    public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row row) {
+    public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
         BoundStatement boundSelectStatement = selectStatement.bind();
-        int index = 0;
-        for (index = 0; index < idColTypes.size(); index++) {
+        for (int index = 0; index < idColTypes.size(); index++) {
             MigrateDataType dataType = idColTypes.get(index);
-            boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, row), dataType.typeClass);
+            boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, sourceRow), dataType.typeClass);
         }
 
         return boundSelectStatement;

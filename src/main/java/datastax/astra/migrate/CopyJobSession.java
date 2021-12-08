@@ -23,6 +23,8 @@ public class CopyJobSession extends AbstractJobSession {
     protected AtomicLong writeCounter = new AtomicLong(0);
 
     protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
+    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
+    protected Boolean isPreserveTTLWritetime = Boolean.FALSE;
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
 
@@ -52,12 +54,17 @@ public class CopyJobSession extends AbstractJobSession {
             }
             count++;
         }
+        isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime","false"));
 
+        String updateSelectMappingStr  = sparkConf.get("spark.migrate.source.counterTable.update.select.index","0");
+        for(String updateSelectIndex: updateSelectMappingStr.split(",")){
+            updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
+        }
         if(isCounterTable){
             String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
-            astraInsertStatement = astraSession.prepare( counterTableUpdate);
+            astraInsertStatement = astraSession.prepare(counterTableUpdate);
         }else {
-            isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime","false"));
+
             if(isPreserveTTLWritetime) {
                 astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ") using TTL ? and TIMESTAMP ?");
             }else{
@@ -185,46 +192,46 @@ public class CopyJobSession extends AbstractJobSession {
 
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow){
-        BoundStatement boundInsertStatement = insertStatement.bind();
-        int index= 0;
-        for(index=0;index<insertColTypes.size();index++){
-            MigrateDataType dataType = insertColTypes.get(index);
-            boundInsertStatement = boundInsertStatement.set(index,getData(dataType, index, sourceRow),dataType.typeClass);
-        }
-
-        if(isPreserveTTLWritetime){
-            boundInsertStatement = boundInsertStatement.set(index,getLargestTTL(sourceRow),Integer.class);
-            index++;
-            boundInsertStatement = boundInsertStatement.set(index,getLargestWriteTimeStamp(sourceRow),Long.class);
-        }
-        return boundInsertStatement;
+        return bindInsert(insertStatement,sourceRow,null);
     }
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow){
-        if(astraRow==null) {
-            return bindInsert(insertStatement, sourceRow);
-        }else{
+        if(isCounterTable){
 
             BoundStatement boundInsertStatement = insertStatement.bind();
             for(int index=0;index<insertColTypes.size();index++){
                 MigrateDataType dataType = insertColTypes.get(index);
-                if(index<=deltaRowMaxIndex){
-                    boundInsertStatement = boundInsertStatement.set(index,getCounterDelta(index,sourceRow,astraRow),Long.class);
+                // compute the counter delta if reading from astra for the difference
+                if(astraRow!=null && isCounterTable && index <= counterDeltaMaxIndex){
+                    boundInsertStatement = boundInsertStatement.set(index,getCounterDelta(sourceRow.getLong(updateSelectMapping.get(index)), astraRow.getLong(updateSelectMapping.get(index))),Long.class);
                 }else {
-                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, index, sourceRow), dataType.typeClass);
+                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
                 }
             }
 
             return boundInsertStatement;
 
+        }else{
+            BoundStatement boundInsertStatement = insertStatement.bind();
+            int index= 0;
+            for(index=0;index<insertColTypes.size();index++){
+                MigrateDataType dataType = insertColTypes.get(index);
+                boundInsertStatement = boundInsertStatement.set(index,getData(dataType, index, sourceRow),dataType.typeClass);
+            }
+
+            if(isPreserveTTLWritetime){
+                boundInsertStatement = boundInsertStatement.set(index,getLargestTTL(sourceRow),Integer.class);
+                index++;
+                boundInsertStatement = boundInsertStatement.set(index,getLargestWriteTimeStamp(sourceRow),Long.class);
+            }
+            return boundInsertStatement;
 
         }
     }
 
 
-    public Long getCounterDelta (int index, Row sourceRow, Row astraRow){
-        return sourceRow.getLong(index) - astraRow.getLong(index);
-
+    public Long getCounterDelta (Long sourceRow, Long astraRow) {
+        return sourceRow - astraRow;
     }
 
 
