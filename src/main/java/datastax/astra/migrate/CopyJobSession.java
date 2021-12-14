@@ -25,7 +25,7 @@ public class CopyJobSession extends AbstractJobSession {
     protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
     protected Boolean isPreserveTTLWritetime = Boolean.FALSE;
-
+    protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
 
 
@@ -57,6 +57,8 @@ public class CopyJobSession extends AbstractJobSession {
         isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime","false"));
 
         String updateSelectMappingStr  = sparkConf.get("spark.migrate.source.counterTable.update.select.index","0");
+
+        maxWriteTimeStampFilter = new Long(sparkConf.get("spark.migrate.source.maxWriteTimeStampFilter", ""+Long.MAX_VALUE));
         for(String updateSelectIndex: updateSelectMappingStr.split(",")){
             updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
         }
@@ -84,12 +86,13 @@ public class CopyJobSession extends AbstractJobSession {
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(min, max));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
-                //cannot do batching if the writeFilter is greater than 0
-                if(batchSize==1 || writeTimeStampFilter>0l) {
+                //cannot do batching if the writeFilter is greater than 0 or maxWriteTimeStampFilter is less than max long
+                if(batchSize==1 || writeTimeStampFilter>0l || maxWriteTimeStampFilter < Long.MAX_VALUE) {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         //only process rows greater than writeTimeStampFilter
-                        if(writeTimeStampFilter>0l && getLargestWriteTimeStamp(sourceRow)<writeTimeStampFilter){
+                        Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
+                        if(writeTimeStampFilter>0l && (sourceWriteTimeStamp<writeTimeStampFilter) || sourceWriteTimeStamp > maxWriteTimeStampFilter){
                             continue;
                         }
 

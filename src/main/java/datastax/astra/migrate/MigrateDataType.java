@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
@@ -62,6 +63,8 @@ public class MigrateDataType {
                 return List.class;
             case 7:
                 return ByteBuffer.class;
+            case 8:
+                return Set.class;
 
         }
 

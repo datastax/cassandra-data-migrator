@@ -26,7 +26,7 @@ public class TestConnection {
 
     public static void main(String[] args) {
 
-
+/*
 
             try {
 
@@ -58,10 +58,13 @@ if(false){
     return;
 }
 
+*/
+
+
         // Create the CqlSession object:
         try (CqlSession session = CqlSession.builder()
-                .withCloudSecureConnectBundle(Paths.get("/Users/ankitpatel/Documents/Astra/albertsons/secure-connect-enterprise.zip"))
-                .withAuthCredentials("GbqYadICWAUUWWZGHFfAvCMi","cG5ceaj3AIPm.gzSXT0msfrfZgibry3l+pE+mHHsQRXS-05kztIrmlvg8El1448jYp,cJlyXDaaD53yFXTbYYEuOMsvQ-bU0HWfd.t9iF-SvBmS2pM5Hu4W2CkHM45Pd")
+                .withCloudSecureConnectBundle(Paths.get("/Users/ankitpatel/Documents/Astra/secure-connect-enterprise.zip"))
+                .withAuthCredentials("dQmpZXTqQPnHFjtPYSLtOpHp","S9rcurwZ2S07h4+YK7xeo+0tIks5svlZwlI46a_h_saHYlx0AheHLgyZLApYvQp5CUMu-P2KP9Th27wF8Z4_BP9NhTx4WLi8tf-sZ04DKEyGavh.LJavrkdciZazxFnu")
                 .build()) {
             // Select the release_version from the system.local table:
             ResultSet rs = session.execute("select release_version from system.local");

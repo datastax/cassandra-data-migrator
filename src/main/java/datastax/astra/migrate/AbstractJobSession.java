@@ -162,6 +162,13 @@ public abstract class AbstractJobSession {
         } else if (dataType.typeClass == List.class) {
             return sourceRow.getList(index, dataType.subTypes.get(0));
         }
+        if(isCounterTable && dataType.typeClass==Long.class) {
+            Object data = sourceRow.get(index, dataType.typeClass);
+            if(data==null){
+                return new Long(0);
+            }
+
+        }
         return sourceRow.get(index, dataType.typeClass);
     }
 
