@@ -14,7 +14,9 @@ public abstract class AbstractJobSession {
 
     protected PreparedStatement sourceSelectStatement;
 
+
     protected PreparedStatement astraSelectStatement;
+
     // Read/Write Rate limiter
     // Determine the total throughput for the entire cluster in terms of wries/sec, reads/sec
     // then do the following to set the values as they are only applicable per JVM (hence spark Executor)...
@@ -52,6 +54,8 @@ public abstract class AbstractJobSession {
 
         sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
         astraKeyspaceTable = sparkConf.get("spark.migrate.astra.keyspaceTable");
+
+
 
 
         writeTimeStampFilter = new Long(sparkConf.get("spark.migrate.source.writeTimeStampFilter", "0"));
@@ -113,6 +117,10 @@ public abstract class AbstractJobSession {
         astraSelectStatement = astraSession.prepare(
                 "select " + selectCols + " from " + astraKeyspaceTable
                         + " where " + idBinds);
+
+
+
+
 
     }
 
