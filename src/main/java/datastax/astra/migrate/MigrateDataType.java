@@ -2,10 +2,7 @@ package datastax.astra.migrate;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
@@ -65,6 +62,8 @@ public class MigrateDataType {
                 return ByteBuffer.class;
             case 8:
                 return Set.class;
+            case 9:
+                return UUID.class;
 
         }
 
