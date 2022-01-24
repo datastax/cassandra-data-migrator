@@ -46,7 +46,7 @@ Once the jar file is ready, we can run the job via spark-submit command, below i
   --class datastax.astra.migrate.Migrate /media/bulk/migrate-0.1.jar > <logfile_name>.txt
   
  
-#Data-validation job
+# Data-validation job
   
 For Data validation same pre-requisite applies as Data migration. 
   Spark job needs a sparkConf file plus the `DataDiff` class while running spark submit.
@@ -68,7 +68,7 @@ spark.migrate.astra.password                                  �
 spark.cassandra.source.read.consistency.level                   LOCAL_QUORUM
 spark.cassandra.astra.read.consistency.level                    LOCAL_QUORUM
 
-// no changes needed for below 5 lines. Readrate limit can be increased to make it faster but depends on overall load of the cluster.
+// no changes needed for below 5 lines. Read rate limit can be increased to make it faster but depends on overall load of the cluster.
 spark.migrate.maxRetries                                        10
 spark.migrate.readRateLimit                                     40000
 spark.migrate.writeRateLimit                                    40000
