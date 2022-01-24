@@ -1,0 +1,63 @@
+spark.migrate.beta                                             False // this should be false if origin cluster is on-prem and Astra is used.
+
+spark.migrate.source.host                                    <Source cluster contact_ip address>
+spark.migrate.source.username                               <Source username>
+spark.migrate.source.password                               <Source password>
+
+
+spark.migrate.astra.scb                                      <path to scb for Astra> example below    
+spark.migrate.astra.username                                    <Client_id from token file>
+spark.migrate.astra.password                                    < <Client_secret from token file>>
+
+spark.cassandra.source.read.consistency.level                   LOCAL_QUORUM
+spark.cassandra.astra.read.consistency.level                    LOCAL_QUORUM
+
+// no changes needed for below 5 lines. Readrate limit can be increased to make it faster but depends on overall load of the cluster.
+spark.migrate.maxRetries                                        10
+spark.migrate.readRateLimit                                     40000
+spark.migrate.writeRateLimit                                    40000
+spark.migrate.splitSize                                         5
+spark.migrate.batchSize                                         5
+
+
+spark.migrate.source.keyspaceTable                             <source keyspace.tablename>
+spark.migrate.astra.keyspaceTable                               <astra keyspace.tablename>
+
+
+spark.migrate.query.cols.select                                 primary key,col1,col2,col3,col4….all the columns of the table.
+spark.migrate.diff.select.types                                 9,0 (data type of the columns, please refer to the end of this doc)
+spark.migrate.query.cols.id                                     key,key2 (this is primary key which is Partition key, Clustering key)
+spark.migrate.query.cols.id.types                               9 <data types of the primary key columns for example 0,0,1>
+spark.migrate.query.cols.partitionKey                           key  ( this is just the partition key column)
+
+
+//no changes needed in below params unless timestamp filtering, TTL is needed. 
+spark.migrate.query.cols.insert
+spark.migrate.query.cols.insert.types                           0
+spark.migrate.source.counterTable                               false
+spark.migrate.source.counterTable.update.cql
+spark.migrate.source.counterTable.update.max.counter.index      0
+spark.migrate.source.counterTable.update.select.index           0
+spark.migrate.preserveTTLWriteTime                              false
+spark.migrate.source.ttl.cols                                   10
+spark.migrate.source.writeTimeStampFilter.cols                  11
+spark.migrate.source.writeTimeStampFilter                       0
+spark.migrate.source.maxWriteTimeStampFilter                    0
+
+//Following are corresponding values for data types
+/*
+0: String
+
+1: Integer
+
+2: Long
+3: Double
+4: Instant (datetime)
+5: Map (separate type by %) - Example: 5%0%1 (Map<String,Integer>)
+6: List (separate type by %) - Example: 5%1 (List<Long>)
+7: ByteBuffer (Blob)
+8: Set (seperate type by %) - Example: 5%1 (Set<Long>)
+9: UUID
+
+*/
+
