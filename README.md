@@ -16,13 +16,15 @@ SparkConf.txt file needs to be configured accordingly, for example below is the 
 
 Class name for data migration is `Migrate` 
 
-#Spark conf file configuration for `Migrate` class
-<
+Sample Spark conf file configuration for `Migrate` class can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
+
 `spark.migrate.source.username               <Source cluster user_id>`
+ <!-- blank line -->
 `spark.migrate.source.password               <Source cluster password>`
+ <!-- blank line -->
 `spark.migrate.source.host                   <Source cluster host ip address or contact ip address>`
 
-`spark.migrate.astra.scb                     <path to scb for the target database on Astra>
+spark.migrate.astra.scb                     <path to scb for the target database on Astra>
 spark.migrate.astra.username                <Astra client_id from the token file>
 spark.migrate.astra.password                <Client_Secret from token file>
 spark.migrate.keyspaceName                  <keyspace name>`
@@ -30,8 +32,8 @@ spark.migrate.tableName                     <table name>`
 spark.migrate.readRateLimit                 200000 <can be configured as needed>
 spark.migrate.writeRateLimit                200000 <can be configured as needed>
 spark.migrate.batchSize                     2 <batch size can be configured as needed>
-spark.migrate.source.writeTimeStampFilter   0`
->
+spark.migrate.source.writeTimeStampFilter   0
+
 place the confile where it can be accessed while runninn the job via spark-submit.
   
 Step2: 
