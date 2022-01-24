@@ -53,7 +53,7 @@ For Data validation same pre-requisite applies as Data migration.
   
  Step1: Configure the sparkConf file as below. 
   
-  
+`  
 spark.migrate.beta                                             False // this should be false if origin cluster is on-prem and Astra is used.
 
 spark.migrate.source.host                                       <Source cluster contact_ip address>
@@ -116,9 +116,9 @@ spark.migrate.source.maxWriteTimeStampFilter                    0
 9: UUID
 
 */
+`
 
-
-	2.	If not, package the project via maven, it generates a jar file called `migrate-0.1.jar’ 
+	2.	If not, package the project via maven, it generates a jar file called `migrate-0.1.jar’  
 
 Using this jar file we can run spark-submit command like below from bin directory of spark :- 
 
