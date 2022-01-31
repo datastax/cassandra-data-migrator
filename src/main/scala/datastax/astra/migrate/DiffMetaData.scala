@@ -88,7 +88,7 @@ object DiffMetaData extends App {
     val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
     parts.foreach(part => {
-      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>DiffMetaJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndDiff(part.getMin, part.getMax)))
+      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>DiffMetaJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataDiffAndCorrect(part.getMin, part.getMax)))
     })
 
     println(parts.collect.tail)
