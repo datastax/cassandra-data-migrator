@@ -34,7 +34,6 @@ public class DiffJobSession extends AbstractJobSession {
 
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
 
-    private long writeTimeStampFilter = 0;
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (diffJobSession == null) {
