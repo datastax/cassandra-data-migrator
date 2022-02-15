@@ -64,6 +64,8 @@ public class MigrateDataType {
                 return Set.class;
             case 9:
                 return UUID.class;
+            case 10:
+                return Boolean.class;
 
         }
 
