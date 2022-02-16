@@ -1,7 +1,8 @@
 # astra-spark-migration-ranges
 
 Spark jobs in this repo can be used for data migration and data validation.
-`Please note: This job has been tested with spark version ` [2.4.8](https://downloads.apache.org/spark/spark-2.4.8/)
+
+>Please note: This job has been tested with spark version [2.4.8](https://downloads.apache.org/spark/spark-2.4.8/)
 
 ## Pre-requisite
 
@@ -14,8 +15,8 @@ tar -xvzf <spark downloaded file name>
 
 # Steps:
 
-- sparkConf.properties file needs to be configured accordingly, for example below is the conf file for data migration job.
-  \*\* Sample Spark conf file configuration for `Data Migration` can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
+1. sparkConf.properties file needs to be configured accordingly, for example below is the conf file for data migration job.
+> Sample Spark conf file configuration for `Data Migration` can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
 
 ```
 Example of the conf file is below: -
@@ -33,9 +34,9 @@ Example of the conf file is below: -
 `spark.migrate.source.writeTimeStampFilter 0`
 ```
 
-- Place the conf file where it can be accessed while runninn the job via spark-submit.
-- If the project is not already packaged, it needs to packaged via mvn. It will be generate a fat jar called `migrate-0.1.jar`
-- Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command, below is spark submit for example:
+2. Place the conf file where it can be accessed while runninn the job via spark-submit.
+3. If the project is not already packaged, it needs to packaged via mvn. It will be generate a fat jar called `migrate-0.1.jar`
+4. Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command, below is spark submit for example:
 
 ```
 ./spark-submit --properties-file /media/bulk/sparkConf.properties /
@@ -45,7 +46,7 @@ Example of the conf file is below: -
 --class datastax.astra.migrate.Migrate /media/bulk/migrate-0.1.jar
 ```
 
-- Additionally you could write the output to a log file like “logfile_name.txt” to avoid getting the output on the console.
+5. Additionally you could write the output to a log file like “logfile_name.txt” to avoid getting the output on the console.
 
 ```
 ./spark-submit --properties-file /media/bulk/sparkConf.properties /
@@ -55,7 +56,7 @@ Example of the conf file is below: -
 --class datastax.astra.migrate.Migrate /media/bulk/migrate-0.1.jar &> logfile_name.txt
 ```
 
-- On the output of the run, job will report “ERRORS” like below reporting data differences.
+6. On the output of the run, job will report “ERRORS” like below reporting data differences.
 
 ```
 22/01/14 10:17:10 ERROR CopyJobSession: Data difference found - Key: 5b6962dd-3f90-4c93-8f61-eabfa4a803e5 Data: (Index: 1 Source: Anoop Astra: AA ) (Index: 2 Source: T Astra: TIW )
@@ -67,13 +68,12 @@ Example of the conf file is below: -
 22/01/14 10:17:10 ERROR CopyJobSession: Data is missing in Astra: 5b6962dd-3f90-4c93-8f61-eabfa4a803e3
 ```
 
-- Please grep for all `ERROR` from the output log files to get the list of differences, notice that its listing differences by partition key value in this case.
+7. Please grep for all `ERROR` from the output log files to get the list of differences, notice that its listing differences by partition key value in this case.
 
 # Data-validation job
 
-For Data validation same pre-requisite applies as Data migration, however you will need to use the class option `--class datastax.astra.migrate.DiffData`
-
-- Sample Spark conf file configuration for `Data Validation` can be found here: astra-spark-migration-ranges/src/resources/sparkConf.properties`astra-spark-migration-ranges/src/resources/SparkConfDataValidation.txt`
+* For Data validation same pre-requisite applies as Data migration, however you will need to use the class option `--class datastax.astra.migrate.DiffData`
+> Sample Spark conf file configuration for `Data Validation` can be found here: astra-spark-migration-ranges/src/resources/sparkConf.properties`astra-spark-migration-ranges/src/resources/SparkConfDataValidation.txt`
 
 ```
 ./spark-submit --properties-file /media/bulk/sparkConf.properties /
