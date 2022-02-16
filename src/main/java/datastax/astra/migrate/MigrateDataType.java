@@ -8,52 +8,47 @@ public class MigrateDataType {
     Class typeClass = Object.class;
     List<Class> subTypes = new ArrayList<Class>();
 
-    public MigrateDataType(String dataType){
-        if(dataType.contains("%")){
-            int count =1 ;
-            for(String type: dataType.split("%")){
-                if(count==1){
+    public MigrateDataType(String dataType) {
+        if (dataType.contains("%")) {
+            int count = 1;
+            for (String type : dataType.split("%")) {
+                if (count == 1) {
                     typeClass = getType(Integer.parseInt(type));
-                }else{
+                } else {
                     subTypes.add(getType(Integer.parseInt(type)));
                 }
                 count++;
             }
-        }else {
+        } else {
             int type = Integer.parseInt(dataType);
             typeClass = getType(type);
         }
     }
 
-    public boolean diff(Object source, Object astra){
-        if(source==null && astra==null){
+    public boolean diff(Object source, Object astra) {
+        if (source == null && astra == null) {
             return false;
-        }if(source==null && astra!=null){
+        } else if (source == null && astra != null) {
             return true;
-        }else if(source!=null && astra==null){
+        } else if (source != null && astra == null) {
             return true;
         }
 
-
         return !source.equals(astra);
     }
-    private Class getType(int type){
-        switch(type) {
+
+    private Class getType(int type) {
+        switch (type) {
             case 0:
                 return String.class;
-
             case 1:
                 return Integer.class;
-
             case 2:
                 return Long.class;
-
             case 3:
                 return Double.class;
-
             case 4:
                 return Instant.class;
-
             case 5:
                 return Map.class;
             case 6:
@@ -66,7 +61,6 @@ public class MigrateDataType {
                 return UUID.class;
             case 10:
                 return Boolean.class;
-
         }
 
         return Object.class;
