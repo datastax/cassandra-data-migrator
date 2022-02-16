@@ -2,9 +2,11 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.javatuples.Tuple;
 
 import java.util.*;
 
@@ -169,6 +171,8 @@ public abstract class AbstractJobSession {
             return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
         } else if (dataType.typeClass == List.class) {
             return sourceRow.getList(index, dataType.subTypes.get(0));
+        }else if (dataType.typeClass == TupleValue.class) {
+            return sourceRow.getTupleValue(index);
         }
         if(isCounterTable && dataType.typeClass==Long.class) {
             Object data = sourceRow.get(index, dataType.typeClass);
@@ -176,6 +180,10 @@ public abstract class AbstractJobSession {
                 return new Long(0);
             }
 
+        }
+
+        if(dataType.typeClass==Object.class){
+            return sourceRow.getObject(index);
         }
         return sourceRow.get(index, dataType.typeClass);
     }

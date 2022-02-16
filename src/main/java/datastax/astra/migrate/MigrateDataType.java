@@ -1,5 +1,10 @@
 package datastax.astra.migrate;
 
+import com.datastax.oss.driver.api.core.data.TupleValue;
+import com.datastax.oss.driver.api.core.type.TupleType;
+import com.datastax.oss.driver.internal.core.data.DefaultTupleValue;
+import org.javatuples.Tuple;
+
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
@@ -41,7 +46,6 @@ public class MigrateDataType {
         switch(type) {
             case 0:
                 return String.class;
-
             case 1:
                 return Integer.class;
 
@@ -66,7 +70,8 @@ public class MigrateDataType {
                 return UUID.class;
             case 10:
                 return Boolean.class;
-
+            case 11:
+                return TupleValue.class;
         }
 
         return Object.class;
