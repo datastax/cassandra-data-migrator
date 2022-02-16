@@ -5,7 +5,6 @@ import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import datastax.astra.migrate.Migrate.{astraPassword, astraReadConsistencyLevel, astraScbPath, astraUsername, sc, sourceHost, sourcePassword, sourceReadConsistencyLevel, sourceUsername}
-import datastax.astra.migrate.{CassUtil, DiffJobSession, SplitPartitions}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.cassandra._

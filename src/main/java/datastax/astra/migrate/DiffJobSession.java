@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 /*
 
 (
@@ -25,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DiffJobSession extends AbstractJobSession {
 
-    public static Logger logger = Logger.getLogger(CopyJobSession.class);
+    public static Logger logger = Logger.getLogger(DiffJobSession.class);
     private static DiffJobSession diffJobSession;
 
     private AtomicLong readCounter = new AtomicLong(0);
@@ -33,7 +32,6 @@ public class DiffJobSession extends AbstractJobSession {
     private AtomicLong validDiffCounter = new AtomicLong(0);
 
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
-
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (diffJobSession == null) {
@@ -62,11 +60,11 @@ public class DiffJobSession extends AbstractJobSession {
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(min, max).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
-                //cannot do batching if the writeFilter is greater than 0
+                // cannot do batching if the writeFilter is greater than 0
 
                 for (Row sourceRow : resultSet) {
                     readLimiter.acquire(1);
-                    //do not process rows less than writeTimeStampFilter
+                    // do not process rows less than writeTimeStampFilter
                     if (writeTimeStampFilter > 0l && getLargestWriteTimeStamp(sourceRow) < writeTimeStampFilter) {
                         continue;
                     }
@@ -114,17 +112,16 @@ public class DiffJobSession extends AbstractJobSession {
         }
 
         StringBuffer diffData = new StringBuffer();
-        boolean isDifferent = isDifferent(sourceRow, astraRow,diffData);
+        boolean isDifferent = isDifferent(sourceRow, astraRow, diffData);
 
         if (isDifferent) {
             diffCounter.incrementAndGet();
-            logger.error("Data difference found -  Key: " + key + " Data: " +  diffData);
+            logger.error("Data difference found -  Key: " + key + " Data: " + diffData);
             return;
         } else {
             validDiffCounter.incrementAndGet();
         }
     }
-
 
     private boolean isDifferent(Row sourceRow, Row astraRow, StringBuffer diffData) {
 
@@ -138,18 +135,15 @@ public class DiffJobSession extends AbstractJobSession {
             Object source = getData(dataType, index, sourceRow);
             Object astra = getData(dataType, index, astraRow);
 
-
             boolean isDiff = dataType.diff(source, astra);
-            if(isDiff){
+            if (isDiff) {
                 diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
             }
             dataIsDifferent = dataIsDifferent || isDiff;
 
         }
 
-
         return dataIsDifferent;
     }
-
 
 }
