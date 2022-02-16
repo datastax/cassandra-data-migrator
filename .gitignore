@@ -1,1 +1,5 @@
 target/
+.bloop/*
+.metals/*
+.vscode/*
+dependency-reduced-pom.xml

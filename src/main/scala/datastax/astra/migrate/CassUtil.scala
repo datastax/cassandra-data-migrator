@@ -16,8 +16,6 @@ object CassUtil {
   {
 
     val tableName = quoteWrap(metadata.getName.toString)
-
-
     val columns = metadata.getColumns
     val columnsString = mapAsScalaMap(columns).map(x => {
       (quoteWrap(x._2.getName.toString) + " " + x._2.getType.asCql(true,true))

@@ -4,7 +4,6 @@ import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession}
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import datastax.astra.migrate.{CassUtil, CopyJobSession, SplitPartitions}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.cassandra._
