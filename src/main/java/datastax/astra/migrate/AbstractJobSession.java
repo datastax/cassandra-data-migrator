@@ -2,9 +2,11 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.javatuples.Tuple;
 
 import java.util.*;
 
@@ -14,12 +16,13 @@ public abstract class AbstractJobSession {
 
     protected PreparedStatement sourceSelectStatement;
 
-
     protected PreparedStatement astraSelectStatement;
 
     // Read/Write Rate limiter
-    // Determine the total throughput for the entire cluster in terms of wries/sec, reads/sec
-    // then do the following to set the values as they are only applicable per JVM (hence spark Executor)...
+    // Determine the total throughput for the entire cluster in terms of wries/sec,
+    // reads/sec
+    // then do the following to set the values as they are only applicable per JVM
+    // (hence spark Executor)...
     // Rate = Total Throughput (write/read per sec) / Total Executors
     protected final RateLimiter readLimiter;
     protected final RateLimiter writeLimiter;
@@ -65,11 +68,10 @@ public abstract class AbstractJobSession {
         logger.info(" DEFAULT -- WriteRateLimit: " + writeLimiter.getRate());
         logger.info(" DEFAULT -- WriteTimestampFilter: " + writeTimeStampFilter);
 
-
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable", "false"));
 
-        counterDeltaMaxIndex = Integer.parseInt(sparkConf.get("spark.migrate.source.counterTable.update.max.counter.index","0"));
-
+        counterDeltaMaxIndex = Integer
+                .parseInt(sparkConf.get("spark.migrate.source.counterTable.update.max.counter.index", "0"));
 
         String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
         for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
@@ -100,21 +102,15 @@ public abstract class AbstractJobSession {
             count++;
         }
 
-
         sourceSelectStatement = sourceSession.prepare(
-                "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim() + ") >= ? and token(" + partionKey.trim() + ") <= ? ALLOW FILTERING");
-
+                "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
+                        + ") >= ? and token(" + partionKey.trim() + ") <= ? ALLOW FILTERING");
 
         astraSelectStatement = astraSession.prepare(
                 "select " + selectCols + " from " + astraKeyspaceTable
                         + " where " + idBinds);
 
-
-
-
-
     }
-
 
     public List<MigrateDataType> getTypes(String types) {
         List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
@@ -142,12 +138,12 @@ public abstract class AbstractJobSession {
         return writeTimestamp;
     }
 
-
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
         BoundStatement boundSelectStatement = selectStatement.bind();
         for (int index = 0; index < idColTypes.size(); index++) {
             MigrateDataType dataType = idColTypes.get(index);
-            boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, sourceRow), dataType.typeClass);
+            boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, sourceRow),
+                    dataType.typeClass);
         }
 
         return boundSelectStatement;
@@ -166,6 +162,10 @@ public abstract class AbstractJobSession {
             if (data == null) {
                 return new Long(0);
             }
+        } else if (dataType.typeClass == TupleValue.class) {
+            return sourceRow.getTupleValue(index);
+        } else if (dataType.typeClass == Object.class) {
+            return sourceRow.getObject(index);
         }
 
         return sourceRow.get(index, dataType.typeClass);

@@ -2,7 +2,13 @@ package datastax.astra.migrate;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import com.datastax.oss.driver.api.core.data.TupleValue;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
@@ -61,6 +67,8 @@ public class MigrateDataType {
                 return UUID.class;
             case 10:
                 return Boolean.class;
+            case 11:
+                return TupleValue.class;
         }
 
         return Object.class;
