@@ -15,6 +15,7 @@ public abstract class AbstractJobSession {
     public static Logger logger = Logger.getLogger(AbstractJobSession.class);
 
     protected PreparedStatement sourceSelectStatement;
+    protected String sourceSelectCondition;
 
     protected PreparedStatement astraSelectStatement;
 
@@ -55,6 +56,7 @@ public abstract class AbstractJobSession {
 
         sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
         astraKeyspaceTable = sparkConf.get("spark.migrate.astra.keyspaceTable");
+
 
         writeTimeStampFilter = new Long(sparkConf.get("spark.migrate.source.writeTimeStampFilter", "0"));
         // batchsize set to 1 if there is a writeFilter
@@ -102,9 +104,11 @@ public abstract class AbstractJobSession {
             count++;
         }
 
+        sourceSelectCondition = sparkConf.get("spark.migrate.query.cols.select.condition","");
+
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
-                        + ") >= ? and token(" + partionKey.trim() + ") <= ? ALLOW FILTERING");
+                        + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
 
         astraSelectStatement = astraSession.prepare(
                 "select " + selectCols + " from " + astraKeyspaceTable
