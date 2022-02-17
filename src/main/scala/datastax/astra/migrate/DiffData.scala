@@ -18,18 +18,16 @@ import java.math.BigInteger
 object DiffData extends App {
 
   val spark = SparkSession.builder
-    .appName("Datastax Data Migration")
+    .appName("Datastax Data Validation")
     .getOrCreate()
 
   import spark.implicits._
 
   val sc = spark.sparkContext
 
-
   val sourceUsername = sc.getConf.get("spark.migrate.source.username")
   val sourcePassword = sc.getConf.get("spark.migrate.source.password")
   val sourceHost = sc.getConf.get("spark.migrate.source.host")
-
 
   val astraUsername = sc.getConf.get("spark.migrate.astra.username")
   val astraPassword = sc.getConf.get("spark.migrate.astra.password")
@@ -41,13 +39,10 @@ object DiffData extends App {
 
   val splitSize = sc.getConf.get("spark.migrate.splitSize","10000")
 
-
-
   val sourceReadConsistencyLevel = sc.getConf.get("spark.cassandra.source.read.consistency.level","LOCAL_QUORUM")
   val astraReadConsistencyLevel = sc.getConf.get("spark.cassandra.astra.read.consistency.level","LOCAL_QUORUM")
 
-  println("Started Difference App")
-
+  println("Started Data Validation App")
 
   val isBeta = sc.getConf.get("spark.migrate.beta","false")
 
@@ -57,7 +52,6 @@ object DiffData extends App {
       .set("spark.cassandra.auth.username", sourceUsername)
       .set("spark.cassandra.auth.password", sourcePassword)
       .set("spark.cassandra.input.consistency.level", sourceReadConsistencyLevel))
-
 
   if("true".equals(isBeta)){
     sourceConnection = CassandraConnector(
@@ -70,31 +64,27 @@ object DiffData extends App {
 
   }
 
-
   val astraConnection = CassandraConnector(sc.getConf
     .set("spark.cassandra.connection.config.cloud.path", astraScbPath)
     .set("spark.cassandra.auth.username", astraUsername)
     .set("spark.cassandra.auth.password", astraPassword)
     .set("spark.cassandra.input.consistency.level", astraReadConsistencyLevel))
 
-
-
-
   diffTable(sourceConnection,astraConnection, minPartition, maxPartition)
 
   exitSpark
 
   private def diffTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
-
     val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
     parts.foreach(part => {
-      sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>DiffJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndDiff(part.getMin, part.getMax)))
+      sourceConnection.withSessionDo(sourceSession => 
+        astraConnection.withSessionDo(astraSession => 
+          DiffJobSession.getInstance(sourceSession,astraSession, sc.getConf)
+            .getDataAndDiff(part.getMin, part.getMax)))
     })
 
     println(parts.collect.tail)
-
-
   }
 
   private def exitSpark = {
