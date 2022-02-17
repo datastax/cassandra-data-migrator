@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.datastax.spark.example</groupId>
   <artifactId>migrate</artifactId>
-  <version>0.1</version>
+  <version>0.2</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -32,42 +31,42 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
-<!--      <scope>provided</scope>-->
+      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
-<!--      <scope>provided</scope>-->
+      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
-<!--      <scope>provided</scope>-->
+      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-hive_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
-<!--      <scope>provided</scope>-->
+      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>com.datastax.spark</groupId>
       <artifactId>spark-cassandra-connector_${scala.main.version}</artifactId>
       <version>${connector.version}</version>
-<!--      <scope>provided</scope>-->
+      <!--      <scope>provided</scope>-->
     </dependency>
-     <!--Your dependencies, 'provided' are not included in jar-->
+    <!--Your dependencies, 'provided' are not included in jar-->
     <!--<dependency>-->
-      <!--<groupId>org.apache.commons</groupId>-->
-      <!--<artifactId>commons-math3</artifactId>-->
-      <!--<version>3.6.1</version>-->
+    <!--<groupId>org.apache.commons</groupId>-->
+    <!--<artifactId>commons-math3</artifactId>-->
+    <!--<version>3.6.1</version>-->
     <!--</dependency>-->
     <!--<dependency>-->
-      <!--<groupId>org.apache.commons</groupId>-->
-      <!--<artifactId>commons-csv</artifactId>-->
-      <!--<version>1.0</version>-->
+    <!--<groupId>org.apache.commons</groupId>-->
+    <!--<artifactId>commons-csv</artifactId>-->
+    <!--<version>1.0</version>-->
     <!--</dependency>-->
 
     <!-- Test Dependencies -->
@@ -101,9 +100,9 @@
 
   <build>
     <resources>
-       <resource>
-           <directory>src/resources</directory>
-       </resource>
+      <resource>
+        <directory>src/resources</directory>
+      </resource>
     </resources>
     <plugins>
       <plugin>
@@ -173,7 +172,7 @@
           <execution>
             <id>test</id>
             <goals>
-                <goal>test</goal>
+              <goal>test</goal>
             </goals>
           </execution>
         </executions>
