@@ -101,37 +101,23 @@ public class DiffJobSession extends AbstractJobSession {
     }
 
     private void diff(Row sourceRow, Row astraRow) {
-        StringBuffer key = new StringBuffer();
-        for (int index = 0; index < idColTypes.size(); index++) {
-            MigrateDataType dataType = idColTypes.get(index);
-            if (index == 0) {
-                key.append(getData(dataType, index, sourceRow));
-            } else {
-                key.append(" %% " + getData(dataType, index, sourceRow));
-            }
-        }
-
         if (astraRow == null) {
-            logger.error("Data is missing in Astra: " + key);
+            logger.error("Data is missing in Astra: " + getKey(sourceRow));
             return;
         }
 
         String diffData = isDifferent(sourceRow, astraRow);
         if (!diffData.isEmpty()) {
             diffCounter.incrementAndGet();
-            logger.error("Data difference found -  Key: " + key + " Data: " + diffData);
+            logger.error("Data difference found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
             return;
-        } else {
-            validDiffCounter.incrementAndGet();
         }
+
+        validDiffCounter.incrementAndGet();
     }
 
     private String isDifferent(Row sourceRow, Row astraRow) {
         StringBuffer diffData = new StringBuffer();
-        if (astraRow == null) {
-            return "";
-        }
-
         IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
             MigrateDataType dataType = selectColTypes.get(index);
             Object source = getData(dataType, index, sourceRow);
@@ -144,6 +130,20 @@ public class DiffJobSession extends AbstractJobSession {
         });
 
         return diffData.toString();
+    }
+
+    private String getKey(Row sourceRow) {
+        StringBuffer key = new StringBuffer();
+        for (int index = 0; index < idColTypes.size(); index++) {
+            MigrateDataType dataType = idColTypes.get(index);
+            if (index == 0) {
+                key.append(getData(dataType, index, sourceRow));
+            } else {
+                key.append(" %% " + getData(dataType, index, sourceRow));
+            }
+        }
+
+        return key.toString();
     }
 
 }
