@@ -219,7 +219,15 @@ public class CopyJobSession extends AbstractJobSession {
             int index= 0;
             for(index=0;index<insertColTypes.size();index++){
                 MigrateDataType dataType = insertColTypes.get(index);
-                boundInsertStatement = boundInsertStatement.set(index,getData(dataType, index, sourceRow),dataType.typeClass);
+
+                try {
+                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, index, sourceRow), dataType.typeClass);
+                }catch(NullPointerException e ){
+                    //ignore the exception for map values being null
+                    if(dataType.typeClass!=Map.class){
+                        throw e;
+                    }
+                }
             }
 
             if(isPreserveTTLWritetime){
