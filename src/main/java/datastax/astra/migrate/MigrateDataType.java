@@ -69,6 +69,10 @@ public class MigrateDataType {
                 return Boolean.class;
             case 11:
                 return TupleValue.class;
+            case 12:
+                return Float.class;
+            case 13:
+                return Byte.class;
         }
 
         return Object.class;
