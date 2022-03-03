@@ -35,12 +35,11 @@ Example of the conf file is below: -
 ```
 
 2. Place the conf file where it can be accessed while running the job via spark-submit.
-3. If the project is not already packaged, it needs to be packaged via mvn. It will be generate a fat jar called `migrate-0.1.jar`
-4. Generated the Min and Max partition values for the table using the commands below:
+3. If the project is not already packaged, it needs to be packaged via mvn. It will be generate a fat jar called `migrate-0.x.jar`
+4. Find the Min and Max partition values for the table using dsbulk as shown below:
 
 ```
-select min(token(<comma separated partition keys>)) from <table_name>;
-select max(token(<comma separated partition keys>)) from <table_name>;
+dsbulk unload -h <contact_points> -query "select token(<partition_keys>) from <keyspace>.<table>;" -verbosity 0 --connector.csv.header false | sort -un | { tee >(head -1 >&2; cat >/dev/null) | tail -1; }
 ```
 
 5. Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command, below is spark submit for example:
@@ -63,20 +62,6 @@ select max(token(<comma separated partition keys>)) from <table_name>;
 --class datastax.astra.migrate.Migrate /media/bulk/migrate-0.1.jar &> logfile_name.txt
 ```
 
-7. On the output of the run, the job will report “ERRORS” like below reporting data differences.
-
-```
-22/02/16 12:41:15 INFO Executor: Finished task 5.0 in stage 0.0 (TID 5). 794 bytes result sent to driver
-22/02/16 12:41:15 INFO Executor: Finished task 1.0 in stage 0.0 (TID 1). 751 bytes result sent to driver
-22/02/16 12:41:15 INFO TaskSetManager: Finished task 2.0 in stage 0.0 (TID 2) in 2814 ms on localhost (executor driver) (3/6)
-22/02/16 12:41:15 INFO TaskSetManager: Finished task 3.0 in stage 0.0 (TID 3) in 2814 ms on localhost (executor driver) (4/6)
-22/02/16 12:41:15 ERROR DiffJobSession: Data is missing in Astra: e7cd5752-bc0d-4157-a80f-7523add8dbcd
-22/02/16 12:41:15 ERROR DiffJobSession: Data difference found -  Key: 1 Data:  (Index: 3 Source: [val-A, val-B] Astra: [val-A, val-B, val-C] )
-22/02/16 12:41:15 INFO DiffJobSession: TreadID: 57 Final Read Record Count: 1
-```
-
-8. Please grep for all `ERROR` from the output log files to get the list of differences, notice that its listing differences by partition key value in this case.
-
 # Data-validation job
 
 - For Data validation same prerequisite applies as Data migration, however you will need to use the class option `--class datastax.astra.migrate.DiffData`
@@ -89,3 +74,17 @@ select max(token(<comma separated partition keys>)) from <table_name>;
 --conf spark.migrate.source.maxPartition=9223372036854775807 /
 --class datastax.astra.migrate.DiffData /media/bulk/migrate-0.1.jar
 ```
+
+- On the output of the run, the job will report differences as “ERRORS” as shown below
+
+```
+22/02/16 12:41:15 INFO Executor: Finished task 5.0 in stage 0.0 (TID 5). 794 bytes result sent to driver
+22/02/16 12:41:15 INFO Executor: Finished task 1.0 in stage 0.0 (TID 1). 751 bytes result sent to driver
+22/02/16 12:41:15 INFO TaskSetManager: Finished task 2.0 in stage 0.0 (TID 2) in 2814 ms on localhost (executor driver) (3/6)
+22/02/16 12:41:15 INFO TaskSetManager: Finished task 3.0 in stage 0.0 (TID 3) in 2814 ms on localhost (executor driver) (4/6)
+22/02/16 12:41:15 ERROR DiffJobSession: Data is missing in Astra: e7cd5752-bc0d-4157-a80f-7523add8dbcd
+22/02/16 12:41:15 ERROR DiffJobSession: Data difference found -  Key: 1 Data:  (Index: 3 Source: [val-A, val-B] Astra: [val-A, val-B, val-C] )
+22/02/16 12:41:15 INFO DiffJobSession: TreadID: 57 Final Read Record Count: 1
+```
+
+- Please grep for all `ERROR` from the output log files to get the list of differences, notice that its listing differences by partition key value in this case.
