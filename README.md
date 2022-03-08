@@ -15,7 +15,7 @@ tar -xvzf <spark downloaded file name>
 
 # Steps:
 
-1. sparkConf.properties file needs to be configured accordingly
+1. sparkConf.properties file needs to be configured as applicable for the environment
    > Sample Spark conf file configuration can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
 
 ```
@@ -42,7 +42,7 @@ Example of the conf file is below: -
 dsbulk unload -h <contact_points> -query "select token(<partition_keys>) from <keyspace>.<table>;" -verbosity 0 --connector.csv.header false | sort -un | { tee >(head -1 >&2; cat >/dev/null) | tail -1; }
 ```
 
-5. Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command, below is spark submit for example:
+5. Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command as shown below:
 
 ```
 ./spark-submit --properties-file /media/bulk/sparkConf.properties /
