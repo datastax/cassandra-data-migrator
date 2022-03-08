@@ -116,25 +116,14 @@ public class DiffMetaJobSession extends AbstractJobSession {
 
             try {
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(min, max).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
-                Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
-
-                //cannot do batching if the writeFilter is greater than 0
-
                 for (Row sourceRow : resultSet) {
                     readLimiter.acquire(1);
-                    //do not process rows less than writeTimeStampFilter
-                    if (writeTimeStampFilter > 0l && getLargestWriteTimeStamp(sourceRow) < writeTimeStampFilter) {
+                    // do not process rows less than minWriteTimeStampFilter or more than
+                    // maxWriteTimeStampFilter
+                    if (writeTimeStampFilter && (getLargestWriteTimeStamp(sourceRow) < minWriteTimeStampFilter
+                            || getLargestWriteTimeStamp(sourceRow) > maxWriteTimeStampFilter)) {
                         continue;
                     }
-
-                    // if above the maxWriteTimeStamp then skip record to diff
-                    if (maxWriteTimeStampFilter > 0l && getLargestWriteTimeStamp(sourceRow) > maxWriteTimeStampFilter) {
-                        continue;
-                    }
-
-//                    if(getLargestTTL(sourceRow)> 0 ){
-//                        continue;
-//                    }
 
                     if (readCounter.incrementAndGet() % 100000 == 0) {
                         logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
@@ -147,33 +136,33 @@ public class DiffMetaJobSession extends AbstractJobSession {
 
                     ResultSet astraReadResultSet = astraSession.execute(selectFromAstra(astraSelectStatement, sourceRow));
                     Row astraRow = astraReadResultSet.one();
-                    //if meta id is found, then extract the row for payload and data id
+                    // if meta id is found, then extract the row for payload and data id
                     String metaKey = diffMetaId(sourceRow, astraRow);
-                    if(metaKey!=null){
+                    if (metaKey != null) {
                         String srcPayloadId = getIdFromPayload(sourceRow.getString(9));
                         String astraPayloadId = getIdFromPayload(astraRow.getString(9));
                         String uniqueKey = srcPayloadId + "%" + astraPayloadId;
-                        if(!uniqueDiff.contains(uniqueKey)) {
+                        if (!uniqueDiff.contains(uniqueKey)) {
                             uniqueDiff.add(uniqueKey);
                             logger.error("ThreadID: " + Thread.currentThread().getId() + " - UniqueKey SrcId: " + srcPayloadId + " AstraId: " + astraPayloadId + " MetaKey: " + metaKey);
                             boolean isDifferent = diffData(srcPayloadId, astraPayloadId, 0, metaKey, false);
                             isDifferent = isDifferent || diffData(srcPayloadId, astraPayloadId, 1, metaKey, false);
 
-                            int count =0 ;
-                            for(int i=1; i < 30 && !isDifferent;i++ ){
+                            int count = 0;
+                            for (int i = 1; i < 30 && !isDifferent; i++) {
                                 for (int j = 1; j <= 4 && !isDifferent; j++) {
                                     isDifferent = isDifferent || diffData(srcPayloadId, astraPayloadId, getRandomInteger(( (i*1000)-1000), i*1000), metaKey, false);
                                 }
                             }
 
-                            for(int i=30; i < 100 && !isDifferent;i++ ){
+                            for (int i = 30; i < 100 && !isDifferent; i++) {
                                 isDifferent = isDifferent || diffData(srcPayloadId, astraPayloadId, getRandomInteger(( (i*1000)-1000), i*1000), metaKey, false);
                             }
 
                             if (isDifferent) {
                                 srcDestKeys.add(new SrcDestKey(srcPayloadId, astraPayloadId, metaKey));
                                 logger.error("ThreadID: " + Thread.currentThread().getId() + " - Data difference found-  SrcId: " + srcPayloadId + " AstraId: " + astraPayloadId + " MetaKey: " + metaKey);
-                            }else{
+                            } else {
                                 validDiffCounter.incrementAndGet();
                             }
                         }
@@ -206,37 +195,37 @@ public class DiffMetaJobSession extends AbstractJobSession {
 
 
 
-    public static void main(String[] args){
-//        System.out.println(getIdFromPayload(""));
+    public static void main(String[] args) {
+        // System.out.println(getIdFromPayload(""));
 
-        for(int i=1;i<5;i++){
-            System.out.println(getRandomInteger(1,5000));
+        for (int i = 1; i < 5; i++) {
+            System.out.println(getRandomInteger(1, 5000));
         }
-        for(int i=1;i<5;i++){
-            System.out.println(getRandomInteger(5000,10000));
-        }
-
-        for(int i=1;i<5;i++){
-            System.out.println(getRandomInteger(10000,20000));
+        for (int i = 1; i < 5; i++) {
+            System.out.println(getRandomInteger(5000, 10000));
         }
 
-        for(int i=1;i<5;i++){
-            System.out.println(getRandomInteger(20000,30000));
+        for (int i = 1; i < 5; i++) {
+            System.out.println(getRandomInteger(10000, 20000));
         }
 
-        for(int i=1;i<5;i++){
-            System.out.println(getRandomInteger(30000,50000));
+        for (int i = 1; i < 5; i++) {
+            System.out.println(getRandomInteger(20000, 30000));
         }
 
-        for(int i=1;i<5;i++){
-            System.out.println(getRandomInteger(50000,100000));
+        for (int i = 1; i < 5; i++) {
+            System.out.println(getRandomInteger(30000, 50000));
+        }
+
+        for (int i = 1; i < 5; i++) {
+            System.out.println(getRandomInteger(50000, 100000));
         }
 
     }
 
 
 
-    private static String getIdFromPayload(String payloadStr){
+    private static String getIdFromPayload(String payloadStr) {
 //        payloadStr = "{\"data_id\":\"ec6cdd20-e9a5-4331-4eba-6d8e9da202b0\",\"data_index\":68,\"data_id_write_length\":20,\"col_width\":2880,\"row_length\":1441,\"tile_size\":2,\"blob\":{\"type\":\"GRIB2\",\"product_size\":1884952,\"blob_name\":\"/local-project/tmp/wxgrid/hourly/250/1/2033/1613977200/1613977200.250.1.157.2033.8.1.2.61.1.0.-1.0.3600.4.GRIB2\",\"field_index\":0,\"product_offset\":0}}";
         String id = payloadStr.split("\"")[3];
 
@@ -253,44 +242,44 @@ public class DiffMetaJobSession extends AbstractJobSession {
             }
         }
 
-        //id is not found
+        // id is not found
         if (astraRow == null) {
             logger.error("Meta Data is missing in Astra: " + key);
             return null;
         }
-        //id is found
+        // id is found
         return key.toString();
 
     }
 
     private static MigrateDataType blobDataType = new MigrateDataType("7");
 
-    private void correctData(Set<SrcDestKey> srcDestKeys) throws Exception{
-        for(SrcDestKey key: srcDestKeys){
-            correctData(key.getSrcId(),key.getAstraId(),key.getMetaId());
+    private void correctData(Set<SrcDestKey> srcDestKeys) throws Exception {
+        for (SrcDestKey key : srcDestKeys) {
+            correctData(key.getSrcId(), key.getAstraId(), key.getMetaId());
         }
     }
-    private void correctData(String srcPayloadId, String astraPayloadId, String metaKey) throws Exception{
+    private void correctData(String srcPayloadId, String astraPayloadId, String metaKey) throws Exception {
         int noDataCounter = 0;
         int maxIndex = 0;
         for (int i = 0; i <= 150000; i++) {
             maxIndex = i;
             boolean noData = correctData(srcPayloadId, astraPayloadId, i, metaKey, ConsistencyLevel.ONE);
 
-            //Retry with the same CL if there is no data found
-            if(noData){
+            // Retry with the same CL if there is no data found
+            if (noData) {
                 noData = correctData(srcPayloadId, astraPayloadId, i, metaKey, ConsistencyLevel.LOCAL_QUORUM);
             }
 
-            //increase the CL to ALL if there is no data
-            if(noData){
+            // increase the CL to ALL if there is no data
+            if (noData) {
                 noData = correctData(srcPayloadId, astraPayloadId, i, metaKey, ConsistencyLevel.ALL);
             }
-            //after 3 attempts to data found then increase the counter
+            // after 3 attempts to data found then increase the counter
             if (noData) {
                 noDataCounter++;
-            }else{
-                noDataCounter=0;
+            } else {
+                noDataCounter = 0;
             }
             if (noDataCounter > 5) {
                 break;
@@ -321,7 +310,7 @@ public class DiffMetaJobSession extends AbstractJobSession {
                     noData = false;
 //            logger.error("Corrected difference for-  SrcId: " + srcId + " AstraId: " + astrId + " Index: " + index + " Cylinder: " + sourceRow.getString(1));
                     batchStatement = batchStatement.add(astraCorrectDataInsertStatement.bind(astrId + ":" + index, sourceRow.getString(1), sourceRow.getByteBuffer(2), sourceRow.getInt(3), sourceRow.getLong(4)));
-                    if(correctDataCounter.incrementAndGet()%1000000 ==0){
+                    if (correctDataCounter.incrementAndGet() % 1000000 == 0) {
                         logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         logger.info("ThreadID: " + Thread.currentThread().getId() + " DiffPayload Count: " + diffPayloadCounter.get());
                         logger.info("ThreadID: " + Thread.currentThread().getId() + " DiffKey Count: " + diffKeyCounter.get());
@@ -358,7 +347,7 @@ public class DiffMetaJobSession extends AbstractJobSession {
     }
 
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception{
-        for(CompletionStage<AsyncResultSet> writeResult: writeResults){
+        for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
         }
@@ -366,28 +355,28 @@ public class DiffMetaJobSession extends AbstractJobSession {
     }
 
 
-    private boolean diffData(String srcId, String astrId, Integer index, String metaKey, boolean printLog){
-        Row srcRow = sourceSession.execute(sourceDataSelectStatement.bind(srcId+":"+index)).one();
+    private boolean diffData(String srcId, String astrId, Integer index, String metaKey, boolean printLog) {
+        Row srcRow = sourceSession.execute(sourceDataSelectStatement.bind(srcId + ":" + index)).one();
         boolean isDifferent = false;
-        if(srcRow!=null) {
+        if (srcRow != null) {
             Row astraRow = astraSession.execute(astraDataSelectStatement.bind(astrId + ":" + index, srcRow.getString(1))).one();
 
 
             if (srcRow != null && astraRow != null) {
                 Object srcPayload = srcRow.getByteBuffer(2);
                 Object astraPayload = astraRow.getByteBuffer(2);
-                isDifferent = blobDataType.diff(srcPayload,astraPayload );
-                if(isDifferent) {
+                isDifferent = blobDataType.diff(srcPayload, astraPayload);
+                if (isDifferent) {
 
                      logger.error("Data difference found Payload-  SrcId: " + srcId + " AstraId: " + astrId + " Index: " + index + " MetaKey: " + metaKey);
 
                     diffPayloadCounter.incrementAndGet();
-                    //return false on Payload differences
+                    // return false on Payload differences
                     return false;
                 }
             } else if (srcRow != null && astraRow == null) {
                 isDifferent = true;
-                if(printLog) {
+                if (printLog) {
                     logger.error("Data difference found -  SrcId: " + srcId + " AstraId: " + astrId + " Index: " + index + " MetaKey: " + metaKey);
                 }
             }
@@ -414,7 +403,7 @@ public class DiffMetaJobSession extends AbstractJobSession {
 
 
             boolean isDiff = dataType.diff(source, astra);
-            if(isDiff){
+            if (isDiff) {
                 diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
             }
             dataIsDifferent = dataIsDifferent || isDiff;
