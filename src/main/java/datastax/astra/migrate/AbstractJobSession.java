@@ -6,7 +6,6 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
-import org.javatuples.Tuple;
 
 import java.util.*;
 
@@ -34,7 +33,11 @@ public abstract class AbstractJobSession {
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
 
     protected Integer batchSize = 1;
-    protected long writeTimeStampFilter = 0;
+
+    protected Boolean writeTimeStampFilter = false;
+    protected Long minWriteTimeStampFilter = 0l;
+    protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
+
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
@@ -57,10 +60,14 @@ public abstract class AbstractJobSession {
         sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
         astraKeyspaceTable = sparkConf.get("spark.migrate.astra.keyspaceTable");
 
-
-        writeTimeStampFilter = new Long(sparkConf.get("spark.migrate.source.writeTimeStampFilter", "0"));
+        writeTimeStampFilter = Boolean
+                .parseBoolean(sparkConf.get("spark.migrate.source.writeTimeStampFilter", "false"));
+        minWriteTimeStampFilter = new Long(
+                sparkConf.get("spark.migrate.source.minWriteTimeStampFilter", "0"));
+        maxWriteTimeStampFilter = new Long(
+                sparkConf.get("spark.migrate.source.maxWriteTimeStampFilter", "" + Long.MAX_VALUE));
         // batchsize set to 1 if there is a writeFilter
-        if (writeTimeStampFilter > 0) {
+        if (writeTimeStampFilter) {
             batchSize = 1;
         }
         logger.info(" DEFAULT -- Write Batch Size: " + batchSize);
@@ -78,7 +85,6 @@ public abstract class AbstractJobSession {
         String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
         for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
             writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
-
         }
 
         String ttlColsStr = sparkConf.get("spark.migrate.source.ttl.cols");
@@ -104,7 +110,7 @@ public abstract class AbstractJobSession {
             count++;
         }
 
-        sourceSelectCondition = sparkConf.get("spark.migrate.query.cols.select.condition","");
+        sourceSelectCondition = sparkConf.get("spark.migrate.query.cols.select.condition", "");
 
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()

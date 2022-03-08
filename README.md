@@ -15,8 +15,8 @@ tar -xvzf <spark downloaded file name>
 
 # Steps:
 
-1. sparkConf.properties file needs to be configured accordingly, for example below is the conf file for data migration job.
-   > Sample Spark conf file configuration for `Data Migration` can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
+1. sparkConf.properties file needs to be configured as applicable for the environment
+   > Sample Spark conf file configuration can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
 
 ```
 Example of the conf file is below: -
@@ -42,14 +42,14 @@ Example of the conf file is below: -
 dsbulk unload -h <contact_points> -query "select token(<partition_keys>) from <keyspace>.<table>;" -verbosity 0 --connector.csv.header false | sort -un | { tee >(head -1 >&2; cat >/dev/null) | tail -1; }
 ```
 
-5. Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command, below is spark submit for example:
+5. Once the jar file is ready, we can run the 'Data Migration' job via spark-submit command as shown below:
 
 ```
 ./spark-submit --properties-file /media/bulk/sparkConf.properties /
 --master "local[*]" /
 --conf spark.migrate.source.minPartition=-9223372036854775808 /
 --conf spark.migrate.source.maxPartition=9223372036854775807 /
---class datastax.astra.migrate.Migrate /media/bulk/migrate-0.1.jar
+--class datastax.astra.migrate.Migrate /media/bulk/migrate-0.x.jar
 ```
 
 6. Additionally you could write the output to a log file like “logfile_name.txt” to avoid getting the output on the console.
@@ -59,20 +59,19 @@ dsbulk unload -h <contact_points> -query "select token(<partition_keys>) from <k
 --master "local[*]" /
 --conf spark.migrate.source.minPartition=-9223372036854775808 /
 --conf spark.migrate.source.maxPartition=9223372036854775807 /
---class datastax.astra.migrate.Migrate /media/bulk/migrate-0.1.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate /media/bulk/migrate-0.x.jar &> logfile_name.txt
 ```
 
 # Data-validation job
 
 - For Data validation same prerequisite applies as Data migration, however you will need to use the class option `--class datastax.astra.migrate.DiffData`
-  > Sample Spark conf file configuration for `Data Validation` can be found here: `astra-spark-migration-ranges/src/resources/SparkConfDataValidation.txt`
 
 ```
 ./spark-submit --properties-file /media/bulk/sparkConf.properties /
 --master "local[*]" /
 --conf spark.migrate.source.minPartition=-9223372036854775808 /
 --conf spark.migrate.source.maxPartition=9223372036854775807 /
---class datastax.astra.migrate.DiffData /media/bulk/migrate-0.1.jar
+--class datastax.astra.migrate.DiffData /media/bulk/migrate-0.x.jar
 ```
 
 - On the output of the run, the job will report differences as “ERRORS” as shown below

@@ -66,7 +66,8 @@ public class DiffJobSession extends AbstractJobSession {
                     StreamSupport.stream(resultSet.spliterator(), true).forEach(sRow -> {
                         readLimiter.acquire(1);
                         // do not process rows less than writeTimeStampFilter
-                        if (!(writeTimeStampFilter > 0l && getLargestWriteTimeStamp(sRow) < writeTimeStampFilter)) {
+                        if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(sRow) < minWriteTimeStampFilter
+                                || getLargestWriteTimeStamp(sRow) > maxWriteTimeStampFilter))) {
                             if (readCounter.incrementAndGet() % 1000 == 0) {
                                 logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
                                         + readCounter.get());
@@ -119,13 +120,15 @@ public class DiffJobSession extends AbstractJobSession {
     private String isDifferent(Row sourceRow, Row astraRow) {
         StringBuffer diffData = new StringBuffer();
         IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
-            MigrateDataType dataType = selectColTypes.get(index);
-            Object source = getData(dataType, index, sourceRow);
-            Object astra = getData(dataType, index, astraRow);
+            if (!writeTimeStampCols.contains(index)) {
+                MigrateDataType dataType = selectColTypes.get(index);
+                Object source = getData(dataType, index, sourceRow);
+                Object astra = getData(dataType, index, astraRow);
 
-            boolean isDiff = dataType.diff(source, astra);
-            if (isDiff) {
-                diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
+                boolean isDiff = dataType.diff(source, astra);
+                if (isDiff) {
+                    diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
+                }
             }
         });
 
