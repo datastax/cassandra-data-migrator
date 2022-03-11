@@ -29,6 +29,7 @@ public class DiffJobSession extends AbstractJobSession {
     private static DiffJobSession diffJobSession;
 
     private AtomicLong readCounter = new AtomicLong(0);
+    private AtomicLong missingInAstraCounter = new AtomicLong(0);
     private AtomicLong diffCounter = new AtomicLong(0);
     private AtomicLong validDiffCounter = new AtomicLong(0);
 
@@ -69,12 +70,7 @@ public class DiffJobSession extends AbstractJobSession {
                         if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(sRow) < minWriteTimeStampFilter
                                 || getLargestWriteTimeStamp(sRow) > maxWriteTimeStampFilter))) {
                             if (readCounter.incrementAndGet() % 1000 == 0) {
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
-                                        + readCounter.get());
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Differences Count: "
-                                        + diffCounter.get());
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Valid Count: "
-                                        + validDiffCounter.get());
+                                printCounts();
                             }
 
                             Row astraRow = astraSession
@@ -84,12 +80,7 @@ public class DiffJobSession extends AbstractJobSession {
                     });
                 }).get();
 
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: "
-                        + readCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Differences Count: "
-                        + diffCounter.get());
-                logger.info(
-                        "TreadID: " + Thread.currentThread().getId() + " Final Valid Count: " + validDiffCounter.get());
+                printCounts();
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount, e);
@@ -101,8 +92,20 @@ public class DiffJobSession extends AbstractJobSession {
         customThreadPool.shutdownNow();
     }
 
+    private void printCounts() {
+        logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
+                + readCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + " Different in target Count: "
+                + diffCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + " Missing in target Count: "
+                + missingInAstraCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + " Valid Count: "
+                + validDiffCounter.get());
+    }
+
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
+            missingInAstraCounter.incrementAndGet();
             logger.error("Data is missing in Astra: " + getKey(sourceRow));
             return;
         }
