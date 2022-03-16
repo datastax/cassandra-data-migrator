@@ -14,7 +14,7 @@ public class CopyJobSession extends AbstractJobSession {
     public static Logger logger = Logger.getLogger(CopyJobSession.class);
     private static CopyJobSession copyJobSession;
 
-    private PreparedStatement astraInsertStatement;
+    protected PreparedStatement astraInsertStatement;
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
@@ -34,7 +34,7 @@ public class CopyJobSession extends AbstractJobSession {
         return copyJobSession;
     }
 
-    private CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
+    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         super(sourceSession, astraSession, sparkConf);
 
         String insertCols = sparkConf.get("spark.migrate.query.cols.insert");

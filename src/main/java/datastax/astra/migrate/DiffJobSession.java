@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
@@ -14,6 +15,7 @@ import com.datastax.oss.driver.api.core.cql.Row;
 
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.spark_project.jetty.util.ConcurrentHashSet;
 
 /*
 (
@@ -23,16 +25,19 @@ import org.apache.spark.SparkConf;
     PRIMARY KEY (data_id, cylinder)
 )
  */
-public class DiffJobSession extends AbstractJobSession {
+public class DiffJobSession extends CopyJobSession {
 
     public static Logger logger = Logger.getLogger(DiffJobSession.class);
     private static DiffJobSession diffJobSession;
 
     private AtomicLong readCounter = new AtomicLong(0);
     private AtomicLong diffCounter = new AtomicLong(0);
+    private AtomicLong missingCounter = new AtomicLong(0);
+    private AtomicLong correctedMissingCounter = new AtomicLong(0);
     private AtomicLong validDiffCounter = new AtomicLong(0);
 
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
+
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (diffJobSession == null) {
@@ -73,6 +78,10 @@ public class DiffJobSession extends AbstractJobSession {
                                         + readCounter.get());
                                 logger.info("TreadID: " + Thread.currentThread().getId() + " Differences Count: "
                                         + diffCounter.get());
+                                logger.info("TreadID: " + Thread.currentThread().getId() + " Missing Count: "
+                                        + missingCounter.get());
+                                logger.info("TreadID: " + Thread.currentThread().getId() + " Corrected Missing Count: "
+                                        + correctedMissingCounter.get());
                                 logger.info("TreadID: " + Thread.currentThread().getId() + " Valid Count: "
                                         + validDiffCounter.get());
                             }
@@ -88,6 +97,10 @@ public class DiffJobSession extends AbstractJobSession {
                         + readCounter.get());
                 logger.info("TreadID: " + Thread.currentThread().getId() + " Final Differences Count: "
                         + diffCounter.get());
+                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Missing Count: "
+                        + missingCounter.get());
+                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Corrected Missing Count: "
+                        + correctedMissingCounter.get());
                 logger.info(
                         "TreadID: " + Thread.currentThread().getId() + " Final Valid Count: " + validDiffCounter.get());
                 retryCount = maxAttempts;
@@ -103,7 +116,13 @@ public class DiffJobSession extends AbstractJobSession {
 
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
+
+            missingCounter.incrementAndGet();
             logger.error("Data is missing in Astra: " + getKey(sourceRow));
+            //correct data
+            astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
+            correctedMissingCounter.incrementAndGet();
+            logger.error("Corrected missing data in Astra: " + getKey(sourceRow));
             return;
         }
 
