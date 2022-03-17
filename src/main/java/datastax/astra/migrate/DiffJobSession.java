@@ -73,17 +73,8 @@ public class DiffJobSession extends CopyJobSession {
                         // do not process rows less than writeTimeStampFilter
                         if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(sRow) < minWriteTimeStampFilter
                                 || getLargestWriteTimeStamp(sRow) > maxWriteTimeStampFilter))) {
-                            if (readCounter.incrementAndGet() % 1000 == 0) {
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
-                                        + readCounter.get());
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Differences Count: "
-                                        + diffCounter.get());
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Missing Count: "
-                                        + missingCounter.get());
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Corrected Missing Count: "
-                                        + correctedMissingCounter.get());
-                                logger.info("TreadID: " + Thread.currentThread().getId() + " Valid Count: "
-                                        + validDiffCounter.get());
+                            if (readCounter.incrementAndGet() % printStatsAfter == 0) {
+                                printCounts(false);
                             }
 
                             Row astraRow = astraSession
@@ -93,16 +84,7 @@ public class DiffJobSession extends CopyJobSession {
                     });
                 }).get();
 
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: "
-                        + readCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Differences Count: "
-                        + diffCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Missing Count: "
-                        + missingCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Corrected Missing Count: "
-                        + correctedMissingCounter.get());
-                logger.info(
-                        "TreadID: " + Thread.currentThread().getId() + " Final Valid Count: " + validDiffCounter.get());
+                printCounts(true);
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount, e);
@@ -114,9 +96,25 @@ public class DiffJobSession extends CopyJobSession {
         customThreadPool.shutdownNow();
     }
 
+    private void printCounts(boolean isFinal) {
+        String finalStr = "";
+        if (isFinal) {
+            finalStr = " Final";
+        }
+        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Record Count: "
+                + readCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Differences Count: "
+                + diffCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Missing Count: "
+                + missingCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Corrected Missing Count: "
+                + correctedMissingCounter.get());
+        logger.info(
+                "TreadID: " + Thread.currentThread().getId() + finalStr + " Read Valid Count: " + validDiffCounter.get());
+    }
+
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
-
             missingCounter.incrementAndGet();
             logger.error("Data is missing in Astra: " + getKey(sourceRow));
             //correct data

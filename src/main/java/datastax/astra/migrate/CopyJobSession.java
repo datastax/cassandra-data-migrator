@@ -69,7 +69,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     }
 
-
     public void getDataAndInsert(Long min, Long max) {
         logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
         int maxAttempts = maxRetries;

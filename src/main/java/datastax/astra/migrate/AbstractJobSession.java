@@ -33,6 +33,7 @@ public abstract class AbstractJobSession {
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
 
     protected Integer batchSize = 1;
+    protected Integer printStatsAfter = 100000;
 
     protected Boolean writeTimeStampFilter = false;
     protected Long minWriteTimeStampFilter = 0l;
@@ -52,6 +53,10 @@ public abstract class AbstractJobSession {
         this.astraSession = astraSession;
 
         batchSize = new Integer(sparkConf.get("spark.migrate.batchSize", "1"));
+        printStatsAfter = new Integer(sparkConf.get("spark.migrate.printStatsAfter", "100000"));
+        if (printStatsAfter < 1) {
+            printStatsAfter = 100000;
+        }
 
         readLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.migrate.readRateLimit", "20000")));
         writeLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.migrate.writeRateLimit", "40000")));
@@ -83,14 +88,17 @@ public abstract class AbstractJobSession {
                 .parseInt(sparkConf.get("spark.migrate.source.counterTable.update.max.counter.index", "0"));
 
         String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
-        for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
-            writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
+        if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
+            for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
+                writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
+            }
         }
 
         String ttlColsStr = sparkConf.get("spark.migrate.source.ttl.cols");
-        for (String ttlCol : ttlColsStr.split(",")) {
-            ttlCols.add(Integer.parseInt(ttlCol));
-
+        if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
+            for (String ttlCol : ttlColsStr.split(",")) {
+                ttlCols.add(Integer.parseInt(ttlCol));
+            }
         }
 
         String partionKey = sparkConf.get("spark.migrate.query.cols.partitionKey");
