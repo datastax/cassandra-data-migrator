@@ -1,5 +1,6 @@
 package datastax.astra.migrate;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -73,6 +74,8 @@ public class MigrateDataType {
                 return Float.class;
             case 13:
                 return Byte.class;
+            case 14:
+                return BigDecimal.class;
         }
 
         return Object.class;
