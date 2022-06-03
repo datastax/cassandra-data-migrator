@@ -34,7 +34,7 @@ object DiffData extends App {
   val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
   val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
 
-  val splitSize = sc.getConf.get("spark.migrate.splitSize","10000")
+  val splitSize = sc.getConf.get("spark.migrate.splitSize","10")
 
 
   println("Started Data Validation App")
