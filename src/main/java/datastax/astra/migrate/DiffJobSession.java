@@ -72,7 +72,7 @@ public class DiffJobSession extends CopyJobSession {
                         if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(sRow) < minWriteTimeStampFilter
                                 || getLargestWriteTimeStamp(sRow) > maxWriteTimeStampFilter))) {
                             if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                                printCounts(false);
+                                printCounts("Current");
                             }
 
                             Row astraRow = astraSession
@@ -83,6 +83,8 @@ public class DiffJobSession extends CopyJobSession {
                             skippedCounter.incrementAndGet();
                         }
                     });
+
+                    printCounts("Final");
                 }).get();
 
                 retryCount = maxAttempts;
@@ -96,22 +98,18 @@ public class DiffJobSession extends CopyJobSession {
         customThreadPool.shutdownNow();
     }
 
-    public void printCounts(boolean isFinal) {
-        String finalStr = "";
-        if (isFinal) {
-            finalStr = " Final";
-        }
-        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Record Count: "
+    public void printCounts(String finalStr) {
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Record Count: "
                 + readCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Differences Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Differences Count: "
                 + diffCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Missing Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Missing Count: "
                 + missingCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Corrected Missing Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Corrected Missing Count: "
                 + correctedMissingCounter.get());
-        logger.info(
-                "TreadID: " + Thread.currentThread().getId() + finalStr + " Read Valid Count: " + validDiffCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Skipped Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Valid Count: "
+                + validDiffCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Skipped Count: "
                 + skippedCounter.get());
     }
 
