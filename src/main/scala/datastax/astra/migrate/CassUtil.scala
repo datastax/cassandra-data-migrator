@@ -1,8 +1,10 @@
 package datastax.astra.migrate
 
+import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
+import com.datastax.spark.connector.CassandraRowMetadata
 
-import scala.collection.JavaConversions._
+import collection.JavaConversions._
 
 object CassUtil {
 
