@@ -1,19 +1,12 @@
 package datastax.astra.migrate
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession}
-import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
-import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.sql.hive._
-import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.SparkSession
 
-import scala.collection.JavaConversions._
-import java.lang.Long
 import java.math.BigInteger
-import collection.JavaConversions._
+import scala.collection.JavaConversions._
 
-
+import java.lang.Long
 
 // http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
@@ -21,8 +14,6 @@ object Migrate extends App {
   val spark = SparkSession.builder
     .appName("Datastax Data Migration")
     .getOrCreate()
-
-  import spark.implicits._
 
   val sc = spark.sparkContext
 
