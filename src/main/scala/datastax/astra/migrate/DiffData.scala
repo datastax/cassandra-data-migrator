@@ -30,9 +30,9 @@ object DiffData extends App {
   val sourceHost = sc.getConf.get("spark.migrate.source.host")
   val sourceReadConsistencyLevel = sc.getConf.get("spark.cassandra.source.read.consistency.level","LOCAL_QUORUM")
 
-  val destinationHost =  sc.getConf.get("spark.migrate.destination.host")
-  val destintationUsername = sc.getConf.get("spark.migrate.destination.username")
-  val destinationPassword = sc.getConf.get("spark.migrate.destination.password")
+  val destinationHost =  sc.getConf.get("spark.migrate.destination.host", "")
+  val destintationUsername = sc.getConf.get("spark.migrate.destination.username", "")
+  val destinationPassword = sc.getConf.get("spark.migrate.destination.password", "")
   val destinationReadConsistencyLevel = sc.getConf.get("spark.migrate.destination.read.consistency.level", "LOCAL_QUORUM")
 
   val astraScbPath = sc.getConf.get("spark.migrate.astra.scb")
@@ -97,7 +97,7 @@ object DiffData extends App {
             .getDataAndDiff(part.getMin, part.getMax)))
     })
 
-    println(parts.collect.tail)
+    DiffJobSession.getInstance(null, null, sc.getConf).printCounts(true);
   }
 
   private def exitSpark = {

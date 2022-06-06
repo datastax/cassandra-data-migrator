@@ -1,21 +1,18 @@
 package datastax.astra.migrate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
-
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
-import org.spark_project.jetty.util.ConcurrentHashSet;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /*
 (
@@ -35,6 +32,7 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong missingCounter = new AtomicLong(0);
     private AtomicLong correctedMissingCounter = new AtomicLong(0);
     private AtomicLong validDiffCounter = new AtomicLong(0);
+    private AtomicLong skippedCounter = new AtomicLong(0);
 
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
 
@@ -80,11 +78,13 @@ public class DiffJobSession extends CopyJobSession {
                             Row astraRow = astraSession
                                     .execute(selectFromAstra(astraSelectStatement, sRow)).one();
                             diff(sRow, astraRow);
+                        } else {
+                            readCounter.incrementAndGet();
+                            skippedCounter.incrementAndGet();
                         }
                     });
                 }).get();
 
-                printCounts(true);
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount, e);
@@ -96,7 +96,7 @@ public class DiffJobSession extends CopyJobSession {
         customThreadPool.shutdownNow();
     }
 
-    private void printCounts(boolean isFinal) {
+    public void printCounts(boolean isFinal) {
         String finalStr = "";
         if (isFinal) {
             finalStr = " Final";
@@ -111,6 +111,8 @@ public class DiffJobSession extends CopyJobSession {
                 + correctedMissingCounter.get());
         logger.info(
                 "TreadID: " + Thread.currentThread().getId() + finalStr + " Read Valid Count: " + validDiffCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + finalStr + " Read Skipped Count: "
+                + skippedCounter.get());
     }
 
     private void diff(Row sourceRow, Row astraRow) {

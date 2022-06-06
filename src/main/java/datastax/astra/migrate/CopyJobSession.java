@@ -1,13 +1,16 @@
 package datastax.astra.migrate;
 
-import java.util.*;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyJobSession extends AbstractJobSession {
 

@@ -1,15 +1,11 @@
 package datastax.astra.migrate;
 
+import com.datastax.oss.driver.api.core.data.TupleValue;
+
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import com.datastax.oss.driver.api.core.data.TupleValue;
+import java.util.*;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
