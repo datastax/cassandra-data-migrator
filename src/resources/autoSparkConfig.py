@@ -22,7 +22,7 @@ cfg_base_array = {
   'max_retries' :                   '10',
   'read_rate_limit' :               '40000',
   'write_rate_limit' :              '40000',
-  'split_size' :                    '5',
+  'split_size' :                    '10000',
   'batch_size' :                    '5',
   'print_stats_after' :             '100000',
   'counter_table' :                 'false'
@@ -153,15 +153,15 @@ for argnum,arg in enumerate(sys.argv):
       '       astra_username\n'\
       '       astra_password\n'\
       '     Optional Elements in Config File\n'\
-      '       beta                            Default: false\n'\
-      '       source_read_consistancy_level   Default: LOCAL_QUORUM\n'\
-      '       astra_read_consistancy_level    Default: LOCAL_QUORUM\n'\
-      '       maxRetries                      Default: 10\n'\
-      '       readRateLimit                   Default: 40000\n'\
-      '       writeRateLimit                  Default: 40000\n'\
-      '       splitSize                       Default: 5\n'\
-      '       batchSize                       Default: 5\n'\
-      '       printStatsAfter                 Default: 100000\n'\
+      '       beta                            Default: '+cfg_base_array['beta']+'\n'\
+      '       source_read_consistancy_level   Default: '+cfg_base_array['source_read_consistancy_level']+'\n'\
+      '       astra_read_consistancy_level    Default: '+cfg_base_array['astra_read_consistancy_level']+'\n'\
+      '       max_retries                     Default: '+cfg_base_array['max_retries']+'\n'\
+      '       read_rate_limit                 Default: '+cfg_base_array['read_rate_limit']+'\n'\
+      '       write_rate_Limit                Default: '+cfg_base_array['write_rate_limit']+'\n'\
+      '       split_size                      Default: '+cfg_base_array['split_size']+'\n'\
+      '       batch_size                      Default: '+cfg_base_array['batch_size']+'\n'\
+      '       print_stats_after               Default: '+cfg_base_array['print_stats_after']+'\n'\
       '\n'
 
     exit(help_content)
