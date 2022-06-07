@@ -50,8 +50,24 @@ field_type_array = {
   'tuple':    '11',
   'float':    '12',
   'tinyint':  '13',
-  'decimal':  '14'
+  'decimal':  '14',
+  'date':     '1',
+  'inet':     '0'
+  
 }
+
+def field_type_comment(tbl,fieldName,fieldType):
+  if fieldType=='date':
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the date type are encoded as 32-bit unsigned integers representing a number of days with “the epoch” at the center of the range (2^31). Epoch is January 1st, 1970\n\tFor timestamps, a date can be input either as an integer or using a date string. In the later case, the format should be yyyy-mm-dd (so 2011-02-03 for instance).\n\tAdditional customization required for this table.\n')
+  elif fieldType=='decimal':
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the decimal type require specific variable-precision at the field level./n/tAdditional customization required for this table.\n')
+  elif fieldType=='double':
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the double type require specific variable-precision at the field level./n/tAdditional customization required for this table.\n')
+  elif fieldType=='float':
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the float type require additonal work at the field level./n/tAdditional customization required for this table.\n')
+  elif fieldType=='time' or fieldType=='timestamp':
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the time type are encoded as 64-bit signed integers representing the number of nanoseconds since midnight.\n\tFor timestamps, a time can be input either as an integer or using a string representing the time. In the later case, the format should be hh:mm:ss[.fffffffff] (where the sub-second precision is optional and if provided, can be less than the nanosecond). So for instance, the following are valid inputs for a time:\n\t\t08:12:54\n\t\t08:12:54.123\n\t\t08:12:54.123456\n\t\t08:12:54.123456789\n\tAdditional customization required for this table.\n')
+
 
 # 0: String [ascii, text, varchar]
 # 1: Integer [int, smallint]
@@ -84,12 +100,19 @@ cfg_array = {}
 schema_name = 'schema'
 
 
-def process_field(fieldName,fieldType,cql=''):
+def process_field(tbl,fieldName,fieldType,cql=''):
   if 'map<' in fieldType:
     mapData = fieldType.split('<')[1].split('>')[0].split(',')
     fieldValue = field_type_array['map']
     for mapType in mapData:
       fieldValue += '%' + field_type_array[mapType.strip()]
+      field_type_comment(tbl,fieldName,mapType.strip())
+  elif 'set<' in fieldType:
+    mapData = fieldType.split('<')[1].split('>')[0].split(',')
+    fieldValue = field_type_array['set']
+    for mapType in mapData:
+      fieldValue += '%' + field_type_array[mapType.strip()]
+      field_type_comment(tbl,fieldName,mapType.strip())
   elif fieldType in field_types:
     fieldValue = field_type_array[fieldType]
   else:
@@ -102,6 +125,7 @@ def process_field(fieldName,fieldType,cql=''):
     # more work here
   elif fieldType == 'map' or fieldType == 'list' or fieldType == 'set':
     exit('Error:  Build fieldType: ' + fieldType)
+  field_type_comment(tbl,fieldName,fieldType)
 
 # communicate command line help
 for argnum,arg in enumerate(sys.argv):
@@ -334,7 +358,7 @@ for tbl,tblData in list(migrate_tbl_data.items()):
       cfg_array['fields'] += ','
       cfg_array['field_types'] += ','
       cfg_array['partition_keys'] += ','+key
-    process_field(key,tblData['field'][key],tblData['cql'])
+    process_field(tbl,key,tblData['field'][key],tblData['cql'])
     if len(tblData['pk'])>1: cfg_array['fields'] += '),('
     cfg_array['fields'] += ','
     if len(tblData['cc'])>1: cfg_array['fields'] += '('
@@ -347,7 +371,7 @@ for tbl,tblData in list(migrate_tbl_data.items()):
     else:
       cfg_array['fields'] += ','
       cfg_array['field_types'] += ','
-    process_field(key,tblData['field'][key],tblData['cql'])
+    process_field(tbl,key,tblData['field'][key],tblData['cql'])
     if len(tblData['cc'])>1 : cfg_array['fields'] += ')'
 
   # non-primary field(s)
@@ -355,7 +379,7 @@ for tbl,tblData in list(migrate_tbl_data.items()):
     if fieldName not in tblData['pk'] and fieldName not in tblData['cc']:
       cfg_array['fields'] += ','
       cfg_array['field_types'] += ','
-      process_field(fieldName,fieldType,tblData['cql'])
+      process_field(tbl,fieldName,fieldType,tblData['cql'])
 
   # Retrieve migration config template
   if path.isfile(dm_path + template_file):
