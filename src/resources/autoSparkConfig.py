@@ -379,5 +379,5 @@ for tbl,tblData in list(migrate_tbl_data.items()):
   # Create Spark Migration Table Config File
   cfgFile = open(dm_path+migrate_ks+'_'+tbl+'_SparkConfig.properties', 'w')
   cfgFile.write(config_file_data)
-  print('Migration Config File Created: '+dm_path+migrate_ks+'_'+tbl+'_SparkConfig.txt')
+  print('Migration Config File Created: '+dm_path+migrate_ks+'_'+tbl+'_SparkConfig.properties')
   cfgFile.close()
