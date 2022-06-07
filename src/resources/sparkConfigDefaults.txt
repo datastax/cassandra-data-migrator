@@ -1,0 +1,7 @@
+source_host		localhost
+source_username		s_username
+source_password		s_pswd
+
+astra_scb               file:///aaa/bbb/secure-connect-enterprise.zip
+astra_username          client-id
+astra_password          client-secret
