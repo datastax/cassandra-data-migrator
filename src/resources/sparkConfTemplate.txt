@@ -1,0 +1,71 @@
+spark.migrate.beta                                              <<beta>>
+
+spark.migrate.source.host                                       <<source_host>>
+spark.migrate.source.username                                   <<source_username>>
+spark.migrate.source.password                                   <<source_password>>
+spark.migrate.astra.scb                                         <<astra_scb>>
+spark.migrate.astra.username                                    <<astra_username>>
+spark.migrate.astra.password                                    <<astra_password>>
+
+spark.cassandra.source.read.consistency.level                   <<source_read_consistancy_level>>
+spark.cassandra.astra.read.consistency.level                    <<astra_read_consistancy_level>>
+
+spark.migrate.maxRetries                                        <<max_retries>>
+spark.migrate.readRateLimit                                     <<read_rate_limit>>
+spark.migrate.writeRateLimit                                    <<write_rate_limit>>
+spark.migrate.splitSize                                         <<split_size>>
+spark.migrate.batchSize                                         <<batch_size>>
+spark.migrate.printStatsAfter                                   <<print_stats_after>>
+
+spark.migrate.source.keyspaceTable                              <<keyspace_table>>
+spark.migrate.astra.keyspaceTable                               <<keyspace_table>>
+
+spark.migrate.query.cols.select                                 <<fields>>
+spark.migrate.diff.select.types                                 <<field_types>>
+spark.migrate.query.cols.id                                     <<fields>>
+spark.migrate.query.cols.id.types                               <<field_types>>
+spark.migrate.query.cols.partitionKey                           <<partition_keys>>
+
+spark.migrate.query.cols.insert                                 <<fields>>
+spark.migrate.query.cols.insert.types                           <<field_types>>
+
+spark.migrate.source.counterTable                               <<counter_table>>
+spark.migrate.source.counterTable.update.cql
+spark.migrate.source.counterTable.update.max.counter.index      0
+spark.migrate.source.counterTable.update.select.index           0
+
+spark.migrate.preserveTTLWriteTime                              false
+spark.migrate.source.ttl.cols                                   6,7
+
+spark.migrate.source.writeTimeStampFilter                       false
+spark.migrate.source.writeTimeStampFilter.cols                  4,5
+spark.migrate.source.minWriteTimeStampFilter                    0
+spark.migrate.source.maxWriteTimeStampFilter                    9223372036854775807
+
+/* Note: 
+Enable "spark.migrate.preserveTTLWriteTime" only if you want to migrate writetimes and TTLs
+"spark.migrate.source.ttl.cols" - Comma separated column indexes from "spark.migrate.query.cols.select". Script will only use the largest value per row.
+Include "writetime(column-name)" in "spark.migrate.query.cols.select" only if you want to use "writeTimeStampFilter" filter
+"spark.migrate.source.writeTimeStampFilter.cols" - Comma separated column indexes from "spark.migrate.query.cols.select". Script will only use the largest value per row.
+Default value for "spark.migrate.source.maxWriteTimeStampFilter" is alway "9223372036854775807" (max long value)
+Properties "spark.migrate.query.cols.insert" and "spark.migrate.query.cols.insert.types" are required for "Migrate" job, however they can be left empty for "DiffData" job
+
+Frozen has no impact on the mapping of Collections (Map/List/Set) - Example: 5%1%0 for frozen<map<int, text>>
+
+Following are the supported data types and their corresponding [Cassandra data-types]
+ 0: String [ascii, text, varchar]
+ 1: Integer [int, smallint]
+ 2: Long [bigint]
+ 3: Double [double]
+ 4: Instant [time, timestamp]
+ 5: Map (separate type by %) [map] - Example: 5%1%0 for map<int, text>
+ 6: List (separate type by %) [list] - Example: 6%0 for list<text> 
+ 7: ByteBuffer [blob]
+ 8: Set (seperate type by %) [set] - Example: 8%0 for set<text> 
+ 9: UUID [uuid, timeuuid]
+10: Boolean [boolean]
+11: TupleValue [tuple]
+12: Float (float)
+13: TinyInt [tinyint]
+14: BigDecimal (decimal)
+*/
