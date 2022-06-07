@@ -109,15 +109,15 @@ for argnum,arg in enumerate(sys.argv):
     help_content = \
       '\n'\
       'Script for creating migration support files\n'\
-      'usage: autoSparkConfig.py -k KEYSPACE [-t TABLE] [-p PATH_MIGRATION_SUPPORT_FILES]\n'\
+      'usage: autoSparkConfig.py -k KEYSPACE [-p PATH_MIGRATION_SUPPORT_FILES] [-c] [-t TABLE1] [-t TABLE2]\n'\
       'optional arguments:\n'\
       '-v, --version          Version\n'\
       '-h, --help             This help info\n'\
       '-p, --path             Path to data model file\n'\
       '-s, --schema           Name of schema file - Default schema\n'\
       '-k, --keyspace         *Required: keyspace\n'\
-      '-c, --counter          Generate files for counter tables\n'\
-      '-t, --table            Generate files for a single table\n'\
+      '-c, --counter          Generates files for tables with counters\n'\
+      '-t, --table            Generates file for table(s)\n'\
       '\n'\
       'Configuration Elements\n'\
       '-cf, --config          Configuration File - Default: migrateConfig.txt\n'\
@@ -289,7 +289,7 @@ for ks, ksData in list(tbl_data.items()):
         if len(target_table)>0:
           if (tbl in target_table):
             migrate_tbl_data[tbl]=tbl_data[ks]['table'][tbl]
-        elif len(target_field_type)>0:
+        if len(target_field_type)>0:
           for field, fieldType in list(tblData['field'].items()):
             if fieldType in target_field_type:
               try:
