@@ -97,7 +97,7 @@ object DiffData extends App {
             .getDataAndDiff(part.getMin, part.getMax)))
     })
 
-    DiffJobSession.getInstance(null, null, sc.getConf).printCounts(true);
+    DiffJobSession.getInstance(null, null, sc.getConf).printCounts("Job Final");
   }
 
   private def exitSpark = {

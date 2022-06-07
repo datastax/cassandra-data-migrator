@@ -90,10 +90,6 @@ object Migrate extends App {
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndInsert(part.getMin, part.getMax)))
     })
-
-    println(parts.collect.tail)
-
-
   }
 
   private def exitSpark = {
