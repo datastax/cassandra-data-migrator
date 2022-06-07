@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 
 public class MigrateDataType {
@@ -72,6 +73,8 @@ public class MigrateDataType {
                 return Byte.class;
             case 14:
                 return BigDecimal.class;
+            case 15:
+                return LocalDate.class;
         }
 
         return Object.class;
