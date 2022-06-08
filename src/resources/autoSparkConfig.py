@@ -59,12 +59,14 @@ field_type_array = {
 def field_type_comment(tbl,fieldName,fieldType):
   if fieldType=='date':
     print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the date type are encoded as 32-bit unsigned integers representing a number of days with “the epoch” at the center of the range (2^31). Epoch is January 1st, 1970\n\tFor timestamps, a date can be input either as an integer or using a date string. In the later case, the format should be yyyy-mm-dd (so 2011-02-03 for instance).\n\tAdditional customization required for this table.\n')
+  elif fieldType=='counter':
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the counter type require specific variable-precision at the field level.\n\tAdditional customization required for this table.\n')
   elif fieldType=='decimal':
-    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the decimal type require specific variable-precision at the field level./n/tAdditional customization required for this table.\n')
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the decimal type require specific variable-precision at the field level.\n\tAdditional customization required for this table.\n')
   elif fieldType=='double':
-    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the double type require specific variable-precision at the field level./n/tAdditional customization required for this table.\n')
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the double type require specific variable-precision at the field level.\n\tAdditional customization required for this table.\n')
   elif fieldType=='float':
-    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the float type require additonal work at the field level./n/tAdditional customization required for this table.\n')
+    print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the float type require additonal work at the field level.\n\tAdditional customization required for this table.\n')
   elif fieldType=='time' or fieldType=='timestamp':
     print('Alert for '+tbl+'.'+fieldName+'\n\tValues of the time type are encoded as 64-bit signed integers representing the number of nanoseconds since midnight.\n\tFor timestamps, a time can be input either as an integer or using a string representing the time. In the later case, the format should be hh:mm:ss[.fffffffff] (where the sub-second precision is optional and if provided, can be less than the nanosecond). So for instance, the following are valid inputs for a time:\n\t\t08:12:54\n\t\t08:12:54.123\n\t\t08:12:54.123456\n\t\t08:12:54.123456789\n\tAdditional customization required for this table.\n')
 
