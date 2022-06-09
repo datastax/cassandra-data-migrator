@@ -2,9 +2,11 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.internal.core.metadata.token.Murmur3Token;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -79,7 +81,7 @@ public class CopyJobSession extends AbstractJobSession {
 
             try {
 
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind().set(0,min,Long.class).set(1,max,Long.class));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(new Murmur3Token(min), new Murmur3Token(max)));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
