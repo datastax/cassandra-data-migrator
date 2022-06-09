@@ -78,7 +78,8 @@ public class CopyJobSession extends AbstractJobSession {
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(min, max));
+
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind().set(0,min,Long.class).set(1,max,Long.class));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
