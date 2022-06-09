@@ -6,6 +6,7 @@ Spark jobs in this repo can be used for data migration and data validation.
 
 ## Prerequisite
 
+Install Java8 as requirement as spark binaries are compiled with it
 Install single instance of spark on a node where we want to run this job. Spark can be installed by running the following: -
 
 ```
