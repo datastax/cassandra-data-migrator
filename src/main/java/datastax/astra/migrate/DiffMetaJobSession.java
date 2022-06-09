@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.spark_project.jetty.util.ConcurrentHashSet;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
@@ -93,7 +94,7 @@ public class DiffMetaJobSession extends AbstractJobSession {
     }
 
 
-    public void getDataDiffAndCorrect(Long min, Long max) {
+    public void getDataDiffAndCorrect(BigInteger min, BigInteger max) {
         try {
             correctData(getDataAndDiff(min, max));
             logger.info("ThreadID: " + Thread.currentThread().getId() + " CorrectFinal Read Record Count: " + readCounter.get());
@@ -108,14 +109,14 @@ public class DiffMetaJobSession extends AbstractJobSession {
         }
     }
 
-    private Set<SrcDestKey> getDataAndDiff(Long min, Long max) {
+    private Set<SrcDestKey> getDataAndDiff(BigInteger min, BigInteger max) {
         Set<SrcDestKey> srcDestKeys = new HashSet<SrcDestKey>();
         logger.info("ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(min, max).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner? min : min.longValueExact(), hasRandomPartitioner? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
                 for (Row sourceRow : resultSet) {
                     readLimiter.acquire(1);
                     // do not process rows less than minWriteTimeStampFilter or more than

@@ -3,6 +3,7 @@ package datastax.astra.migrate;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.internal.core.metadata.token.Murmur3Token;
+import com.datastax.oss.driver.internal.core.metadata.token.RandomToken;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
@@ -74,14 +75,15 @@ public class CopyJobSession extends AbstractJobSession {
 
     }
 
-    public void getDataAndInsert(Long min, Long max) {
+    public void getDataAndInsert(BigInteger min, BigInteger max) {
         logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
 
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(new Murmur3Token(min), new Murmur3Token(max)));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner? min : min.longValueExact(), hasRandomPartitioner? max : max.longValueExact()));
+
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or

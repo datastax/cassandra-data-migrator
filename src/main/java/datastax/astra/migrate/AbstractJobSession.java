@@ -52,6 +52,9 @@ public abstract class AbstractJobSession {
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
 
+
+    protected Boolean hasRandomPartitioner;
+
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
 
         this.sourceSession = sourceSession;
@@ -86,6 +89,8 @@ public abstract class AbstractJobSession {
         logger.info(" DEFAULT -- ReadRateLimit: " + readLimiter.getRate());
         logger.info(" DEFAULT -- WriteRateLimit: " + writeLimiter.getRate());
         logger.info(" DEFAULT -- WriteTimestampFilter: " + writeTimeStampFilter);
+
+        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.hasRandomPartitioner", "false"));
 
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable", "false"));
 

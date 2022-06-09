@@ -1,8 +1,11 @@
  wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.6.tgz
 
+ --driver-memory 8G
+
   ~/Documents/Astra/spark-2.4.8-bin-hadoop2.7/bin//spark-submit --properties-file /Users/ankitpatel/Documents/spark-astra-migrator-ranges/src/resources/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=9223372036854775807 --class datastax.astra.migrate.Migrate /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.1.jar
 
-
+Random Partitioner Run Command
+ ~/Documents/Astra/spark-2.4.8-bin-hadoop2.7/bin//spark-submit --properties-file /Users/ankitpatel/Documents/spark-astra-migrator-ranges/src/resources/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-1 --conf spark.migrate.source.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /Users/ankitpatel/Documents/spark-astra-migrator-ranges/target/migrate-0.9.jar
 
 
 //Diff Data

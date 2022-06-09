@@ -7,6 +7,7 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -45,6 +46,7 @@ public class DiffJobSession extends CopyJobSession {
                 }
             }
         }
+
         return diffJobSession;
     }
 
@@ -54,7 +56,7 @@ public class DiffJobSession extends CopyJobSession {
         selectColTypes = getTypes(sparkConf.get("spark.migrate.diff.select.types"));
     }
 
-    public void getDataAndDiff(Long min, Long max) {
+    public void getDataAndDiff(BigInteger min, BigInteger max) {
         ForkJoinPool customThreadPool = new ForkJoinPool();
         logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
         int maxAttempts = maxRetries;
@@ -63,7 +65,7 @@ public class DiffJobSession extends CopyJobSession {
             try {
                 // cannot do batching if the writeFilter is greater than 0
                 ResultSet resultSet = sourceSession.execute(
-                        sourceSelectStatement.bind(min, max).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
+                        sourceSelectStatement.bind(hasRandomPartitioner? min : min.longValueExact(), hasRandomPartitioner? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
 
                 customThreadPool.submit(() -> {
                     StreamSupport.stream(resultSet.spliterator(), true).forEach(sRow -> {
