@@ -55,6 +55,12 @@ field_type_array = {
   'inet':     '0'
   
 }
+system_keyspace = ['OpsCenter','dse_insights_local','solr_admin','test','dse_system','dse_analytics','system_auth','system_traces','system','dse_system_local','system_distributed','system_schema','dse_perf','dse_insights','dse_security','dse_system','killrvideo','dse_leases','dsefs_c4z','HiveMetaStore','dse_analytics','dsefs','spark_system']
+tp_tbl_data = {
+    'Materialized Views':{},
+    'Secondary Indexes':{},
+    'Storage-Attached Indexes':{}
+}
 
 def field_type_comment(tbl,fieldName,fieldType):
   if fieldType=='date':
@@ -99,6 +105,18 @@ fieldData = {}
 cfg_array = {}
 schema_name = 'schema'
 
+def add_tp_tbl(gr,ks,tbl,src_ks,src_tbl):
+  if src_ks not in system_keyspace:
+    try:
+      type(tp_tbl_data[gr][src_ks])
+    except:
+      tp_tbl_data[gr][src_ks]={}
+    try:
+      type(tp_tbl_data[gr][src_ks][src_tbl])
+    except:
+      tp_tbl_data[gr][src_ks][src_tbl] = []
+    if (ks+'.'+tbl) not in tp_tbl_data[gr][src_ks][src_tbl]:
+      tp_tbl_data[gr][src_ks][src_tbl].append(ks+'.'+tbl)
 
 def process_field(tbl,fieldName,fieldType,cql=''):
   if 'map<' in fieldType:
@@ -110,6 +128,12 @@ def process_field(tbl,fieldName,fieldType,cql=''):
   elif 'set<' in fieldType:
     mapData = fieldType.split('<')[1].split('>')[0].split(',')
     fieldValue = field_type_array['set']
+    for mapType in mapData:
+      fieldValue += '%' + field_type_array[mapType.strip()]
+      field_type_comment(tbl,fieldName,mapType.strip())
+  elif 'list<' in fieldType:
+    mapData = fieldType.split('<')[1].split('>')[0].split(',')
+    fieldValue = field_type_array['list']
     for mapType in mapData:
       fieldValue += '%' + field_type_array[mapType.strip()]
       field_type_comment(tbl,fieldName,mapType.strip())
