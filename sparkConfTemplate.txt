@@ -1,0 +1,46 @@
+spark.migrate.beta                                              <<beta>>
+
+spark.migrate.source.host                                       <<source_host>>
+spark.migrate.source.username                                   <<source_username>>
+spark.migrate.source.password                                   <<source_password>>
+spark.migrate.astra.scb                                         <<astra_scb>>
+spark.migrate.astra.username                                    <<astra_username>>
+spark.migrate.astra.password                                    <<astra_password>>
+
+spark.cassandra.source.read.consistency.level                   <<source_read_consistancy_level>>
+spark.cassandra.astra.read.consistency.level                    <<astra_read_consistancy_level>>
+
+spark.migrate.maxRetries                                        <<max_retries>>
+spark.migrate.readRateLimit                                     <<read_rate_limit>>
+spark.migrate.writeRateLimit                                    <<write_rate_limit>>
+spark.migrate.splitSize                                         <<split_size>>
+spark.migrate.batchSize                                         <<batch_size>>
+spark.migrate.printStatsAfter                                   <<print_stats_after>>
+spark.migrate.source.hasRandomPartitioner                       <<random_partitioner>>
+spark.migrate.source.minPartition			       <<min_partition>>
+spark.migrate.source.maxPartition			       <<max_partition>>
+
+spark.migrate.source.keyspaceTable                              <<keyspace_table>>
+spark.migrate.astra.keyspaceTable                               <<keyspace_table>>
+
+spark.migrate.query.cols.select                                 <<fields>>
+spark.migrate.diff.select.types                                 <<field_types>>
+spark.migrate.query.cols.id                                     <<primary_keys>>
+spark.migrate.query.cols.id.types                               <<primary_field_types>>
+spark.migrate.query.cols.partitionKey                           <<partition_keys>>
+
+spark.migrate.query.cols.insert                                 <<insert_fields>>
+spark.migrate.query.cols.insert.types                           <<insert_field_types>>
+
+spark.migrate.source.counterTable                               <<counter_table>>
+spark.migrate.source.counterTable.update.cql		       <<counter_update_cql>>
+spark.migrate.source.counterTable.update.max.counter.index      <<max_counter_update_index>>
+spark.migrate.source.counterTable.update.select.index           <<counter_update_index>>
+
+spark.migrate.preserveTTLWriteTime                              <<ttl>>
+spark.migrate.source.ttl.cols                                   <<ttl_index>>
+
+spark.migrate.source.writeTimeStampFilter                       <<timestamp_filter>>
+spark.migrate.source.writeTimeStampFilter.cols                  <<timestamp_index>>
+spark.migrate.source.minWriteTimeStampFilter                    <<min_timestamp_filter>>
+spark.migrate.source.maxWriteTimeStampFilter                    <<max_timestamp_filter>>
