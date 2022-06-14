@@ -36,6 +36,7 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong skippedCounter = new AtomicLong(0);
 
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
+    protected Boolean isDiffOnly = false;
 
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
@@ -54,6 +55,7 @@ public class DiffJobSession extends CopyJobSession {
         super(sourceSession, astraSession, sparkConf);
 
         selectColTypes = getTypes(sparkConf.get("spark.migrate.diff.select.types"));
+        isDiffOnly = Boolean.parseBoolean(sparkConf.get("spark.migrate.isDiffOnly", "false"));
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
@@ -120,9 +122,12 @@ public class DiffJobSession extends CopyJobSession {
             missingCounter.incrementAndGet();
             logger.error("Data is missing in Astra: " + getKey(sourceRow));
             //correct data
-            astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
-            correctedMissingCounter.incrementAndGet();
-            logger.error("Corrected missing data in Astra: " + getKey(sourceRow));
+
+            if (!isDiffOnly) {
+                astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
+                correctedMissingCounter.incrementAndGet();
+                logger.error("Corrected missing data in Astra: " + getKey(sourceRow));
+            }
             return;
         }
 
