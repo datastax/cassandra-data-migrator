@@ -1,0 +1,11 @@
+source_host		localhost
+source_username		cassandra
+source_password		cassandra
+
+astra_scb               file:///aaa/bbb/secure-connect-enterprise.zip
+astra_username          client-id
+astra_password          client-secret
+
+random_partitioner      true
+
+
