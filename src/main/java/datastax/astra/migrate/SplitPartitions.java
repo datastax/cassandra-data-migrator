@@ -1,9 +1,6 @@
 package datastax.astra.migrate;
 
-import com.datastax.oss.driver.internal.core.metadata.token.RandomToken;
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory;
 import org.apache.log4j.Logger;
-import scala.math.BigInt;
 
 import java.io.Serializable;
 import java.math.BigInteger;

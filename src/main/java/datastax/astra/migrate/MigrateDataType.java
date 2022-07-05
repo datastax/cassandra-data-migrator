@@ -1,6 +1,7 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -75,6 +76,8 @@ public class MigrateDataType {
                 return BigDecimal.class;
             case 15:
                 return LocalDate.class;
+            case 16:
+                return UdtValue.class;
         }
 
         return Object.class;
