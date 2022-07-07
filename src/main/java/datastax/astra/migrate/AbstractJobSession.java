@@ -4,7 +4,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
@@ -190,10 +189,6 @@ public abstract class AbstractJobSession {
             if (data == null) {
                 return new Long(0);
             }
-        } else if (dataType.typeClass == TupleValue.class) {
-            return sourceRow.getTupleValue(index);
-        } else if (dataType.typeClass == Object.class) {
-            return sourceRow.getObject(index);
         }
 
         return sourceRow.get(index, dataType.typeClass);

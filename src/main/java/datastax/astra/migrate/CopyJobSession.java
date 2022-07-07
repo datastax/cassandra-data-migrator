@@ -2,8 +2,6 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
-import com.datastax.oss.driver.internal.core.metadata.token.Murmur3Token;
-import com.datastax.oss.driver.internal.core.metadata.token.RandomToken;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
