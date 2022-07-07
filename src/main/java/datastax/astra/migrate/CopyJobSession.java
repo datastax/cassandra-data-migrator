@@ -55,11 +55,13 @@ public class CopyJobSession extends AbstractJobSession {
         }
         isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime", "false"));
 
-        String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
-        for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
-            updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
-        }
         if (isCounterTable) {
+            String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
+            for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
+                updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
+            }
+
+
             String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
             astraInsertStatement = astraSession.prepare(counterTableUpdate);
         } else {
@@ -89,11 +91,15 @@ public class CopyJobSession extends AbstractJobSession {
                 if (batchSize == 1 || writeTimeStampFilter) {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
-                        // only process rows greater than writeTimeStampFilter
-                        Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
-                        if (writeTimeStampFilter && (sourceWriteTimeStamp < minWriteTimeStampFilter)
-                                || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
-                            continue;
+
+                        if(writeTimeStampFilter) {
+                            // only process rows greater than writeTimeStampFilter
+                            Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
+                            if (sourceWriteTimeStamp < minWriteTimeStampFilter
+                                    || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
+                                continue;
+                            }
+
                         }
 
                         writeLimiter.acquire(1);
@@ -222,7 +228,11 @@ public class CopyJobSession extends AbstractJobSession {
                 MigrateDataType dataType = insertColTypes.get(index);
 
                 try {
-                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, index, sourceRow), dataType.typeClass);
+                    Object colData = getData(dataType, index, sourceRow);
+                    if(index < idColTypes.size() && colData==null && dataType.typeClass==String.class){
+                        colData="";
+                    }
+                    boundInsertStatement = boundInsertStatement.set(index, colData, dataType.typeClass);
                 } catch (NullPointerException e) {
                     // ignore the exception for map values being null
                     if (dataType.typeClass != Map.class) {
