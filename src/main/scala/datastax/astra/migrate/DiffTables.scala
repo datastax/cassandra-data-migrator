@@ -239,25 +239,26 @@ class DiffTask(spark: SparkSession,
       return Missing(primaryKeys)
     }
     val differences = columns.map(c => {
-      val sourceColumn = source.get[AnyRef](c.getName.asCql(true))
+      val sourceColumn = source.get[Option[AnyRef]](c.getName.asCql(true))
       val codec: TypeCodec[AnyRef] = target.codecRegistry().codecFor(c.getType)
       val targetColumn = target.get(c.getName, codec)
 
-      if (tableMetadata.getPrimaryKey.contains(c)) {
-        primaryKeys = primaryKeys :+ sourceColumn
-      }
-      if (sourceColumn == null) {
-        if (targetColumn == null) {
-          None
-        } else {
-          Some(ColumnDifference(c.getName.asCql(true), null, targetColumn))
-        }
-      } else {
-        if (sourceColumn.equals(targetColumn)) {
-          None
-        } else {
-          Some(ColumnDifference(c.getName.asCql(true), sourceColumn, targetColumn))
-        }
+      sourceColumn match {
+        case Some(value) =>
+          if (tableMetadata.getPrimaryKey.contains(c)) {
+            primaryKeys = primaryKeys :+ value
+          }
+          if (value.equals(targetColumn)) {
+            None
+          } else {
+            Some(ColumnDifference(c.getName.asCql(true), value, targetColumn))
+          }
+        case None =>
+          if (targetColumn == null) {
+            None
+          } else {
+            Some(ColumnDifference(c.getName.asCql(true), null, targetColumn))
+          }
       }
     }).filter(_.isDefined)
     if (differences.isEmpty) {
