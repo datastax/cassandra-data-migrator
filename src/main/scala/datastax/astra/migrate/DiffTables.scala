@@ -1,9 +1,8 @@
 package datastax.astra.migrate
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
-import com.datastax.oss.driver.api.core.`type`.{DataTypes, ListType, MapType, SetType}
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
-import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.driver.api.core.`type`.{DataTypes, ListType, MapType, SetType}
 import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, TableMetadata}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
@@ -176,14 +175,23 @@ class DiffTask(spark: SparkSession,
         targetConnector.withSessionDo(session => {
           val builder = prepared.boundStatementBuilder()
           // Bind primary keys
+          var primaryKeys = Seq[AnyRef]()
           tableMetadata.getPrimaryKey.foreach(pk => {
             val dataType = tableMetadata.getColumns.get(pk.getName).getType
             val data = row.get[AnyRef](pk.getName.asCql(true))
+            primaryKeys = primaryKeys :+ data
             val codec: TypeCodec[AnyRef] = builder.codecRegistry().codecFor(dataType)
             builder.set(pk.getName.asCql(true), data, codec)
           })
-          val targetRow = session.execute(builder.build()).one
-          compareRow(row, targetRow)
+          val result = session.execute(builder.build())
+          val columns = result.getColumnDefinitions.map(c => c.getName.asCql(true)).toIndexedSeq
+          if (result.isEmpty) {
+            Missing(primaryKeys)
+          } else {
+            val targetRow = CassandraRow.fromJavaDriverRow(result.one(),
+              CassandraRowMetadata.fromResultSet(columns, result, session))
+            compareRow(primaryKeys, row, targetRow)
+          }
         })
       })
     }).fold(Summary(0, 0, 0, 0, Seq(), Seq())) {
@@ -229,36 +237,44 @@ class DiffTask(spark: SparkSession,
     }
   }
 
-  def compareRow(source: CassandraRow, target: Row): Result = {
-    var primaryKeys = Seq[AnyRef]()
-    val columns = tableMetadata.getColumns.values
-    if (target == null) {
-      primaryKeys = tableMetadata.getPrimaryKey.map(c => {
-        source.get[AnyRef](c.getName.asCql(true))
-      })
-      return Missing(primaryKeys)
-    }
+  /**
+   * Compares rows that have the same primary keys
+   *
+   * @param primaryKeys primary keys
+   * @param source Row from the source cluster
+   * @param target Row from the target cluster queried by the primary key
+   * @return Result matching result
+   */
+  def compareRow(primaryKeys: Seq[AnyRef], source: CassandraRow, target: CassandraRow): Result = {
+    val columns = tableMetadata.getColumns.values.filterNot(tableMetadata.getPrimaryKey.contains)
     val differences = columns.map(c => {
-      val sourceColumn = source.get[Option[AnyRef]](c.getName.asCql(true))
-      val codec: TypeCodec[AnyRef] = target.codecRegistry().codecFor(c.getType)
-      val targetColumn = target.get(c.getName, codec)
+      val columnName = c.getName.asCql(true)
+      val sourceColumn = source.get[Option[AnyRef]](columnName)
+      val targetColumn = target.get[Option[AnyRef]](columnName)
 
-      sourceColumn match {
-        case Some(value) =>
-          if (tableMetadata.getPrimaryKey.contains(c)) {
-            primaryKeys = primaryKeys :+ value
-          }
-          if (value.equals(targetColumn)) {
+      (sourceColumn, targetColumn) match {
+        case (Some(sourceValue: Array[Byte]), Some(targetValue: Array[Byte])) =>
+          if (sourceValue.sameElements(targetValue)) {
             None
           } else {
-            Some(ColumnDifference(c.getName.asCql(true), value, targetColumn))
+            Some(ColumnDifference(columnName, sourceValue, targetValue))
           }
-        case None =>
-          if (targetColumn == null) {
+        case (Some(sourceValue: UDTValue), Some(targetValue: UDTValue)) =>
+          // TODO this does not work for blob type inside UDT
+          if (sourceValue.toMap == targetValue.toMap) {
             None
           } else {
-            Some(ColumnDifference(c.getName.asCql(true), null, targetColumn))
+            Some(ColumnDifference(columnName, sourceValue, targetValue))
           }
+        case (Some(sourceValue), Some(targetValue)) =>
+            if (sourceValue.equals(targetValue)) {
+              None // no difference
+            } else {
+              Some(ColumnDifference(columnName, sourceValue, targetValue))
+            }
+        case (Some(sourceValue), None) => Some(ColumnDifference(columnName, sourceValue, null))
+        case (None, Some(targetValue)) => Some(ColumnDifference(columnName, null, targetValue))
+        case (None, None) => None // no difference
       }
     }).filter(_.isDefined)
     if (differences.isEmpty) {
