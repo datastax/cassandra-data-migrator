@@ -69,7 +69,7 @@ public abstract class AbstractJobSession {
         maxRetries = Integer.parseInt(sparkConf.get("spark.migrate.maxRetries", "10"));
 
         sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
-        astraKeyspaceTable = sparkConf.get("spark.migrate.astra.keyspaceTable");
+        astraKeyspaceTable = sparkConf.get("spark.migrate.destination.keyspaceTable");
 
         isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime", "false"));
         if (isPreserveTTLWritetime) {
@@ -101,7 +101,7 @@ public abstract class AbstractJobSession {
 
         logger.info(" DEFAULT -- Write Batch Size: " + batchSize);
         logger.info(" DEFAULT -- Source Keyspace Table: " + sourceKeyspaceTable);
-        logger.info(" DEFAULT -- Astra Keyspace Table: " + astraKeyspaceTable);
+        logger.info(" DEFAULT -- Destination Keyspace Table: " + astraKeyspaceTable);
         logger.info(" DEFAULT -- ReadRateLimit: " + readLimiter.getRate());
         logger.info(" DEFAULT -- WriteRateLimit: " + writeLimiter.getRate());
         logger.info(" DEFAULT -- WriteTimestampFilter: " + writeTimeStampFilter);
