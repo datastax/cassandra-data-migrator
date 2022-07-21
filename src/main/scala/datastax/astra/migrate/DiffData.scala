@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import datastax.astra.migrate.Migrate.{astraPassword, astraReadConsistencyLevel, astraScbPath, astraUsername, sc, sourceHost, sourcePassword, sourceReadConsistencyLevel, sourceUsername}
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.cassandra._
@@ -16,6 +17,8 @@ import collection.JavaConversions._
 import java.math.BigInteger
 
 object DiffData extends App {
+
+  val logger = Logger.getLogger(this.getClass.getName)
 
   val spark = SparkSession.builder
     .appName("Datastax Data Validation")
@@ -46,7 +49,7 @@ object DiffData extends App {
   val splitSize = sc.getConf.get("spark.migrate.splitSize","10000")
 
 
-  println("Started Data Validation App")
+  logger.info("Started Data Validation App")
 
   val isBeta = sc.getConf.get("spark.migrate.beta","false")
   val isCassandraToCassandra = sc.getConf.get("spark.migrate.ctoc", "false")
@@ -90,6 +93,8 @@ object DiffData extends App {
   private def diffTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
     val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
+
+    logger.info("Spark parallelize created : " + parts.count() + " parts!");
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession => 
         astraConnection.withSessionDo(astraSession => 

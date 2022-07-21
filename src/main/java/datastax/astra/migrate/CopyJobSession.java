@@ -24,7 +24,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
-    protected Boolean isPreserveTTLWritetime = Boolean.FALSE;
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (copyJobSession == null) {
@@ -53,7 +52,6 @@ public class CopyJobSession extends AbstractJobSession {
             }
             count++;
         }
-        isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime", "false"));
 
         if (isCounterTable) {
             String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
@@ -61,18 +59,15 @@ public class CopyJobSession extends AbstractJobSession {
                 updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
             }
 
-
             String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
             astraInsertStatement = astraSession.prepare(counterTableUpdate);
         } else {
-
             if (isPreserveTTLWritetime) {
                 astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ") using TTL ? and TIMESTAMP ?");
             } else {
                 astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
             }
         }
-
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
@@ -81,9 +76,7 @@ public class CopyJobSession extends AbstractJobSession {
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner? min : min.longValueExact(), hasRandomPartitioner? max : max.longValueExact()));
-
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
@@ -99,7 +92,6 @@ public class CopyJobSession extends AbstractJobSession {
                                     || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
                                 continue;
                             }
-
                         }
 
                         writeLimiter.acquire(1);
@@ -118,13 +110,11 @@ public class CopyJobSession extends AbstractJobSession {
                             CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
                                     .executeAsync(bindInsert(astraInsertStatement, sourceRow, astraRow));
                             writeResults.add(astraWriteResultSet);
-
                         } else {
                             CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
                                     .executeAsync(bindInsert(astraInsertStatement, sourceRow));
                             writeResults.add(astraWriteResultSet);
                         }
-
                         if (writeResults.size() > 1000) {
                             iterateAndClearWriteResults(writeResults, 1);
                         }
@@ -132,9 +122,7 @@ public class CopyJobSession extends AbstractJobSession {
 
                     // clear the write resultset in-case it didnt mod at 1000 above
                     iterateAndClearWriteResults(writeResults, 1);
-
                 } else {
-                    //
                     BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                     for (Row row : resultSet) {
                         readLimiter.acquire(1);
@@ -142,17 +130,13 @@ public class CopyJobSession extends AbstractJobSession {
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
-
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, row));
-
 
                         // if batch threshold is met, send the writes and clear the batch
                         if (batchStatement.size() >= batchSize) {
-
                             CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
                             writeResults.add(writeResultSet);
                             batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-
                         }
 
                         if (writeResults.size() * batchSize > 1000) {
@@ -162,7 +146,6 @@ public class CopyJobSession extends AbstractJobSession {
 
                     // clear the write resultset in-case it didnt mod at 1000 above
                     iterateAndClearWriteResults(writeResults, batchSize);
-
 
                     // if there are any pending writes because the batchSize threshold was not met, then write and clear them
                     if (batchStatement.size() > 0) {
@@ -187,7 +170,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     }
 
-
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception{
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
@@ -198,8 +180,6 @@ public class CopyJobSession extends AbstractJobSession {
         }
         writeResults.clear();
     }
-
-
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow) {
         return bindInsert(insertStatement, sourceRow, null);

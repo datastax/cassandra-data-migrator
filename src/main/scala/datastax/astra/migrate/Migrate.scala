@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession}
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.cassandra._
@@ -18,6 +19,8 @@ import collection.JavaConversions._
 // http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
 object Migrate extends App {
+  val logger = Logger.getLogger(this.getClass.getName)
+
   val spark = SparkSession.builder
     .appName("Datastax Data Migration")
     .getOrCreate()
@@ -46,7 +49,7 @@ object Migrate extends App {
   val astraReadConsistencyLevel = sc.getConf.get("spark.cassandra.astra.read.consistency.level","LOCAL_QUORUM")
 
 
-  println("Started Migration App")
+  logger.info("Started Migration App")
 
   val isBeta = sc.getConf.get("spark.migrate.beta","false")
 
@@ -87,6 +90,7 @@ object Migrate extends App {
 
     val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
+    logger.info("Spark parallelize created : " + parts.count() + " parts!");
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>   CopyJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataAndInsert(part.getMin, part.getMax)))
     })
