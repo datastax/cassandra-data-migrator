@@ -39,7 +39,8 @@ public abstract class AbstractJobSession {
     protected Integer batchSize = 1;
     protected Integer printStatsAfter = 100000;
 
-    protected Boolean writeTimeStampFilter = false;
+    protected Boolean isPreserveTTLWritetime = Boolean.FALSE;
+    protected Boolean writeTimeStampFilter = Boolean.FALSE;
     protected Long minWriteTimeStampFilter = 0l;
     protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
 
@@ -51,11 +52,9 @@ public abstract class AbstractJobSession {
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
 
-
     protected Boolean hasRandomPartitioner;
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
-
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
@@ -72,22 +71,43 @@ public abstract class AbstractJobSession {
         sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
         astraKeyspaceTable = sparkConf.get("spark.migrate.astra.keyspaceTable");
 
+        isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.migrate.preserveTTLWriteTime", "false"));
+        if (isPreserveTTLWritetime) {
+            String ttlColsStr = sparkConf.get("spark.migrate.source.ttl.cols");
+            if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
+                for (String ttlCol : ttlColsStr.split(",")) {
+                    ttlCols.add(Integer.parseInt(ttlCol));
+                }
+            }
+        }
+
         writeTimeStampFilter = Boolean
                 .parseBoolean(sparkConf.get("spark.migrate.source.writeTimeStampFilter", "false"));
+        // batchsize set to 1 if there is a writeFilter
+        if (writeTimeStampFilter) {
+            batchSize = 1;
+            String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
+            if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
+                for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
+                    writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
+                }
+            }
+        }
+
         minWriteTimeStampFilter = new Long(
                 sparkConf.get("spark.migrate.source.minWriteTimeStampFilter", "0"));
         maxWriteTimeStampFilter = new Long(
                 sparkConf.get("spark.migrate.source.maxWriteTimeStampFilter", "" + Long.MAX_VALUE));
-        // batchsize set to 1 if there is a writeFilter
-        if (writeTimeStampFilter) {
-            batchSize = 1;
-        }
+
         logger.info(" DEFAULT -- Write Batch Size: " + batchSize);
         logger.info(" DEFAULT -- Source Keyspace Table: " + sourceKeyspaceTable);
         logger.info(" DEFAULT -- Astra Keyspace Table: " + astraKeyspaceTable);
         logger.info(" DEFAULT -- ReadRateLimit: " + readLimiter.getRate());
         logger.info(" DEFAULT -- WriteRateLimit: " + writeLimiter.getRate());
         logger.info(" DEFAULT -- WriteTimestampFilter: " + writeTimeStampFilter);
+        logger.info(" DEFAULT -- WriteTimestampFilterCols: " + writeTimeStampCols);
+        logger.info(" DEFAULT -- isPreserveTTLWritetime: " + isPreserveTTLWritetime);
+        logger.info(" DEFAULT -- TTLCols: " + ttlCols);
 
         hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.hasRandomPartitioner", "false"));
 
@@ -95,20 +115,6 @@ public abstract class AbstractJobSession {
 
         counterDeltaMaxIndex = Integer
                 .parseInt(sparkConf.get("spark.migrate.source.counterTable.update.max.counter.index", "0"));
-
-        String writeTimestampColsStr = sparkConf.get("spark.migrate.source.writeTimeStampFilter.cols");
-        if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
-            for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
-                writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
-            }
-        }
-
-        String ttlColsStr = sparkConf.get("spark.migrate.source.ttl.cols");
-        if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
-            for (String ttlCol : ttlColsStr.split(",")) {
-                ttlCols.add(Integer.parseInt(ttlCol));
-            }
-        }
 
         String partionKey = sparkConf.get("spark.migrate.query.cols.partitionKey");
         String idCols = sparkConf.get("spark.migrate.query.cols.id");
@@ -128,7 +134,6 @@ public abstract class AbstractJobSession {
         }
 
         sourceSelectCondition = sparkConf.get("spark.migrate.query.cols.select.condition", "");
-
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
@@ -136,7 +141,6 @@ public abstract class AbstractJobSession {
         astraSelectStatement = astraSession.prepare(
                 "select " + selectCols + " from " + astraKeyspaceTable
                         + " where " + idBinds);
-
     }
 
     public List<MigrateDataType> getTypes(String types) {
@@ -146,7 +150,6 @@ public abstract class AbstractJobSession {
         }
 
         return dataTypes;
-
     }
 
     public int getLargestTTL(Row sourceRow) {
@@ -177,7 +180,6 @@ public abstract class AbstractJobSession {
     }
 
     public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
-
         if (dataType.typeClass == Map.class) {
             return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
         } else if (dataType.typeClass == List.class) {
