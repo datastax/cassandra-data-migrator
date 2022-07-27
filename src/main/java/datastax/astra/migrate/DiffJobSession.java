@@ -29,15 +29,16 @@ public class DiffJobSession extends CopyJobSession {
     private static DiffJobSession diffJobSession;
 
     private AtomicLong readCounter = new AtomicLong(0);
-    private AtomicLong diffCounter = new AtomicLong(0);
+    private AtomicLong mismatchCounter = new AtomicLong(0);
     private AtomicLong missingCounter = new AtomicLong(0);
     private AtomicLong correctedMissingCounter = new AtomicLong(0);
-    private AtomicLong validDiffCounter = new AtomicLong(0);
+    private AtomicLong correctedMismatchCounter = new AtomicLong(0);
+    private AtomicLong validCounter = new AtomicLong(0);
     private AtomicLong skippedCounter = new AtomicLong(0);
 
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
-    protected Boolean isDiffOnly = false;
-
+    protected Boolean autoCorrectMissing = false;
+    protected Boolean autoCorrectMismatch = false;
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (diffJobSession == null) {
@@ -55,7 +56,8 @@ public class DiffJobSession extends CopyJobSession {
         super(sourceSession, astraSession, sparkConf);
 
         selectColTypes = getTypes(sparkConf.get("spark.migrate.diff.select.types"));
-        isDiffOnly = Boolean.parseBoolean(sparkConf.get("spark.migrate.isDiffOnly", "false"));
+        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.mising", "false"));
+        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.mismatch", "false"));
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
@@ -105,14 +107,16 @@ public class DiffJobSession extends CopyJobSession {
     public void printCounts(String finalStr) {
         logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Record Count: "
                 + readCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Differences Count: "
-                + diffCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Missing Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Mismatch Count: "
+                + mismatchCounter.get());
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Corrected Mismatch Count: "
+                + correctedMismatchCounter.get());
+                logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Missing Count: "
                 + missingCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Corrected Missing Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Corrected Missing Count: "
                 + correctedMissingCounter.get());
         logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Valid Count: "
-                + validDiffCounter.get());
+                + validCounter.get());
         logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Skipped Count: "
                 + skippedCounter.get());
     }
@@ -123,22 +127,30 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Data is missing in Astra: " + getKey(sourceRow));
             //correct data
 
-            if (!isDiffOnly) {
+            if (autoCorrectMissing) {
                 astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
                 correctedMissingCounter.incrementAndGet();
                 logger.error("Corrected missing data in Astra: " + getKey(sourceRow));
             }
+
             return;
         }
 
         String diffData = isDifferent(sourceRow, astraRow);
         if (!diffData.isEmpty()) {
-            diffCounter.incrementAndGet();
-            logger.error("Data difference found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
+            mismatchCounter.incrementAndGet();
+            logger.error("Data mismatch found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
+
+            if (autoCorrectMismatch) {
+                astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
+                correctedMismatchCounter.incrementAndGet();
+                logger.error("Corrected mismatch data in Astra: " + getKey(sourceRow));
+            }
+
             return;
         }
 
-        validDiffCounter.incrementAndGet();
+        validCounter.incrementAndGet();
     }
 
     private String isDifferent(Row sourceRow, Row astraRow) {
