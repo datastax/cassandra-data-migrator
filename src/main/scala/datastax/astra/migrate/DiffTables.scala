@@ -1,5 +1,6 @@
 package datastax.astra.migrate
 
+import au.com.bytecode.opencsv.CSVWriter
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.`type`.{DataTypes, ListType, MapType, SetType}
@@ -8,7 +9,14 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.types.UserDefinedType
 import org.apache.spark.sql.SparkSession
+import org.json4s.JsonAST.JString
+import org.json4s.jackson.Serialization
+import org.json4s.{CustomSerializer, NoTypeHints}
 
+import java.io.{BufferedWriter, FileWriter, OutputStreamWriter}
+import java.math.BigInteger
+import java.nio.file.{Files, Path, Paths}
+import java.time.Instant
 import java.util.function.Supplier
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -25,13 +33,15 @@ import scala.sys.exit
 object DiffTables extends App {
 
   @tailrec
-  def nextArg(map: Map[String, Any], list: List[String]): Map[String, Any] = {
+  def nextArg(map: Map[String, String], list: List[String]): Map[String, String] = {
     list match {
       case Nil => map
       case "-w" :: value :: tail =>
-        nextArg(map ++ Map("writeTimeFilter" -> value.toLong), tail)
+        nextArg(map ++ Map("writeTimeFilter" -> value), tail)
       case "-t" :: value :: tail =>
         nextArg(map ++ Map("tables" -> value), tail)
+      case "-o" :: value :: tail =>
+        nextArg(map ++ Map("output" -> value), tail)
       case string :: Nil =>
         nextArg(map ++ Map("keyspace" -> string), list.tail)
       case unknown :: _ =>
@@ -51,16 +61,20 @@ object DiffTables extends App {
          |    largest write timestamp is greater than the value given
          |-t: Comma separated list of tables to be included for data validation.
          |    If not give, include all tables.
+         |-o: Output directory to write results. If not specified, "results/" in the current directory will be created and used.
          |""".stripMargin)
     exit(1)
   }
 
-  val keyspace = options("keyspace").toString
-  val includeTables = options.get("tables").map(_.toString.split(",").map(_.trim))
-  val writeTimeFilter = options.get("writeTimeFilter").map(_.asInstanceOf[Long]).orElse(Some(0L)).get
+  val keyspace = options("keyspace")
+  val includeTables = options.get("tables").map(_.split(",").map(_.trim))
+  val writeTimeFilter = options.get("writeTimeFilter").map(_.toLong).orElse(Some(0L)).get
   if (writeTimeFilter > 0) {
     println(s"""Filtering with writetime greater than $writeTimeFilter""")
   }
+
+  // Create output directory with the current timestamp
+  val outputDir = options.get("output").orElse(Some("results")).get
 
   val spark = SparkSession.builder
     .appName("Datastax Data Validation")
@@ -85,12 +99,12 @@ object DiffTables extends App {
       ks.getTables
     })
     includeTables match {
-      case Some(tableNames) => allTables.filter(entry => tableNames.contains(entry._1.asCql(true))).toMap
+      case Some(tableNames) => allTables.filter(entry => tableNames.contains(entry._1.asInternal())).toMap
       case None => allTables.toMap
     }
   }
 
-  val tasks = tables.values.toList.map(new DiffTask(spark, _, originConnector, targetConf, writeTimeFilter))
+  val tasks = tables.values.toList.map(new DiffTask(spark, _, outputDir, originConnector, targetConf, writeTimeFilter))
 
   tasks.foreach(_.run())
 }
@@ -131,6 +145,7 @@ case class Mismatch(primaryKey: Seq[Any], columns: Seq[ColumnDifference]) extend
  * @param matchCount     number of matched records
  * @param missingCount   number of missing records in target
  * @param mismatchCount  number of mismatched records
+ * @param missing        Missing information
  * @param mismatched     Mismatch information
  */
 case class Summary(processedCount: Long,
@@ -140,13 +155,24 @@ case class Summary(processedCount: Long,
                    missing: Seq[Missing],
                    mismatched: Seq[Mismatch]) extends Result
 
+class BigIntegerSerializer extends CustomSerializer[BigInteger](format => ( {
+  case JString(s) => new BigInteger(s)
+}, {
+  case i: BigInteger => JString(i.toString)
+}))
+
 class DiffTask(spark: SparkSession,
                tableMetadata: TableMetadata,
+               outputDirPath: String,
                source: CassandraConnector,
                targetConf: Map[String, String],
                writeTimeFilter: Long) extends Serializable {
 
+  val outputFilePrefix = Seq(tableMetadata.getKeyspace, tableMetadata.getName, Instant.now().toEpochMilli).mkString("-")
+
   val targetSelectStatement: String = createTargetSelectStatement()
+
+  val primaryKeyColumns: Seq[String] = tableMetadata.getPrimaryKey.map(pk => pk.getName.asInternal())
 
   def run(): Unit = {
     // Load from source
@@ -178,16 +204,16 @@ class DiffTask(spark: SparkSession,
           var primaryKeys = Seq[AnyRef]()
           tableMetadata.getPrimaryKey.foreach(pk => {
             val dataType = tableMetadata.getColumns.get(pk.getName).getType
-            val data = row.get[AnyRef](pk.getName.asCql(true))
+            val data = row.get[AnyRef](pk.getName.asInternal())
             primaryKeys = primaryKeys :+ data
             val codec: TypeCodec[AnyRef] = builder.codecRegistry().codecFor(dataType)
-            builder.set(pk.getName.asCql(true), data, codec)
+            builder.set(pk.getName.asInternal(), data, codec)
           })
           val result = session.execute(builder.build())
-          val columns = result.getColumnDefinitions.map(c => c.getName.asCql(true)).toIndexedSeq
           if (result.isEmpty) {
             Missing(primaryKeys)
           } else {
+            val columns = result.getColumnDefinitions.map(c => c.getName.asInternal()).toIndexedSeq
             val targetRow = CassandraRow.fromJavaDriverRow(result.one(),
               CassandraRowMetadata.fromResultSet(columns, result, session))
             compareRow(primaryKeys, row, targetRow)
@@ -210,30 +236,63 @@ class DiffTask(spark: SparkSession,
     }
 
     // Final result
-    println(tableMetadata.getKeyspace + "." + tableMetadata.getName)
-    printResult(summary)
+    val outputDir = Paths.get(outputDirPath)
+    if (!Files.exists(outputDir)) {
+      Files.createDirectories(outputDir)
+    }
+    outputResult(summary)
   }
 
-  def printResult[R <: Result](result: R): Unit = {
+  def outputResult[R <: Result](result: R): Unit = {
     result match {
       case Summary(processedCount, matchCount, missingCount, mismatchCount, missing, mismatched) =>
-        println(s"""Processed records: $processedCount""")
-        println(s"""  Matched records: $matchCount""")
-        println(s"""  Missing records: $missingCount""")
-        println(s""" Mismatch records: $mismatchCount""")
-        println("Missing records =====")
-        missing.foreach(printResult)
-        println("Mismatched records =====")
-        mismatched.foreach(printResult)
-      case Missing(primaryKey) => println(s"""    ${primaryKey.mkString(", ")}""")
-      case Mismatch(primaryKey, columns) =>
-        println(s"""    Key: ${primaryKey.mkString(", ")}""")
-        columns.foreach {
-          case ColumnDifference(column, source, target) =>
-            println(s"""        Column: $column""")
-            println(s"""            Source: $source""")
-            println(s"""            Target: $target""")
+        val writer = Files.newBufferedWriter(Paths.get(outputDirPath, outputFilePrefix + "-summary.log"))
+        try {
+          writer.append(s"""Processed records: $processedCount""")
+          writer.newLine()
+          writer.write(s"""  Matched records: $matchCount""")
+          writer.newLine()
+          writer.write(s"""  Missing records: $missingCount""")
+          writer.newLine()
+          writer.write(s""" Mismatch records: $mismatchCount""")
+          writer.newLine()
+        } finally {
+          writer.close()
         }
+        outMissing(missing)
+        outMismatch(mismatched)
+    }
+  }
+
+  def outMissing(missing: Seq[Missing]): Unit = {
+    if (missing.isEmpty) return
+
+    val writer = new CSVWriter(Files.newBufferedWriter(Paths.get(outputDirPath, outputFilePrefix + "-missing.csv")))
+    try {
+      writer.writeNext(primaryKeyColumns.toArray)
+      missing.foreach {
+        case Missing(primaryKey) => writer.writeNext(primaryKey.map(_.toString).toArray)
+      }
+    } finally {
+      writer.close()
+    }
+  }
+
+  def outMismatch(mismatches: Seq[Mismatch]): Unit = {
+    if (mismatches.isEmpty) return
+
+    implicit val fmt = Serialization.formats(NoTypeHints) + new BigIntegerSerializer//org.json4s.DefaultFormats + new BigIntegerSerializer
+
+    val writer = new CSVWriter(Files.newBufferedWriter(Paths.get(outputDirPath, outputFilePrefix + "-mismatch.csv")))
+    try {
+      writer.writeNext((primaryKeyColumns :+ "diff").toArray)
+      mismatches.foreach {
+        case Mismatch(primaryKey, columns) =>
+          val diff = Serialization.write(columns)
+          writer.writeNext((primaryKey :+ diff).map(_.toString).toArray)
+      }
+    } finally {
+      writer.close()
     }
   }
 
@@ -248,7 +307,7 @@ class DiffTask(spark: SparkSession,
   def compareRow(primaryKeys: Seq[AnyRef], source: CassandraRow, target: CassandraRow): Result = {
     val columns = tableMetadata.getColumns.values.filterNot(tableMetadata.getPrimaryKey.contains)
     val differences = columns.map(c => {
-      val columnName = c.getName.asCql(true)
+      val columnName = c.getName.asInternal()
       val sourceColumn = source.get[Option[AnyRef]](columnName)
       val targetColumn = target.get[Option[AnyRef]](columnName)
 
