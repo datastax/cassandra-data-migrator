@@ -13,10 +13,11 @@ import org.json4s.JsonAST.JString
 import org.json4s.jackson.Serialization
 import org.json4s.{CustomSerializer, NoTypeHints}
 
-import java.io.{BufferedWriter, FileWriter, OutputStreamWriter}
 import java.math.BigInteger
-import java.nio.file.{Files, Path, Paths}
-import java.time.Instant
+import java.net.InetAddress
+import java.nio.file.{Files, Paths}
+import java.time.{Instant, LocalDate, LocalTime}
+import java.util.UUID
 import java.util.function.Supplier
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -155,10 +156,40 @@ case class Summary(processedCount: Long,
                    missing: Seq[Missing],
                    mismatched: Seq[Mismatch]) extends Result
 
-class BigIntegerSerializer extends CustomSerializer[BigInteger](format => ( {
+class BigIntegerSerializer extends CustomSerializer[BigInteger](_ => ( {
   case JString(s) => new BigInteger(s)
 }, {
   case i: BigInteger => JString(i.toString)
+}))
+
+class InetSerializer extends CustomSerializer[InetAddress](_ => ({
+  case JString(s) => InetAddress.getByName(s)
+}, {
+  case inet: InetAddress => JString(inet.toString)
+}))
+
+class UUIDSerializer extends CustomSerializer[UUID](_ => ( {
+  case JString(s) => UUID.fromString(s)
+}, {
+  case uuid: UUID => JString(uuid.toString)
+}))
+
+class InstantSerializer extends CustomSerializer[Instant](_ => ( {
+  case JString(s) => Instant.parse(s)
+}, {
+  case inst: Instant => JString(inst.toString)
+}))
+
+class LocalDateSerializer extends CustomSerializer[LocalDate](_ => ( {
+  case JString(s) => LocalDate.from(Instant.parse(s))
+}, {
+  case date: LocalDate => JString(date.toString)
+}))
+
+class LocalTimeSerializer extends CustomSerializer[LocalTime](_ => ( {
+  case JString(s) => LocalTime.from(Instant.parse(s))
+}, {
+  case t: LocalTime => JString(t.toString)
 }))
 
 class DiffTask(spark: SparkSession,
@@ -168,7 +199,7 @@ class DiffTask(spark: SparkSession,
                targetConf: Map[String, String],
                writeTimeFilter: Long) extends Serializable {
 
-  val outputFilePrefix = Seq(tableMetadata.getKeyspace, tableMetadata.getName, Instant.now().toEpochMilli).mkString("-")
+  val outputFilePrefix: String = Seq(tableMetadata.getKeyspace, tableMetadata.getName, Instant.now().toEpochMilli).mkString("-")
 
   val targetSelectStatement: String = createTargetSelectStatement()
 
@@ -281,7 +312,13 @@ class DiffTask(spark: SparkSession,
   def outMismatch(mismatches: Seq[Mismatch]): Unit = {
     if (mismatches.isEmpty) return
 
-    implicit val fmt = Serialization.formats(NoTypeHints) + new BigIntegerSerializer//org.json4s.DefaultFormats + new BigIntegerSerializer
+    implicit val fmt = Serialization.formats(NoTypeHints) +
+      new BigIntegerSerializer +
+      new InetSerializer +
+      new UUIDSerializer +
+      new LocalDateSerializer +
+      new LocalTimeSerializer +
+      new InstantSerializer
 
     val writer = new CSVWriter(Files.newBufferedWriter(Paths.get(outputDirPath, outputFilePrefix + "-mismatch.csv")))
     try {
