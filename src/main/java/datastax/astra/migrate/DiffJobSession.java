@@ -56,7 +56,7 @@ public class DiffJobSession extends CopyJobSession {
         super(sourceSession, astraSession, sparkConf);
 
         selectColTypes = getTypes(sparkConf.get("spark.migrate.diff.select.types"));
-        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.mising", "false"));
+        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.missing", "false"));
         autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.mismatch", "false"));
     }
 
