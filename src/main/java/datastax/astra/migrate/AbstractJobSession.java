@@ -94,10 +94,16 @@ public abstract class AbstractJobSession {
             }
         }
 
-        minWriteTimeStampFilter = new Long(
-                sparkConf.get("spark.migrate.source.minWriteTimeStampFilter", "0"));
-        maxWriteTimeStampFilter = new Long(
-                sparkConf.get("spark.migrate.source.maxWriteTimeStampFilter", "" + Long.MAX_VALUE));
+        String minWriteTimeStampFilterStr =
+                sparkConf.get("spark.migrate.source.minWriteTimeStampFilter", "0");
+        if (null != minWriteTimeStampFilterStr && minWriteTimeStampFilterStr.trim().length() > 1) {
+            minWriteTimeStampFilter = Long.parseLong(minWriteTimeStampFilterStr);
+        }
+        String maxWriteTimeStampFilterStr =
+                sparkConf.get("spark.migrate.source.maxWriteTimeStampFilter", "0");
+        if (null != maxWriteTimeStampFilterStr && maxWriteTimeStampFilterStr.trim().length() > 1) {
+            maxWriteTimeStampFilter = Long.parseLong(maxWriteTimeStampFilterStr);
+        }
 
         logger.info(" DEFAULT -- Write Batch Size: " + batchSize);
         logger.info(" DEFAULT -- Source Keyspace Table: " + sourceKeyspaceTable);
