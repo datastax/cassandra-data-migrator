@@ -81,6 +81,10 @@ public class MigrateDataType {
                 return UdtValue.class;
             case 17:
                 return BigInteger.class;
+            case 90:
+                return StringCompressSpace.class;
+            case 91:
+                return StringLZ4compress.class;
         }
 
         return Object.class;

@@ -5,9 +5,12 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import net.jpountz.lz4.LZ4Compressor;
+import net.jpountz.lz4.LZ4Factory;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +19,6 @@ import java.util.Set;
 public abstract class AbstractJobSession {
 
     public static Logger logger = Logger.getLogger(AbstractJobSession.class);
-
-    protected PreparedStatement sourceSelectStatement;
-    protected String sourceSelectCondition;
-
-    protected PreparedStatement astraSelectStatement;
-
     // Read/Write Rate limiter
     // Determine the total throughput for the entire cluster in terms of wries/sec,
     // reads/sec
@@ -30,6 +27,9 @@ public abstract class AbstractJobSession {
     // Rate = Total Throughput (write/read per sec) / Total Executors
     protected final RateLimiter readLimiter;
     protected final RateLimiter writeLimiter;
+    protected PreparedStatement sourceSelectStatement;
+    protected String sourceSelectCondition;
+    protected PreparedStatement astraSelectStatement;
     protected Integer maxRetries = 10;
 
     protected CqlSession sourceSession;
@@ -53,6 +53,7 @@ public abstract class AbstractJobSession {
     protected String astraKeyspaceTable;
 
     protected Boolean hasRandomPartitioner;
+    protected LZ4Factory factory = LZ4Factory.fastestInstance();
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         this.sourceSession = sourceSession;
@@ -191,6 +192,25 @@ public abstract class AbstractJobSession {
             if (data == null) {
                 return new Long(0);
             }
+        } else if (dataType.typeClass == StringCompressSpace.class) {
+            String val = sourceRow.get(index, String.class);
+            if (null == val || val.trim().length() == 0) {
+                return "";
+            }
+            return val.trim().replaceAll("\\s{2,}", " ");
+        } else if (dataType.typeClass == StringLZ4compress.class) {
+            String val = sourceRow.get(index, String.class);
+            if (null == val || val.trim().length() == 0) {
+                return "";
+            }
+
+            byte[] data = val.getBytes(StandardCharsets.UTF_8);
+            final int decompressedLength = data.length;
+            LZ4Compressor compressor = factory.fastCompressor();
+            int maxCompressedLength = compressor.maxCompressedLength(decompressedLength);
+            byte[] compressed = new byte[maxCompressedLength];
+            compressor.compress(data, 0, decompressedLength, compressed, 0, maxCompressedLength);
+            return compressed.toString();
         }
 
         return sourceRow.get(index, dataType.typeClass);

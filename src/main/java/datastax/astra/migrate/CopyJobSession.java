@@ -187,7 +187,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
         if (isCounterTable) {
-
             BoundStatement boundInsertStatement = insertStatement.bind();
             for (int index = 0; index < insertColTypes.size(); index++) {
                 MigrateDataType dataType = insertColTypes.get(index);
@@ -200,7 +199,6 @@ public class CopyJobSession extends AbstractJobSession {
             }
 
             return boundInsertStatement;
-
         } else {
             BoundStatement boundInsertStatement = insertStatement.bind();
             int index = 0;
@@ -209,6 +207,9 @@ public class CopyJobSession extends AbstractJobSession {
 
                 try {
                     Object colData = getData(dataType, index, sourceRow);
+                    if (dataType.typeClass.equals(StringCompressSpace.class) || dataType.typeClass.equals(StringLZ4compress.class)) {
+                        dataType.typeClass = String.class;
+                    }
                     if(index < idColTypes.size() && colData==null && dataType.typeClass==String.class){
                         colData="";
                     }
