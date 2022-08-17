@@ -81,7 +81,8 @@ public class CopyJobSession extends AbstractJobSession {
 
                 // cannot do batching if the writeFilter is greater than 0 or
                 // maxWriteTimeStampFilter is less than max long
-                if (batchSize == 1 || writeTimeStampFilter) {
+                // do not batch for counters as it adds latency & increases chance of discrepancy
+                if (batchSize == 1 || writeTimeStampFilter || isCounterTable) {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
@@ -124,13 +125,7 @@ public class CopyJobSession extends AbstractJobSession {
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
-                        Row astraRow = null;
-                        if (isCounterTable) {
-                            ResultSet astraReadResultSet = astraSession
-                                    .execute(selectFromAstra(astraSelectStatement, sourceRow));
-                            astraRow = astraReadResultSet.one();
-                        }
-                        batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, astraRow));
+                        batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
                         // if batch threshold is met, send the writes and clear the batch
                         if (batchStatement.size() >= batchSize) {
