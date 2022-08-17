@@ -10,6 +10,7 @@ import net.jpountz.lz4.LZ4Factory;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -204,7 +205,7 @@ public abstract class AbstractJobSession {
                 return "";
             }
             return val.trim().replaceAll("\\s{2,}", " ");
-        } else if (dataType.typeClass == StringLZ4compress.class) {
+        } else if (dataType.typeClass == StringLZ4compress.class || dataType.typeClass == BlobLZ4compress.class) {
             String val = sourceRow.get(index, String.class);
             if (null == val || val.trim().length() == 0) {
                 return "";
@@ -215,8 +216,13 @@ public abstract class AbstractJobSession {
             LZ4Compressor compressor = factory.fastCompressor();
             int maxCompressedLength = compressor.maxCompressedLength(decompressedLength);
             byte[] compressed = new byte[maxCompressedLength];
-            compressor.compress(data, 0, decompressedLength, compressed, 0, maxCompressedLength);
-            return compressed.toString();
+            int len = compressor.compress(data, 0, decompressedLength, compressed, 0, maxCompressedLength);
+
+            if (dataType.typeClass == StringLZ4compress.class) {
+                return new String(Arrays.copyOfRange(compressed, 0, len), StandardCharsets.UTF_8);
+            } else {
+                return ByteBuffer.wrap(compressed, 0, len);
+            }
         }
 
         return sourceRow.get(index, dataType.typeClass);

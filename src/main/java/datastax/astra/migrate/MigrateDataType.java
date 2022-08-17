@@ -85,6 +85,8 @@ public class MigrateDataType {
                 return StringCompressSpace.class;
             case 91:
                 return StringLZ4compress.class;
+            case 92:
+                return BlobLZ4compress.class;
         }
 
         return Object.class;

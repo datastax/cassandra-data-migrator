@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -203,8 +204,11 @@ public class CopyJobSession extends AbstractJobSession {
                     if (dataType.equals(StringCompressSpace.class) || dataType.equals(StringLZ4compress.class)) {
                         dataType = String.class;
                     }
-                    if(index < idColTypes.size() && colData==null && dataType==String.class){
-                        colData="";
+                    if (dataType.equals(BlobLZ4compress.class)) {
+                        dataType = ByteBuffer.class;
+                    }
+                    if (index < idColTypes.size() && colData == null && dataType == String.class) {
+                        colData = "";
                     }
                     boundInsertStatement = boundInsertStatement.set(index, colData, dataType);
                 } catch (NullPointerException e) {
