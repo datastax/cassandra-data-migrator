@@ -76,7 +76,7 @@ public class CopyJobSession extends AbstractJobSession {
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner? min : min.longValueExact(), hasRandomPartitioner? max : max.longValueExact()));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
@@ -85,7 +85,7 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        if(writeTimeStampFilter) {
+                        if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
                             if (sourceWriteTimeStamp < minWriteTimeStampFilter
@@ -99,22 +99,16 @@ public class CopyJobSession extends AbstractJobSession {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
                                     + readCounter.get());
                         }
-                        if (minWriteTimeStampFilter > 0l) {
-                            Row astraRow = null;
-                            if (isCounterTable) {
-                                ResultSet astraReadResultSet = astraSession
-                                        .execute(selectFromAstra(astraSelectStatement, sourceRow));
-                                astraRow = astraReadResultSet.one();
-                            }
-
-                            CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
-                                    .executeAsync(bindInsert(astraInsertStatement, sourceRow, astraRow));
-                            writeResults.add(astraWriteResultSet);
-                        } else {
-                            CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
-                                    .executeAsync(bindInsert(astraInsertStatement, sourceRow));
-                            writeResults.add(astraWriteResultSet);
+                        Row astraRow = null;
+                        if (isCounterTable) {
+                            ResultSet astraReadResultSet = astraSession
+                                    .execute(selectFromAstra(astraSelectStatement, sourceRow));
+                            astraRow = astraReadResultSet.one();
                         }
+
+                        CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
+                                .executeAsync(bindInsert(astraInsertStatement, sourceRow, astraRow));
+                        writeResults.add(astraWriteResultSet);
                         if (writeResults.size() > 1000) {
                             iterateAndClearWriteResults(writeResults, 1);
                         }
@@ -124,13 +118,19 @@ public class CopyJobSession extends AbstractJobSession {
                     iterateAndClearWriteResults(writeResults, 1);
                 } else {
                     BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-                    for (Row row : resultSet) {
+                    for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
-                        batchStatement = batchStatement.add(bindInsert(astraInsertStatement, row));
+                        Row astraRow = null;
+                        if (isCounterTable) {
+                            ResultSet astraReadResultSet = astraSession
+                                    .execute(selectFromAstra(astraSelectStatement, sourceRow));
+                            astraRow = astraReadResultSet.one();
+                        }
+                        batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, astraRow));
 
                         // if batch threshold is met, send the writes and clear the batch
                         if (batchStatement.size() >= batchSize) {
@@ -166,11 +166,9 @@ public class CopyJobSession extends AbstractJobSession {
             }
         }
 
-
-
     }
 
-    private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception{
+    private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
@@ -181,41 +179,34 @@ public class CopyJobSession extends AbstractJobSession {
         writeResults.clear();
     }
 
-    public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow) {
-        return bindInsert(insertStatement, sourceRow, null);
-    }
-
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
-        if (isCounterTable) {
+        BoundStatement boundInsertStatement = insertStatement.bind();
 
-            BoundStatement boundInsertStatement = insertStatement.bind();
+        if (isCounterTable) {
             for (int index = 0; index < insertColTypes.size(); index++) {
                 MigrateDataType dataType = insertColTypes.get(index);
                 // compute the counter delta if reading from astra for the difference
                 if (astraRow != null && isCounterTable && index <= counterDeltaMaxIndex) {
-                    boundInsertStatement = boundInsertStatement.set(index,getCounterDelta(sourceRow.getLong(updateSelectMapping.get(index)), astraRow.getLong(updateSelectMapping.get(index))),Long.class);
+                    boundInsertStatement = boundInsertStatement.set(index, getCounterDelta(sourceRow.getLong(updateSelectMapping.get(index)), astraRow.getLong(updateSelectMapping.get(index))), Long.class);
                 } else {
                     boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
                 }
             }
-
-            return boundInsertStatement;
-
         } else {
-            BoundStatement boundInsertStatement = insertStatement.bind();
             int index = 0;
             for (index = 0; index < insertColTypes.size(); index++) {
-                MigrateDataType dataType = insertColTypes.get(index);
+                MigrateDataType dataTypeObj = insertColTypes.get(index);
+                Class dataType = dataTypeObj.typeClass;
 
                 try {
-                    Object colData = getData(dataType, index, sourceRow);
-                    if(index < idColTypes.size() && colData==null && dataType.typeClass==String.class){
-                        colData="";
+                    Object colData = getData(dataTypeObj, index, sourceRow);
+                    if (index < idColTypes.size() && colData == null && dataType == String.class) {
+                        colData = "";
                     }
-                    boundInsertStatement = boundInsertStatement.set(index, colData, dataType.typeClass);
+                    boundInsertStatement = boundInsertStatement.set(index, colData, dataType);
                 } catch (NullPointerException e) {
                     // ignore the exception for map values being null
-                    if (dataType.typeClass != Map.class) {
+                    if (dataType != Map.class) {
                         throw e;
                     }
                 }
@@ -226,9 +217,9 @@ public class CopyJobSession extends AbstractJobSession {
                 index++;
                 boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow), Long.class);
             }
-            return boundInsertStatement;
-
         }
+
+        return boundInsertStatement;
     }
 
     public Long getCounterDelta(Long sourceRow, Long astraRow) {
