@@ -128,7 +128,7 @@ public class DiffJobSession extends CopyJobSession {
             //correct data
 
             if (autoCorrectMissing) {
-                astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
+                astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMissingCounter.incrementAndGet();
                 logger.error("Corrected missing data in Astra: " + getKey(sourceRow));
             }
@@ -142,7 +142,7 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Data mismatch found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
 
             if (autoCorrectMismatch) {
-                astraSession.execute(bindInsert(astraInsertStatement, sourceRow));
+                astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Corrected mismatch data in Astra: " + getKey(sourceRow));
             }
