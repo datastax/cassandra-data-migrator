@@ -3,7 +3,7 @@
 
   <groupId>com.datastax.spark.example</groupId>
   <artifactId>migrate</artifactId>
-  <version>0.16</version>
+  <version>0.17</version>
   <packaging>jar</packaging>
 
   <properties>
