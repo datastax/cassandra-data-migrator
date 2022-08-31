@@ -1,7 +1,7 @@
 package datastax.astra.migrate
 
 import au.com.bytecode.opencsv.CSVWriter
-import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.{ConsistencyLevel, CqlIdentifier}
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.`type`.{DataTypes, ListType, MapType, SetType}
 import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, TableMetadata}
@@ -240,7 +240,7 @@ class DiffTask(spark: SparkSession,
             val codec: TypeCodec[AnyRef] = builder.codecRegistry().codecFor(dataType)
             builder.set(pk.getName.asInternal(), data, codec)
           })
-          val result = session.execute(builder.build())
+          val result = session.execute(builder.build().setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM))
           if (result.isEmpty) {
             Missing(primaryKeys)
           } else {
