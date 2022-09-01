@@ -41,6 +41,10 @@ object DiffTables extends App {
         nextArg(map ++ Map("writeTimeFilter" -> value), tail)
       case "-t" :: value :: tail =>
         nextArg(map ++ Map("tables" -> value), tail)
+      case "-i" :: value :: tail =>
+        nextArg(map ++ Map("includedColumns" -> value), tail)
+      case "-e" :: value :: tail =>
+        nextArg(map ++ Map("excludedColumns" -> value), tail)
       case "-o" :: value :: tail =>
         nextArg(map ++ Map("output" -> value), tail)
       case string :: Nil =>
@@ -63,12 +67,30 @@ object DiffTables extends App {
          |-t: Comma separated list of tables to be included for data validation.
          |    If not give, include all tables.
          |-o: Output directory to write results. If not specified, "results/" in the current directory will be created and used.
+         |-i: Column names separated by comma to include from verification. Primary key columns are always included. This can only be
+         |    specified if only one table is selected with '-t' option.
+         |-e: Column names separated by comma to exclude from verification. This cannot be primary key columns. This can only be
+         |    specified if only one table is selected with '-t' option.
          |""".stripMargin)
     exit(1)
   }
 
   val keyspace = options("keyspace")
   val includeTables = options.get("tables").map(_.split(",").map(_.trim))
+  val includedColumns = options.get("includedColumns").map(_.split(",").map(_.trim)).map(_.toSet)
+  val excludedColumns = options.get("excludedColumns").map(_.split(",").map(_.trim)).map(_.toSet)
+  val numTables = includeTables.map(_.length).getOrElse(0)
+  val numIncludedColumns = includedColumns.map(_.size).getOrElse(0)
+  val numExcludedColumns = excludedColumns.map(_.size).getOrElse(0)
+  if (numIncludedColumns > 0 && numExcludedColumns > 0) {
+    println(s"""Cannot specify -i/-e at the same time""")
+    exit(1)
+  }
+  if ((numIncludedColumns > 0 || numExcludedColumns > 0) && numTables != 1) {
+    // having included/excluded columns with more than one table is invalid
+    println(s"""Specify only one table using `-t` option to include/exclude columns""")
+    exit(1)
+  }
   val writeTimeFilter = options.get("writeTimeFilter").map(_.toLong).orElse(Some(0L)).get
   if (writeTimeFilter > 0) {
     println(s"""Filtering with writetime greater than $writeTimeFilter""")
@@ -105,7 +127,10 @@ object DiffTables extends App {
     }
   }
 
-  val tasks = tables.values.toList.map(new DiffTask(spark, _, outputDir, originConnector, targetConf, writeTimeFilter))
+  val tasks = tables.values.toList.map(new DiffTask(spark, _,
+    outputDir, originConnector, targetConf, writeTimeFilter,
+    includedColumns.getOrElse(Set.empty),
+    excludedColumns.getOrElse(Set.empty)))
 
   tasks.foreach(_.run())
 }
@@ -197,13 +222,27 @@ class DiffTask(spark: SparkSession,
                outputDirPath: String,
                source: CassandraConnector,
                targetConf: Map[String, String],
-               writeTimeFilter: Long) extends Serializable {
+               writeTimeFilter: Long,
+               includedColumns: Set[String],
+               excludedColumns: Set[String]) extends Serializable {
 
   val outputFilePrefix: String = Seq(tableMetadata.getKeyspace, tableMetadata.getName, Instant.now().toEpochMilli).mkString("-")
 
-  val targetSelectStatement: String = createTargetSelectStatement()
-
   val primaryKeyColumns: Seq[String] = tableMetadata.getPrimaryKey.map(pk => pk.getName.asInternal())
+
+  def columnFilter: ((CqlIdentifier, ColumnMetadata)) => Boolean = {
+    case (name, _) =>
+      // no double quotes when comparing
+      val columnName = name.asInternal()
+      // primary key column is always included
+      if (primaryKeyColumns.contains(columnName)) {
+        true
+      } else {
+        !excludedColumns.contains(columnName) && (includedColumns.isEmpty || includedColumns.contains(columnName))
+      }
+  }
+
+  val targetSelectStatement: String = createTargetSelectStatement()
 
   def run(): Unit = {
     // Load from source
@@ -342,7 +381,7 @@ class DiffTask(spark: SparkSession,
    * @return Result matching result
    */
   def compareRow(primaryKeys: Seq[AnyRef], source: CassandraRow, target: CassandraRow): Result = {
-    val columns = tableMetadata.getColumns.values.filterNot(tableMetadata.getPrimaryKey.contains)
+    val columns = tableMetadata.getColumns.filter(columnFilter).values.filterNot(tableMetadata.getPrimaryKey.contains)
     val differences = columns.map(c => {
       val columnName = c.getName.asInternal()
       val sourceColumn = source.get[Option[AnyRef]](columnName)
@@ -383,7 +422,7 @@ class DiffTask(spark: SparkSession,
   def columnsToSelect(writeTime: Boolean, ttl: Boolean): Seq[ColumnRef] = {
     val isCounterTable = tableMetadata.getColumns.values().exists(_.getType == DataTypes.COUNTER)
     val primaryKeys = tableMetadata.getPrimaryKey.map(column => column.getName).toSet
-    tableMetadata.getColumns.flatMap {
+    tableMetadata.getColumns.filter(columnFilter).flatMap {
       case (name, meta) =>
         val columnName = name.asCql(true)
         var cols: Seq[ColumnRef] = Seq(ColumnName(columnName))
