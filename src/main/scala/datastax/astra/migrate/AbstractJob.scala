@@ -5,6 +5,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
 import java.math.BigInteger
+import java.lang.Long
 
 class AbstractJob extends App {
 
@@ -43,8 +44,9 @@ class AbstractJob extends App {
 
   val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
   val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
-
+  val coveragePercent = sc.getConf.get("spark.migrate.coveragePercent", "100")
   val splitSize = sc.getConf.get("spark.migrate.splitSize", "10000")
+  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition,Integer.parseInt(coveragePercent))
 
   var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword, sourceReadConsistencyLevel,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);

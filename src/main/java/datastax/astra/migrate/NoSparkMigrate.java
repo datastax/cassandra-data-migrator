@@ -22,7 +22,7 @@ public class NoSparkMigrate {
         String splitSize = System.getProperty("spark.migrate.splitSize","10000");
         BigInteger minPartition = new BigInteger(System.getProperty("spark.migrate.source.minPartition"));
         BigInteger maxPartition = new BigInteger(System.getProperty("spark.migrate.source.maxPartition"));
-        Collection<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition);
+        Collection<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition, 100);
 
 /*
         partitions.parallelStream().forEach( part ->
