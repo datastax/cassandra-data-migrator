@@ -17,27 +17,7 @@ tar -xvzf <spark downloaded file name>
 # Steps:
 
 1. sparkConf.properties file needs to be configured as applicable for the environment
-   > A sample Spark conf file configuration can be found here: `astra-spark-migration-ranges/src/resources/sparkConf.properties`
-
-```
-Example of the conf file is below: -
-spark.migrate.source.isAstra                                    false
-spark.migrate.source.host                                       <host contact point>
-spark.migrate.source.username                                   <username>
-spark.migrate.source.password                                   <password>
-spark.migrate.source.read.consistency.level                     LOCAL_QUORUM
-spark.migrate.source.keyspaceTable                              test.a1
-
-spark.migrate.destination.isAstra                               true
-spark.migrate.destination.scb                                   file:///aaa/bbb/secure-connect-enterprise.zip
-spark.migrate.destination.username                              <astra-client-id>
-spark.migrate.destination.password                              <astra-client-secret>
-spark.migrate.destination.read.consistency.level                LOCAL_QUORUM
-spark.migrate.destination.keyspaceTable                         test.a2
-spark.migrate.destination.autocorrect.missing                   false
-spark.migrate.destination.autocorrect.mismatch                  false
-```
-
+   > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
 2. Place the conf file where it can be accessed while running the job via spark-submit.
 3. Generate a fat jar (`migrate-0.x.jar`) using command `mvn clean package`
 4. Run the 'Data Migration' job using `spark-submit` command as shown below:
