@@ -76,7 +76,7 @@ object DiffMetaData extends App {
 
   private def diffTable(sourceConnection: CassandraConnector, astraConnection: CassandraConnector, minPartition:BigInteger, maxPartition:BigInteger) = {
 
-    val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition)
+    val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition, 100)
     val parts = sc.parallelize(partitions.toSeq,partitions.size);
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession => astraConnection.withSessionDo(astraSession=>DiffMetaJobSession.getInstance(sourceSession,astraSession, sc.getConf).getDataDiffAndCorrect(part.getMin, part.getMax)))

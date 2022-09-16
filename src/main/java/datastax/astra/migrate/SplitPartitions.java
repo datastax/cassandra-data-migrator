@@ -15,57 +15,28 @@ public class SplitPartitions {
     public final static Long MIN_PARTITION = Long.MIN_VALUE;
     public final static Long MAX_PARTITION  = Long.MAX_VALUE;
 
-    public static final BigInteger MIN_RANDOM = new BigInteger("-1");
-    public static final BigInteger MAX_RANDOM = (new BigInteger("2")).pow(127);
-
-
     public static void main(String[] args){
-        Collection<Partition> partitions = getSubPartitions(new BigInteger("20"), MIN_RANDOM, MAX_RANDOM);
+        Collection<Partition> partitions = getSubPartitions(new BigInteger("20"), BigInteger.valueOf(MIN_PARTITION),
+                BigInteger.valueOf(MAX_PARTITION), 20);
         for(Partition partition: partitions){
             System.out.println(partition);
         }
     }
-    public static Collection<Partition> getRandomSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max){
 
+    public static Collection<Partition> getRandomSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent){
         logger.info("TreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
-        List<Partition> partitions = getSubPartitions(splitSize,min,max);
+        List<Partition> partitions = getSubPartitions(splitSize,min,max, coveragePercent);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
         return partitions;
     }
-//    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max){
-//        long curMax = min.longValueExact();
-//        long partitionSize =  max.subtract(min).divide(splitSize).longValueExact();
-//        List<Partition> partitions = new ArrayList<Partition>();
-//        if(partitionSize==0){
-//            partitionSize=100000;
-//        }
-//        boolean exausted = false;
-//        while(curMax<=max.longValueExact()){
-//            long curMin = curMax;
-//            long newCurMax = curMin + partitionSize;
-//            if (newCurMax < curMax) {
-//                newCurMax = max.longValueExact();
-//                exausted = true;
-//            }
-//            if(newCurMax > max.longValueExact()){
-//                newCurMax=max.longValueExact();
-//                exausted=true;
-//            }
-//            curMax = newCurMax;
-//            partitions.add(new Partition(curMin,curMax));
-//            if(exausted){
-//                break;
-//            }
-//        }
-//
-//        return partitions;
-//    }
 
-
-    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max){
+    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent){
+        if (coveragePercent < 1 || coveragePercent > 100) {
+            coveragePercent = 100;
+        }
         BigInteger curMax = new BigInteger(min.toString());
         BigInteger partitionSize =  max.subtract(min).divide(splitSize);
         List<Partition> partitions = new ArrayList<Partition>();
@@ -85,7 +56,10 @@ public class SplitPartitions {
                 exausted=true;
             }
             curMax = newCurMax;
-            partitions.add(new Partition(curMin,curMax));
+
+            BigInteger range = curMax.subtract(curMin);
+            BigInteger curRange = range.multiply(BigInteger.valueOf(coveragePercent)).divide(BigInteger.valueOf(100));
+            partitions.add(new Partition(curMin,curMin.add(curRange)));
             if(exausted){
                 break;
             }
@@ -94,21 +68,16 @@ public class SplitPartitions {
         return partitions;
     }
 
-
-
     public static class Partition implements Serializable{
         private static final long serialVersionUID = 1L;
 
         private BigInteger min;
         private BigInteger max;
 
-
         public Partition(BigInteger min, BigInteger max){
             this.min = min;
             this.max = max;
         }
-
-
 
         public BigInteger getMin() {
             return min;
@@ -119,9 +88,7 @@ public class SplitPartitions {
         }
 
         public String toString(){
-//            return "--conf spark.migrate.source.minPartition="+ min + " --conf spark.migrate.source.maxPartition=" + max;
-
-            return "select * from field_api.field_users where token(account_id,field_id)>="+ min + " and token(account_id,field_id)<=" + max  + "  and account_id=ee8556f4-9a1a-4c89-ae05-e8105d42ed6f allow  filtering; ";
+            return "Processing partition for token range "+ min + " to " + max;
         }
     }
 }
