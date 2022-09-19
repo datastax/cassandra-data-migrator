@@ -24,6 +24,7 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
+    private Row sourceRow;
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (copyJobSession == null) {
@@ -86,6 +87,11 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
+                        //TODO add for resource_action == "COPY REVISION"
+                        String resourceAction = (String)getData(new MigrateDataType("0"), 2, sourceRow);
+                        if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION"))
+                            continue;
+
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
@@ -122,6 +128,12 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
+
+                        //TODO add for resource_action == "COPY REVISION"
+                        String resourceAction = (String)getData(new MigrateDataType("0"), 2, sourceRow);
+                        if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION"))
+                            continue;
+
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
