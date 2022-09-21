@@ -19,7 +19,7 @@ public abstract class AbstractJobSession {
 
     protected PreparedStatement sourceSelectStatement;
     protected String sourceSelectCondition;
-
+    protected Boolean trimColumnRow;
     protected PreparedStatement astraSelectStatement;
 
     // Read/Write Rate limiter
@@ -116,7 +116,7 @@ public abstract class AbstractJobSession {
         logger.info(" DEFAULT -- TTLCols: " + ttlCols);
 
         hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.hasRandomPartitioner", "false"));
-
+        trimColumnRow = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.trimColumnRow", "false"));
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable", "false"));
 
         counterDeltaMaxIndex = Integer

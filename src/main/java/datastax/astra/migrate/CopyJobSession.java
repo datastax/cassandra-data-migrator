@@ -2,9 +2,11 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,9 +89,9 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        //TODO add for resource_action == "COPY REVISION"
+                        GetRowColumnLength(sourceRow, trimColumnRow);
                         String resourceAction = (String)getData(new MigrateDataType("0"), 2, sourceRow);
-                        if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION"))
+                        if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
                             continue;
 
                         if (writeTimeStampFilter) {
@@ -129,9 +131,9 @@ public class CopyJobSession extends AbstractJobSession {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
 
-                        //TODO add for resource_action == "COPY REVISION"
+                        GetRowColumnLength(sourceRow, trimColumnRow);
                         String resourceAction = (String)getData(new MigrateDataType("0"), 2, sourceRow);
-                        if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION"))
+                        if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
                             continue;
 
                         if (readCounter.incrementAndGet() % 1000 == 0) {
@@ -173,6 +175,26 @@ public class CopyJobSession extends AbstractJobSession {
             }
         }
 
+    }
+
+    private void GetRowColumnLength(Row sourceRow, boolean flag) {
+        //TODO Serialize Row get char length get byte size off of char length
+        // add flag to either skip or trim row -- Add method for refactor
+        int index = 0;
+        for (index = 0; index < insertColTypes.size(); index++) {
+            MigrateDataType dataTypeObj = insertColTypes.get(index);
+            Object colData = getData(dataTypeObj, index, sourceRow);
+            Serializable sobj = colData.toString();
+            byte[] colBytes = SerializationUtils.serialize(sobj);
+            if(colBytes.length > 10000000)
+            {
+                if(flag)
+                    colData.toString().trim();
+                else
+                    continue;
+            }
+
+        }
     }
 
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
