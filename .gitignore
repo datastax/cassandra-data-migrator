@@ -3,3 +3,4 @@ target/
 .metals/*
 .vscode/*
 dependency-reduced-pom.xml
+.idea/*
