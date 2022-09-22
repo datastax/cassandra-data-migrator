@@ -1,4 +1,4 @@
-# astra-spark-migration-ranges
+# cassandra-data-migrator
 
 Spark jobs in this repo can be used for data migration and data validation.
 
@@ -19,7 +19,7 @@ tar -xvzf <spark downloaded file name>
 1. sparkConf.properties file needs to be configured as applicable for the environment
    > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
 2. Place the conf file where it can be accessed while running the job via spark-submit.
-3. Generate a fat jar (`migrate-0.x.jar`) using command `mvn clean package`
+3. Generate a fat jar (`cassandra-data-migrator-1.x.jar`) using command `mvn clean package`
 4. Run the 'Data Migration' job using `spark-submit` command as shown below:
 
 ```
@@ -27,7 +27,7 @@ tar -xvzf <spark downloaded file name>
 --master "local[*]" /
 --conf spark.migrate.source.minPartition=-9223372036854775808 /
 --conf spark.migrate.source.maxPartition=9223372036854775807 /
---class datastax.astra.migrate.Migrate migrate-0.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-1.x.jar &> logfile_name.txt
 ```
 
 Note: Above command also generates a log file `logfile_name.txt` to avoid log output on the console.
@@ -42,7 +42,7 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 --master "local[*]" /
 --conf spark.migrate.source.minPartition=-9223372036854775808 /
 --conf spark.migrate.source.maxPartition=9223372036854775807 /
---class datastax.astra.migrate.DiffData migrate-0.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.DiffData cassandra-data-migrator-1.x.jar &> logfile_name.txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
