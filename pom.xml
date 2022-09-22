@@ -2,72 +2,52 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>datastax.astra.migrate</groupId>
-  <artifactId>migrate</artifactId>
-  <version>0.18</version>
+  <artifactId>cassandra-data-migrator</artifactId>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>2.11.8</scala.version>
     <scala.main.version>2.11</scala.main.version>
-    <spark.version>2.4.0</spark.version>
-    <scalatest.version>3.0.0</scalatest.version>
-    <connector.version>2.5.1</connector.version>
+    <spark.version>2.4.8</spark.version>
+    <scalatest.version>3.2.12</scalatest.version>
+    <connector.version>2.5.2</connector.version>
     <cassandra.version>3.11.6</cassandra.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.2</junit.version>
   </properties>
 
-  <!--
-    Please make sure that following dependencies have versions corresponding to the ones in your cluster.
-    Note that spark-cassandra-connector should be provided with '&#45;&#45;packages' flag to spark-submit command.
-  -->
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>18.0</version>
+      <version>31.1-jre</version>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
-      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
-      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
-      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-hive_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
-      <!--      <scope>provided</scope>-->
     </dependency>
     <dependency>
       <groupId>com.datastax.spark</groupId>
       <artifactId>spark-cassandra-connector_${scala.main.version}</artifactId>
       <version>${connector.version}</version>
-      <!--      <scope>provided</scope>-->
     </dependency>
-    <!--Your dependencies, 'provided' are not included in jar-->
-    <!--<dependency>-->
-    <!--<groupId>org.apache.commons</groupId>-->
-    <!--<artifactId>commons-math3</artifactId>-->
-    <!--<version>3.6.1</version>-->
-    <!--</dependency>-->
-    <!--<dependency>-->
-    <!--<groupId>org.apache.commons</groupId>-->
-    <!--<artifactId>commons-csv</artifactId>-->
-    <!--<version>1.0</version>-->
-    <!--</dependency>-->
 
     <!-- Test Dependencies -->
     <dependency>
