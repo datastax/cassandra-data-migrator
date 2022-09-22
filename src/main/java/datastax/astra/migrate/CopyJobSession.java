@@ -5,9 +5,11 @@ import com.datastax.oss.driver.api.core.cql.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import py4j.Base64;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -89,11 +91,33 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        GetRowColumnLength(sourceRow, trimColumnRow);
-                        String resourceAction = (String)getData(new MigrateDataType("0"), 2, sourceRow);
-                        if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
-                            continue;
+//                        int index = 0;
+//                        for (index = 0; index < insertColTypes.size(); index++) {
+//                            MigrateDataType dataTypeObj = insertColTypes.get(index);
+                            Object colData = getData(new MigrateDataType("6%16"), 2, sourceRow);
+                            byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
+                            if (colBytes.length > 10000000)
+                            {
+                                String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
+                                String sm_rot_id = (String)getData(new MigrateDataType("9"), 1, sourceRow);
+                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id);
+                                continue;
+                            }
+//                        }
+//                        int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
+//                        if(rowColcnt > 10000000)
+//                        {
+//                            String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
+//                            String sm_rot_id = (String)getData(new MigrateDataType("0"), 1, sourceRow);
+//                            logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id);
+//                            continue;
+//                        }
 
+                        if(sourceKeyspaceTable.endsWith("resource_status")) {
+                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
+                            if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
+                                continue;
+                        }
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
@@ -131,10 +155,32 @@ public class CopyJobSession extends AbstractJobSession {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
 
-                        GetRowColumnLength(sourceRow, trimColumnRow);
-                        String resourceAction = (String)getData(new MigrateDataType("0"), 2, sourceRow);
-                        if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
+//                        int index = 0;
+//                        for (index = 0; index < insertColTypes.size(); index++) {
+//                            MigrateDataType dataTypeObj = insertColTypes.get(index);
+                        Object colData = getData(new MigrateDataType("6%16"), 2, sourceRow);
+                        byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
+                        if (colBytes.length > 10000000)
+                        {
+                            String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
+                            String sm_rot_id = (String)getData(new MigrateDataType("9"), 1, sourceRow);
+                            logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id);
                             continue;
+                        }
+//                        }
+//                        int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
+//                        if(rowColcnt > 10000000)
+//                        {
+//                            String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
+//                            String sm_rot_id = (String)getData(new MigrateDataType("0"), 1, sourceRow);
+//                            logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id);
+//                            continue;
+//                        }
+                        if(sourceKeyspaceTable.endsWith("resource_status")) {
+                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
+                            if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
+                                continue;
+                        }
 
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
@@ -177,24 +223,22 @@ public class CopyJobSession extends AbstractJobSession {
 
     }
 
-    private void GetRowColumnLength(Row sourceRow, boolean flag) {
+    private int GetRowColumnLength(Row sourceRow, boolean flag) {
         //TODO Serialize Row get char length get byte size off of char length
         // add flag to either skip or trim row -- Add method for refactor
+        int i = 0;
         int index = 0;
         for (index = 0; index < insertColTypes.size(); index++) {
             MigrateDataType dataTypeObj = insertColTypes.get(index);
             Object colData = getData(dataTypeObj, index, sourceRow);
-            Serializable sobj = colData.toString();
-            byte[] colBytes = SerializationUtils.serialize(sobj);
-            if(colBytes.length > 10000000)
-            {
-                if(flag)
-                    colData.toString().trim();
-                else
-                    continue;
-            }
-
+            //Serializable sobj = colData.toString();
+            //byte[] colBytes = SerializationUtils.serialize(sobj);
+            byte[] colBytes = Base64.decode(colData.toString());
+            i = colBytes.length;
+            if (colBytes.length > 10000000)
+                return i;
         }
+        return i;
     }
 
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
