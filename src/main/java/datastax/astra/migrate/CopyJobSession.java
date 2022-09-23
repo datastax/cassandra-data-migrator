@@ -10,10 +10,7 @@ import py4j.Base64;
 import java.io.Serializable;
 import java.math.BigInteger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -96,13 +93,14 @@ public class CopyJobSession extends AbstractJobSession {
 //                            MigrateDataType dataTypeObj = insertColTypes.get(index);
                             Object colData = getData(new MigrateDataType("6%16"), 2, sourceRow);
                             byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
-                            if (colBytes.length > 10000000)
-                            {
-                                String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
-                                String sm_rot_id = (String)getData(new MigrateDataType("9"), 1, sourceRow);
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id);
-                                continue;
-                            }
+                        if (colBytes.length > 1024*1024*10)
+                        {
+                            String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
+                            UUID sm_rot_id = (UUID)getData(new MigrateDataType("9"), 1, sourceRow);
+                            logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
+                                    + " - rotation_set length: " + colBytes.length);
+                            continue;
+                        }
 //                        }
 //                        int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
 //                        if(rowColcnt > 10000000)
@@ -160,11 +158,12 @@ public class CopyJobSession extends AbstractJobSession {
 //                            MigrateDataType dataTypeObj = insertColTypes.get(index);
                         Object colData = getData(new MigrateDataType("6%16"), 2, sourceRow);
                         byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
-                        if (colBytes.length > 10000000)
+                        if (colBytes.length > 1024*1024*10)
                         {
                             String adv_id = (String)getData(new MigrateDataType("0"), 0, sourceRow);
-                            String sm_rot_id = (String)getData(new MigrateDataType("9"), 1, sourceRow);
-                            logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id);
+                            UUID sm_rot_id = (UUID)getData(new MigrateDataType("9"), 1, sourceRow);
+                            logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
+                                    + " - rotation_set length: " + colBytes.length);
                             continue;
                         }
 //                        }
