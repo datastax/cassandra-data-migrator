@@ -34,6 +34,7 @@ public abstract class AbstractJobSession {
 
     protected CqlSession sourceSession;
     protected CqlSession astraSession;
+    protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
 
     protected Integer batchSize = 1;
@@ -47,7 +48,6 @@ public abstract class AbstractJobSession {
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
-    protected Integer counterDeltaMaxIndex = 0;
 
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
@@ -117,11 +117,8 @@ public abstract class AbstractJobSession {
 
         hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.source.hasRandomPartitioner", "false"));
 
-        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.source.counterTable", "false"));
-
-        counterDeltaMaxIndex = Integer
-                .parseInt(sparkConf.get("spark.source.counterTable.update.max.counter.index", "0"));
-
+        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.counterTable", "false"));
+        selectColTypes = getTypes(sparkConf.get("spark.diff.select.types"));
         String partionKey = sparkConf.get("spark.query.cols.partitionKey");
         String idCols = sparkConf.get("spark.query.cols.id");
         idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));

@@ -28,7 +28,6 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong validCounter = new AtomicLong(0);
     private AtomicLong skippedCounter = new AtomicLong(0);
 
-    protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected Boolean autoCorrectMissing = false;
     protected Boolean autoCorrectMismatch = false;
 
@@ -47,7 +46,6 @@ public class DiffJobSession extends CopyJobSession {
     private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         super(sourceSession, astraSession, sparkConf);
 
-        selectColTypes = getTypes(sparkConf.get("spark.diff.select.types"));
         autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.missing", "false"));
         autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.mismatch", "false"));
     }
@@ -134,7 +132,11 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Data mismatch found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
 
             if (autoCorrectMismatch) {
-                astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
+                if (isCounterTable) {
+                    astraSession.execute(bindInsert(astraInsertStatement, sourceRow, astraRow));
+                } else {
+                    astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
+                }
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Corrected mismatch data in Astra: " + getKey(sourceRow));
             }
