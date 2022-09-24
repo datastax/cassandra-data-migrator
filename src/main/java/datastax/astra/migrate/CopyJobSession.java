@@ -40,8 +40,8 @@ public class CopyJobSession extends AbstractJobSession {
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         super(sourceSession, astraSession, sparkConf);
 
-        String insertCols = sparkConf.get("spark.migrate.query.cols.insert");
-        insertColTypes = getTypes(sparkConf.get("spark.migrate.query.cols.insert.types"));
+        String insertCols = sparkConf.get("spark.query.cols.insert");
+        insertColTypes = getTypes(sparkConf.get("spark.query.cols.insert.types"));
         String insertBinds = "";
         int count = 1;
         for (String str : insertCols.split(",")) {
@@ -54,12 +54,12 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         if (isCounterTable) {
-            String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
+            String updateSelectMappingStr = sparkConf.get("spark.source.counterTable.update.select.index", "0");
             for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
                 updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
             }
 
-            String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
+            String counterTableUpdate = sparkConf.get("spark.source.counterTable.update.cql");
             astraInsertStatement = astraSession.prepare(counterTableUpdate);
         } else {
             if (isPreserveTTLWritetime) {

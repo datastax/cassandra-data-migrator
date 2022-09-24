@@ -15,14 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
-/*
-(
-    data_id text,
-    cylinder text,
-    value blob,
-    PRIMARY KEY (data_id, cylinder)
-)
- */
 public class DiffJobSession extends CopyJobSession {
 
     public static Logger logger = Logger.getLogger(DiffJobSession.class);
@@ -55,9 +47,9 @@ public class DiffJobSession extends CopyJobSession {
     private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         super(sourceSession, astraSession, sparkConf);
 
-        selectColTypes = getTypes(sparkConf.get("spark.migrate.diff.select.types"));
-        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.missing", "false"));
-        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.mismatch", "false"));
+        selectColTypes = getTypes(sparkConf.get("spark.diff.select.types"));
+        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.missing", "false"));
+        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.mismatch", "false"));
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {

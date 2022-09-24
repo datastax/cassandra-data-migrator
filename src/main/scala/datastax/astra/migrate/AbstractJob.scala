@@ -16,36 +16,36 @@ class AbstractJob extends App {
 
   val sc = spark.sparkContext
 
-  val sourceIsAstra = sc.getConf.get("spark.migrate.source.isAstra", "false")
-  val sourceScbPath = sc.getConf.get("spark.migrate.source.scb", "")
-  val sourceHost = sc.getConf.get("spark.migrate.source.host", "")
-  val sourceUsername = sc.getConf.get("spark.migrate.source.username")
-  val sourcePassword = sc.getConf.get("spark.migrate.source.password")
-  val sourceReadConsistencyLevel = sc.getConf.get("spark.migrate.source.read.consistency.level", "LOCAL_QUORUM")
-  val sourceTrustStorePath = sc.getConf.get("spark.migrate.source.trustStore.path", "")
-  val sourceTrustStorePassword = sc.getConf.get("spark.migrate.source.trustStore.password", "")
-  val sourceTrustStoreType = sc.getConf.get("spark.migrate.source.trustStore.type", "JKS")
-  val sourceKeyStorePath = sc.getConf.get("spark.migrate.source.keyStore.path", "")
-  val sourceKeyStorePassword = sc.getConf.get("spark.migrate.source.keyStore.password", "")
-  val sourceEnabledAlgorithms = sc.getConf.get("spark.migrate.source.enabledAlgorithms", "")
+  val sourceIsAstra = sc.getConf.get("spark.source.isAstra", "false")
+  val sourceScbPath = sc.getConf.get("spark.source.scb", "")
+  val sourceHost = sc.getConf.get("spark.source.host", "")
+  val sourceUsername = sc.getConf.get("spark.source.username", "")
+  val sourcePassword = sc.getConf.get("spark.source.password", "")
+  val sourceReadConsistencyLevel = sc.getConf.get("spark.source.read.consistency.level", "LOCAL_QUORUM")
+  val sourceTrustStorePath = sc.getConf.get("spark.source.trustStore.path", "")
+  val sourceTrustStorePassword = sc.getConf.get("spark.source.trustStore.password", "")
+  val sourceTrustStoreType = sc.getConf.get("spark.source.trustStore.type", "JKS")
+  val sourceKeyStorePath = sc.getConf.get("spark.source.keyStore.path", "")
+  val sourceKeyStorePassword = sc.getConf.get("spark.source.keyStore.password", "")
+  val sourceEnabledAlgorithms = sc.getConf.get("spark.source.enabledAlgorithms", "")
 
-  val destinationIsAstra = sc.getConf.get("spark.migrate.destination.isAstra", "true")
-  val destinationScbPath = sc.getConf.get("spark.migrate.destination.scb", "")
-  val destinationHost = sc.getConf.get("spark.migrate.destination.host", "")
-  val destinationUsername = sc.getConf.get("spark.migrate.destination.username")
-  val destinationPassword = sc.getConf.get("spark.migrate.destination.password")
-  val destinationReadConsistencyLevel = sc.getConf.get("spark.migrate.destination.read.consistency.level", "LOCAL_QUORUM")
-  val destinationTrustStorePath = sc.getConf.get("spark.migrate.destination.trustStore.path", "")
-  val destinationTrustStorePassword = sc.getConf.get("spark.migrate.destination.trustStore.password", "")
-  val destinationTrustStoreType = sc.getConf.get("spark.migrate.destination.trustStore.type", "JKS")
-  val destinationKeyStorePath = sc.getConf.get("spark.migrate.destination.keyStore.path", "")
-  val destinationKeyStorePassword = sc.getConf.get("spark.migrate.destination.keyStore.password", "")
-  val destinationEnabledAlgorithms = sc.getConf.get("spark.migrate.destination.enabledAlgorithms", "")
+  val destinationIsAstra = sc.getConf.get("spark.destination.isAstra", "true")
+  val destinationScbPath = sc.getConf.get("spark.destination.scb", "")
+  val destinationHost = sc.getConf.get("spark.destination.host", "")
+  val destinationUsername = sc.getConf.get("spark.destination.username")
+  val destinationPassword = sc.getConf.get("spark.destination.password")
+  val destinationReadConsistencyLevel = sc.getConf.get("spark.destination.read.consistency.level", "LOCAL_QUORUM")
+  val destinationTrustStorePath = sc.getConf.get("spark.destination.trustStore.path", "")
+  val destinationTrustStorePassword = sc.getConf.get("spark.destination.trustStore.password", "")
+  val destinationTrustStoreType = sc.getConf.get("spark.destination.trustStore.type", "JKS")
+  val destinationKeyStorePath = sc.getConf.get("spark.destination.keyStore.path", "")
+  val destinationKeyStorePassword = sc.getConf.get("spark.destination.keyStore.password", "")
+  val destinationEnabledAlgorithms = sc.getConf.get("spark.destination.enabledAlgorithms", "")
 
-  val minPartition = new BigInteger(sc.getConf.get("spark.migrate.source.minPartition"))
-  val maxPartition = new BigInteger(sc.getConf.get("spark.migrate.source.maxPartition"))
-  val coveragePercent = sc.getConf.get("spark.migrate.coveragePercent", "100")
-  val splitSize = sc.getConf.get("spark.migrate.splitSize", "10000")
+  val minPartition = new BigInteger(sc.getConf.get("spark.source.minPartition","-9223372036854775808"))
+  val maxPartition = new BigInteger(sc.getConf.get("spark.source.maxPartition","9223372036854775807"))
+  val coveragePercent = sc.getConf.get("spark.coveragePercent", "100")
+  val splitSize = sc.getConf.get("spark.splitSize", "10000")
   val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition,Integer.parseInt(coveragePercent))
 
   var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword, sourceReadConsistencyLevel,
@@ -68,7 +68,7 @@ class AbstractJob extends App {
     }
 
     if ("true".equals(isAstra)) {
-      abstractLogger.info(connType + ": Connected to Astra!");
+      abstractLogger.info(connType + ": Connected to Astra using SCB: " + scbPath);
 
       return CassandraConnector(sc.getConf
         .set("spark.cassandra.auth.username", username)
@@ -76,7 +76,7 @@ class AbstractJob extends App {
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
     } else if (null != trustStorePath && !trustStorePath.trim.isEmpty) {
-      abstractLogger.info(connType + ": Connected to Cassandra (or DSE) with SSL!");
+      abstractLogger.info(connType + ": Connected to Cassandra (or DSE) with SSL host: " + host);
 
       // Use defaults when not provided
       var enabledAlgorithmsVar = enabledAlgorithms
@@ -99,7 +99,7 @@ class AbstractJob extends App {
         .set("spark.cassandra.connection.ssl.clientAuth.enabled", "true")
       )
     } else {
-      abstractLogger.info(connType + ": Connected to Cassandra (or DSE)!");
+      abstractLogger.info(connType + ": Connected to Cassandra (or DSE) host: " + host);
 
       return CassandraConnector(sc.getConf.set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
