@@ -1,7 +1,7 @@
 package datastax.astra.migrate
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
@@ -9,7 +9,7 @@ import scala.collection.JavaConversions._
 
 object Migrate extends AbstractJob {
 
-  val logger = Logger.getLogger(this.getClass.getName)
+  val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")
 
   migrateTable(sourceConnection, destinationConnection)

@@ -44,8 +44,10 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 - Validation job will report differences as “ERRORS” in the log file as shown below
 
 ```
-22/02/16 12:41:15 ERROR DiffJobSession: Data is missing in Astra: e7cd5752-bc0d-4157-a80f-7523add8dbcd
-22/02/16 12:41:15 ERROR DiffJobSession: Data difference found -  Key: 1 Data:  (Index: 3 Source: [val-A, val-B] Astra: [val-A, val-B, val-C] )
+22/09/27 11:21:24 ERROR DiffJobSession: Data mismatch found -  Key: ek-1 %% mn1 %% c1 %% true Data:  (Index: 4 Source: 30 Astra: 20 )
+22/09/27 11:21:24 ERROR DiffJobSession: Corrected mismatch data in Astra: ek-1 %% mn1 %% c1 %% true
+22/09/27 11:21:24 ERROR DiffJobSession: Data is missing in Astra: ek-2 %% mn2 %% c2 %% true
+22/09/27 11:21:24 ERROR DiffJobSession: Corrected missing data in Astra: ek-2 %% mn2 %% c2 %% true
 ```
 
 - Please grep for all `ERROR` from the output log files to get the list of missing and mismatched records.
