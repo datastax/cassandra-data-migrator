@@ -5,10 +5,10 @@ wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.6
 --driver-memory 8G
 
 // Migrate
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=9223372036854775807 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-1.x.jar
+spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-1.x.jar
 
 // Random Partitioner Run Command
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-1 --conf spark.migrate.source.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-1.x.jar
+spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --conf spark.source.minPartition=-1 --conf spark.source.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-1.x.jar
 
 // Diff Data
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --conf spark.migrate.source.minPartition=-9223372036854775808 --conf spark.migrate.source.maxPartition=9223372036854775807 --class datastax.astra.migrate.DiffData /<path>/cassandra-data-migrator-1.x.jar
+spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --class datastax.astra.migrate.DiffData /<path>/cassandra-data-migrator-1.x.jar

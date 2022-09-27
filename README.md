@@ -25,8 +25,6 @@ tar -xvzf <spark downloaded file name>
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---conf spark.migrate.source.minPartition=-9223372036854775808 /
---conf spark.migrate.source.maxPartition=9223372036854775807 /
 --class datastax.astra.migrate.Migrate cassandra-data-migrator-1.x.jar &> logfile_name.txt
 ```
 
@@ -40,8 +38,6 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---conf spark.migrate.source.minPartition=-9223372036854775808 /
---conf spark.migrate.source.maxPartition=9223372036854775807 /
 --class datastax.astra.migrate.DiffData cassandra-data-migrator-1.x.jar &> logfile_name.txt
 ```
 
@@ -60,8 +56,8 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 - Enable/disable this feature using one or both of the below setting in the config file
 
 ```
-spark.migrate.destination.autocorrect.missing                   true|false
-spark.migrate.destination.autocorrect.mismatch                  true|false
+spark.destination.autocorrect.missing                   true|false
+spark.destination.autocorrect.mismatch                  true|false
 ```
 
 # Additional features

@@ -40,8 +40,8 @@ public class CopyJobSession extends AbstractJobSession {
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         super(sourceSession, astraSession, sparkConf);
 
-        String insertCols = sparkConf.get("spark.migrate.query.cols.insert");
-        insertColTypes = getTypes(sparkConf.get("spark.migrate.query.cols.insert.types"));
+        String insertCols = sparkConf.get("spark.query.cols.insert");
+        insertColTypes = getTypes(sparkConf.get("spark.query.cols.insert.types"));
         String insertBinds = "";
         int count = 1;
         for (String str : insertCols.split(",")) {
@@ -54,12 +54,12 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         if (isCounterTable) {
-            String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
+            String updateSelectMappingStr = sparkConf.get("spark.counterTable.cql.index", "0");
             for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
                 updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
             }
 
-            String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
+            String counterTableUpdate = sparkConf.get("spark.counterTable.cql");
             astraInsertStatement = astraSession.prepare(counterTableUpdate);
         } else {
             if (isPreserveTTLWritetime) {
@@ -181,8 +181,8 @@ public class CopyJobSession extends AbstractJobSession {
             for (int index = 0; index < insertColTypes.size(); index++) {
                 MigrateDataType dataType = insertColTypes.get(index);
                 // compute the counter delta if reading from astra for the difference
-                if (astraRow != null && isCounterTable && index <= counterDeltaMaxIndex) {
-                    boundInsertStatement = boundInsertStatement.set(index, getCounterDelta(sourceRow.getLong(updateSelectMapping.get(index)), astraRow.getLong(updateSelectMapping.get(index))), Long.class);
+                if (astraRow != null && index < (selectColTypes.size() - idColTypes.size())) {
+                    boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
                 } else {
                     boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
                 }
@@ -215,10 +215,6 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return boundInsertStatement;
-    }
-
-    public Long getCounterDelta(Long sourceRow, Long astraRow) {
-        return sourceRow - astraRow;
     }
 
 }
