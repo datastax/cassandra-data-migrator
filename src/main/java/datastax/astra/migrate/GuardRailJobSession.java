@@ -4,7 +4,8 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.spark.SparkConf;
 
 import java.io.Serializable;
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class GuardRailJobSession extends BaseJobSession  {
 
-    public static Logger logger = Logger.getLogger(GuardRailJobSession.class);
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private static GuardRailJobSession guardRailJobSession;
     protected AtomicLong readCounter = new AtomicLong(0);
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();

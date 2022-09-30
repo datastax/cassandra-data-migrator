@@ -2,8 +2,10 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
-import org.apache.log4j.Logger;
+
 import org.apache.spark.SparkConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -15,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyJobSession extends AbstractJobSession {
 
-    public static Logger logger = Logger.getLogger(CopyJobSession.class);
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private static CopyJobSession copyJobSession;
 
     protected PreparedStatement astraInsertStatement;

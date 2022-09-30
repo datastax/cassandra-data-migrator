@@ -2,11 +2,11 @@ package datastax.astra.migrate
 
 import java.math.BigInteger
 import java.lang.Long
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.apache.spark.sql.SparkSession
 
 class BaseJob extends App {
-  val abstractLogger = Logger.getLogger(this.getClass.getName)
+  val abstractLogger = LoggerFactory.getLogger(this.getClass.getName)
   val spark = SparkSession.builder
     .appName("Datastax Data Validation")
     .getOrCreate()
