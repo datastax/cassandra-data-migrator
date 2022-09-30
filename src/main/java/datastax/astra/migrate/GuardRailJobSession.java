@@ -18,9 +18,7 @@ public class GuardRailJobSession extends BaseJobSession  {
     public static Logger logger = Logger.getLogger(GuardRailJobSession.class);
     private static GuardRailJobSession guardRailJobSession;
     protected AtomicLong readCounter = new AtomicLong(0);
-    protected AtomicLong writeCounter = new AtomicLong(0);
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
-
 
     public static GuardRailJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
         if (guardRailJobSession == null) {
@@ -36,8 +34,6 @@ public class GuardRailJobSession extends BaseJobSession  {
 
     protected GuardRailJobSession(CqlSession sourceSession, SparkConf sparkConf) {
         this.sourceSession = sourceSession;
-
-
         batchSize = new Integer(sparkConf.get("spark.migrate.batchSize", "1"));
         printStatsAfter = new Integer(sparkConf.get("spark.migrate.printStatsAfter", "100000"));
         if (printStatsAfter < 1) {
@@ -68,7 +64,6 @@ public class GuardRailJobSession extends BaseJobSession  {
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
-
 
     }
 
@@ -105,8 +100,6 @@ public class GuardRailJobSession extends BaseJobSession  {
                                 continue;
                         }
 
-
-
                     }
 
                 } else {
@@ -141,7 +134,6 @@ public class GuardRailJobSession extends BaseJobSession  {
 
 
                 logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Write Record Count: " + writeCounter.get());
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount, e);
