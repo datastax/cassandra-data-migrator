@@ -4,28 +4,19 @@ import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
-/*
-(
-    data_id text,
-    cylinder text,
-    value blob,
-    PRIMARY KEY (data_id, cylinder)
-)
- */
 public class DiffJobSession extends CopyJobSession {
 
-    public static Logger logger = Logger.getLogger(DiffJobSession.class);
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private static DiffJobSession diffJobSession;
 
     private AtomicLong readCounter = new AtomicLong(0);
@@ -36,7 +27,6 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong validCounter = new AtomicLong(0);
     private AtomicLong skippedCounter = new AtomicLong(0);
 
-    protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected Boolean autoCorrectMissing = false;
     protected Boolean autoCorrectMismatch = false;
 
@@ -55,9 +45,8 @@ public class DiffJobSession extends CopyJobSession {
     private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         super(sourceSession, astraSession, sparkConf);
 
-        selectColTypes = getTypes(sparkConf.get("spark.migrate.diff.select.types"));
-        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.missing", "false"));
-        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.migrate.destination.autocorrect.mismatch", "false"));
+        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.missing", "false"));
+        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.mismatch", "false"));
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
@@ -142,7 +131,11 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Data mismatch found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
 
             if (autoCorrectMismatch) {
-                astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
+                if (isCounterTable) {
+                    astraSession.execute(bindInsert(astraInsertStatement, sourceRow, astraRow));
+                } else {
+                    astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
+                }
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Corrected mismatch data in Astra: " + getKey(sourceRow));
             }

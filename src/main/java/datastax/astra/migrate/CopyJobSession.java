@@ -2,15 +2,14 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
-import org.apache.commons.lang.SerializationUtils;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
-import py4j.Base64;
 
-import java.io.Serializable;
 import java.math.BigInteger;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -25,7 +24,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
-    private Row sourceRow;
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (copyJobSession == null) {
@@ -88,23 +86,6 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        if(sourceKeyspaceTable.endsWith("smart_rotations")) {
-                            int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
-                            if (rowColcnt > 1024 * 1024 * 10) {
-                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
-                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
-                                        + " - rotation_set length: " + rowColcnt);
-                                continue;
-                            }
-                        }
-
-                        if(sourceKeyspaceTable.endsWith("resource_status")) {
-                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
-                                continue;
-                        }
-
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
@@ -120,7 +101,6 @@ public class CopyJobSession extends AbstractJobSession {
                                     + readCounter.get());
                         }
                         Row astraRow = null;
-
                         if (isCounterTable) {
                             ResultSet astraReadResultSet = astraSession
                                     .execute(selectFromAstra(astraSelectStatement, sourceRow));
@@ -133,7 +113,6 @@ public class CopyJobSession extends AbstractJobSession {
                         if (writeResults.size() > 1000) {
                             iterateAndClearWriteResults(writeResults, 1);
                         }
-
                     }
 
                     // clear the write resultset in-case it didnt mod at 1000 above
@@ -143,28 +122,9 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
-
-                        if (sourceKeyspaceTable.endsWith("smart_rotations")) {
-                            int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
-                            if (rowColcnt > 1024 * 1024 * 10) {
-                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
-                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
-                                        + " - rotation_set length: " + rowColcnt);
-                                continue;
-                            }
-                        }
-
-                        if (sourceKeyspaceTable.endsWith("resource_status")) {
-                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
-                                continue;
-                        }
-
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
-
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
                         // if batch threshold is met, send the writes and clear the batch
@@ -177,18 +137,17 @@ public class CopyJobSession extends AbstractJobSession {
                         if (writeResults.size() * batchSize > 1000) {
                             iterateAndClearWriteResults(writeResults, batchSize);
                         }
+                    }
 
+                    // clear the write resultset in-case it didnt mod at 1000 above
+                    iterateAndClearWriteResults(writeResults, batchSize);
 
-                        // clear the write resultset in-case it didnt mod at 1000 above
-                        iterateAndClearWriteResults(writeResults, batchSize);
-
-                        // if there are any pending writes because the batchSize threshold was not met, then write and clear them
-                        if (batchStatement.size() > 0) {
-                            CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
-                            writeResults.add(writeResultSet);
-                            iterateAndClearWriteResults(writeResults, batchStatement.size());
-                            batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-                        }
+                    // if there are any pending writes because the batchSize threshold was not met, then write and clear them
+                    if (batchStatement.size() > 0) {
+                        CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                        writeResults.add(writeResultSet);
+                        iterateAndClearWriteResults(writeResults, batchStatement.size());
+                        batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                     }
                 }
 
@@ -202,16 +161,6 @@ public class CopyJobSession extends AbstractJobSession {
             }
         }
 
-    }
-
-    private int GetRowColumnLength(Row sourceRow, boolean flag) {
-        int i = 0;
-        Object colData = getData(new MigrateDataType("6%16"), 2, sourceRow);
-        byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
-        i = colBytes.length;
-        if (i > 1024*1024*10)
-            return i;
-        return i;
     }
 
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
