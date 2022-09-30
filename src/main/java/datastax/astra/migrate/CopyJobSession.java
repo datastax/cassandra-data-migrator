@@ -120,6 +120,7 @@ public class CopyJobSession extends AbstractJobSession {
                                     + readCounter.get());
                         }
                         Row astraRow = null;
+
                         if (isCounterTable) {
                             ResultSet astraReadResultSet = astraSession
                                     .execute(selectFromAstra(astraSelectStatement, sourceRow));
@@ -132,6 +133,7 @@ public class CopyJobSession extends AbstractJobSession {
                         if (writeResults.size() > 1000) {
                             iterateAndClearWriteResults(writeResults, 1);
                         }
+
                     }
 
                     // clear the write resultset in-case it didnt mod at 1000 above
@@ -142,7 +144,7 @@ public class CopyJobSession extends AbstractJobSession {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
 
-                        if(sourceKeyspaceTable.endsWith("smart_rotations")) {
+                        if (sourceKeyspaceTable.endsWith("smart_rotations")) {
                             int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
                             if (rowColcnt > 1024 * 1024 * 10) {
                                 String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
@@ -153,7 +155,7 @@ public class CopyJobSession extends AbstractJobSession {
                             }
                         }
 
-                        if(sourceKeyspaceTable.endsWith("resource_status")) {
+                        if (sourceKeyspaceTable.endsWith("resource_status")) {
                             String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
                             if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
                                 continue;
@@ -162,6 +164,7 @@ public class CopyJobSession extends AbstractJobSession {
                         if (readCounter.incrementAndGet() % 1000 == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
+
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
                         // if batch threshold is met, send the writes and clear the batch
@@ -174,17 +177,18 @@ public class CopyJobSession extends AbstractJobSession {
                         if (writeResults.size() * batchSize > 1000) {
                             iterateAndClearWriteResults(writeResults, batchSize);
                         }
-                    }
 
-                    // clear the write resultset in-case it didnt mod at 1000 above
-                    iterateAndClearWriteResults(writeResults, batchSize);
 
-                    // if there are any pending writes because the batchSize threshold was not met, then write and clear them
-                    if (batchStatement.size() > 0) {
-                        CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
-                        writeResults.add(writeResultSet);
-                        iterateAndClearWriteResults(writeResults, batchStatement.size());
-                        batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
+                        // clear the write resultset in-case it didnt mod at 1000 above
+                        iterateAndClearWriteResults(writeResults, batchSize);
+
+                        // if there are any pending writes because the batchSize threshold was not met, then write and clear them
+                        if (batchStatement.size() > 0) {
+                            CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                            writeResults.add(writeResultSet);
+                            iterateAndClearWriteResults(writeResults, batchStatement.size());
+                            batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
+                        }
                     }
                 }
 
