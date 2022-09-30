@@ -1,6 +1,7 @@
 package datastax.astra.migrate;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -11,7 +12,7 @@ import java.util.List;
 
 public class SplitPartitions {
 
-    public static Logger logger = Logger.getLogger(SplitPartitions.class);
+    public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
     public final static Long MIN_PARTITION = Long.MIN_VALUE;
     public final static Long MAX_PARTITION  = Long.MAX_VALUE;
 

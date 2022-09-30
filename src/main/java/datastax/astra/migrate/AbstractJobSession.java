@@ -5,8 +5,9 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.Set;
 
 public abstract class AbstractJobSession {
 
-    public static Logger logger = Logger.getLogger(AbstractJobSession.class);
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     protected PreparedStatement sourceSelectStatement;
     protected String sourceSelectCondition;
