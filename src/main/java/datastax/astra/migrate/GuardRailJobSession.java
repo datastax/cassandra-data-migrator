@@ -153,8 +153,5 @@ public class GuardRailJobSession extends BaseJobSession  {
         return i;
     }
 
-    public Long getCounterDelta(Long sourceRow, Long astraRow) {
-        return sourceRow - astraRow;
-    }
 
 }
