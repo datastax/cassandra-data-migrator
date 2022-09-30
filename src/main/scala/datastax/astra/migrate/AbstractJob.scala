@@ -1,11 +1,6 @@
 package datastax.astra.migrate
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.log4j.Logger
-import org.apache.spark.sql.SparkSession
-
-import java.math.BigInteger
-import java.lang.Long
 
 class AbstractJob extends BaseJob {
 
