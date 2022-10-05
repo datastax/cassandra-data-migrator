@@ -19,6 +19,7 @@ public abstract class BaseJobSession {
     protected PreparedStatement sourceSelectStatement;
     protected String sourceSelectCondition;
     protected Boolean trimColumnRow;
+
     protected PreparedStatement astraSelectStatement;
 
     // Read/Write Rate limiter
@@ -47,64 +48,10 @@ public abstract class BaseJobSession {
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
-    protected Integer counterDeltaMaxIndex = 0;
 
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
 
     protected Boolean hasRandomPartitioner;
 
-
-    public List<MigrateDataType> getTypes(String types) {
-        List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
-        for (String type : types.split(",")) {
-            dataTypes.add(new MigrateDataType(type));
-        }
-
-        return dataTypes;
-    }
-
-    public int getLargestTTL(Row sourceRow) {
-        int ttl = 0;
-        for (Integer ttlCol : ttlCols) {
-            ttl = Math.max(ttl, sourceRow.getInt(ttlCol));
-        }
-        return ttl;
-    }
-
-    public long getLargestWriteTimeStamp(Row sourceRow) {
-        long writeTimestamp = 0;
-        for (Integer writeTimeStampCol : writeTimeStampCols) {
-            writeTimestamp = Math.max(writeTimestamp, sourceRow.getLong(writeTimeStampCol));
-        }
-        return writeTimestamp;
-    }
-
-    public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
-        BoundStatement boundSelectStatement = selectStatement.bind();
-        for (int index = 0; index < idColTypes.size(); index++) {
-            MigrateDataType dataType = idColTypes.get(index);
-            boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, sourceRow),
-                    dataType.typeClass);
-        }
-
-        return boundSelectStatement;
-    }
-
-    public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
-        if (dataType.typeClass == Map.class) {
-            return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
-        } else if (dataType.typeClass == List.class) {
-            return sourceRow.getList(index, dataType.subTypes.get(0));
-        } else if (dataType.typeClass == Set.class) {
-            return sourceRow.getSet(index, dataType.subTypes.get(0));
-        } else if (isCounterTable && dataType.typeClass == Long.class) {
-            Object data = sourceRow.get(index, dataType.typeClass);
-            if (data == null) {
-                return new Long(0);
-            }
-        }
-
-        return sourceRow.get(index, dataType.typeClass);
-    }
 }
