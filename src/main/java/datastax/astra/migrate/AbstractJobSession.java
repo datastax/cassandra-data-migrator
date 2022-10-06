@@ -68,6 +68,12 @@ public class AbstractJobSession extends BaseJobSession {
             maxWriteTimeStampFilter = Long.parseLong(maxWriteTimeStampFilterStr);
         }
 
+        String customWriteTimeStr =
+                sparkConf.get("spark.migrate.custom.writeTime", "0");
+        if (null != customWriteTimeStr && customWriteTimeStr.trim().length() > 1) {
+            customWritetime = Long.parseLong(customWriteTimeStr);
+        }
+
         logger.info(" DEFAULT -- Write Batch Size: " + batchSize);
         logger.info(" DEFAULT -- Source Keyspace Table: " + sourceKeyspaceTable);
         logger.info(" DEFAULT -- Destination Keyspace Table: " + astraKeyspaceTable);

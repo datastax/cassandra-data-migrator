@@ -211,7 +211,11 @@ public class CopyJobSession extends AbstractJobSession {
             if (isPreserveTTLWritetime) {
                 boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
                 index++;
-                boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow), Long.class);
+                if (customWritetime > 0) {
+                    boundInsertStatement = boundInsertStatement.set(index, customWritetime, Long.class);
+                } else {
+                    boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow), Long.class);
+                }
             }
         }
 
