@@ -16,9 +16,10 @@ import java.util.stream.StreamSupport;
 
 public class DiffJobSession extends CopyJobSession {
 
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private static DiffJobSession diffJobSession;
-
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    protected Boolean autoCorrectMissing = false;
+    protected Boolean autoCorrectMismatch = false;
     private AtomicLong readCounter = new AtomicLong(0);
     private AtomicLong mismatchCounter = new AtomicLong(0);
     private AtomicLong missingCounter = new AtomicLong(0);
@@ -27,8 +28,15 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong validCounter = new AtomicLong(0);
     private AtomicLong skippedCounter = new AtomicLong(0);
 
-    protected Boolean autoCorrectMissing = false;
-    protected Boolean autoCorrectMismatch = false;
+    private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
+        super(sourceSession, astraSession, sparkConf);
+
+        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.missing", "false"));
+        logger.info("PARAM -- Autocorrect Missing: " + autoCorrectMissing);
+
+        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.mismatch", "false"));
+        logger.info("PARAM -- Autocorrect Mismatch: " + autoCorrectMismatch);
+    }
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (diffJobSession == null) {
@@ -42,13 +50,6 @@ public class DiffJobSession extends CopyJobSession {
         return diffJobSession;
     }
 
-    private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
-        super(sourceSession, astraSession, sparkConf);
-
-        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.missing", "false"));
-        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.mismatch", "false"));
-    }
-
     public void getDataAndDiff(BigInteger min, BigInteger max) {
         ForkJoinPool customThreadPool = new ForkJoinPool();
         logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
@@ -58,7 +59,7 @@ public class DiffJobSession extends CopyJobSession {
             try {
                 // cannot do batching if the writeFilter is greater than 0
                 ResultSet resultSet = sourceSession.execute(
-                        sourceSelectStatement.bind(hasRandomPartitioner? min : min.longValueExact(), hasRandomPartitioner? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
+                        sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
 
                 customThreadPool.submit(() -> {
                     StreamSupport.stream(resultSet.spliterator(), true).forEach(sRow -> {
@@ -100,7 +101,7 @@ public class DiffJobSession extends CopyJobSession {
                 + mismatchCounter.get());
         logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Corrected Mismatch Count: "
                 + correctedMismatchCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Missing Count: "
+        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Missing Count: "
                 + missingCounter.get());
         logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Corrected Missing Count: "
                 + correctedMissingCounter.get());
