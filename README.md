@@ -2,7 +2,7 @@
 
 Spark jobs in this repo can be used for data migration and data validation.
 
-> Please note: This job has been tested with spark version [2.4.8](https://downloads.apache.org/spark/spark-2.4.8/)
+> :warning: Please note this job has been tested with spark version [2.4.8](https://downloads.apache.org/spark/spark-2.4.8/)
 
 ## Prerequisite
 
@@ -16,7 +16,7 @@ tar -xvzf <spark downloaded file name>
 
 # Steps:
 
-1. sparkConf.properties file needs to be configured as applicable for the environment
+1. `sparkConf.properties` file needs to be configured as applicable for the environment
    > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
 2. Place the conf file where it can be accessed while running the job via spark-submit.
 3. Generate a fat jar (`cassandra-data-migrator-1.x.jar`) using command `mvn clean package`
@@ -63,10 +63,10 @@ spark.destination.autocorrect.mismatch                  true|false
 ```
 
 # Additional features
-- Counter tables
-- Preserve writetimes and TTL
-- Advanced DataTypes (Sets, Lists, Maps, UDTs)
+- [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
+- Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTL](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)
+- Advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
 - Filter records from source using writetime
 - SSL Support (including custom cipher algorithms)
-- Migrate from any Cassandra source (Cassandra/DSE/Astra) to any Cassandra target (Cassandra/DSE/Astra)
+- Migrate from any Cassandra source ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set
