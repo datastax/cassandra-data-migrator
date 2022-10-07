@@ -28,11 +28,24 @@ class BaseJob extends App {
   val sourceKeyStorePassword = sc.getConf.get("spark.source.keyStore.password", "")
   val sourceEnabledAlgorithms = sc.getConf.get("spark.source.enabledAlgorithms", "")
 
+  val destinationIsAstra = sc.getConf.get("spark.destination.isAstra", "true")
+  val destinationScbPath = sc.getConf.get("spark.destination.scb", "")
+  val destinationHost = sc.getConf.get("spark.destination.host", "")
+  val destinationUsername = sc.getConf.get("spark.destination.username")
+  val destinationPassword = sc.getConf.get("spark.destination.password")
+  val destinationReadConsistencyLevel = sc.getConf.get("spark.destination.read.consistency.level", "LOCAL_QUORUM")
+  val destinationTrustStorePath = sc.getConf.get("spark.destination.trustStore.path", "")
+  val destinationTrustStorePassword = sc.getConf.get("spark.destination.trustStore.password", "")
+  val destinationTrustStoreType = sc.getConf.get("spark.destination.trustStore.type", "JKS")
+  val destinationKeyStorePath = sc.getConf.get("spark.destination.keyStore.path", "")
+  val destinationKeyStorePassword = sc.getConf.get("spark.destination.keyStore.password", "")
+  val destinationEnabledAlgorithms = sc.getConf.get("spark.destination.enabledAlgorithms", "")
+
   val minPartition = new BigInteger(sc.getConf.get("spark.source.minPartition","-9223372036854775808"))
   val maxPartition = new BigInteger(sc.getConf.get("spark.source.maxPartition","9223372036854775807"))
   val coveragePercent = sc.getConf.get("spark.coveragePercent", "100")
   val splitSize = sc.getConf.get("spark.splitSize", "10000")
-  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition,Integer.parseInt(coveragePercent))
+  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition, Integer.parseInt(coveragePercent))
 
   protected def exitSpark() = {
     spark.stop()
