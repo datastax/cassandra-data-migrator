@@ -32,7 +32,6 @@ public abstract class BaseJobSession {
     protected Integer batchSize = 1;
     protected Integer printStatsAfter = 100000;
 
-    protected Boolean isPreserveTTLWritetime = Boolean.FALSE;
     protected Boolean writeTimeStampFilter = Boolean.FALSE;
     protected Long minWriteTimeStampFilter = 0l;
     protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;

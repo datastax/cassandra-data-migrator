@@ -173,9 +173,11 @@ public class CopyJobSession extends AbstractJobSession {
                 }
             }
 
-            if (isPreserveTTLWritetime) {
+            if (!ttlCols.isEmpty()) {
                 boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
                 index++;
+            }
+            if (!writeTimeStampCols.isEmpty()) {
                 boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow), Long.class);
             }
         }
