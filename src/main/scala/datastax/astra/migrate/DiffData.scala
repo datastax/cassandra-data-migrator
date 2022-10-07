@@ -15,7 +15,7 @@ object DiffData extends AbstractJob {
   exitSpark
 
   private def diffTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
-    val parts = sc.parallelize(partitions.toSeq,partitions.size);
+    val parts = sc.parallelize(partitions.toSeq, partitions.size);
     logger.info("Spark parallelize created : " + parts.count() + " parts!");
 
     parts.foreach(part => {

@@ -62,7 +62,7 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         writeLimiter.acquire(1);
-                        if (readCounter.incrementAndGet() % 1000 == 0) {
+                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
                                     + readCounter.get());
                         }
@@ -88,7 +88,7 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
-                        if (readCounter.incrementAndGet() % 1000 == 0) {
+                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
@@ -133,7 +133,7 @@ public class CopyJobSession extends AbstractJobSession {
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
-            if (writeCounter.addAndGet(incrementBy) % 1000 == 0) {
+            if (writeCounter.addAndGet(incrementBy) % printStatsAfter == 0) {
                 logger.info("TreadID: " + Thread.currentThread().getId() + " Write Record Count: " + writeCounter.get());
             }
         }

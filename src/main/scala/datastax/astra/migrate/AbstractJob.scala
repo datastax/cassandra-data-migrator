@@ -1,13 +1,14 @@
 package datastax.astra.migrate
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.sql.SparkSession
-import org.slf4j.LoggerFactory
-
-import java.math.BigInteger
-import java.lang.Long
 
 class AbstractJob extends BaseJob {
+
+  abstractLogger.info("PARAM -- Min Partition: " + minPartition)
+  abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
+  abstractLogger.info("PARAM -- Split Size: " + coveragePercent)
+  abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
+  abstractLogger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
 
   var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword, sourceReadConsistencyLevel,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);

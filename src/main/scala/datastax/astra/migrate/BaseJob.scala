@@ -41,11 +41,11 @@ class BaseJob extends App {
   val destinationKeyStorePassword = sc.getConf.get("spark.destination.keyStore.password", "")
   val destinationEnabledAlgorithms = sc.getConf.get("spark.destination.enabledAlgorithms", "")
 
-  val minPartition = new BigInteger(sc.getConf.get("spark.source.minPartition","-9223372036854775808"))
-  val maxPartition = new BigInteger(sc.getConf.get("spark.source.maxPartition","9223372036854775807"))
+  val minPartition = new BigInteger(sc.getConf.get("spark.source.minPartition", "-9223372036854775808"))
+  val maxPartition = new BigInteger(sc.getConf.get("spark.source.maxPartition", "9223372036854775807"))
   val coveragePercent = sc.getConf.get("spark.coveragePercent", "100")
   val splitSize = sc.getConf.get("spark.splitSize", "10000")
-  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition,Integer.parseInt(coveragePercent))
+  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition, Integer.parseInt(coveragePercent))
 
   protected def exitSpark() = {
     spark.stop()

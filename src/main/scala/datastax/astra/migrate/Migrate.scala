@@ -17,13 +17,13 @@ object Migrate extends AbstractJob {
   exitSpark
 
   private def migrateTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
-    val parts = sc.parallelize(partitions.toSeq,partitions.size);
+    val parts = sc.parallelize(partitions.toSeq, partitions.size);
     logger.info("Spark parallelize created : " + parts.count() + " parts!");
 
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession =>
         destinationConnection.withSessionDo(destinationSession =>
-          CopyJobSession.getInstance(sourceSession,destinationSession, sc.getConf)
+          CopyJobSession.getInstance(sourceSession, destinationSession, sc.getConf)
             .getDataAndInsert(part.getMin, part.getMax)))
     })
 

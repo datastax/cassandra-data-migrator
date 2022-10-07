@@ -12,21 +12,21 @@ import java.util.List;
 
 public class SplitPartitions {
 
-    public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
     public final static Long MIN_PARTITION = Long.MIN_VALUE;
-    public final static Long MAX_PARTITION  = Long.MAX_VALUE;
+    public final static Long MAX_PARTITION = Long.MAX_VALUE;
+    public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         Collection<Partition> partitions = getSubPartitions(new BigInteger("20"), BigInteger.valueOf(MIN_PARTITION),
                 BigInteger.valueOf(MAX_PARTITION), 20);
-        for(Partition partition: partitions){
+        for (Partition partition : partitions) {
             System.out.println(partition);
         }
     }
 
-    public static Collection<Partition> getRandomSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent){
+    public static Collection<Partition> getRandomSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent) {
         logger.info("TreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
-        List<Partition> partitions = getSubPartitions(splitSize,min,max, coveragePercent);
+        List<Partition> partitions = getSubPartitions(splitSize, min, max, coveragePercent);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
@@ -34,34 +34,34 @@ public class SplitPartitions {
         return partitions;
     }
 
-    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent){
+    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent) {
         if (coveragePercent < 1 || coveragePercent > 100) {
             coveragePercent = 100;
         }
         BigInteger curMax = new BigInteger(min.toString());
-        BigInteger partitionSize =  max.subtract(min).divide(splitSize);
+        BigInteger partitionSize = max.subtract(min).divide(splitSize);
         List<Partition> partitions = new ArrayList<Partition>();
-        if(partitionSize.compareTo(new BigInteger("0"))==0){
-            partitionSize=new BigInteger("100000");
+        if (partitionSize.compareTo(new BigInteger("0")) == 0) {
+            partitionSize = new BigInteger("100000");
         }
         boolean exausted = false;
-        while(curMax.compareTo(max) <=0){
+        while (curMax.compareTo(max) <= 0) {
             BigInteger curMin = new BigInteger(curMax.toString());
             BigInteger newCurMax = curMin.add(partitionSize);
             if (newCurMax.compareTo(curMax) == -1) {
                 newCurMax = new BigInteger(max.toString());
                 exausted = true;
             }
-            if (newCurMax.compareTo(max)==1){
+            if (newCurMax.compareTo(max) == 1) {
                 newCurMax = new BigInteger(max.toString());
-                exausted=true;
+                exausted = true;
             }
             curMax = newCurMax;
 
             BigInteger range = curMax.subtract(curMin);
             BigInteger curRange = range.multiply(BigInteger.valueOf(coveragePercent)).divide(BigInteger.valueOf(100));
-            partitions.add(new Partition(curMin,curMin.add(curRange)));
-            if(exausted){
+            partitions.add(new Partition(curMin, curMin.add(curRange)));
+            if (exausted) {
                 break;
             }
         }
@@ -69,13 +69,13 @@ public class SplitPartitions {
         return partitions;
     }
 
-    public static class Partition implements Serializable{
+    public static class Partition implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private BigInteger min;
         private BigInteger max;
 
-        public Partition(BigInteger min, BigInteger max){
+        public Partition(BigInteger min, BigInteger max) {
             this.min = min;
             this.max = max;
         }
@@ -88,8 +88,8 @@ public class SplitPartitions {
             return max;
         }
 
-        public String toString(){
-            return "Processing partition for token range "+ min + " to " + max;
+        public String toString() {
+            return "Processing partition for token range " + min + " to " + max;
         }
     }
 }
