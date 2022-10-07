@@ -17,9 +17,6 @@ public abstract class BaseJobSession {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     protected PreparedStatement sourceSelectStatement;
-    protected String sourceSelectCondition;
-    protected Boolean trimColumnRow;
-
     protected PreparedStatement astraSelectStatement;
 
     // Read/Write Rate limiter
