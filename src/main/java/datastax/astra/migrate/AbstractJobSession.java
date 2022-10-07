@@ -69,7 +69,7 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         String customWriteTimeStr =
-                sparkConf.get("spark.migrate.custom.writeTime", "0");
+                sparkConf.get("spark.destination.custom.writeTime", "0");
         if (null != customWriteTimeStr && customWriteTimeStr.trim().length() > 1) {
             customWritetime = Long.parseLong(customWriteTimeStr);
         }
