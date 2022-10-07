@@ -52,21 +52,12 @@ public class GuardRailJobSession extends BaseJobSession  {
         hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.source.hasRandomPartitioner", "false"));
         isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.source.counterTable", "false"));
 
-
-
-
-
         checkTableforColSize = Boolean.parseBoolean(sparkConf.get("spark.source.checkTableforColSize", "false"));
         checkTableforselectCols = sparkConf.get("spark.source.checkTableforColSize.cols");
         checkTableforColSizeTypes = getTypes(sparkConf.get("spark.source.checkTableforColSize.cols.types"));
         filterColName = sparkConf.get("spark.source.FilterColumn");
         filterColType = sparkConf.get("spark.source.FilterColumnType");
-        filterColIndex = Integer.parseInt(sparkConf.get("spark.source.FilterColumnIndex ", "0"));
-
-
-
-
-
+        filterColIndex =  Integer.parseInt(sparkConf.get("spark.source.FilterColumnIndex", "0"));
 
         counterDeltaMaxIndex = Integer
                 .parseInt(sparkConf.get("spark.source.counterTable.update.max.counter.index", "0"));
@@ -105,28 +96,15 @@ public class GuardRailJobSession extends BaseJobSession  {
 
                         if(checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
+                            String result = "";
                             if (rowColcnt > 1024 * 1024 * 10) {
                                 for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
                                     MigrateDataType dataType = checkTableforColSizeTypes.get(index);
                                     Object colData = getData(dataType, index, sourceRow);
-                                    String result = "";
-                                    int count = 1;
-                                    for (String str : checkTableforselectCols.split(",")) {
-                                        if (count > 1) {
-                                            result = result + " - " + str + " : " + colData ;
-                                        } else {
-                                            result = result + " - " + filterColName + "length: " + rowColcnt;
-                                        }
-
-                                        count++;
-                                    }
-                                    logger.error("ThreadID: " + Thread.currentThread().getId() + result);
+                                    String[] colName = checkTableforselectCols.split(",");
+                                    result = result + " - " + colName[index] + " : " + colData;
                                 }
-
-//                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
-//                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
-//                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
-//                                        + " - rotation_set length: " + rowColcnt);
+                                logger.error("ThreadID: " + Thread.currentThread().getId() + result + " - " + filterColName + " length: " + rowColcnt);
                                 continue;
                             }
                         }
@@ -140,28 +118,15 @@ public class GuardRailJobSession extends BaseJobSession  {
 
                         if(checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
+                            String result = "";
                             if (rowColcnt > 1024 * 1024 * 10) {
                                 for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
                                     MigrateDataType dataType = checkTableforColSizeTypes.get(index);
                                     Object colData = getData(dataType, index, sourceRow);
-                                    String result = "";
-                                    int count = 1;
-                                    for (String str : checkTableforselectCols.split(",")) {
-                                        if (count > 1) {
-                                            result = result + " - " + str + " : " + colData ;
-                                        } else {
-                                            result = result + " - " + filterColName + "length: " + rowColcnt;
-                                        }
-
-                                        count++;
-                                    }
-                                    logger.error("ThreadID: " + Thread.currentThread().getId() + result);
+                                    String[] colName = checkTableforselectCols.split(",");
+                                    result = result + " - " + colName[index] + " : " + colData;
                                 }
-
-//                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
-//                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
-//                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
-//                                        + " - rotation_set length: " + rowColcnt);
+                                logger.error("ThreadID: " + Thread.currentThread().getId() + result + " - " + filterColName + " length: " + rowColcnt);
                                 continue;
                             }
                         }
