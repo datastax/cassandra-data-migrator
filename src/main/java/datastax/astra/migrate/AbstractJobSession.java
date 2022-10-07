@@ -16,7 +16,8 @@ import java.util.Set;
 
 public class AbstractJobSession extends BaseJobSession {
 
-
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
@@ -68,45 +69,69 @@ public class AbstractJobSession extends BaseJobSession {
             maxWriteTimeStampFilter = Long.parseLong(maxWriteTimeStampFilterStr);
         }
 
-        logger.info(" DEFAULT -- Write Batch Size: " + batchSize);
-        logger.info(" DEFAULT -- Source Keyspace Table: " + sourceKeyspaceTable);
-        logger.info(" DEFAULT -- Destination Keyspace Table: " + astraKeyspaceTable);
-        logger.info(" DEFAULT -- ReadRateLimit: " + readLimiter.getRate());
-        logger.info(" DEFAULT -- WriteRateLimit: " + writeLimiter.getRate());
-        logger.info(" DEFAULT -- WriteTimestampFilter: " + writeTimeStampFilter);
-        logger.info(" DEFAULT -- WriteTimestampFilterCols: " + writeTimeStampCols);
-        logger.info(" DEFAULT -- isPreserveTTLWritetime: " + isPreserveTTLWritetime);
-        logger.info(" DEFAULT -- TTLCols: " + ttlCols);
+        logger.info("PARAM -- Write Batch Size: " + batchSize);
+        logger.info("PARAM -- Source Keyspace Table: " + sourceKeyspaceTable);
+        logger.info("PARAM -- Destination Keyspace Table: " + astraKeyspaceTable);
+        logger.info("PARAM -- ReadRateLimit: " + readLimiter.getRate());
+        logger.info("PARAM -- WriteRateLimit: " + writeLimiter.getRate());
+        logger.info("PARAM -- WriteTimestampFilter: " + writeTimeStampFilter);
+        logger.info("PARAM -- WriteTimestampFilterCols: " + writeTimeStampCols);
+        logger.info("PARAM -- isPreserveTTLWritetime: " + isPreserveTTLWritetime);
+        logger.info("PARAM -- isPreserveTTLWritetime: " + isPreserveTTLWritetime);
+        logger.info("PARAM -- TTLCols: " + ttlCols);
 
-        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.source.hasRandomPartitioner", "false"));
-
-        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.counterTable", "false"));
-        selectColTypes = getTypes(sparkConf.get("spark.diff.select.types"));
-        String partionKey = sparkConf.get("spark.query.cols.partitionKey");
-        String idCols = sparkConf.get("spark.query.cols.id");
-        idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
-
-        String selectCols = sparkConf.get("spark.query.cols.select");
-
-        String idBinds = "";
-        int count = 1;
-        for (String str : idCols.split(",")) {
-            if (count > 1) {
-                idBinds = idBinds + " and " + str + "= ?";
-            } else {
-                idBinds = str + "= ?";
-            }
-            count++;
-        }
-
-        sourceSelectCondition = sparkConf.get("spark.query.cols.select.condition", "");
+        String selectCols = sparkConf.get("spark.query.source");
+        String partionKey = sparkConf.get("spark.query.source.partitionKey");
+        selectColTypes = getTypes(sparkConf.get("spark.query.types"));
+        String idCols = sparkConf.get("spark.query.destination.id", "");
+        idColTypes = selectColTypes.subList(0, idCols.split(",").length);
+        String sourceSelectCondition = sparkConf.get("spark.query.condition", "");
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
 
+        String insertCols = sparkConf.get("spark.query.destination", "");
+        if (null == insertCols || insertCols.trim().isEmpty()) {
+            insertCols = selectCols;
+        }
+        String insertBinds = "";
+        for (String str : idCols.split(",")) {
+            if (insertBinds.isEmpty()) {
+                insertBinds = str + "= ?";
+            } else {
+                insertBinds += " and " + str + "= ?";
+            }
+        }
         astraSelectStatement = astraSession.prepare(
-                "select " + selectCols + " from " + astraKeyspaceTable
-                        + " where " + idBinds);
+                "select " + insertCols + " from " + astraKeyspaceTable
+                        + " where " + insertBinds);
+
+        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.source.hasRandomPartitioner", "false"));
+        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.counterTable", "false"));
+        if (isCounterTable) {
+            String updateSelectMappingStr = sparkConf.get("spark.counterTable.cql.index", "0");
+            for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
+                updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
+            }
+
+            String counterTableUpdate = sparkConf.get("spark.counterTable.cql");
+            astraInsertStatement = astraSession.prepare(counterTableUpdate);
+        } else {
+            insertBinds = "";
+            for (String str : insertCols.split(",")) {
+                if (insertBinds.isEmpty()) {
+                    insertBinds += "?";
+                } else {
+                    insertBinds += ", ?";
+                }
+            }
+
+            if (isPreserveTTLWritetime) {
+                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ") using TTL ? and TIMESTAMP ?");
+            } else {
+                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
+            }
+        }
     }
 
     public List<MigrateDataType> getTypes(String types) {

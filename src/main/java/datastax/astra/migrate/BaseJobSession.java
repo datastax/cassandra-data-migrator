@@ -11,12 +11,9 @@ import java.util.List;
 
 public abstract  class BaseJobSession {
 
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
     protected PreparedStatement sourceSelectStatement;
-    protected String sourceSelectCondition;
-
     protected PreparedStatement astraSelectStatement;
+    protected PreparedStatement astraInsertStatement;
 
     // Read/Write Rate limiter
     // Determine the total throughput for the entire cluster in terms of wries/sec,
@@ -32,6 +29,7 @@ public abstract  class BaseJobSession {
     protected CqlSession astraSession;
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
+    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
 
     protected Integer batchSize = 1;
     protected Integer printStatsAfter = 100000;
