@@ -20,7 +20,12 @@ public class GuardRailJobSession extends BaseJobSession  {
     private static GuardRailJobSession guardRailJobSession;
     protected AtomicLong readCounter = new AtomicLong(0);
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
-
+    protected Boolean checkTableforColSize;
+    protected String checkTableforselectCols;
+    protected String filterColName;
+    protected String filterColType;
+    protected Integer filterColIndex;
+    protected List<MigrateDataType> checkTableforColSizeTypes = new ArrayList<MigrateDataType>();
     public static GuardRailJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
         if (guardRailJobSession == null) {
             synchronized (GuardRailJobSession.class) {
@@ -35,33 +40,47 @@ public class GuardRailJobSession extends BaseJobSession  {
 
     protected GuardRailJobSession(CqlSession sourceSession, SparkConf sparkConf) {
         this.sourceSession = sourceSession;
-        batchSize = new Integer(sparkConf.get("spark.migrate.batchSize", "1"));
-        printStatsAfter = new Integer(sparkConf.get("spark.migrate.printStatsAfter", "100000"));
+        batchSize = new Integer(sparkConf.get("spark.batchSize", "1"));
+        printStatsAfter = new Integer(sparkConf.get("spark.printStatsAfter", "100000"));
         if (printStatsAfter < 1) {
             printStatsAfter = 100000;
         }
 
-        readLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.migrate.readRateLimit", "20000")));
+        readLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.readRateLimit", "20000")));
+        sourceKeyspaceTable = sparkConf.get("spark.source.keyspaceTable");
 
-        sourceKeyspaceTable = sparkConf.get("spark.migrate.source.keyspaceTable");
+        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.source.hasRandomPartitioner", "false"));
+        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.source.counterTable", "false"));
 
-        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.hasRandomPartitioner", "false"));
-        trimColumnRow = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.trimColumnRow", "false"));
-        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.migrate.source.counterTable", "false"));
+
+
+
+
+        checkTableforColSize = Boolean.parseBoolean(sparkConf.get("spark.source.checkTableforColSize", "false"));
+        checkTableforselectCols = sparkConf.get("spark.source.checkTableforColSize.cols");
+        checkTableforColSizeTypes = getTypes(sparkConf.get("spark.source.checkTableforColSize.cols.types"));
+        filterColName = sparkConf.get("spark.source.FilterColumn");
+        filterColType = sparkConf.get("spark.source.FilterColumnType");
+        filterColIndex = Integer.parseInt(sparkConf.get("spark.source.FilterColumnIndex ", "0"));
+
+
+
+
+
 
         counterDeltaMaxIndex = Integer
-                .parseInt(sparkConf.get("spark.migrate.source.counterTable.update.max.counter.index", "0"));
+                .parseInt(sparkConf.get("spark.source.counterTable.update.max.counter.index", "0"));
 
-        String partionKey = sparkConf.get("spark.migrate.query.cols.partitionKey");
-        String idCols = sparkConf.get("spark.migrate.query.cols.id");
-        idColTypes = getTypes(sparkConf.get("spark.migrate.query.cols.id.types"));
+        String partionKey = sparkConf.get("spark.query.cols.partitionKey");
+        String idCols = sparkConf.get("spark.query.cols.id");
+        idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
 
-        String selectCols = sparkConf.get("spark.migrate.query.cols.select");
-            String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
+        String selectCols = sparkConf.get("spark.query.cols.select");
+            String updateSelectMappingStr = sparkConf.get("spark.source.counterTable.update.select.index", "0");
             for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
                 updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
             }
-        sourceSelectCondition = sparkConf.get("spark.migrate.query.cols.select.condition", "");
+        sourceSelectCondition = sparkConf.get("spark.query.cols.select.condition", "");
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
@@ -84,23 +103,33 @@ public class GuardRailJobSession extends BaseJobSession  {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        if(sourceKeyspaceTable.endsWith("smart_rotations")) {
-                            int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
+                        if(checkTableforColSize) {
+                            int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             if (rowColcnt > 1024 * 1024 * 10) {
-                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
-                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
-                                        + " - rotation_set length: " + rowColcnt);
+                                for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
+                                    MigrateDataType dataType = checkTableforColSizeTypes.get(index);
+                                    Object colData = getData(dataType, index, sourceRow);
+                                    String result = "";
+                                    int count = 1;
+                                    for (String str : checkTableforselectCols.split(",")) {
+                                        if (count > 1) {
+                                            result = result + " - " + str + " : " + colData ;
+                                        } else {
+                                            result = result + " - " + filterColName + "length: " + rowColcnt;
+                                        }
+
+                                        count++;
+                                    }
+                                    logger.error("ThreadID: " + Thread.currentThread().getId() + result);
+                                }
+
+//                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
+//                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
+//                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
+//                                        + " - rotation_set length: " + rowColcnt);
                                 continue;
                             }
                         }
-
-                        if(sourceKeyspaceTable.endsWith("resource_status")) {
-                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
-                                continue;
-                        }
-
                     }
 
                 } else {
@@ -109,21 +138,32 @@ public class GuardRailJobSession extends BaseJobSession  {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
 
-                        if (sourceKeyspaceTable.endsWith("smart_rotations")) {
-                            int rowColcnt = GetRowColumnLength(sourceRow, trimColumnRow);
+                        if(checkTableforColSize) {
+                            int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             if (rowColcnt > 1024 * 1024 * 10) {
-                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
-                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
-                                        + " - rotation_set length: " + rowColcnt);
+                                for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
+                                    MigrateDataType dataType = checkTableforColSizeTypes.get(index);
+                                    Object colData = getData(dataType, index, sourceRow);
+                                    String result = "";
+                                    int count = 1;
+                                    for (String str : checkTableforselectCols.split(",")) {
+                                        if (count > 1) {
+                                            result = result + " - " + str + " : " + colData ;
+                                        } else {
+                                            result = result + " - " + filterColName + "length: " + rowColcnt;
+                                        }
+
+                                        count++;
+                                    }
+                                    logger.error("ThreadID: " + Thread.currentThread().getId() + result);
+                                }
+
+//                                String adv_id = (String) getData(new MigrateDataType("0"), 0, sourceRow);
+//                                UUID sm_rot_id = (UUID) getData(new MigrateDataType("9"), 1, sourceRow);
+//                                logger.error("ThreadID: " + Thread.currentThread().getId() + " - advertiser_id: " + adv_id + " - smart_rotation_id: " + sm_rot_id
+//                                        + " - rotation_set length: " + rowColcnt);
                                 continue;
                             }
-                        }
-
-                        if (sourceKeyspaceTable.endsWith("resource_status")) {
-                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase("spark.migrate.source.keyspaceFilterColumn"))
-                                continue;
                         }
 
                         if (readCounter.incrementAndGet() % 1000 == 0) {
@@ -144,9 +184,9 @@ public class GuardRailJobSession extends BaseJobSession  {
 
     }
 
-    private int GetRowColumnLength(Row sourceRow, boolean flag) {
+    private int GetRowColumnLength(Row sourceRow, String filterColType, Integer filterColIndex) {
         int i = 0;
-        Object colData = getData(new MigrateDataType("6%16"), 2, sourceRow);
+        Object colData = getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
         byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
         i = colBytes.length;
         if (i > 1024*1024*10)

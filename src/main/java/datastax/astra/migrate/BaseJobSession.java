@@ -54,7 +54,6 @@ public abstract class BaseJobSession {
 
     protected Boolean hasRandomPartitioner;
 
-    protected Boolean isAstraDestination;
 
     public List<MigrateDataType> getTypes(String types) {
         List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
