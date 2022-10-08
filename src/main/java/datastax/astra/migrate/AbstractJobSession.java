@@ -35,14 +35,14 @@ public class AbstractJobSession extends BaseJobSession {
         sourceKeyspaceTable = sparkConf.get("spark.source.keyspaceTable");
         astraKeyspaceTable = sparkConf.get("spark.destination.keyspaceTable");
 
-        String ttlColsStr = sparkConf.get("spark.query.ttl.cols");
+        String ttlColsStr = sparkConf.get("spark.query.ttl.cols", "");
         if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
             for (String ttlCol : ttlColsStr.split(",")) {
                 ttlCols.add(Integer.parseInt(ttlCol));
             }
         }
 
-        String writeTimestampColsStr = sparkConf.get("spark.query.writetime.cols");
+        String writeTimestampColsStr = sparkConf.get("spark.query.writetime.cols", "");
         if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
             for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
                 writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));

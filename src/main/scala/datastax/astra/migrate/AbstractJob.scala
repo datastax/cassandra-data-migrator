@@ -6,9 +6,8 @@ class AbstractJob extends BaseJob {
 
   abstractLogger.info("PARAM -- Min Partition: " + minPartition)
   abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
-  abstractLogger.info("PARAM -- Split Size: " + coveragePercent)
+  abstractLogger.info("PARAM -- Split Size: " + splitSize)
   abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
-  abstractLogger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
 
   var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword, sourceReadConsistencyLevel,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);

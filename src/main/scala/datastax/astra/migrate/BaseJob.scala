@@ -10,8 +10,11 @@ class BaseJob extends App {
 
   val abstractLogger = LoggerFactory.getLogger(this.getClass.getName)
   val spark = SparkSession.builder
-    .appName("Datastax Data Validation")
+    .appName("Cassandra Data Migrator")
     .getOrCreate()
+  abstractLogger.info("################################################################################################")
+  abstractLogger.info("############################## Cassandra Data Migrator - Starting ##############################")
+  abstractLogger.info("################################################################################################")
 
   val sc = spark.sparkContext
 
@@ -44,11 +47,13 @@ class BaseJob extends App {
   val minPartition = new BigInteger(sc.getConf.get("spark.source.minPartition", "-9223372036854775808"))
   val maxPartition = new BigInteger(sc.getConf.get("spark.source.maxPartition", "9223372036854775807"))
   val coveragePercent = sc.getConf.get("spark.coveragePercent", "100")
-  val splitSize = sc.getConf.get("spark.splitSize", "10000")
-  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition, Integer.parseInt(coveragePercent))
+  val splitSize = Integer.parseInt(sc.getConf.get("spark.splitSize", "10000"))
 
   protected def exitSpark() = {
     spark.stop()
+    abstractLogger.info("################################################################################################")
+    abstractLogger.info("############################## Cassandra Data Migrator - Stopped ###############################")
+    abstractLogger.info("################################################################################################")
     sys.exit(0)
   }
 

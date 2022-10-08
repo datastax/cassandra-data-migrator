@@ -3,6 +3,9 @@ package datastax.astra.migrate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -16,15 +19,16 @@ public class SplitPartitions {
     public final static Long MAX_PARTITION = Long.MAX_VALUE;
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
 
-    public static void main(String[] args) {
-        Collection<Partition> partitions = getSubPartitions(new BigInteger("20"), BigInteger.valueOf(MIN_PARTITION),
-                BigInteger.valueOf(MAX_PARTITION), 20);
+    public static void main(String[] args) throws IOException {
+        Collection<Partition> partitions = getSubPartitions(2, BigInteger.valueOf(1),
+                BigInteger.valueOf(1000), 100);
+//        Collection<Partition> partitions = getSubPartitionsFromFile(3);
         for (Partition partition : partitions) {
             System.out.println(partition);
         }
     }
 
-    public static Collection<Partition> getRandomSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent) {
+    public static Collection<Partition> getRandomSubPartitions(int splitSize, BigInteger min, BigInteger max, int coveragePercent) {
         logger.info("TreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
         List<Partition> partitions = getSubPartitions(splitSize, min, max, coveragePercent);
         Collections.shuffle(partitions);
@@ -34,12 +38,30 @@ public class SplitPartitions {
         return partitions;
     }
 
-    private static List<Partition> getSubPartitions(BigInteger splitSize, BigInteger min, BigInteger max, int coveragePercent) {
+    public static List<Partition> getSubPartitionsFromFile(int splitSize) throws IOException {
+        logger.info("TreadID: " + Thread.currentThread().getId() +
+                " Splitting partitions in file: ./partitions.csv using a split-size of " + splitSize);
+        List<Partition> partitions = new ArrayList<Partition>();
+        BufferedReader reader = new BufferedReader(new FileReader("./partitions.csv"));
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            String[] minMax = line.split(",");
+            try {
+                partitions.addAll(getSubPartitions(splitSize, new BigInteger(minMax[0]), new BigInteger(minMax[1]), 100));
+            } catch (Exception e) {
+                logger.error("Skipping partition: " + line, e);
+            }
+        }
+
+        return partitions;
+    }
+
+    private static List<Partition> getSubPartitions(int splitSize, BigInteger min, BigInteger max, int coveragePercent) {
         if (coveragePercent < 1 || coveragePercent > 100) {
             coveragePercent = 100;
         }
         BigInteger curMax = new BigInteger(min.toString());
-        BigInteger partitionSize = max.subtract(min).divide(splitSize);
+        BigInteger partitionSize = max.subtract(min).divide(BigInteger.valueOf(splitSize));
         List<Partition> partitions = new ArrayList<Partition>();
         if (partitionSize.compareTo(new BigInteger("0")) == 0) {
             partitionSize = new BigInteger("100000");
@@ -64,6 +86,7 @@ public class SplitPartitions {
             if (exausted) {
                 break;
             }
+            curMax = curMax.add(BigInteger.ONE);
         }
 
         return partitions;
