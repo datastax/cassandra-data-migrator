@@ -4,7 +4,6 @@ import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
 import java.math.BigInteger
-import java.lang.Long
 
 class BaseJob extends App {
 

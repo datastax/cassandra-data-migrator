@@ -62,6 +62,23 @@ spark.destination.autocorrect.missing                   true|false
 spark.destination.autocorrect.mismatch                  true|false
 ```
 
+# Migrating specific partition ranges
+- You can also use the tool to migrate specific partition ranges, use class option `--class datastax.astra.migrate.MigratePartitionsFromFile` as shown below
+```
+./spark-submit --properties-file sparkConf.properties /
+--master "local[*]" /
+--class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-1.x.jar &> logfile_name.txt
+```
+
+When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
+```
+-507900353496146534,-107285462027022883
+-506781526266485690,1506166634797362039
+2637884402540451982,4638499294009575633
+798869613692279889,8699484505161403540
+```
+This mode is specifically useful to processes a subset of partition-ranges that may have generated errors as a result of a previous long-running job to migrate a large table.
+
 # Additional features
 - [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
 - Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTL](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)

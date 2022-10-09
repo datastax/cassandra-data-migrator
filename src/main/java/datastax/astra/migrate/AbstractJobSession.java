@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 public class AbstractJobSession extends BaseJobSession {
 
@@ -156,19 +157,13 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     public int getLargestTTL(Row sourceRow) {
-        int ttl = 0;
-        for (Integer ttlCol : ttlCols) {
-            ttl = Math.max(ttl, sourceRow.getInt(selectColTypes.size() + ttlCol - 1));
-        }
-        return ttl;
+        return IntStream.range(0, ttlCols.size())
+                .map(i -> sourceRow.getInt(selectColTypes.size() + i)).max().getAsInt();
     }
 
     public long getLargestWriteTimeStamp(Row sourceRow) {
-        long writeTimestamp = 0;
-        for (Integer writeTimeStampCol : writeTimeStampCols) {
-            writeTimestamp = Math.max(writeTimestamp, sourceRow.getLong(selectColTypes.size() + ttlCols.size() + writeTimeStampCol - 1));
-        }
-        return writeTimestamp;
+        return IntStream.range(0, writeTimeStampCols.size())
+                .mapToLong(i -> sourceRow.getLong(selectColTypes.size() + ttlCols.size() + i)).max().getAsLong();
     }
 
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {

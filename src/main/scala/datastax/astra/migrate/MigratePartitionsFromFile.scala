@@ -3,9 +3,7 @@ package datastax.astra.migrate
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.slf4j.LoggerFactory
 
-import java.math.BigInteger
 import scala.collection.JavaConversions._
-import java.lang.Long
 
 object MigratePartitionsFromFile extends AbstractJob {
 
