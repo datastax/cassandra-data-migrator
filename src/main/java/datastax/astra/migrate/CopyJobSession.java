@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -142,6 +143,7 @@ public class CopyJobSession extends AbstractJobSession {
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
         BoundStatement boundInsertStatement = insertStatement.bind();
+        String dtHr;
 
         if (isCounterTable) {
             for (int index = 0; index < selectColTypes.size(); index++) {
@@ -163,6 +165,13 @@ public class CopyJobSession extends AbstractJobSession {
                     Object colData = getData(dataTypeObj, index, sourceRow);
                     if (index < idColTypes.size() && colData == null && dataType == String.class) {
                         colData = "";
+                    }
+                    if (index == 2) {
+                        continue;
+                    }
+                    if (index == 3) {
+                        dtHr = ((Instant)colData).toString().substring(0,13);
+                        boundInsertStatement = boundInsertStatement.set(index-1, dtHr, String.class);
                     }
                     boundInsertStatement = boundInsertStatement.set(index, colData, dataType);
                 } catch (NullPointerException e) {
