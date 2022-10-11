@@ -15,9 +15,9 @@ import java.util.Set;
 
 public abstract class BaseJobSession {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
     protected PreparedStatement sourceSelectStatement;
     protected PreparedStatement astraSelectStatement;
+    protected PreparedStatement astraInsertStatement;
 
     // Read/Write Rate limiter
     // Determine the total throughput for the entire cluster in terms of wries/sec,
@@ -33,6 +33,7 @@ public abstract class BaseJobSession {
     protected CqlSession astraSession;
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
+    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
 
     protected Integer batchSize = 1;
     protected Integer printStatsAfter = 100000;
@@ -51,4 +52,29 @@ public abstract class BaseJobSession {
 
     protected Boolean hasRandomPartitioner;
 
+    public List<MigrateDataType> getTypes(String types) {
+        List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
+        for (String type : types.split(",")) {
+            dataTypes.add(new MigrateDataType(type));
+        }
+
+        return dataTypes;
+    }
+
+    public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
+        if (dataType.typeClass == Map.class) {
+            return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
+        } else if (dataType.typeClass == List.class) {
+            return sourceRow.getList(index, dataType.subTypes.get(0));
+        } else if (dataType.typeClass == Set.class) {
+            return sourceRow.getSet(index, dataType.subTypes.get(0));
+        } else if (isCounterTable && dataType.typeClass == Long.class) {
+            Object data = sourceRow.get(index, dataType.typeClass);
+            if (data == null) {
+                return new Long(0);
+            }
+        }
+
+        return sourceRow.get(index, dataType.typeClass);
+    }
 }

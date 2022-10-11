@@ -59,11 +59,7 @@ public class GuardRailJobSession extends BaseJobSession  {
         filterColType = sparkConf.get("spark.source.FilterColumnType");
         filterColIndex =  Integer.parseInt(sparkConf.get("spark.source.FilterColumnIndex", "0"));
 
-        counterDeltaMaxIndex = Integer
-                .parseInt(sparkConf.get("spark.source.counterTable.update.max.counter.index", "0"));
-
         String partionKey = sparkConf.get("spark.query.cols.partitionKey");
-        String idCols = sparkConf.get("spark.query.cols.id");
         idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
 
         String selectCols = sparkConf.get("spark.query.cols.select");
@@ -71,7 +67,7 @@ public class GuardRailJobSession extends BaseJobSession  {
             for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
                 updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
             }
-        sourceSelectCondition = sparkConf.get("spark.query.cols.select.condition", "");
+        String sourceSelectCondition = sparkConf.get("spark.query.cols.select.condition", "");
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");

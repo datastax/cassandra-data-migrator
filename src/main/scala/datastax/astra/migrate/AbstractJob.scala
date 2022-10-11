@@ -4,6 +4,19 @@ import com.datastax.spark.connector.cql.CassandraConnector
 
 class AbstractJob extends BaseJob {
 
+  val destinationIsAstra = sc.getConf.get("spark.destination.isAstra", "true")
+  val destinationScbPath = sc.getConf.get("spark.destination.scb", "")
+  val destinationHost = sc.getConf.get("spark.destination.host", "")
+  val destinationUsername = sc.getConf.get("spark.destination.username")
+  val destinationPassword = sc.getConf.get("spark.destination.password")
+  val destinationReadConsistencyLevel = sc.getConf.get("spark.destination.read.consistency.level", "LOCAL_QUORUM")
+  val destinationTrustStorePath = sc.getConf.get("spark.destination.trustStore.path", "")
+  val destinationTrustStorePassword = sc.getConf.get("spark.destination.trustStore.password", "")
+  val destinationTrustStoreType = sc.getConf.get("spark.destination.trustStore.type", "JKS")
+  val destinationKeyStorePath = sc.getConf.get("spark.destination.keyStore.path", "")
+  val destinationKeyStorePassword = sc.getConf.get("spark.destination.keyStore.password", "")
+  val destinationEnabledAlgorithms = sc.getConf.get("spark.destination.enabledAlgorithms", "")
+
   abstractLogger.info("PARAM -- Min Partition: " + minPartition)
   abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
   abstractLogger.info("PARAM -- Split Size: " + coveragePercent)

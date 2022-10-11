@@ -79,13 +79,26 @@ public class AbstractJobSession extends BaseJobSession {
 
         String selectCols = sparkConf.get("spark.query.source");
         String partionKey = sparkConf.get("spark.query.source.partitionKey");
+        String sourceSelectCondition = sparkConf.get("spark.query.condition", "");
+
+        final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
+        if (isPreserveTTLWritetime) {
+            String[] allCols = selectCols.split(",");
+            ttlCols.forEach(col -> {
+                selectTTLWriteTimeCols.append(",ttl(" + allCols[col] + ")");
+            });
+            writeTimeStampCols.forEach(col -> {
+                selectTTLWriteTimeCols.append(",writetime(" + allCols[col] + ")");
+            });
+        }
+        String fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols.toString() + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
+                + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING";
+        sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
+        logger.info("PARAM -- Query used: " + fullSelectQuery);
+
         selectColTypes = getTypes(sparkConf.get("spark.query.types"));
         String idCols = sparkConf.get("spark.query.destination.id", "");
         idColTypes = selectColTypes.subList(0, idCols.split(",").length);
-        sourceSelectCondition = sparkConf.get("spark.query.condition", "");
-        sourceSelectStatement = sourceSession.prepare(
-                "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
-                        + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
 
         String insertCols = sparkConf.get("spark.query.destination", "");
         if (null == insertCols || insertCols.trim().isEmpty()) {
@@ -131,15 +144,6 @@ public class AbstractJobSession extends BaseJobSession {
         }
     }
 
-    public List<MigrateDataType> getTypes(String types) {
-        List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
-        for (String type : types.split(",")) {
-            dataTypes.add(new MigrateDataType(type));
-        }
-
-        return dataTypes;
-    }
-
     public int getLargestTTL(Row sourceRow) {
         int ttl = 0;
         for (Integer ttlCol : ttlCols) {
@@ -165,23 +169,6 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         return boundSelectStatement;
-    }
-
-    public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
-        if (dataType.typeClass == Map.class) {
-            return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
-        } else if (dataType.typeClass == List.class) {
-            return sourceRow.getList(index, dataType.subTypes.get(0));
-        } else if (dataType.typeClass == Set.class) {
-            return sourceRow.getSet(index, dataType.subTypes.get(0));
-        } else if (isCounterTable && dataType.typeClass == Long.class) {
-            Object data = sourceRow.get(index, dataType.typeClass);
-            if (data == null) {
-                return new Long(0);
-            }
-        }
-
-        return sourceRow.get(index, dataType.typeClass);
     }
 
 }

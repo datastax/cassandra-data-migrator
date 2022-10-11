@@ -17,15 +17,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyJobSession extends AbstractJobSession {
 
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private static CopyJobSession copyJobSession;
-
-    protected PreparedStatement astraInsertStatement;
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
-    protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
-    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
+    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
+        super(sourceSession, astraSession, sparkConf);
+    }
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (copyJobSession == null) {
@@ -37,39 +36,6 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return copyJobSession;
-    }
-
-    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
-        super(sourceSession, astraSession, sparkConf);
-
-        String insertCols = sparkConf.get("spark.migrate.query.cols.insert");
-        insertColTypes = getTypes(sparkConf.get("spark.migrate.query.cols.insert.types"));
-        String insertBinds = "";
-        int count = 1;
-        for (String str : insertCols.split(",")) {
-            if (count > 1) {
-                insertBinds = insertBinds + ",?";
-            } else {
-                insertBinds = insertBinds + "?";
-            }
-            count++;
-        }
-
-        if (isCounterTable) {
-            String updateSelectMappingStr = sparkConf.get("spark.migrate.source.counterTable.update.select.index", "0");
-            for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
-                updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
-            }
-
-            String counterTableUpdate = sparkConf.get("spark.migrate.source.counterTable.update.cql");
-            astraInsertStatement = astraSession.prepare(counterTableUpdate);
-        } else {
-            if (isPreserveTTLWritetime) {
-                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ") using TTL ? and TIMESTAMP ?");
-            } else {
-                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
-            }
-        }
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
@@ -180,19 +146,19 @@ public class CopyJobSession extends AbstractJobSession {
         BoundStatement boundInsertStatement = insertStatement.bind();
 
         if (isCounterTable) {
-            for (int index = 0; index < insertColTypes.size(); index++) {
-                MigrateDataType dataType = insertColTypes.get(index);
+            for (int index = 0; index < selectColTypes.size(); index++) {
+                MigrateDataType dataType = selectColTypes.get(updateSelectMapping.get(index));
                 // compute the counter delta if reading from astra for the difference
-                if (astraRow != null && isCounterTable && index <= counterDeltaMaxIndex) {
-                    boundInsertStatement = boundInsertStatement.set(index, getCounterDelta(sourceRow.getLong(updateSelectMapping.get(index)), astraRow.getLong(updateSelectMapping.get(index))), Long.class);
+                if (astraRow != null && index < (selectColTypes.size() - idColTypes.size())) {
+                    boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
                 } else {
                     boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
                 }
             }
         } else {
             int index = 0;
-            for (index = 0; index < insertColTypes.size(); index++) {
-                MigrateDataType dataTypeObj = insertColTypes.get(index);
+            for (index = 0; index < selectColTypes.size(); index++) {
+                MigrateDataType dataTypeObj = selectColTypes.get(index);
                 Class dataType = dataTypeObj.typeClass;
 
                 try {
@@ -217,10 +183,6 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return boundInsertStatement;
-    }
-
-    public Long getCounterDelta(Long sourceRow, Long astraRow) {
-        return sourceRow - astraRow;
     }
 
 }
