@@ -3,7 +3,7 @@
 
   <groupId>datastax.astra.migrate</groupId>
   <artifactId>cassandra-data-migrator</artifactId>
-  <version>1.5</version>
+  <version>1.6</version>
   <packaging>jar</packaging>
 
   <properties>

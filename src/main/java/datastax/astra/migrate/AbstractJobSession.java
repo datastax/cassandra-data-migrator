@@ -17,7 +17,7 @@ import java.util.Set;
 public class AbstractJobSession extends BaseJobSession {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    
+
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
@@ -37,10 +37,17 @@ public class AbstractJobSession extends BaseJobSession {
 
         isPreserveTTLWritetime = Boolean.parseBoolean(sparkConf.get("spark.preserveTTLWriteTime", "false"));
         if (isPreserveTTLWritetime) {
-            String ttlColsStr = sparkConf.get("spark.source.ttl.cols");
+            String ttlColsStr = sparkConf.get("spark.preserveTTLWriteTime.ttl.cols");
             if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
                 for (String ttlCol : ttlColsStr.split(",")) {
                     ttlCols.add(Integer.parseInt(ttlCol));
+                }
+            }
+
+            String writeTimestampColsStr = sparkConf.get("spark.preserveTTLWriteTime.writetime.cols");
+            if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
+                for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
+                    writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
                 }
             }
         }
@@ -50,12 +57,6 @@ public class AbstractJobSession extends BaseJobSession {
         // batchsize set to 1 if there is a writeFilter
         if (writeTimeStampFilter) {
             batchSize = 1;
-            String writeTimestampColsStr = sparkConf.get("spark.source.writeTimeStampFilter.cols");
-            if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
-                for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
-                    writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
-                }
-            }
         }
 
         String minWriteTimeStampFilterStr =
@@ -82,14 +83,27 @@ public class AbstractJobSession extends BaseJobSession {
 
         String selectCols = sparkConf.get("spark.query.source");
         String partionKey = sparkConf.get("spark.query.source.partitionKey");
+        String sourceSelectCondition = sparkConf.get("spark.query.condition", "");
+
+        final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
+        if (isPreserveTTLWritetime) {
+            String[] allCols = selectCols.split(",");
+            ttlCols.forEach(col -> {
+                selectTTLWriteTimeCols.append(",ttl(" + allCols[col] + ")");
+            });
+            writeTimeStampCols.forEach(col -> {
+                selectTTLWriteTimeCols.append(",writetime(" + allCols[col] + ")");
+            });
+        }
+        String fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols.toString() + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
+                + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING";
+        sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
+        logger.info("PARAM -- Query used: " + fullSelectQuery);
+
         selectColTypes = getTypes(sparkConf.get("spark.query.types"));
         String idCols = sparkConf.get("spark.query.destination.id", "");
         idColTypes = selectColTypes.subList(0, idCols.split(",").length);
-        String sourceSelectCondition = sparkConf.get("spark.query.condition", "");
-        sourceSelectStatement = sourceSession.prepare(
-                "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
-                        + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
-
+        
         String insertCols = sparkConf.get("spark.query.destination", "");
         if (null == insertCols || insertCols.trim().isEmpty()) {
             insertCols = selectCols;
@@ -146,7 +160,7 @@ public class AbstractJobSession extends BaseJobSession {
     public int getLargestTTL(Row sourceRow) {
         int ttl = 0;
         for (Integer ttlCol : ttlCols) {
-            ttl = Math.max(ttl, sourceRow.getInt(ttlCol));
+            ttl = Math.max(ttl, sourceRow.getInt(selectColTypes.size() + ttlCol - 1));
         }
         return ttl;
     }
@@ -154,7 +168,7 @@ public class AbstractJobSession extends BaseJobSession {
     public long getLargestWriteTimeStamp(Row sourceRow) {
         long writeTimestamp = 0;
         for (Integer writeTimeStampCol : writeTimeStampCols) {
-            writeTimestamp = Math.max(writeTimestamp, sourceRow.getLong(writeTimeStampCol));
+            writeTimestamp = Math.max(writeTimestamp, sourceRow.getLong(selectColTypes.size() + ttlCols.size() + writeTimeStampCol - 1));
         }
         return writeTimestamp;
     }
