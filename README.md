@@ -2,7 +2,7 @@
 
 Spark jobs in this repo can be used for data migration and data validation.
 
-> :warning: Please note this job has been tested with spark version [2.4.8](https://downloads.apache.org/spark/spark-2.4.8/)
+> :warning: Please note this job has been tested with spark version [2.4.8](https://archive.apache.org/dist/spark/spark-2.4.8/)
 
 ## Prerequisite
 

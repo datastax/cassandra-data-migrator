@@ -83,7 +83,6 @@
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.16" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:jul-to-slf4j:1.7.16" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:jcl-over-slf4j:1.7.16" level="project" />
-    <orderEntry type="library" name="Maven: log4j:log4j:1.2.17" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-log4j12:1.7.16" level="project" />
     <orderEntry type="library" name="Maven: com.ning:compress-lzf:1.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.xerial.snappy:snappy-java:1.1.8.2" level="project" />
@@ -160,7 +159,6 @@
     <orderEntry type="library" name="Maven: org.spark-project.hive:hive-exec:1.2.1.spark2" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" name="Maven: javolution:javolution:5.5.1" level="project" />
-    <orderEntry type="library" name="Maven: log4j:apache-log4j-extras:1.2.17" level="project" />
     <orderEntry type="library" name="Maven: org.antlr:ST4:4.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.googlecode.javaewah:JavaEWAH:0.3.2" level="project" />
     <orderEntry type="library" name="Maven: org.iq80.snappy:snappy:0.2" level="project" />
@@ -202,6 +200,9 @@
     <orderEntry type="library" name="Maven: com.github.spotbugs:spotbugs-annotations:3.1.12" level="project" />
     <orderEntry type="library" name="Maven: com.datastax.oss:java-driver-mapper-runtime:4.10.0" level="project" />
     <orderEntry type="library" name="Maven: com.datastax.oss:java-driver-query-builder:4.10.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.19.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-core:2.19.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-to-slf4j:2.19.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.scalatest:scalatest_2.11:3.2.12" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.scalatest:scalatest-core_2.11:3.2.12" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.scalatest:scalatest-compatible:3.2.12" level="project" />

@@ -9,22 +9,20 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyJobSession extends AbstractJobSession {
 
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private static CopyJobSession copyJobSession;
-
-    protected PreparedStatement astraInsertStatement;
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
-    protected List<MigrateDataType> insertColTypes = new ArrayList<MigrateDataType>();
-    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
+    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
+        super(sourceSession, astraSession, sparkConf);
+    }
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
         if (copyJobSession == null) {
@@ -36,39 +34,6 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return copyJobSession;
-    }
-
-    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
-        super(sourceSession, astraSession, sparkConf);
-
-        String insertCols = sparkConf.get("spark.query.cols.insert");
-        insertColTypes = getTypes(sparkConf.get("spark.query.cols.insert.types"));
-        String insertBinds = "";
-        int count = 1;
-        for (String str : insertCols.split(",")) {
-            if (count > 1) {
-                insertBinds = insertBinds + ",?";
-            } else {
-                insertBinds = insertBinds + "?";
-            }
-            count++;
-        }
-
-        if (isCounterTable) {
-            String updateSelectMappingStr = sparkConf.get("spark.counterTable.cql.index", "0");
-            for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
-                updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
-            }
-
-            String counterTableUpdate = sparkConf.get("spark.counterTable.cql");
-            astraInsertStatement = astraSession.prepare(counterTableUpdate);
-        } else {
-            if (isPreserveTTLWritetime) {
-                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ") using TTL ? and TIMESTAMP ?");
-            } else {
-                astraInsertStatement = astraSession.prepare("insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")");
-            }
-        }
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
@@ -97,7 +62,7 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         writeLimiter.acquire(1);
-                        if (readCounter.incrementAndGet() % 1000 == 0) {
+                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
                                     + readCounter.get());
                         }
@@ -123,7 +88,7 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
-                        if (readCounter.incrementAndGet() % 1000 == 0) {
+                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
@@ -168,7 +133,7 @@ public class CopyJobSession extends AbstractJobSession {
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
-            if (writeCounter.addAndGet(incrementBy) % 1000 == 0) {
+            if (writeCounter.addAndGet(incrementBy) % printStatsAfter == 0) {
                 logger.info("TreadID: " + Thread.currentThread().getId() + " Write Record Count: " + writeCounter.get());
             }
         }
@@ -179,8 +144,8 @@ public class CopyJobSession extends AbstractJobSession {
         BoundStatement boundInsertStatement = insertStatement.bind();
 
         if (isCounterTable) {
-            for (int index = 0; index < insertColTypes.size(); index++) {
-                MigrateDataType dataType = insertColTypes.get(index);
+            for (int index = 0; index < selectColTypes.size(); index++) {
+                MigrateDataType dataType = selectColTypes.get(updateSelectMapping.get(index));
                 // compute the counter delta if reading from astra for the difference
                 if (astraRow != null && index < (selectColTypes.size() - idColTypes.size())) {
                     boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
@@ -190,8 +155,8 @@ public class CopyJobSession extends AbstractJobSession {
             }
         } else {
             int index = 0;
-            for (index = 0; index < insertColTypes.size(); index++) {
-                MigrateDataType dataTypeObj = insertColTypes.get(index);
+            for (index = 0; index < selectColTypes.size(); index++) {
+                MigrateDataType dataTypeObj = selectColTypes.get(index);
                 Class dataType = dataTypeObj.typeClass;
 
                 try {
