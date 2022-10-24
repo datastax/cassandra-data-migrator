@@ -35,6 +35,7 @@ public abstract class BaseJobSession {
     protected Boolean writeTimeStampFilter = Boolean.FALSE;
     protected Long minWriteTimeStampFilter = 0l;
     protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
+    protected Long customWritetime = 0l;
 
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();

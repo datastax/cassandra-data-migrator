@@ -87,3 +87,4 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - SSL Support (including custom cipher algorithms)
 - Migrate from any Cassandra source ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set
+- Custom writetime

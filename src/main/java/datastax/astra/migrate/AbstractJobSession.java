@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +67,12 @@ public class AbstractJobSession extends BaseJobSession {
                 sparkConf.get("spark.source.maxWriteTimeStampFilter", "0");
         if (null != maxWriteTimeStampFilterStr && maxWriteTimeStampFilterStr.trim().length() > 1) {
             maxWriteTimeStampFilter = Long.parseLong(maxWriteTimeStampFilterStr);
+        }
+
+        String customWriteTimeStr =
+                sparkConf.get("spark.destination.custom.writeTime", "0");
+        if (null != customWriteTimeStr && customWriteTimeStr.trim().length() > 1 && StringUtils.isNumeric(customWriteTimeStr.trim())) {
+            customWritetime = Long.parseLong(customWriteTimeStr);
         }
 
         logger.info("PARAM -- Write Batch Size: " + batchSize);
