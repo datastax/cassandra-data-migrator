@@ -63,28 +63,28 @@ public class DiffJobSession extends CopyJobSession {
                 ResultSet resultSet = sourceSession.execute(
                         sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
 
-                Map<Row, CompletionStage<AsyncResultSet>> writeResults = new HashMap<Row, CompletionStage<AsyncResultSet>>();
-                StreamSupport.stream(resultSet.spliterator(), false).forEach(sRow -> {
+                Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap = new HashMap<Row, CompletionStage<AsyncResultSet>>();
+                StreamSupport.stream(resultSet.spliterator(), false).forEach(srcRow -> {
                     readLimiter.acquire(1);
                     // do not process rows less than writeTimeStampFilter
-                    if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(sRow) < minWriteTimeStampFilter
-                            || getLargestWriteTimeStamp(sRow) > maxWriteTimeStampFilter))) {
+                    if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(srcRow) < minWriteTimeStampFilter
+                            || getLargestWriteTimeStamp(srcRow) > maxWriteTimeStampFilter))) {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             printCounts("Current");
                         }
 
-                        CompletionStage<AsyncResultSet> writeResultSet = astraSession
-                                .executeAsync(selectFromAstra(astraSelectStatement, sRow));
-                        writeResults.put(sRow, writeResultSet);
-                        if (writeResults.size() > 1000) {
-                            iterateAndClearWriteResults(writeResults);
+                        CompletionStage<AsyncResultSet> targetRowFuture = astraSession
+                                .executeAsync(selectFromAstra(astraSelectStatement, srcRow));
+                        srcToTargetRowMap.put(srcRow, targetRowFuture);
+                        if (srcToTargetRowMap.size() > 1000) {
+                            diffAndClear(srcToTargetRowMap);
                         }
                     } else {
                         readCounter.incrementAndGet();
                         skippedCounter.incrementAndGet();
                     }
                 });
-                iterateAndClearWriteResults(writeResults);
+                diffAndClear(srcToTargetRowMap);
 
                 printCounts("Final");
 
@@ -98,17 +98,16 @@ public class DiffJobSession extends CopyJobSession {
 
     }
 
-    private void iterateAndClearWriteResults(Map<Row, CompletionStage<AsyncResultSet>> writeResults) {
-        for (Row sr : writeResults.keySet()) {
-            Row ar = null;
+    private void diffAndClear(Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap) {
+        for (Row srcRow : srcToTargetRowMap.keySet()) {
             try {
-                ar = writeResults.get(sr).toCompletableFuture().get().one();
+                Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
+                diff(srcRow, targetRow);
             } catch (Exception e) {
-                logger.error("Could not perform diff for Key: " + getKey(sr), e);
+                logger.error("Could not perform diff for Key: " + getKey(srcRow), e);
             }
-            diff(sr, ar);
         }
-        writeResults.clear();
+        srcToTargetRowMap.clear();
     }
 
     public void printCounts(String finalStr) {
