@@ -5,17 +5,17 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-object DiffData extends AbstractJob {
+object MigratePartitionsFromFile extends AbstractJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
-  logger.info("Started Data Validation App")
+  logger.info("Started MigratePartitionsFromFile App")
 
-  diffTable(sourceConnection, destinationConnection)
+  migrateTable(sourceConnection, destinationConnection)
 
   exitSpark
 
-  private def diffTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
-    val partitions = SplitPartitions.getRandomSubPartitions(splitSize, minPartition, maxPartition, Integer.parseInt(coveragePercent))
+  private def migrateTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
+    val partitions = SplitPartitions.getSubPartitionsFromFile(splitSize)
     logger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
     val parts = sc.parallelize(partitions.toSeq, partitions.size);
     logger.info("Spark parallelize created : " + parts.count() + " parts!");
@@ -23,11 +23,13 @@ object DiffData extends AbstractJob {
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession =>
         destinationConnection.withSessionDo(destinationSession =>
-          DiffJobSession.getInstance(sourceSession, destinationSession, sc.getConf)
-            .getDataAndDiff(part.getMin, part.getMax)))
+          CopyJobSession.getInstance(sourceSession, destinationSession, sc.getConf)
+            .getDataAndInsert(part.getMin, part.getMax)))
     })
 
-    DiffJobSession.getInstance(null, null, sc.getConf).printCounts("Job Final");
   }
 
 }
+
+
+

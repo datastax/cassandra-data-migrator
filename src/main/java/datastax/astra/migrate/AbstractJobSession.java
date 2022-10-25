@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 public class AbstractJobSession extends BaseJobSession {
 
@@ -36,14 +37,14 @@ public class AbstractJobSession extends BaseJobSession {
         sourceKeyspaceTable = sparkConf.get("spark.source.keyspaceTable");
         astraKeyspaceTable = sparkConf.get("spark.destination.keyspaceTable");
 
-        String ttlColsStr = sparkConf.get("spark.query.ttl.cols");
+        String ttlColsStr = sparkConf.get("spark.query.ttl.cols", "");
         if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
             for (String ttlCol : ttlColsStr.split(",")) {
                 ttlCols.add(Integer.parseInt(ttlCol));
             }
         }
 
-        String writeTimestampColsStr = sparkConf.get("spark.query.writetime.cols");
+        String writeTimestampColsStr = sparkConf.get("spark.query.writetime.cols", "");
         if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
             for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
                 writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
@@ -163,19 +164,13 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     public int getLargestTTL(Row sourceRow) {
-        int ttl = 0;
-        for (Integer ttlCol : ttlCols) {
-            ttl = Math.max(ttl, sourceRow.getInt(selectColTypes.size() + ttlCol - 1));
-        }
-        return ttl;
+        return IntStream.range(0, ttlCols.size())
+                .map(i -> sourceRow.getInt(selectColTypes.size() + i)).max().getAsInt();
     }
 
     public long getLargestWriteTimeStamp(Row sourceRow) {
-        long writeTimestamp = 0;
-        for (Integer writeTimeStampCol : writeTimeStampCols) {
-            writeTimestamp = Math.max(writeTimestamp, sourceRow.getLong(selectColTypes.size() + ttlCols.size() + writeTimeStampCol - 1));
-        }
-        return writeTimestamp;
+        return IntStream.range(0, writeTimeStampCols.size())
+                .mapToLong(i -> sourceRow.getLong(selectColTypes.size() + ttlCols.size() + i)).max().getAsLong();
     }
 
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
