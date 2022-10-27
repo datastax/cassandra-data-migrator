@@ -31,13 +31,13 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong validCounter = new AtomicLong(0);
     private AtomicLong skippedCounter = new AtomicLong(0);
 
-    private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
-        super(sourceSession, astraSession, sparkConf);
+    private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
+        super(sourceSession, astraSession, sc);
 
-        autoCorrectMissing = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.missing", "false"));
+        autoCorrectMissing = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.missing", "false"));
         logger.info("PARAM -- Autocorrect Missing: " + autoCorrectMissing);
 
-        autoCorrectMismatch = Boolean.parseBoolean(sparkConf.get("spark.destination.autocorrect.mismatch", "false"));
+        autoCorrectMismatch = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.mismatch", "false"));
         logger.info("PARAM -- Autocorrect Mismatch: " + autoCorrectMismatch);
     }
 

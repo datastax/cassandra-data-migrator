@@ -26,7 +26,7 @@ class AbstractJob extends BaseJob {
     if ("true".equals(isAstra)) {
       abstractLogger.info(connType + ": Connected to Astra using SCB: " + scbPath);
 
-      return CassandraConnector(sc.getConf
+      return CassandraConnector(sc
         .set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
@@ -40,7 +40,7 @@ class AbstractJob extends BaseJob {
         enabledAlgorithmsVar = "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
       }
 
-      return CassandraConnector(sc.getConf
+      return CassandraConnector(sc
         .set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
@@ -57,7 +57,7 @@ class AbstractJob extends BaseJob {
     } else {
       abstractLogger.info(connType + ": Connected to Cassandra (or DSE) host: " + host);
 
-      return CassandraConnector(sc.getConf.set("spark.cassandra.auth.username", username)
+      return CassandraConnector(sc.set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
         .set("spark.cassandra.connection.host", host))

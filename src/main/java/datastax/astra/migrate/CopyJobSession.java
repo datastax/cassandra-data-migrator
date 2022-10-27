@@ -20,15 +20,15 @@ public class CopyJobSession extends AbstractJobSession {
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
-    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
-        super(sourceSession, astraSession, sparkConf);
+    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
+        super(sourceSession, astraSession, sc);
     }
 
-    public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
+    public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         if (copyJobSession == null) {
             synchronized (CopyJobSession.class) {
                 if (copyJobSession == null) {
-                    copyJobSession = new CopyJobSession(sourceSession, astraSession, sparkConf);
+                    copyJobSession = new CopyJobSession(sourceSession, astraSession, sc);
                 }
             }
         }
