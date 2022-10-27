@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import org.apache.spark.SparkConf;
@@ -9,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.concurrent.ForkJoinPool;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -51,7 +54,6 @@ public class DiffJobSession extends CopyJobSession {
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
-        ForkJoinPool customThreadPool = new ForkJoinPool();
         logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
@@ -61,27 +63,30 @@ public class DiffJobSession extends CopyJobSession {
                 ResultSet resultSet = sourceSession.execute(
                         sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
 
-                customThreadPool.submit(() -> {
-                    StreamSupport.stream(resultSet.spliterator(), true).forEach(sRow -> {
-                        readLimiter.acquire(1);
-                        // do not process rows less than writeTimeStampFilter
-                        if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(sRow) < minWriteTimeStampFilter
-                                || getLargestWriteTimeStamp(sRow) > maxWriteTimeStampFilter))) {
-                            if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                                printCounts("Current");
-                            }
-
-                            Row astraRow = astraSession
-                                    .execute(selectFromAstra(astraSelectStatement, sRow)).one();
-                            diff(sRow, astraRow);
-                        } else {
-                            readCounter.incrementAndGet();
-                            skippedCounter.incrementAndGet();
+                Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap = new HashMap<Row, CompletionStage<AsyncResultSet>>();
+                StreamSupport.stream(resultSet.spliterator(), false).forEach(srcRow -> {
+                    readLimiter.acquire(1);
+                    // do not process rows less than writeTimeStampFilter
+                    if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(srcRow) < minWriteTimeStampFilter
+                            || getLargestWriteTimeStamp(srcRow) > maxWriteTimeStampFilter))) {
+                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
+                            printCounts("Current");
                         }
-                    });
 
-                    printCounts("Final");
-                }).get();
+                        CompletionStage<AsyncResultSet> targetRowFuture = astraSession
+                                .executeAsync(selectFromAstra(astraSelectStatement, srcRow));
+                        srcToTargetRowMap.put(srcRow, targetRowFuture);
+                        if (srcToTargetRowMap.size() > 1000) {
+                            diffAndClear(srcToTargetRowMap);
+                        }
+                    } else {
+                        readCounter.incrementAndGet();
+                        skippedCounter.incrementAndGet();
+                    }
+                });
+                diffAndClear(srcToTargetRowMap);
+
+                printCounts("Final");
 
                 retryCount = maxAttempts;
             } catch (Exception e) {
@@ -91,7 +96,18 @@ public class DiffJobSession extends CopyJobSession {
             }
         }
 
-        customThreadPool.shutdownNow();
+    }
+
+    private void diffAndClear(Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap) {
+        for (Row srcRow : srcToTargetRowMap.keySet()) {
+            try {
+                Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
+                diff(srcRow, targetRow);
+            } catch (Exception e) {
+                logger.error("Could not perform diff for Key: " + getKey(srcRow), e);
+            }
+        }
+        srcToTargetRowMap.clear();
     }
 
     public void printCounts(String finalStr) {
@@ -150,15 +166,13 @@ public class DiffJobSession extends CopyJobSession {
     private String isDifferent(Row sourceRow, Row astraRow) {
         StringBuffer diffData = new StringBuffer();
         IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
-            if (!writeTimeStampCols.contains(index)) {
-                MigrateDataType dataType = selectColTypes.get(index);
-                Object source = getData(dataType, index, sourceRow);
-                Object astra = getData(dataType, index, astraRow);
+            MigrateDataType dataType = selectColTypes.get(index);
+            Object source = getData(dataType, index, sourceRow);
+            Object astra = getData(dataType, index, astraRow);
 
-                boolean isDiff = dataType.diff(source, astra);
-                if (isDiff) {
-                    diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
-                }
+            boolean isDiff = dataType.diff(source, astra);
+            if (isDiff) {
+                diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
             }
         });
 
