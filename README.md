@@ -44,10 +44,10 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 - Validation job will report differences as “ERRORS” in the log file as shown below
 
 ```
-22/09/27 11:21:24 ERROR DiffJobSession: Data mismatch found -  Key: ek-1 %% mn1 %% c1 %% true Data:  (Index: 4 Origin: 30 Target: 20 )
-22/09/27 11:21:24 ERROR DiffJobSession: Corrected mismatch data in Astra: ek-1 %% mn1 %% c1 %% true
-22/09/27 11:21:24 ERROR DiffJobSession: Data is missing in Astra: ek-2 %% mn2 %% c2 %% true
-22/09/27 11:21:24 ERROR DiffJobSession: Corrected missing data in Astra: ek-2 %% mn2 %% c2 %% true
+22/10/27 23:25:29 ERROR DiffJobSession: Missing target row found for key: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% Aliquam faucibus
+22/10/27 23:25:29 ERROR DiffJobSession: Inserted missing row in target: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% Aliquam faucibus
+22/10/27 23:25:30 ERROR DiffJobSession: Mismatch row found for key: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% augue odio at quam Data:  (Index: 8 Origin: Hello 3 Target: Hello 2 )
+22/10/27 23:25:30 ERROR DiffJobSession: Updated mismatch row in target: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% augue odio at quam
 ```
 
 - Please grep for all `ERROR` from the output log files to get the list of missing and mismatched records.
@@ -58,8 +58,8 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 - Enable/disable this feature using one or both of the below setting in the config file
 
 ```
+spark.target.autocorrect.missing                    true|false
 spark.target.autocorrect.mismatch                   true|false
-spark.target.custom.writeTime                       true|false
 ```
 
 # Migrating specific partition ranges
