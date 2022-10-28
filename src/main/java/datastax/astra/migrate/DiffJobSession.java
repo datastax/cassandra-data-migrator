@@ -130,13 +130,13 @@ public class DiffJobSession extends CopyJobSession {
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Data is missing in Astra: " + getKey(sourceRow));
+            logger.error("Data is missing in Target: " + getKey(sourceRow));
             //correct data
 
             if (autoCorrectMissing) {
                 astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Corrected missing data in Astra: " + getKey(sourceRow));
+                logger.error("Corrected missing data in Target: " + getKey(sourceRow));
             }
 
             return;
@@ -154,7 +154,7 @@ public class DiffJobSession extends CopyJobSession {
                     astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Corrected mismatch data in Astra: " + getKey(sourceRow));
+                logger.error("Corrected mismatch data in Target: " + getKey(sourceRow));
             }
 
             return;
@@ -172,7 +172,7 @@ public class DiffJobSession extends CopyJobSession {
 
             boolean isDiff = dataType.diff(source, astra);
             if (isDiff) {
-                diffData.append(" (Index: " + index + " Source: " + source + " Astra: " + astra + " ) ");
+                diffData.append(" (Index: " + index + " Origin: " + source + " Target: " + astra + " ) ");
             }
         });
 

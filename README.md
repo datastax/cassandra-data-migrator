@@ -44,7 +44,7 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 - Validation job will report differences as “ERRORS” in the log file as shown below
 
 ```
-22/09/27 11:21:24 ERROR DiffJobSession: Data mismatch found -  Key: ek-1 %% mn1 %% c1 %% true Data:  (Index: 4 Source: 30 Astra: 20 )
+22/09/27 11:21:24 ERROR DiffJobSession: Data mismatch found -  Key: ek-1 %% mn1 %% c1 %% true Data:  (Index: 4 Origin: 30 Target: 20 )
 22/09/27 11:21:24 ERROR DiffJobSession: Corrected mismatch data in Astra: ek-1 %% mn1 %% c1 %% true
 22/09/27 11:21:24 ERROR DiffJobSession: Data is missing in Astra: ek-2 %% mn2 %% c2 %% true
 22/09/27 11:21:24 ERROR DiffJobSession: Corrected missing data in Astra: ek-2 %% mn2 %% c2 %% true
@@ -53,13 +53,13 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 - Please grep for all `ERROR` from the output log files to get the list of missing and mismatched records.
   - Note that it lists differences by partition key values.
 - The Validation job can also be run in an AutoCorrect mode. This mode can
-  - Add any missing records from source to target
-  - Fix any inconsistencies between source and target (makes target same as source). 
+  - Add any missing records from origin to target
+  - Fix any inconsistencies between origin and target (makes target same as origin). 
 - Enable/disable this feature using one or both of the below setting in the config file
 
 ```
-spark.destination.autocorrect.missing                   true|false
-spark.destination.autocorrect.mismatch                  true|false
+spark.target.autocorrect.mismatch                   true|false
+spark.target.custom.writeTime                       true|false
 ```
 
 # Migrating specific partition ranges
@@ -83,8 +83,8 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
 - Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTL](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)
 - Advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
-- Filter records from source using writetime
+- Filter records from origin using writetime
 - SSL Support (including custom cipher algorithms)
-- Migrate from any Cassandra source ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
+- Migrate from any Cassandra origin ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Custom writetime
