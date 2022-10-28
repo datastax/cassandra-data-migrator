@@ -52,6 +52,15 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
+                        if (sourceKeyspaceTable.endsWith("resource_status")) {
+                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
+                            if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION")) {
+                                logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
+                                continue;
+                            }
+                        }
+
+
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
@@ -91,6 +100,15 @@ public class CopyJobSession extends AbstractJobSession {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
+
+                        if (sourceKeyspaceTable.endsWith("resource_status")) {
+                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
+                            if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION")) {
+                                logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
+                                continue;
+                            }
+                        }
+
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
                         // if batch threshold is met, send the writes and clear the batch
@@ -187,6 +205,20 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return boundInsertStatement;
+    }
+
+    private String getKey(Row sourceRow) {
+        StringBuffer key = new StringBuffer();
+        for (int index = 0; index < idColTypes.size(); index++) {
+            MigrateDataType dataType = idColTypes.get(index);
+            if (index == 0) {
+                key.append(getData(dataType, index, sourceRow));
+            } else {
+                key.append(" %% " + getData(dataType, index, sourceRow));
+            }
+        }
+
+        return key.toString();
     }
 
 }
