@@ -130,13 +130,13 @@ public class DiffJobSession extends CopyJobSession {
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Data is missing in Target: " + getKey(sourceRow));
+            logger.error("Missing target row found for key: " + getKey(sourceRow));
             //correct data
 
             if (autoCorrectMissing) {
                 astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Corrected missing data in Target: " + getKey(sourceRow));
+                logger.error("Inserted missing row in target: " + getKey(sourceRow));
             }
 
             return;
@@ -145,7 +145,7 @@ public class DiffJobSession extends CopyJobSession {
         String diffData = isDifferent(sourceRow, astraRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
-            logger.error("Data mismatch found -  Key: " + getKey(sourceRow) + " Data: " + diffData);
+            logger.error("Mismatch row found for key: " + getKey(sourceRow) + " Mismatch: " + diffData);
 
             if (autoCorrectMismatch) {
                 if (isCounterTable) {
@@ -154,7 +154,7 @@ public class DiffJobSession extends CopyJobSession {
                     astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Corrected mismatch data in Target: " + getKey(sourceRow));
+                logger.error("Updated mismatch row in target: " + getKey(sourceRow));
             }
 
             return;
@@ -172,7 +172,7 @@ public class DiffJobSession extends CopyJobSession {
 
             boolean isDiff = dataType.diff(source, astra);
             if (isDiff) {
-                diffData.append(" (Index: " + index + " Origin: " + source + " Target: " + astra + " ) ");
+                diffData.append("(Index: " + index + " Origin: " + source + " Target: " + astra + " ) ");
             }
         });
 
