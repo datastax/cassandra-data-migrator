@@ -46,23 +46,23 @@ public class OriginCountJobSession extends BaseJobSession{
         }
 
         readLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.readRateLimit", "20000")));
-        sourceKeyspaceTable = sparkConf.get("spark.source.keyspaceTable");
+        sourceKeyspaceTable = sparkConf.get("spark.origin.keyspaceTable");
 
-        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.source.hasRandomPartitioner", "false"));
-        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.source.counterTable", "false"));
+        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.origin.hasRandomPartitioner", "false"));
+        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.counterTable", "false"));
 
-        checkTableforColSize = Boolean.parseBoolean(sparkConf.get("spark.source.checkTableforColSize", "false"));
-        checkTableforselectCols = sparkConf.get("spark.source.checkTableforColSize.cols");
-        checkTableforColSizeTypes = getTypes(sparkConf.get("spark.source.checkTableforColSize.cols.types"));
-        filterColName = sparkConf.get("spark.source.FilterColumn");
-        filterColType = sparkConf.get("spark.source.FilterColumnType");
-        filterColIndex =  Integer.parseInt(sparkConf.get("spark.source.FilterColumnIndex", "0"));
+        checkTableforColSize = Boolean.parseBoolean(sparkConf.get("spark.origin.checkTableforColSize", "false"));
+        checkTableforselectCols = sparkConf.get("spark.origin.checkTableforColSize.cols");
+        checkTableforColSizeTypes = getTypes(sparkConf.get("spark.origin.checkTableforColSize.cols.types"));
+        filterColName = sparkConf.get("spark.origin.FilterColumn");
+        filterColType = sparkConf.get("spark.origin.FilterColumnType");
+        filterColIndex =  Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
 
         String partionKey = sparkConf.get("spark.query.cols.partitionKey");
         idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
 
         String selectCols = sparkConf.get("spark.query.cols.select");
-        String updateSelectMappingStr = sparkConf.get("spark.source.counterTable.update.select.index", "0");
+        String updateSelectMappingStr = sparkConf.get("spark.counterTable.cql.index", "0");
         for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
             updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
         }
