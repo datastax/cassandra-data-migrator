@@ -58,7 +58,7 @@ public class OriginCountJobSession extends BaseJobSession{
         filterColName = sparkConf.get("spark.origin.FilterColumn");
         filterColType = sparkConf.get("spark.origin.FilterColumnType");
         filterColIndex =  Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
-        fieldGuardraillimitMB =  Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
+        fieldGuardraillimitMB =   Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
 
         String partionKey = sparkConf.get("spark.query.cols.partitionKey");
         idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
@@ -94,7 +94,7 @@ public class OriginCountJobSession extends BaseJobSession{
                         if(checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             String result = "";
-                            if (rowColcnt > fieldGuardraillimitMB) {
+                            if (rowColcnt > fieldGuardraillimitMB * 1048576) {
                                 for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
                                     MigrateDataType dataType = checkTableforColSizeTypes.get(index);
                                     Object colData = getData(dataType, index, sourceRow);
@@ -116,7 +116,7 @@ public class OriginCountJobSession extends BaseJobSession{
                         if(checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             String result = "";
-                            if (rowColcnt > fieldGuardraillimitMB) {
+                            if (rowColcnt > fieldGuardraillimitMB * 1048576) {
                                 for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
                                     MigrateDataType dataType = checkTableforColSizeTypes.get(index);
                                     Object colData = getData(dataType, index, sourceRow);
