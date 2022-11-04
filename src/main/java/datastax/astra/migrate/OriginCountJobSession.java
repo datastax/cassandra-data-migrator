@@ -24,6 +24,7 @@ public class OriginCountJobSession extends BaseJobSession{
     protected String filterColName;
     protected String filterColType;
     protected Integer filterColIndex;
+    protected Integer fieldGuardraillimitMB;
     protected List<MigrateDataType> checkTableforColSizeTypes = new ArrayList<MigrateDataType>();
     public static OriginCountJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
         if (originCountJobSession == null) {
@@ -57,6 +58,7 @@ public class OriginCountJobSession extends BaseJobSession{
         filterColName = sparkConf.get("spark.origin.FilterColumn");
         filterColType = sparkConf.get("spark.origin.FilterColumnType");
         filterColIndex =  Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
+        fieldGuardraillimitMB =  Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
 
         String partionKey = sparkConf.get("spark.query.cols.partitionKey");
         idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
@@ -92,7 +94,7 @@ public class OriginCountJobSession extends BaseJobSession{
                         if(checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             String result = "";
-                            if (rowColcnt > 1024 * 1024 * 10) {
+                            if (rowColcnt > fieldGuardraillimitMB) {
                                 for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
                                     MigrateDataType dataType = checkTableforColSizeTypes.get(index);
                                     Object colData = getData(dataType, index, sourceRow);
@@ -114,7 +116,7 @@ public class OriginCountJobSession extends BaseJobSession{
                         if(checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             String result = "";
-                            if (rowColcnt > 1024 * 1024 * 10) {
+                            if (rowColcnt > fieldGuardraillimitMB) {
                                 for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
                                     MigrateDataType dataType = checkTableforColSizeTypes.get(index);
                                     Object colData = getData(dataType, index, sourceRow);
@@ -145,13 +147,13 @@ public class OriginCountJobSession extends BaseJobSession{
     }
 
     private int GetRowColumnLength(Row sourceRow, String filterColType, Integer filterColIndex) {
-        int i = 0;
+        int sizeInMB = 0;
         Object colData = getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
         byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
-        i = colBytes.length;
-        if (i > 1024*1024*10)
-            return i;
-        return i;
+        sizeInMB = colBytes.length;
+        if (sizeInMB > fieldGuardraillimitMB)
+            return sizeInMB;
+        return sizeInMB;
     }
 
 }
