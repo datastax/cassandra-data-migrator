@@ -22,6 +22,7 @@
     <orderEntry type="library" name="Maven: org.apache.spark:spark-core_2.11:2.4.8" level="project" />
     <orderEntry type="library" name="Maven: com.thoughtworks.paranamer:paranamer:2.8" level="project" />
     <orderEntry type="library" name="Maven: org.apache.avro:avro:1.8.2" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-core-asl:1.9.13" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-compress:1.8.1" level="project" />
     <orderEntry type="library" name="Maven: org.tukaani:xz:1.5" level="project" />
     <orderEntry type="library" name="Maven: org.apache.avro:avro-mapred:hadoop2:1.8.2" level="project" />
@@ -68,8 +69,6 @@
     <orderEntry type="library" name="Maven: org.apache.spark:spark-launcher_2.11:2.4.8" level="project" />
     <orderEntry type="library" name="Maven: org.apache.spark:spark-kvstore_2.11:2.4.8" level="project" />
     <orderEntry type="library" name="Maven: org.fusesource.leveldbjni:leveldbjni-all:1.8" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.6.7" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.7" level="project" />
     <orderEntry type="library" name="Maven: org.apache.spark:spark-network-common_2.11:2.4.8" level="project" />
     <orderEntry type="library" name="Maven: org.apache.spark:spark-network-shuffle_2.11:2.4.8" level="project" />
     <orderEntry type="library" name="Maven: org.apache.spark:spark-unsafe_2.11:2.4.8" level="project" />
@@ -159,7 +158,6 @@
     <orderEntry type="library" name="Maven: org.spark-project.hive:hive-exec:1.2.1.spark2" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" name="Maven: javolution:javolution:5.5.1" level="project" />
-    <orderEntry type="library" name="Maven: org.antlr:ST4:4.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.googlecode.javaewah:JavaEWAH:0.3.2" level="project" />
     <orderEntry type="library" name="Maven: org.iq80.snappy:snappy:0.2" level="project" />
     <orderEntry type="library" name="Maven: stax:stax-api:1.0.1" level="project" />
@@ -194,7 +192,6 @@
     <orderEntry type="library" name="Maven: com.datastax.oss:native-protocol:1.4.12" level="project" />
     <orderEntry type="library" name="Maven: com.datastax.oss:java-driver-shaded-guava:25.1-jre-graal-sub-1" level="project" />
     <orderEntry type="library" name="Maven: com.typesafe:config:1.4.1" level="project" />
-    <orderEntry type="library" name="Maven: org.hdrhistogram:HdrHistogram:2.1.12" level="project" />
     <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
     <orderEntry type="library" name="Maven: com.github.stephenc.jcip:jcip-annotations:1.0-1" level="project" />
     <orderEntry type="library" name="Maven: com.github.spotbugs:spotbugs-annotations:3.1.12" level="project" />
@@ -223,33 +220,26 @@
     <orderEntry type="library" name="Maven: org.scala-lang:scala-reflect:2.11.12" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.13.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.cassandra:cassandra-all:3.11.6" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.cassandra:cassandra-all:3.11.13" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: net.jpountz.lz4:lz4:1.3.0" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.4" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.antlr:antlr:3.5.2" level="project" />
+    <orderEntry type="library" name="Maven: org.antlr:ST4:4.0.8" level="project" />
     <orderEntry type="library" name="Maven: org.antlr:antlr-runtime:3.5.2" level="project" />
-    <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-core-asl:1.9.2" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.13.2" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.13.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.googlecode.json-simple:json-simple:1.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.boundary:high-scale-lib:1.0.6" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.yaml:snakeyaml:1.11" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.mindrot:jbcrypt:0.3m" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.yaml:snakeyaml:1.26" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.mindrot:jbcrypt:0.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: io.airlift:airline:0.6" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: javax.inject:javax.inject:1" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: io.dropwizard.metrics:metrics-logback:3.1.5" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.addthis.metrics:reporter-config3:3.0.3" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.addthis.metrics:reporter-config-base:3.0.3" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.hibernate:hibernate-validator:4.3.0.Final" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.jboss.logging:jboss-logging:3.1.0.CR2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.thinkaurelius.thrift:thrift-server:0.3.7" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.lmax:disruptor:3.0.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: ch.qos.logback:logback-core:1.1.3" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: ch.qos.logback:logback-classic:1.1.3" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.cassandra:cassandra-thrift:3.11.6" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: de.jflex:jflex:1.6.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.ant:ant:1.7.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.ant:ant-launcher:1.7.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: com.github.rholder:snowball-stemmer:1.3.0.581.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: com.googlecode.concurrent-trees:concurrent-trees:2.4.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: ch.qos.logback:logback-core:1.2.9" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: ch.qos.logback:logback-classic:1.2.9" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: net.java.dev.jna:jna:4.2.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.github.jbellis:jamm:0.3.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.fusesource:sigar:1.6.4" level="project" />
@@ -259,5 +249,10 @@
     <orderEntry type="library" scope="TEST" name="Maven: com.github.ben-manes.caffeine:caffeine:2.2.6" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.jctools:jctools-core:1.2.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm:5.0.4" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: javax.inject:javax.inject:1" level="project" />
+    <orderEntry type="library" name="Maven: org.hdrhistogram:HdrHistogram:2.1.9" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: de.jflex:jflex:1.6.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.github.rholder:snowball-stemmer:1.3.0.581.1" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.googlecode.concurrent-trees:concurrent-trees:2.4.0" level="project" />
   </component>
 </module>
