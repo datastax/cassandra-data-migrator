@@ -1,0 +1,4 @@
+# This is a sample input file for job: MigrateRowsFromFile
+# list of primary-key fields separated by ' %% '
+-1000154815969456717 %% 0 %% 10 %% 1024
+-1000154815969456717 %% 0 %% 10 %% 1025
