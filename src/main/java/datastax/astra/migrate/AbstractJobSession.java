@@ -10,10 +10,7 @@ import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 public class AbstractJobSession extends BaseJobSession {
@@ -21,6 +18,10 @@ public class AbstractJobSession extends BaseJobSession {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
+        this(sourceSession, astraSession, sc, false);
+    }
+
+    protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
@@ -96,11 +97,6 @@ public class AbstractJobSession extends BaseJobSession {
         writeTimeStampCols.forEach(col -> {
             selectTTLWriteTimeCols.append(",writetime(" + allCols[col] + ")");
         });
-        String fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
-                + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING";
-        sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
-        logger.info("PARAM -- Query used: " + fullSelectQuery);
-
         selectColTypes = getTypes(Util.getSparkProp(sc, "spark.query.types"));
         String idCols = Util.getSparkPropOrEmpty(sc, "spark.query.target.id");
         idColTypes = selectColTypes.subList(0, idCols.split(",").length);
@@ -117,6 +113,17 @@ public class AbstractJobSession extends BaseJobSession {
                 insertBinds += " and " + str + "= ?";
             }
         }
+
+        String fullSelectQuery;
+        if (!isJobMigrateRowsFromFile) {
+            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
+                    + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING";
+        } else {
+            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where " + insertBinds;
+        }
+        sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
+        logger.info("PARAM -- Query used: " + fullSelectQuery);
+
         astraSelectStatement = astraSession.prepare(
                 "select " + insertCols + " from " + astraKeyspaceTable
                         + " where " + insertBinds);
@@ -152,6 +159,55 @@ public class AbstractJobSession extends BaseJobSession {
             }
             astraInsertStatement = astraSession.prepare(fullInsertQuery);
         }
+    }
+
+    public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
+        BoundStatement boundInsertStatement = insertStatement.bind();
+
+        if (isCounterTable) {
+            for (int index = 0; index < selectColTypes.size(); index++) {
+                MigrateDataType dataType = selectColTypes.get(updateSelectMapping.get(index));
+                // compute the counter delta if reading from astra for the difference
+                if (astraRow != null && index < (selectColTypes.size() - idColTypes.size())) {
+                    boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
+                } else {
+                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
+                }
+            }
+        } else {
+            int index = 0;
+            for (index = 0; index < selectColTypes.size(); index++) {
+                MigrateDataType dataTypeObj = selectColTypes.get(index);
+                Class dataType = dataTypeObj.typeClass;
+
+                try {
+                    Object colData = getData(dataTypeObj, index, sourceRow);
+                    if (index < idColTypes.size() && colData == null && dataType == String.class) {
+                        colData = "";
+                    }
+                    boundInsertStatement = boundInsertStatement.set(index, colData, dataType);
+                } catch (NullPointerException e) {
+                    // ignore the exception for map values being null
+                    if (dataType != Map.class) {
+                        throw e;
+                    }
+                }
+            }
+
+            if (!ttlCols.isEmpty()) {
+                boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
+                index++;
+            }
+            if (!writeTimeStampCols.isEmpty()) {
+                if (customWritetime > 0) {
+                    boundInsertStatement = boundInsertStatement.set(index, customWritetime, Long.class);
+                } else {
+                    boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow), Long.class);
+                }
+            }
+        }
+
+        return boundInsertStatement;
     }
 
     public int getLargestTTL(Row sourceRow) {

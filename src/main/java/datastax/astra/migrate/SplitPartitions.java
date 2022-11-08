@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -12,6 +11,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class SplitPartitions {
 
@@ -42,9 +44,12 @@ public class SplitPartitions {
         logger.info("TreadID: " + Thread.currentThread().getId() +
                 " Splitting partitions in file: ./partitions.csv using a split-size of " + splitSize);
         List<Partition> partitions = new ArrayList<Partition>();
-        BufferedReader reader = new BufferedReader(new FileReader("./partitions.csv"));
+        BufferedReader reader = Util.getfileReader("./partitions.csv");
         String line = null;
         while ((line = reader.readLine()) != null) {
+            if (line.startsWith("#")) {
+                continue;
+            }
             String[] minMax = line.split(",");
             try {
                 partitions.addAll(getSubPartitions(splitSize, new BigInteger(minMax[0]), new BigInteger(minMax[1]), 100));
@@ -54,6 +59,36 @@ public class SplitPartitions {
         }
 
         return partitions;
+    }
+
+    public static List<PKRows> getRowPartsFromFile(int splitSize) throws IOException {
+        logger.info("TreadID: " + Thread.currentThread().getId() +
+                " Splitting rows in file: ./primary_key_rows.csv using a split-size of " + splitSize);
+        List<String> pkRows = new ArrayList<String>();
+        BufferedReader reader = Util.getfileReader("./primary_key_rows.csv");
+        String pkRow = null;
+        while ((pkRow = reader.readLine()) != null) {
+            if (pkRow.startsWith("#")) {
+                continue;
+            }
+            pkRows.add(pkRow);
+        }
+        int partSize = pkRows.size() / splitSize;
+        if (partSize == 0) {
+            partSize = pkRows.size();
+        }
+        return batches(pkRows, partSize).map(l -> (new PKRows(l))).collect(Collectors.toList());
+    }
+
+    public static <T> Stream<List<T>> batches(List<T> source, int length) {
+        if (length <= 0)
+            throw new IllegalArgumentException("length = " + length);
+        int size = source.size();
+        if (size <= 0)
+            return Stream.empty();
+        int fullChunks = (size - 1) / length;
+        return IntStream.range(0, fullChunks + 1).mapToObj(
+                n -> source.subList(n * length, n == fullChunks ? size : (n + 1) * length));
     }
 
     private static List<Partition> getSubPartitions(int splitSize, BigInteger min, BigInteger max, int coveragePercent) {
@@ -90,6 +125,14 @@ public class SplitPartitions {
         }
 
         return partitions;
+    }
+
+    public static class PKRows implements Serializable {
+        List<String> pkRows;
+
+        public PKRows(List<String> rows) {
+            pkRows = rows;
+        }
     }
 
     public static class Partition implements Serializable {
