@@ -39,7 +39,7 @@ public class CopyPKJobSession extends AbstractJobSession {
 
     public void getRowAndInsert(List<SplitPartitions.PKRows> rowsList) {
         for (SplitPartitions.PKRows rows : rowsList) {
-            for (String row : rows.pkRows) {
+            rows.pkRows.parallelStream().forEach(row -> {
                 readCounter.incrementAndGet();
                 String[] pkFields = row.split(" %% ");
                 int idx = 0;
@@ -52,20 +52,30 @@ public class CopyPKJobSession extends AbstractJobSession {
                 if (null == pkRow) {
                     missingCounter.incrementAndGet();
                     logger.error("Could not find row with primary-key: " + row);
-                    continue;
+                    return;
                 }
                 ResultSet astraWriteResultSet = astraSession
                         .execute(bindInsert(astraInsertStatement, pkRow, null));
                 writeCounter.incrementAndGet();
-
-            }
+                if (readCounter.get() % printStatsAfter == 0) {
+                    printCounts(false);
+                }
+            });
         }
 
-        logger.info("################################################################################################");
+        printCounts(true);
+    }
+
+    public void printCounts(boolean isFinal) {
+        if (isFinal) {
+            logger.info("################################################################################################");
+        }
         logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
         logger.info("TreadID: " + Thread.currentThread().getId() + " Read Missing Count: " + missingCounter.get());
         logger.info("TreadID: " + Thread.currentThread().getId() + " Inserted Record Count: " + writeCounter.get());
-        logger.info("################################################################################################");
+        if (isFinal) {
+            logger.info("################################################################################################");
+        }
     }
 
     private Object convert(Class<?> targetType, String text) {
