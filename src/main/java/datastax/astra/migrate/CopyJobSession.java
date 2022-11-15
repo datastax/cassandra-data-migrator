@@ -62,8 +62,7 @@ public class CopyJobSession extends AbstractJobSession {
 
                         writeLimiter.acquire(1);
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                            logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
-                                    + readCounter.get());
+                            printCounts(false);
                         }
                         Row astraRow = null;
                         if (isCounterTable) {
@@ -88,7 +87,7 @@ public class CopyJobSession extends AbstractJobSession {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                            logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
+                            printCounts(false);
                         }
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
@@ -116,8 +115,6 @@ public class CopyJobSession extends AbstractJobSession {
                     }
                 }
 
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Write Record Count: " + writeCounter.get());
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount, e);
@@ -126,13 +123,24 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
+    public synchronized void printCounts(boolean isFinal) {
+        String msg = "TreadID: " + Thread.currentThread().getId();
+        if (isFinal) {
+            msg += " Final";
+            logger.info("################################################################################################");
+        }
+        logger.info(msg + " Read Record Count: " + readCounter.get());
+        logger.info(msg + " Write Record Count: " + writeCounter.get());
+        if (isFinal) {
+            logger.info("################################################################################################");
+        }
+    }
+
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
-            if (writeCounter.addAndGet(incrementBy) % printStatsAfter == 0) {
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Write Record Count: " + writeCounter.get());
-            }
+            writeCounter.addAndGet(incrementBy);
         }
         writeResults.clear();
     }

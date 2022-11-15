@@ -27,6 +27,7 @@ object MigratePartitionsFromFile extends AbstractJob {
             .getDataAndInsert(part.getMin, part.getMax)))
     })
 
+    CopyJobSession.getInstance(null, null, sc).printCounts(true);
   }
 
 }

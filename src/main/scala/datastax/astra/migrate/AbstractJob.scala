@@ -26,7 +26,7 @@ class AbstractJob extends BaseJob {
 
     var config: SparkConf = sContext.getConf
     if ("true".equals(isAstra)) {
-      abstractLogger.info(connType + ": Connected to Astra using SCB: " + scbPath);
+      abstractLogger.info(connType + ": Connecting to Astra using SCB: " + scbPath);
 
       return CassandraConnector(config
         .set("spark.cassandra.auth.username", username)
@@ -34,7 +34,7 @@ class AbstractJob extends BaseJob {
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
     } else if (null != trustStorePath && !trustStorePath.trim.isEmpty) {
-      abstractLogger.info(connType + ": Connected to Cassandra (or DSE) with SSL host: " + host);
+      abstractLogger.info(connType + ": Connecting to Cassandra (or DSE) with SSL host: " + host);
 
       // Use defaults when not provided
       var enabledAlgorithmsVar = enabledAlgorithms
@@ -57,7 +57,7 @@ class AbstractJob extends BaseJob {
         .set("spark.cassandra.connection.ssl.clientAuth.enabled", "true")
       )
     } else {
-      abstractLogger.info(connType + ": Connected to Cassandra (or DSE) host: " + host);
+      abstractLogger.info(connType + ": Connecting to Cassandra (or DSE) host: " + host);
 
       return CassandraConnector(config.set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
