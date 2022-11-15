@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class OriginCountJobSession extends BaseJobSession{
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+public class OriginCountJobSession extends BaseJobSession {
     private static OriginCountJobSession originCountJobSession;
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
     protected Boolean checkTableforColSize;
@@ -28,17 +28,6 @@ public class OriginCountJobSession extends BaseJobSession{
     protected Integer filterColIndex;
     protected Integer fieldGuardraillimitMB;
     protected List<MigrateDataType> checkTableforColSizeTypes = new ArrayList<MigrateDataType>();
-    public static OriginCountJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
-        if (originCountJobSession == null) {
-            synchronized (OriginCountJobSession.class) {
-                if (originCountJobSession == null) {
-                    originCountJobSession = new OriginCountJobSession(sourceSession, sparkConf);
-                }
-            }
-        }
-
-        return originCountJobSession;
-    }
 
     protected OriginCountJobSession(CqlSession sourceSession, SparkConf sparkConf) {
         this.sourceSession = sourceSession;
@@ -59,8 +48,8 @@ public class OriginCountJobSession extends BaseJobSession{
         checkTableforColSizeTypes = getTypes(sparkConf.get("spark.origin.checkTableforColSize.cols.types"));
         filterColName = sparkConf.get("spark.origin.FilterColumn");
         filterColType = sparkConf.get("spark.origin.FilterColumnType");
-        filterColIndex =  Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
-        fieldGuardraillimitMB =   Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
+        filterColIndex = Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
+        fieldGuardraillimitMB = Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
 
         String partionKey = sparkConf.get("spark.query.cols.partitionKey");
         idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
@@ -75,6 +64,18 @@ public class OriginCountJobSession extends BaseJobSession{
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
 
+    }
+
+    public static OriginCountJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
+        if (originCountJobSession == null) {
+            synchronized (OriginCountJobSession.class) {
+                if (originCountJobSession == null) {
+                    originCountJobSession = new OriginCountJobSession(sourceSession, sparkConf);
+                }
+            }
+        }
+
+        return originCountJobSession;
     }
 
     public void getData(BigInteger min, BigInteger max) {
@@ -93,7 +94,7 @@ public class OriginCountJobSession extends BaseJobSession{
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        if(checkTableforColSize) {
+                        if (checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             String result = "";
                             if (rowColcnt > fieldGuardraillimitMB * 1048576) {
@@ -115,7 +116,7 @@ public class OriginCountJobSession extends BaseJobSession{
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
 
-                        if(checkTableforColSize) {
+                        if (checkTableforColSize) {
                             int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
                             String result = "";
                             if (rowColcnt > fieldGuardraillimitMB * 1048576) {

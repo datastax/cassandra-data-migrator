@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,7 +173,15 @@ public class DiffJobSession extends CopyJobSession {
 
             boolean isDiff = dataType.diff(source, astra);
             if (isDiff) {
-                diffData.append("(Index: " + index + " Origin: " + source + " Target: " + astra + " ) ");
+                if (dataType.typeClass.equals(UdtValue.class)) {
+                    String sourceUdtContent = ((UdtValue) source).getFormattedContents();
+                    String astraUdtContent = ((UdtValue) astra).getFormattedContents();
+                    if (!sourceUdtContent.equals(astraUdtContent)) {
+                        diffData.append("(Index: " + index + " Origin: " + sourceUdtContent + " Target: " + astraUdtContent + ") ");
+                    }
+                } else {
+                    diffData.append("(Index: " + index + " Origin: " + source + " Target: " + astra + ") ");
+                }
             }
         });
 
