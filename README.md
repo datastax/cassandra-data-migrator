@@ -4,6 +4,12 @@ Spark jobs in this repo can be used for data migration and data validation.
 
 > :warning: Please note this job has been tested with spark version [2.4.8](https://archive.apache.org/dist/spark/spark-2.4.8/)
 
+## Build
+1. Clone this repo
+2. Move to the repo folder `cd cassandra-data-migrator`
+3. Run the build `mvn clean package`
+4. The fat jar (`cassandra-data-migrator-2.x.jar`) file should now be present in the `target` folder
+
 ## Prerequisite
 
 Install Java8 as spark binaries are compiled with it.
@@ -19,13 +25,12 @@ tar -xvzf <spark downloaded file name>
 1. `sparkConf.properties` file needs to be configured as applicable for the environment
    > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
 2. Place the conf file where it can be accessed while running the job via spark-submit.
-3. Generate a fat jar (`cassandra-data-migrator-1.x.jar`) using command `mvn clean package`
-4. Run the 'Data Migration' job using `spark-submit` command as shown below:
+3. Run the 'Data Migration' job using `spark-submit` command as shown below:
 
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.Migrate cassandra-data-migrator-1.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-2.x.jar &> logfile_name.txt
 ```
 
 Note: Above command also generates a log file `logfile_name.txt` to avoid log output on the console.
@@ -38,7 +43,7 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.DiffData cassandra-data-migrator-1.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.DiffData cassandra-data-migrator-2.x.jar &> logfile_name.txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
@@ -67,7 +72,7 @@ spark.target.autocorrect.mismatch                   true|false
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-1.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-2.x.jar &> logfile_name.txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
