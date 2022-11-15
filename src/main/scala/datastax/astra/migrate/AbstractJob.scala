@@ -1,6 +1,7 @@
 package datastax.astra.migrate
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.spark.SparkConf
 
 class AbstractJob extends BaseJob {
 
@@ -23,10 +24,11 @@ class AbstractJob extends BaseJob {
       connType = "Destination"
     }
 
+    var config: SparkConf = sContext.getConf
     if ("true".equals(isAstra)) {
       abstractLogger.info(connType + ": Connected to Astra using SCB: " + scbPath);
 
-      return CassandraConnector(sc
+      return CassandraConnector(config
         .set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
@@ -40,7 +42,7 @@ class AbstractJob extends BaseJob {
         enabledAlgorithmsVar = "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
       }
 
-      return CassandraConnector(sc
+      return CassandraConnector(config
         .set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
@@ -57,7 +59,7 @@ class AbstractJob extends BaseJob {
     } else {
       abstractLogger.info(connType + ": Connected to Cassandra (or DSE) host: " + host);
 
-      return CassandraConnector(sc.set("spark.cassandra.auth.username", username)
+      return CassandraConnector(config.set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
         .set("spark.cassandra.connection.host", host))
