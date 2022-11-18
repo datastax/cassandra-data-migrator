@@ -186,18 +186,5 @@ public class DiffJobSession extends CopyJobSession {
         return diffData.toString();
     }
 
-    private String getKey(Row sourceRow) {
-        StringBuffer key = new StringBuffer();
-        for (int index = 0; index < idColTypes.size(); index++) {
-            MigrateDataType dataType = idColTypes.get(index);
-            if (index == 0) {
-                key.append(getData(dataType, index, sourceRow));
-            } else {
-                key.append(" %% " + getData(dataType, index, sourceRow));
-            }
-        }
-
-        return key.toString();
-    }
 
 }

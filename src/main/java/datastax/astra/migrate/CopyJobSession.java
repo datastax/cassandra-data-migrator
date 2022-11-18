@@ -22,6 +22,12 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         super(sourceSession, astraSession, sc);
+
+        filterData = Boolean.parseBoolean(sc.get("spark.origin.FilterData", "false"));
+        filterColName = sc.get("spark.origin.FilterColumn");
+        filterColType = sc.get("spark.origin.FilterColumnType");
+        filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
+        filterColValue = sc.get("spark.origin.FilterColumnValue");
     }
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
@@ -52,14 +58,13 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
-                        if (sourceKeyspaceTable.endsWith("resource_status")) {
-                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION")) {
+                        if (filterData) {
+                            String resourceAction = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            if (resourceAction.trim().equalsIgnoreCase(filterColValue)) {
                                 logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
                                 continue;
                             }
                         }
-
 
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
@@ -101,9 +106,9 @@ public class CopyJobSession extends AbstractJobSession {
                             logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
 
-                        if (sourceKeyspaceTable.endsWith("resource_status")) {
-                            String resourceAction = (String) getData(new MigrateDataType("0"), 2, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase("COPY_REVISION")) {
+                        if (filterData) {
+                            String resourceAction = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            if (resourceAction.trim().equalsIgnoreCase(filterColValue)) {
                                 logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
                                 continue;
                             }
@@ -147,6 +152,18 @@ public class CopyJobSession extends AbstractJobSession {
 
     }
 
+    public synchronized void printCounts(boolean isFinal) {
+        String msg = "TreadID: " + Thread.currentThread().getId();
+        if (isFinal) {
+            msg += " Final";
+            logger.info("################################################################################################");
+        }
+        logger.info(msg + " Read Record Count: " + readCounter.get());
+        logger.info(msg + " Write Record Count: " + writeCounter.get());
+        if (isFinal) {
+            logger.info("################################################################################################");
+        }
+    }
     private void iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
@@ -205,20 +222,6 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return boundInsertStatement;
-    }
-
-    private String getKey(Row sourceRow) {
-        StringBuffer key = new StringBuffer();
-        for (int index = 0; index < idColTypes.size(); index++) {
-            MigrateDataType dataType = idColTypes.get(index);
-            if (index == 0) {
-                key.append(getData(dataType, index, sourceRow));
-            } else {
-                key.append(" %% " + getData(dataType, index, sourceRow));
-            }
-        }
-
-        return key.toString();
     }
 
 }

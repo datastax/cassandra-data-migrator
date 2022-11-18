@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import org.apache.spark.SparkConf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,23 +32,38 @@ public abstract class BaseJobSession {
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
-
     protected Integer batchSize = 1;
     protected Integer printStatsAfter = 100000;
-
     protected Boolean writeTimeStampFilter = Boolean.FALSE;
     protected Long minWriteTimeStampFilter = 0l;
     protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
     protected Long customWritetime = 0l;
-
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
-
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
-
     protected Boolean hasRandomPartitioner;
+    protected Boolean filterData;
+    protected String filterColName;
+    protected String filterColType;
+    protected Integer filterColIndex;
+
+    protected String filterColValue;
+
+    public String getKey(Row sourceRow) {
+        StringBuffer key = new StringBuffer();
+        for (int index = 0; index < idColTypes.size(); index++) {
+            MigrateDataType dataType = idColTypes.get(index);
+            if (index == 0) {
+                key.append(getData(dataType, index, sourceRow));
+            } else {
+                key.append(" %% " + getData(dataType, index, sourceRow));
+            }
+        }
+
+        return key.toString();
+    }
 
     public List<MigrateDataType> getTypes(String types) {
         List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
