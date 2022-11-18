@@ -107,8 +107,8 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String resourceAction = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
-                            if (resourceAction.trim().equalsIgnoreCase(filterColValue)) {
+                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            if (colValue.trim().equalsIgnoreCase(filterColValue)) {
                                 logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
                                 continue;
                             }
