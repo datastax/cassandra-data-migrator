@@ -79,7 +79,7 @@ public class OriginCountJobSession extends BaseJobSession {
     }
 
     public void getData(BigInteger min, BigInteger max) {
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
+        logger.info("ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
@@ -132,18 +132,18 @@ public class OriginCountJobSession extends BaseJobSession {
                         }
 
                         if (readCounter.incrementAndGet() % 1000 == 0) {
-                            logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
+                            logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
                         }
 
                     }
                 }
 
 
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
+                logger.info("ThreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
                 retryCount = maxAttempts;
             } catch (Exception e) {
                 logger.error("Error occurred retry#: " + retryCount, e);
-                logger.error("Error with PartitionRange -- TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                logger.error("Error with PartitionRange -- ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
             }
         }
 

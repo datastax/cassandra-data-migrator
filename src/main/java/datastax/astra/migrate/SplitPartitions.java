@@ -31,7 +31,7 @@ public class SplitPartitions {
     }
 
     public static Collection<Partition> getRandomSubPartitions(int splitSize, BigInteger min, BigInteger max, int coveragePercent) {
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
+        logger.info("ThreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
         List<Partition> partitions = getSubPartitions(splitSize, min, max, coveragePercent);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
@@ -41,7 +41,7 @@ public class SplitPartitions {
     }
 
     public static List<Partition> getSubPartitionsFromFile(int splitSize) throws IOException {
-        logger.info("TreadID: " + Thread.currentThread().getId() +
+        logger.info("ThreadID: " + Thread.currentThread().getId() +
                 " Splitting partitions in file: ./partitions.csv using a split-size of " + splitSize);
         List<Partition> partitions = new ArrayList<Partition>();
         BufferedReader reader = Util.getfileReader("./partitions.csv");
@@ -62,7 +62,7 @@ public class SplitPartitions {
     }
 
     public static List<PKRows> getRowPartsFromFile(int splitSize) throws IOException {
-        logger.info("TreadID: " + Thread.currentThread().getId() +
+        logger.info("ThreadID: " + Thread.currentThread().getId() +
                 " Splitting rows in file: ./primary_key_rows.csv using a split-size of " + splitSize);
         List<String> pkRows = new ArrayList<String>();
         BufferedReader reader = Util.getfileReader("./primary_key_rows.csv");

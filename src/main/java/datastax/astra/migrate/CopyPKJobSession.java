@@ -70,9 +70,9 @@ public class CopyPKJobSession extends AbstractJobSession {
         if (isFinal) {
             logger.info("################################################################################################");
         }
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Read Missing Count: " + missingCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Inserted Record Count: " + writeCounter.get());
+        logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
+        logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Missing Count: " + missingCounter.get());
+        logger.info("ThreadID: " + Thread.currentThread().getId() + " Inserted Record Count: " + writeCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
         }
