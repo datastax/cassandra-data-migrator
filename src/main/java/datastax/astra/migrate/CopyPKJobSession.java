@@ -51,7 +51,7 @@ public class CopyPKJobSession extends AbstractJobSession {
                 Row pkRow = sourceSession.execute(bspk).one();
                 if (null == pkRow) {
                     missingCounter.incrementAndGet();
-                    logger.error("Could not find row with primary-key: " + row);
+                    logger.error("Could not find row with primary-key: {}", row);
                     return;
                 }
                 ResultSet astraWriteResultSet = astraSession
@@ -70,9 +70,9 @@ public class CopyPKJobSession extends AbstractJobSession {
         if (isFinal) {
             logger.info("################################################################################################");
         }
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Missing Count: " + missingCounter.get());
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Inserted Record Count: " + writeCounter.get());
+        logger.info("ThreadID: {} Read Record Count: {}", Thread.currentThread().getId(), readCounter.get());
+        logger.info("ThreadID: {} Read Missing Count: {}", Thread.currentThread().getId(), missingCounter.get());
+        logger.info("ThreadID: {} Inserted Record Count: {}", Thread.currentThread().getId(), writeCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
         }

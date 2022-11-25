@@ -76,14 +76,14 @@ public class AbstractJobSession extends BaseJobSession {
             customWritetime = Long.parseLong(customWriteTimeStr);
         }
 
-        logger.info("PARAM -- Write Batch Size: " + batchSize);
-        logger.info("PARAM -- Source Keyspace Table: " + sourceKeyspaceTable);
-        logger.info("PARAM -- Destination Keyspace Table: " + astraKeyspaceTable);
-        logger.info("PARAM -- ReadRateLimit: " + readLimiter.getRate());
-        logger.info("PARAM -- WriteRateLimit: " + writeLimiter.getRate());
-        logger.info("PARAM -- TTLCols: " + ttlCols);
-        logger.info("PARAM -- WriteTimestampFilterCols: " + writeTimeStampCols);
-        logger.info("PARAM -- WriteTimestampFilter: " + writeTimeStampFilter);
+        logger.info("PARAM -- Write Batch Size: {}", batchSize);
+        logger.info("PARAM -- Source Keyspace Table: {}", sourceKeyspaceTable);
+        logger.info("PARAM -- Destination Keyspace Table: {}", astraKeyspaceTable);
+        logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
+        logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
+        logger.info("PARAM -- TTLCols: {}" + ttlCols);
+        logger.info("PARAM -- WriteTimestampFilterCols: {}", writeTimeStampCols);
+        logger.info("PARAM -- WriteTimestampFilter: {}", writeTimeStampFilter);
 
         String selectCols = Util.getSparkProp(sc, "spark.query.origin");
         String partionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
@@ -122,7 +122,7 @@ public class AbstractJobSession extends BaseJobSession {
             fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where " + insertBinds;
         }
         sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
-        logger.info("PARAM -- Query used: " + fullSelectQuery);
+        logger.info("PARAM -- Query used: {}", fullSelectQuery);
 
         astraSelectStatement = astraSession.prepare(
                 "select " + insertCols + " from " + astraKeyspaceTable

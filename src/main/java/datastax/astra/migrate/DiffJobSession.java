@@ -36,10 +36,10 @@ public class DiffJobSession extends CopyJobSession {
         super(sourceSession, astraSession, sc);
 
         autoCorrectMissing = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.missing", "false"));
-        logger.info("PARAM -- Autocorrect Missing: " + autoCorrectMissing);
+        logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
 
         autoCorrectMismatch = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.mismatch", "false"));
-        logger.info("PARAM -- Autocorrect Mismatch: " + autoCorrectMismatch);
+        logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
     }
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
@@ -55,7 +55,7 @@ public class DiffJobSession extends CopyJobSession {
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
+        logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
@@ -88,9 +88,9 @@ public class DiffJobSession extends CopyJobSession {
                 diffAndClear(srcToTargetRowMap);
                 retryCount = maxAttempts;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: " + retryCount, e);
-                logger.error("Error with PartitionRange -- ThreadID: " + Thread.currentThread().getId()
-                        + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                logger.error("Error occurred retry#: {}", retryCount, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
+                        Thread.currentThread().getId(), min, max, retryCount);
             }
         }
 
@@ -102,7 +102,7 @@ public class DiffJobSession extends CopyJobSession {
                 Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
                 diff(srcRow, targetRow);
             } catch (Exception e) {
-                logger.error("Could not perform diff for Key: " + getKey(srcRow), e);
+                logger.error("Could not perform diff for Key: {}", getKey(srcRow), e);
             }
         }
         srcToTargetRowMap.clear();

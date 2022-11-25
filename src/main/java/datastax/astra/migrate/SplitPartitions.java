@@ -31,7 +31,7 @@ public class SplitPartitions {
     }
 
     public static Collection<Partition> getRandomSubPartitions(int splitSize, BigInteger min, BigInteger max, int coveragePercent) {
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Splitting min: " + min + " max:" + max);
+        logger.info("ThreadID: {} Splitting min: {} max: {}", Thread.currentThread().getId(), min, max);
         List<Partition> partitions = getSubPartitions(splitSize, min, max, coveragePercent);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
@@ -41,8 +41,8 @@ public class SplitPartitions {
     }
 
     public static List<Partition> getSubPartitionsFromFile(int splitSize) throws IOException {
-        logger.info("ThreadID: " + Thread.currentThread().getId() +
-                " Splitting partitions in file: ./partitions.csv using a split-size of " + splitSize);
+        logger.info("ThreadID: {} Splitting partitions in file: ./partitions.csv using a split-size of {}"
+                , Thread.currentThread().getId(), splitSize);
         List<Partition> partitions = new ArrayList<Partition>();
         BufferedReader reader = Util.getfileReader("./partitions.csv");
         String line = null;
@@ -54,7 +54,7 @@ public class SplitPartitions {
             try {
                 partitions.addAll(getSubPartitions(splitSize, new BigInteger(minMax[0]), new BigInteger(minMax[1]), 100));
             } catch (Exception e) {
-                logger.error("Skipping partition: " + line, e);
+                logger.error("Skipping partition: {}", line, e);
             }
         }
 
@@ -62,8 +62,8 @@ public class SplitPartitions {
     }
 
     public static List<PKRows> getRowPartsFromFile(int splitSize) throws IOException {
-        logger.info("ThreadID: " + Thread.currentThread().getId() +
-                " Splitting rows in file: ./primary_key_rows.csv using a split-size of " + splitSize);
+        logger.info("ThreadID: {} Splitting rows in file: ./primary_key_rows.csv using a split-size of {}"
+                , Thread.currentThread().getId(), splitSize);
         List<String> pkRows = new ArrayList<String>();
         BufferedReader reader = Util.getfileReader("./primary_key_rows.csv");
         String pkRow = null;

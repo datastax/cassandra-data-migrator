@@ -36,7 +36,7 @@ public class CopyJobSession extends AbstractJobSession {
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
+        logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
@@ -117,8 +117,9 @@ public class CopyJobSession extends AbstractJobSession {
 
                 retryCount = maxAttempts;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: " + retryCount, e);
-                logger.error("Error with PartitionRange -- ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                logger.error("Error occurred retry#: {}", retryCount, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
+                        Thread.currentThread().getId(), min, max, retryCount);
             }
         }
     }
@@ -129,8 +130,8 @@ public class CopyJobSession extends AbstractJobSession {
             msg += " Final";
             logger.info("################################################################################################");
         }
-        logger.info(msg + " Read Record Count: " + readCounter.get());
-        logger.info(msg + " Write Record Count: " + writeCounter.get());
+        logger.info("{} Read Record Count: {}", msg, readCounter.get());
+        logger.info("{} Write Record Count: {}", msg, writeCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
         }

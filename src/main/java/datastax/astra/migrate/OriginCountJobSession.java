@@ -79,7 +79,7 @@ public class OriginCountJobSession extends BaseJobSession {
     }
 
     public void getData(BigInteger min, BigInteger max) {
-        logger.info("ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
+        logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
@@ -104,7 +104,7 @@ public class OriginCountJobSession extends BaseJobSession {
                                     String[] colName = checkTableforselectCols.split(",");
                                     result = result + " - " + colName[index] + " : " + colData;
                                 }
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + result + " - " + filterColName + " length: " + rowColcnt);
+                                logger.error("ThreadID: {}{} - {} length: {}", Thread.currentThread().getId(), result, filterColName, rowColcnt);
                                 continue;
                             }
                         }
@@ -126,24 +126,24 @@ public class OriginCountJobSession extends BaseJobSession {
                                     String[] colName = checkTableforselectCols.split(",");
                                     result = result + " - " + colName[index] + " : " + colData;
                                 }
-                                logger.error("ThreadID: " + Thread.currentThread().getId() + result + " - " + filterColName + " length: " + rowColcnt);
+                                logger.error("ThreadID: {}{} - {} length: {}", Thread.currentThread().getId(), result, filterColName, rowColcnt);
                                 continue;
                             }
                         }
 
                         if (readCounter.incrementAndGet() % 1000 == 0) {
-                            logger.info("ThreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
+                            logger.info("ThreadID: {} Read Record Count: {}", Thread.currentThread().getId(), readCounter.get());
                         }
 
                     }
                 }
 
-
-                logger.info("ThreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
+                logger.info("ThreadID: {} Final Read Record Count: {}", Thread.currentThread().getId(), readCounter.get());
                 retryCount = maxAttempts;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: " + retryCount, e);
-                logger.error("Error with PartitionRange -- ThreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                logger.error("Error occurred retry#: {}", retryCount, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
+                        Thread.currentThread().getId(), min, max, retryCount);
             }
         }
 
