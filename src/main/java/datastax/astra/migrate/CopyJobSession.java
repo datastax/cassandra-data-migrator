@@ -22,6 +22,11 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         super(sourceSession, astraSession, sc);
+        filterData = Boolean.parseBoolean(sc.get("spark.origin.FilterData", "false"));
+        filterColName = sc.get("spark.origin.FilterColumn");
+        filterColType = sc.get("spark.origin.FilterColumnType");
+        filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
+        filterColValue = sc.get("spark.origin.FilterColumnValue");
     }
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
@@ -52,6 +57,13 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Row sourceRow : resultSet) {
                         readLimiter.acquire(1);
 
+                        if (filterData) {
+                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            if (col.trim().equalsIgnoreCase(filterColValue)) {
+                                logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
+                                continue;
+                            }
+                        }
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
@@ -92,6 +104,15 @@ public class CopyJobSession extends AbstractJobSession {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             printCounts(false);
                         }
+
+                        if (filterData) {
+                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            if (colValue.trim().equalsIgnoreCase(filterColValue)) {
+                                logger.warn("Row larger than 10 MB found filtering out: " + getKey(sourceRow));
+                                continue;
+                            }
+                        }
+
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
                         // if batch threshold is met, send the writes and clear the batch

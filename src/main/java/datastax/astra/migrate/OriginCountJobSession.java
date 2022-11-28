@@ -23,9 +23,6 @@ public class OriginCountJobSession extends BaseJobSession {
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
     protected Boolean checkTableforColSize;
     protected String checkTableforselectCols;
-    protected String filterColName;
-    protected String filterColType;
-    protected Integer filterColIndex;
     protected Integer fieldGuardraillimitMB;
     protected List<MigrateDataType> checkTableforColSizeTypes = new ArrayList<MigrateDataType>();
 
