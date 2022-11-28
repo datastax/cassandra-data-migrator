@@ -27,7 +27,7 @@ object DiffData extends AbstractJob {
             .getDataAndDiff(part.getMin, part.getMax)))
     })
 
-    DiffJobSession.getInstance(null, null, sc).printCounts("Job Final");
+    DiffJobSession.getInstance(null, null, sc).printCounts(true);
   }
 
 }

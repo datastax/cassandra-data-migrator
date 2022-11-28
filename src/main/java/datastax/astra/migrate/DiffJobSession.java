@@ -36,10 +36,10 @@ public class DiffJobSession extends CopyJobSession {
         super(sourceSession, astraSession, sc);
 
         autoCorrectMissing = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.missing", "false"));
-        logger.info("PARAM -- Autocorrect Missing: " + autoCorrectMissing);
+        logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
 
         autoCorrectMismatch = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.mismatch", "false"));
-        logger.info("PARAM -- Autocorrect Mismatch: " + autoCorrectMismatch);
+        logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
     }
 
     public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
@@ -55,7 +55,7 @@ public class DiffJobSession extends CopyJobSession {
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
+        logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
@@ -71,7 +71,7 @@ public class DiffJobSession extends CopyJobSession {
                     if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(srcRow) < minWriteTimeStampFilter
                             || getLargestWriteTimeStamp(srcRow) > maxWriteTimeStampFilter))) {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                            printCounts("Current");
+                            printCounts(false);
                         }
 
                         CompletionStage<AsyncResultSet> targetRowFuture = astraSession
@@ -86,14 +86,11 @@ public class DiffJobSession extends CopyJobSession {
                     }
                 });
                 diffAndClear(srcToTargetRowMap);
-
-                printCounts("Final");
-
                 retryCount = maxAttempts;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: " + retryCount, e);
-                logger.error("Error with PartitionRange -- TreadID: " + Thread.currentThread().getId()
-                        + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                logger.error("Error occurred retry#: {}", retryCount, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
+                        Thread.currentThread().getId(), min, max, retryCount);
             }
         }
 
@@ -105,39 +102,40 @@ public class DiffJobSession extends CopyJobSession {
                 Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
                 diff(srcRow, targetRow);
             } catch (Exception e) {
-                logger.error("Could not perform diff for Key: " + getKey(srcRow), e);
+                logger.error("Could not perform diff for Key: {}", getKey(srcRow), e);
             }
         }
         srcToTargetRowMap.clear();
     }
 
-    public void printCounts(String finalStr) {
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Record Count: "
-                + readCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Mismatch Count: "
-                + mismatchCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Corrected Mismatch Count: "
-                + correctedMismatchCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Missing Count: "
-                + missingCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Corrected Missing Count: "
-                + correctedMissingCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Valid Count: "
-                + validCounter.get());
-        logger.info("TreadID: " + Thread.currentThread().getId() + " " + finalStr + " Read Skipped Count: "
-                + skippedCounter.get());
+    public synchronized void printCounts(boolean isFinal) {
+        String msg = "ThreadID: " + Thread.currentThread().getId();
+        if (isFinal) {
+            msg += " Final";
+            logger.info("################################################################################################");
+        }
+        logger.info("{} Read Record Count: {}", msg, readCounter.get());
+        logger.info("{} Mismatch Record Count: {}", msg, mismatchCounter.get());
+        logger.info("{} Corrected Mismatch Record Count: {}", msg, correctedMismatchCounter.get());
+        logger.info("{} Missing Record Count: {}", msg, missingCounter.get());
+        logger.info("{} Corrected Missing Record Count: {}", msg, correctedMissingCounter.get());
+        logger.info("{} Valid Record Count: {}", msg, validCounter.get());
+        logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
+        if (isFinal) {
+            logger.info("################################################################################################");
+        }
     }
 
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Missing target row found for key: " + getKey(sourceRow));
+            logger.error("Missing target row found for key: {}", getKey(sourceRow));
             //correct data
 
             if (autoCorrectMissing) {
                 astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Inserted missing row in target: " + getKey(sourceRow));
+                logger.error("Inserted missing row in target: {}", getKey(sourceRow));
             }
 
             return;
@@ -146,7 +144,7 @@ public class DiffJobSession extends CopyJobSession {
         String diffData = isDifferent(sourceRow, astraRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
-            logger.error("Mismatch row found for key: " + getKey(sourceRow) + " Mismatch: " + diffData);
+            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(sourceRow), diffData);
 
             if (autoCorrectMismatch) {
                 if (isCounterTable) {
@@ -155,7 +153,7 @@ public class DiffJobSession extends CopyJobSession {
                     astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Updated mismatch row in target: " + getKey(sourceRow));
+                logger.error("Updated mismatch row in target: {}", getKey(sourceRow));
             }
 
             return;

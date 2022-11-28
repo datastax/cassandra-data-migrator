@@ -17,6 +17,7 @@ public class CopyJobSession extends AbstractJobSession {
     private static CopyJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
+    protected AtomicLong skippedCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
@@ -36,7 +37,7 @@ public class CopyJobSession extends AbstractJobSession {
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
-        logger.info("TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max);
+        logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         int maxAttempts = maxRetries;
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
@@ -56,14 +57,15 @@ public class CopyJobSession extends AbstractJobSession {
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
                             if (sourceWriteTimeStamp < minWriteTimeStampFilter
                                     || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
+                                readCounter.incrementAndGet();
+                                skippedCounter.incrementAndGet();
                                 continue;
                             }
                         }
 
                         writeLimiter.acquire(1);
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                            logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: "
-                                    + readCounter.get());
+                            printCounts(false);
                         }
                         Row astraRow = null;
                         if (isCounterTable) {
@@ -88,7 +90,7 @@ public class CopyJobSession extends AbstractJobSession {
                         readLimiter.acquire(1);
                         writeLimiter.acquire(1);
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                            logger.info("TreadID: " + Thread.currentThread().getId() + " Read Record Count: " + readCounter.get());
+                            printCounts(false);
                         }
                         batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
 
@@ -116,13 +118,26 @@ public class CopyJobSession extends AbstractJobSession {
                     }
                 }
 
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Final Write Record Count: " + writeCounter.get());
                 retryCount = maxAttempts;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: " + retryCount, e);
-                logger.error("Error with PartitionRange -- TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
+                logger.error("Error occurred retry#: {}", retryCount, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
+                        Thread.currentThread().getId(), min, max, retryCount);
             }
+        }
+    }
+
+    public synchronized void printCounts(boolean isFinal) {
+        String msg = "ThreadID: " + Thread.currentThread().getId();
+        if (isFinal) {
+            msg += " Final";
+            logger.info("################################################################################################");
+        }
+        logger.info("{} Read Record Count: {}", msg, readCounter.get());
+        logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
+        logger.info("{} Write Record Count: {}", msg, writeCounter.get());
+        if (isFinal) {
+            logger.info("################################################################################################");
         }
     }
 
@@ -130,9 +145,7 @@ public class CopyJobSession extends AbstractJobSession {
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
             //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
-            if (writeCounter.addAndGet(incrementBy) % printStatsAfter == 0) {
-                logger.info("TreadID: " + Thread.currentThread().getId() + " Write Record Count: " + writeCounter.get());
-            }
+            writeCounter.addAndGet(incrementBy);
         }
         writeResults.clear();
     }
