@@ -114,13 +114,13 @@ public class DiffJobSession extends CopyJobSession {
             msg += " Final";
             logger.info("################################################################################################");
         }
-        logger.info(msg + " Read Record Count: " + readCounter.get());
-        logger.info(msg + " Read Mismatch Count: " + mismatchCounter.get());
-        logger.info(msg + " Corrected Mismatch Count: " + correctedMismatchCounter.get());
-        logger.info(msg + " Read Missing Count: " + missingCounter.get());
-        logger.info(msg + " Corrected Missing Count: " + correctedMissingCounter.get());
-        logger.info(msg + " Read Valid Count: " + validCounter.get());
-        logger.info(msg + " Read Skipped Count: " + skippedCounter.get());
+        logger.info("{} Read Record Count: {}", msg, readCounter.get());
+        logger.info("{} Mismatch Record Count: {}", msg, mismatchCounter.get());
+        logger.info("{} Corrected Mismatch Record Count: {}", msg, correctedMismatchCounter.get());
+        logger.info("{} Missing Record Count: {}", msg, missingCounter.get());
+        logger.info("{} Corrected Missing Record Count: {}", msg, correctedMissingCounter.get());
+        logger.info("{} Valid Record Count: {}", msg, validCounter.get());
+        logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
         }
@@ -129,13 +129,13 @@ public class DiffJobSession extends CopyJobSession {
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Missing target row found for key: " + getKey(sourceRow));
+            logger.error("Missing target row found for key: {}", getKey(sourceRow));
             //correct data
 
             if (autoCorrectMissing) {
                 astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Inserted missing row in target: " + getKey(sourceRow));
+                logger.error("Inserted missing row in target: {}", getKey(sourceRow));
             }
 
             return;
@@ -144,7 +144,7 @@ public class DiffJobSession extends CopyJobSession {
         String diffData = isDifferent(sourceRow, astraRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
-            logger.error("Mismatch row found for key: " + getKey(sourceRow) + " Mismatch: " + diffData);
+            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(sourceRow), diffData);
 
             if (autoCorrectMismatch) {
                 if (isCounterTable) {
@@ -153,7 +153,7 @@ public class DiffJobSession extends CopyJobSession {
                     astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Updated mismatch row in target: " + getKey(sourceRow));
+                logger.error("Updated mismatch row in target: {}", getKey(sourceRow));
             }
 
             return;

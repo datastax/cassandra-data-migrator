@@ -17,6 +17,7 @@ public class CopyJobSession extends AbstractJobSession {
     private static CopyJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
+    protected AtomicLong skippedCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
@@ -56,6 +57,8 @@ public class CopyJobSession extends AbstractJobSession {
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
                             if (sourceWriteTimeStamp < minWriteTimeStampFilter
                                     || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
+                                readCounter.incrementAndGet();
+                                skippedCounter.incrementAndGet();
                                 continue;
                             }
                         }
@@ -131,6 +134,7 @@ public class CopyJobSession extends AbstractJobSession {
             logger.info("################################################################################################");
         }
         logger.info("{} Read Record Count: {}", msg, readCounter.get());
+        logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
         logger.info("{} Write Record Count: {}", msg, writeCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
