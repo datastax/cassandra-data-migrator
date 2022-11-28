@@ -48,7 +48,6 @@ public abstract class BaseJobSession {
     protected String filterColName;
     protected String filterColType;
     protected Integer filterColIndex;
-
     protected String filterColValue;
 
     public String getKey(Row sourceRow) {
@@ -64,6 +63,29 @@ public abstract class BaseJobSession {
 
         return key.toString();
     }
+
+    public List<MigrateDataType> getTypes(String types) {
+        List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
+        for (String type : types.split(",")) {
+            dataTypes.add(new MigrateDataType(type));
+        }
+
+        return dataTypes;
+    }
+
+    public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
+        if (dataType.typeClass == Map.class) {
+            return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
+        } else if (dataType.typeClass == List.class) {
+            return sourceRow.getList(index, dataType.subTypes.get(0));
+        } else if (dataType.typeClass == Set.class) {
+            return sourceRow.getSet(index, dataType.subTypes.get(0));
+        } else if (isCounterTable && dataType.typeClass == Long.class) {
+            Object data = sourceRow.get(index, dataType.typeClass);
+            if (data == null) {
+                return new Long(0);
+            }
+        }
 
     public List<MigrateDataType> getTypes(String types) {
         List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();

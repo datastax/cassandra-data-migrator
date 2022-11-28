@@ -28,6 +28,7 @@ object DiffData extends AbstractJob {
     })
 
     DiffJobSession.getInstance(null, null, sc).printCounts(true);
+
   }
 
 }

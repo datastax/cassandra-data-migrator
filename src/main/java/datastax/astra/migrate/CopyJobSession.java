@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -28,6 +27,7 @@ public class CopyJobSession extends AbstractJobSession {
         filterColType = sc.get("spark.origin.FilterColumnType");
         filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
         filterColValue = sc.get("spark.origin.FilterColumnValue");
+
     }
 
     public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
@@ -140,7 +140,6 @@ public class CopyJobSession extends AbstractJobSession {
                     }
                 }
 
-
                 logger.info("TreadID: " + Thread.currentThread().getId() + " Final Read Record Count: " + readCounter.get());
                 logger.info("TreadID: " + Thread.currentThread().getId() + " Final Write Record Count: " + writeCounter.get());
                 retryCount = maxAttempts;
@@ -149,7 +148,6 @@ public class CopyJobSession extends AbstractJobSession {
                 logger.error("Error with PartitionRange -- TreadID: " + Thread.currentThread().getId() + " Processing min: " + min + " max:" + max + "    -- Retry# " + retryCount);
             }
         }
-
     }
 
     public synchronized void printCounts(boolean isFinal) {
@@ -173,55 +171,6 @@ public class CopyJobSession extends AbstractJobSession {
             }
         }
         writeResults.clear();
-    }
-
-    public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
-        BoundStatement boundInsertStatement = insertStatement.bind();
-
-        if (isCounterTable) {
-            for (int index = 0; index < selectColTypes.size(); index++) {
-                MigrateDataType dataType = selectColTypes.get(updateSelectMapping.get(index));
-                // compute the counter delta if reading from astra for the difference
-                if (astraRow != null && index < (selectColTypes.size() - idColTypes.size())) {
-                    boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
-                } else {
-                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
-                }
-            }
-        } else {
-            int index = 0;
-            for (index = 0; index < selectColTypes.size(); index++) {
-                MigrateDataType dataTypeObj = selectColTypes.get(index);
-                Class dataType = dataTypeObj.typeClass;
-
-                try {
-                    Object colData = getData(dataTypeObj, index, sourceRow);
-                    if (index < idColTypes.size() && colData == null && dataType == String.class) {
-                        colData = "";
-                    }
-                    boundInsertStatement = boundInsertStatement.set(index, colData, dataType);
-                } catch (NullPointerException e) {
-                    // ignore the exception for map values being null
-                    if (dataType != Map.class) {
-                        throw e;
-                    }
-                }
-            }
-
-            if (!ttlCols.isEmpty()) {
-                boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
-                index++;
-            }
-            if (!writeTimeStampCols.isEmpty()) {
-                if (customWritetime > 0) {
-                    boundInsertStatement = boundInsertStatement.set(index, customWritetime, Long.class);
-                } else {
-                    boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow), Long.class);
-                }
-            }
-        }
-
-        return boundInsertStatement;
     }
 
 }
