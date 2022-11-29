@@ -49,6 +49,15 @@ class BaseJob extends App {
   val coveragePercent = Util.getSparkPropOr(sc, "spark.coveragePercent", "100")
   val splitSize = Integer.parseInt(Util.getSparkPropOr(sc, "spark.splitSize", "10000"))
 
+  val checkTableforColSize = Util.getSparkPropOr(sc, "spark.origin.checkTableforColSize", "false")
+  val checkTableforselectCols = Util.getSparkPropOrEmpty(sc, "spark.origin.checkTableforColSize.cols")
+//  val checkTableforColSizeTypes = getTypes(Util.getSparkPropOr(sc, "spark.origin.checkTableforColSize.cols.types"))
+  val filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn")
+  val filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType")
+  val filterColIndex = Util.getSparkPropOr(sc, "spark.origin.FilterColumnIndex", "0")
+  val fieldGuardraillimitMB = Util.getSparkPropOr(sc, "spark.fieldGuardraillimitMB", "0")
+
+
   protected def exitSpark() = {
     spark.stop()
     abstractLogger.info("################################################################################################")

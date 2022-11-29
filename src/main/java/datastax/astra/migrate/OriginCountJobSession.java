@@ -43,8 +43,8 @@ public class OriginCountJobSession extends BaseJobSession {
         checkTableforColSize = Boolean.parseBoolean(sparkConf.get("spark.origin.checkTableforColSize", "false"));
         checkTableforselectCols = sparkConf.get("spark.origin.checkTableforColSize.cols");
         checkTableforColSizeTypes = getTypes(sparkConf.get("spark.origin.checkTableforColSize.cols.types"));
-        filterColName = sparkConf.get("spark.origin.FilterColumn");
-        filterColType = sparkConf.get("spark.origin.FilterColumnType");
+        filterColName = Util.getSparkPropOrEmpty(sparkConf, "spark.origin.FilterColumn");
+        filterColType = Util.getSparkPropOrEmpty(sparkConf, "spark.origin.FilterColumnType");
         filterColIndex = Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
         fieldGuardraillimitMB = Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
 
