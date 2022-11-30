@@ -48,7 +48,7 @@ class BaseJob extends App {
   val maxPartition = new BigInteger(Util.getSparkPropOr(sc, "spark.origin.maxPartition", "9223372036854775807"))
   val coveragePercent = Util.getSparkPropOr(sc, "spark.coveragePercent", "100")
   val splitSize = Integer.parseInt(Util.getSparkPropOr(sc, "spark.splitSize", "10000"))
-
+  
   protected def exitSpark() = {
     spark.stop()
     abstractLogger.info("################################################################################################")

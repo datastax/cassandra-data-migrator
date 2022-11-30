@@ -48,7 +48,25 @@ public abstract class BaseJobSession {
     protected String astraKeyspaceTable;
 
     protected Boolean hasRandomPartitioner;
+    protected Boolean filterData;
+    protected String filterColName;
+    protected String filterColType;
+    protected Integer filterColIndex;
+    protected String filterColValue;
 
+    public String getKey(Row sourceRow) {
+        StringBuffer key = new StringBuffer();
+        for (int index = 0; index < idColTypes.size(); index++) {
+            MigrateDataType dataType = idColTypes.get(index);
+            if (index == 0) {
+                key.append(getData(dataType, index, sourceRow));
+            } else {
+                key.append(" %% " + getData(dataType, index, sourceRow));
+            }
+        }
+
+        return key.toString();
+    }
     public List<MigrateDataType> getTypes(String types) {
         List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
         for (String type : types.split(",")) {
