@@ -33,6 +33,7 @@ public abstract class BaseJobSession {
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
 
     protected Integer batchSize = 1;
+    protected Integer fetchSizeInRows = 1000;
     protected Integer printStatsAfter = 100000;
 
     protected Boolean writeTimeStampFilter = Boolean.FALSE;
@@ -67,6 +68,7 @@ public abstract class BaseJobSession {
 
         return key.toString();
     }
+
     public List<MigrateDataType> getTypes(String types) {
         List<MigrateDataType> dataTypes = new ArrayList<MigrateDataType>();
         for (String type : types.split(",")) {

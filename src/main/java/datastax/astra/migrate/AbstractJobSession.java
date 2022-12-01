@@ -10,6 +10,7 @@ import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -26,6 +27,7 @@ public class AbstractJobSession extends BaseJobSession {
         this.astraSession = astraSession;
 
         batchSize = new Integer(Util.getSparkPropOr(sc, "spark.batchSize", "1"));
+        fetchSizeInRows = new Integer(Util.getSparkPropOr(sc, "spark.read.fetch.sizeInRows", "1000"));
         printStatsAfter = new Integer(Util.getSparkPropOr(sc, "spark.printStatsAfter", "100000"));
         if (printStatsAfter < 1) {
             printStatsAfter = 100000;
@@ -77,6 +79,7 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         logger.info("PARAM -- Write Batch Size: {}", batchSize);
+        logger.info("PARAM -- Read Fetch Size: {}", fetchSizeInRows);
         logger.info("PARAM -- Source Keyspace Table: {}", sourceKeyspaceTable);
         logger.info("PARAM -- Destination Keyspace Table: {}", astraKeyspaceTable);
         logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
@@ -207,7 +210,8 @@ public class AbstractJobSession extends BaseJobSession {
             }
         }
 
-        return boundInsertStatement;
+        // Batch insert for large records may take longer, hence 10 secs to avoid timeout errors
+        return boundInsertStatement.setTimeout(Duration.ofSeconds(10));
     }
 
     public int getLargestTTL(Row sourceRow) {

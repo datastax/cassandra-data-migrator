@@ -62,7 +62,8 @@ public class DiffJobSession extends CopyJobSession {
             try {
                 // cannot do batching if the writeFilter is greater than 0
                 ResultSet resultSet = sourceSession.execute(
-                        sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM));
+                        sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
+                                .setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM).setPageSize(fetchSizeInRows));
 
                 Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap = new HashMap<Row, CompletionStage<AsyncResultSet>>();
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(srcRow -> {
@@ -77,7 +78,7 @@ public class DiffJobSession extends CopyJobSession {
                         CompletionStage<AsyncResultSet> targetRowFuture = astraSession
                                 .executeAsync(selectFromAstra(astraSelectStatement, srcRow));
                         srcToTargetRowMap.put(srcRow, targetRowFuture);
-                        if (srcToTargetRowMap.size() > 1000) {
+                        if (srcToTargetRowMap.size() > fetchSizeInRows) {
                             diffAndClear(srcToTargetRowMap);
                         }
                     } else {
