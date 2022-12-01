@@ -47,7 +47,8 @@ public class CopyJobSession extends AbstractJobSession {
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(),
+                        hasRandomPartitioner ? max : max.longValueExact()).setPageSize(fetchSizeInRows));
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
@@ -87,15 +88,16 @@ public class CopyJobSession extends AbstractJobSession {
                             astraRow = astraReadResultSet.one();
                         }
 
+
                         CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
                                 .executeAsync(bindInsert(astraInsertStatement, sourceRow, astraRow));
                         writeResults.add(astraWriteResultSet);
-                        if (writeResults.size() > 1000) {
+                        if (writeResults.size() > fetchSizeInRows) {
                             iterateAndClearWriteResults(writeResults, 1);
                         }
                     }
 
-                    // clear the write resultset in-case it didnt mod at 1000 above
+                    // clear the write resultset
                     iterateAndClearWriteResults(writeResults, 1);
                 } else {
                     BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
@@ -124,12 +126,12 @@ public class CopyJobSession extends AbstractJobSession {
                             batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                         }
 
-                        if (writeResults.size() * batchSize > 1000) {
+                        if (writeResults.size() * batchSize > fetchSizeInRows) {
                             iterateAndClearWriteResults(writeResults, batchSize);
                         }
                     }
 
-                    // clear the write resultset in-case it didnt mod at 1000 above
+                    // clear the write resultset
                     iterateAndClearWriteResults(writeResults, batchSize);
 
                     // if there are any pending writes because the batchSize threshold was not met, then write and clear them

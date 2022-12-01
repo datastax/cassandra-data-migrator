@@ -18,12 +18,13 @@ class BaseJob extends App {
   val sContext = spark.sparkContext
   val sc = sContext.getConf
 
+  val consistencyLevel = Util.getSparkPropOr(sc, "spark.read.consistency.level", "LOCAL_QUORUM")
+
   val sourceIsAstra = Util.getSparkPropOr(sc, "spark.origin.isAstra", "false")
   val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
   val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")
   val sourceUsername = Util.getSparkPropOrEmpty(sc, "spark.origin.username")
   val sourcePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.password")
-  val sourceReadConsistencyLevel = Util.getSparkPropOr(sc, "spark.origin.read.consistency.level", "LOCAL_QUORUM")
   val sourceTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.origin.trustStore.path")
   val sourceTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.trustStore.password")
   val sourceTrustStoreType = Util.getSparkPropOr(sc, "spark.origin.trustStore.type", "JKS")
@@ -36,7 +37,6 @@ class BaseJob extends App {
   val destinationHost = Util.getSparkPropOrEmpty(sc, "spark.target.host")
   val destinationUsername = Util.getSparkProp(sc, "spark.target.username")
   val destinationPassword = Util.getSparkProp(sc, "spark.target.password")
-  val destinationReadConsistencyLevel = Util.getSparkPropOr(sc, "spark.target.read.consistency.level", "LOCAL_QUORUM")
   val destinationTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.path")
   val destinationTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.password")
   val destinationTrustStoreType = Util.getSparkPropOr(sc, "spark.target.trustStore.type", "JKS")
@@ -48,7 +48,7 @@ class BaseJob extends App {
   val maxPartition = new BigInteger(Util.getSparkPropOr(sc, "spark.origin.maxPartition", "9223372036854775807"))
   val coveragePercent = Util.getSparkPropOr(sc, "spark.coveragePercent", "100")
   val splitSize = Integer.parseInt(Util.getSparkPropOr(sc, "spark.splitSize", "10000"))
-  
+
   protected def exitSpark() = {
     spark.stop()
     abstractLogger.info("################################################################################################")

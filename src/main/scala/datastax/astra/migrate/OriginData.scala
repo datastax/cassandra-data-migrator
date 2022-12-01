@@ -9,13 +9,13 @@ object OriginData extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")
-  var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword, sourceReadConsistencyLevel,
+  var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
   analyzeSourceTable(sourceConnection)
   exitSpark
 
 
-  private def getConnection(isSource: Boolean, isAstra: String, scbPath: String, host: String, username: String, password: String, readConsistencyLevel: String,
+  private def getConnection(isSource: Boolean, isAstra: String, scbPath: String, host: String, username: String, password: String,
                             trustStorePath: String, trustStorePassword: String, trustStoreType: String,
                             keyStorePath: String, keyStorePassword: String, enabledAlgorithms: String): CassandraConnector = {
     var connType: String = "Source"
@@ -26,7 +26,7 @@ object OriginData extends BaseJob {
       return CassandraConnector(sc
         .set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
-        .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
+        .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
     } else if (null != trustStorePath && !trustStorePath.trim.isEmpty) {
       abstractLogger.info(connType + ": Connected to Cassandra (or DSE) with SSL!");
@@ -40,7 +40,7 @@ object OriginData extends BaseJob {
       return CassandraConnector(sc
         .set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
-        .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
+        .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.host", host)
         .set("spark.cassandra.connection.ssl.enabled", "true")
         .set("spark.cassandra.connection.ssl.enabledAlgorithms", enabledAlgorithmsVar)
@@ -56,7 +56,7 @@ object OriginData extends BaseJob {
 
       return CassandraConnector(sc.set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
-        .set("spark.cassandra.input.consistency.level", readConsistencyLevel)
+        .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.host", host))
     }
 
@@ -77,7 +77,4 @@ object OriginData extends BaseJob {
   }
 
 }
-
-
-
 
