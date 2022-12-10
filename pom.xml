@@ -17,6 +17,14 @@
     <junit.version>4.13.2</junit.version>
   </properties>
 
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/datastax/cassandra-data-migrator</url>
+    </repository>
+  </distributionManagement>
+
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
