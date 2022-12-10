@@ -1,6 +1,6 @@
 # cassandra-data-migrator
 
-Spark jobs in this repo can be used for data migration and data validation.
+Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 > :warning: Please note this job has been tested with spark version [2.4.8](https://archive.apache.org/dist/spark/spark-2.4.8/)
 
@@ -20,12 +20,12 @@ wget https://downloads.apache.org/spark/spark-2.4.8/
 tar -xvzf <spark downloaded file name>
 ```
 
-# Steps:
+# Steps for Data-Migration:
 
 1. `sparkConf.properties` file needs to be configured as applicable for the environment
    > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
 2. Place the conf file where it can be accessed while running the job via spark-submit.
-3. Run the 'Data Migration' job using `spark-submit` command as shown below:
+3. Run the below job using `spark-submit` command as shown below:
 
 ```
 ./spark-submit --properties-file sparkConf.properties /
@@ -36,7 +36,7 @@ tar -xvzf <spark downloaded file name>
 Note: Above command also generates a log file `logfile_name.txt` to avoid log output on the console.
 
 
-# Data-validation job
+# Steps for Data-Validation:
 
 - To run the job in Data validation mode, use class option `--class datastax.astra.migrate.DiffData` as shown below
 
@@ -90,6 +90,6 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
 - Filter records from origin using writetime
 - SSL Support (including custom cipher algorithms)
-- Migrate from any Cassandra origin ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org)/[DataStax Enterprise (DSE)](https://www.datastax.com/products/datastax-enterprise)/[DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
+- Migrate from any Cassandra origin ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Custom writetime

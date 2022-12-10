@@ -20,7 +20,6 @@ class BaseJob extends App {
 
   val consistencyLevel = Util.getSparkPropOr(sc, "spark.read.consistency.level", "LOCAL_QUORUM")
 
-  val sourceIsAstra = Util.getSparkPropOr(sc, "spark.origin.isAstra", "false")
   val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
   val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")
   val sourceUsername = Util.getSparkPropOrEmpty(sc, "spark.origin.username")
@@ -32,7 +31,6 @@ class BaseJob extends App {
   val sourceKeyStorePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.keyStore.password")
   val sourceEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, "spark.origin.enabledAlgorithms")
 
-  val destinationIsAstra = Util.getSparkPropOr(sc, "spark.target.isAstra", "true")
   val destinationScbPath = Util.getSparkPropOrEmpty(sc, "spark.target.scb")
   val destinationHost = Util.getSparkPropOrEmpty(sc, "spark.target.host")
   val destinationUsername = Util.getSparkProp(sc, "spark.target.username")

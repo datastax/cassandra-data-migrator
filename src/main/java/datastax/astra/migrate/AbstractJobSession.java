@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -84,9 +85,15 @@ public class AbstractJobSession extends BaseJobSession {
         logger.info("PARAM -- Destination Keyspace Table: {}", astraKeyspaceTable);
         logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
         logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
-        logger.info("PARAM -- TTLCols: {}" + ttlCols);
+        logger.info("PARAM -- TTLCols: {}", ttlCols);
         logger.info("PARAM -- WriteTimestampFilterCols: {}", writeTimeStampCols);
         logger.info("PARAM -- WriteTimestampFilter: {}", writeTimeStampFilter);
+        if (writeTimeStampFilter) {
+            logger.info("PARAM -- minWriteTimeStampFilter: {} datetime is {}", minWriteTimeStampFilter,
+                    Instant.ofEpochMilli(minWriteTimeStampFilter / 1000));
+            logger.info("PARAM -- maxWriteTimeStampFilter: {} datetime is {}", maxWriteTimeStampFilter,
+                    Instant.ofEpochMilli(maxWriteTimeStampFilter / 1000));
+        }
 
         String selectCols = Util.getSparkProp(sc, "spark.query.origin");
         String partionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
