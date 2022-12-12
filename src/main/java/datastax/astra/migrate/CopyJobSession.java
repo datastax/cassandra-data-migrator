@@ -61,11 +61,12 @@ public class CopyJobSession extends AbstractJobSession {
                         if (filterData) {
                             String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
                             if (col.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: " + getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
                                 skippedCounter.incrementAndGet();
                                 continue;
                             }
                         }
+
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
                             Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
@@ -111,7 +112,7 @@ public class CopyJobSession extends AbstractJobSession {
                         if (filterData) {
                             String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
                             if (colValue.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: " + getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
                                 skippedCounter.incrementAndGet();
                                 continue;
                             }

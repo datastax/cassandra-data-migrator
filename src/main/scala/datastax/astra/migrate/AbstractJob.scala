@@ -10,13 +10,13 @@ class AbstractJob extends BaseJob {
   abstractLogger.info("PARAM -- Split Size: " + splitSize)
   abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
 
-  var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
+  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
 
-  var destinationConnection = getConnection(false, destinationIsAstra, destinationScbPath, destinationHost, destinationUsername, destinationPassword,
+  var destinationConnection = getConnection(false, destinationScbPath, destinationHost, destinationUsername, destinationPassword,
     destinationTrustStorePath, destinationTrustStorePassword, destinationTrustStoreType, destinationKeyStorePath, destinationKeyStorePassword, destinationEnabledAlgorithms);
 
-  private def getConnection(isSource: Boolean, isAstra: String, scbPath: String, host: String, username: String, password: String,
+  private def getConnection(isSource: Boolean, scbPath: String, host: String, username: String, password: String,
                             trustStorePath: String, trustStorePassword: String, trustStoreType: String,
                             keyStorePath: String, keyStorePassword: String, enabledAlgorithms: String): CassandraConnector = {
     var connType: String = "Source"
@@ -25,7 +25,7 @@ class AbstractJob extends BaseJob {
     }
 
     var config: SparkConf = sContext.getConf
-    if ("true".equals(isAstra)) {
+    if (scbPath.nonEmpty) {
       abstractLogger.info(connType + ": Connecting to Astra using SCB: " + scbPath);
 
       return CassandraConnector(config
@@ -33,7 +33,7 @@ class AbstractJob extends BaseJob {
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
-    } else if (null != trustStorePath && !trustStorePath.trim.isEmpty) {
+    } else if (trustStorePath.nonEmpty) {
       abstractLogger.info(connType + ": Connecting to Cassandra (or DSE) with SSL host: " + host);
 
       // Use defaults when not provided

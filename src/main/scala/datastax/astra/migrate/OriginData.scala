@@ -9,18 +9,18 @@ object OriginData extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")
-  var sourceConnection = getConnection(true, sourceIsAstra, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
+  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
   analyzeSourceTable(sourceConnection)
   exitSpark
 
 
-  private def getConnection(isSource: Boolean, isAstra: String, scbPath: String, host: String, username: String, password: String,
+  private def getConnection(isSource: Boolean, scbPath: String, host: String, username: String, password: String,
                             trustStorePath: String, trustStorePassword: String, trustStoreType: String,
                             keyStorePath: String, keyStorePassword: String, enabledAlgorithms: String): CassandraConnector = {
     var connType: String = "Source"
 
-    if ("true".equals(isAstra)) {
+    if (scbPath.nonEmpty) {
       abstractLogger.info(connType + ": Connected to Astra!");
 
       return CassandraConnector(sc
@@ -28,7 +28,7 @@ object OriginData extends BaseJob {
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
-    } else if (null != trustStorePath && !trustStorePath.trim.isEmpty) {
+    } else if (trustStorePath.nonEmpty) {
       abstractLogger.info(connType + ": Connected to Cassandra (or DSE) with SSL!");
 
       // Use defaults when not provided
