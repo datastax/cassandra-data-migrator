@@ -4,21 +4,27 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 > :warning: Please note this job has been tested with spark version [2.4.8](https://archive.apache.org/dist/spark/spark-2.4.8/)
 
-## Build
-1. Clone this repo
-2. Move to the repo folder `cd cassandra-data-migrator`
-3. Run the build `mvn clean package`
-4. The fat jar (`cassandra-data-migrator-2.x.jar`) file should now be present in the `target` folder
+## Container Image
+- Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator) 
+  - If you use this route, all migration tools (`cassandra-data-migrator` + `dsbulk` + `cqlsh`) would be available in the `/assets/` folder of the container
+- OR follow the below build steps (and Prerequisite) to build the jar locally
 
-## Prerequisite
+### Prerequisite
 
-Install Java8 as spark binaries are compiled with it.
-Install single instance of spark on a node where you want to run this job. Spark can be installed by running the following: -
+- Install Java8 as spark binaries are compiled with it.
+- Install Maven 3.8.x
+- Install single instance of spark on a node where you want to run this job. Spark can be installed by running the following: -
 
 ```
 wget https://downloads.apache.org/spark/spark-2.4.8/
 tar -xvzf <spark downloaded file name>
 ```
+
+### Build
+1. Clone this repo
+2. Move to the repo folder `cd cassandra-data-migrator`
+3. Run the build `mvn clean package`
+4. The fat jar (`cassandra-data-migrator-2.x.x.jar`) file should now be present in the `target` folder
 
 # Steps for Data-Migration:
 
@@ -30,7 +36,7 @@ tar -xvzf <spark downloaded file name>
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.Migrate cassandra-data-migrator-2.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-2.x.x.jar &> logfile_name.txt
 ```
 
 Note: Above command also generates a log file `logfile_name.txt` to avoid log output on the console.
@@ -43,7 +49,7 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.DiffData cassandra-data-migrator-2.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.DiffData cassandra-data-migrator-2.x.x.jar &> logfile_name.txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
@@ -72,7 +78,7 @@ spark.target.autocorrect.mismatch                   true|false
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-2.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-2.x.x.jar &> logfile_name.txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
@@ -88,7 +94,8 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
 - Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTL](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)
 - Advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
-- Filter records from origin using writetime
+- Filter records from origin using writetimes, CQL conditions, token-ranges
+- Fully containerized (Docker and K8s friendly)
 - SSL Support (including custom cipher algorithms)
 - Migrate from any Cassandra origin ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set

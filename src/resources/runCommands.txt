@@ -4,11 +4,11 @@ curl -OL https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz
 wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.7.tgz
 
 // Migrate
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-2.x.jar
-spark-submit --properties-file /<path>/sparkConf.properties --master "local[8]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-2.x.jar &> table_out.log
+spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-2.*.jar
+spark-submit --properties-file /<path>/sparkConf.properties --master "local[8]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-2.*.jar &> table_out.log
 
 // Random Partitioner Run Command
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --conf spark.origin.minPartition=-1 --conf spark.origin.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-2.x.jar
+spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[8]" --conf spark.origin.minPartition=-1 --conf spark.origin.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-2.*.jar
 
 // Validate
-spark-submit --properties-file /<path>/sparkConf.properties --master "local[8]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.DiffData /<path>/cassandra-data-migrator-2.x.jar &> table_out.log
+spark-submit --properties-file /<path>/sparkConf.properties --master "local[8]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.DiffData /<path>/cassandra-data-migrator-2.*.jar &> table_out.log
