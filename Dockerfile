@@ -1,8 +1,5 @@
 FROM eclipse-temurin:8-jammy
 
-RUN apt update && apt install -y openssh-server vim --no-install-recommends
-RUN service ssh start
-
 # Add all migration tools to path
 RUN mkdir -p /assets/
 
@@ -18,6 +15,10 @@ RUN cd /assets && \
     curl -OL https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.7.tgz && \
     tar -xzf ./spark-2.4.8-bin-hadoop2.7.tgz && \
     rm ./spark-2.4.8-bin-hadoop2.7.tgz
+
+RUN apt-get update && apt-get install -y openssh-server vim --no-install-recommends && \
+     rm -rf /var/lib/apt/lists/*
+RUN service ssh start
 
 # Copy CDM jar & template files
 COPY ./target/cassandra-data-migrator-*.jar /assets/
