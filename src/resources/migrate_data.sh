@@ -39,7 +39,7 @@ if [ $S_IDX -lt -9000000000000000000 ]
 then
   E_IDX=-9000000000000000001
   echo "Running Migrate for Partition Range $S_IDX to $E_IDX .."
-  $SPARK_SUBMIT --properties-file $PROPS_FILE --master "local[*]" --conf spark.source.minPartition=$S_IDX --conf spark.source.maxPartition=$E_IDX --class datastax.astra.migrate.Migrate cassandra-data-migrator-*.jar
+  $SPARK_SUBMIT --properties-file $PROPS_FILE --master "local[*]" --conf spark.origin.minPartition=$S_IDX --conf spark.origin.maxPartition=$E_IDX --class datastax.astra.migrate.Migrate cassandra-data-migrator-*.jar
   S_IDX=-9000000000000000000
 fi
 
@@ -53,12 +53,12 @@ do
     E_IDX=$(( $S_IDX + $SLICE ))
   fi
   echo "Running Migrate for Partition Range $S_IDX to $E_IDX .."
-  $SPARK_SUBMIT --properties-file $PROPS_FILE --master "local[*]" --conf spark.source.minPartition=$S_IDX --conf spark.source.maxPartition=$E_IDX --class datastax.astra.migrate.Migrate cassandra-data-migrator-*.jar
+  $SPARK_SUBMIT --properties-file $PROPS_FILE --master "local[*]" --conf spark.origin.minPartition=$S_IDX --conf spark.origin.maxPartition=$E_IDX --class datastax.astra.migrate.Migrate cassandra-data-migrator-*.jar
   S_IDX=$(( $E_IDX + 1 ))
 done
 
 # Migrate final partition tokens from 9000000000000000000 to max-long
 E_IDX=9223372036854775807
 echo "Running Migrate for Partition Range $S_IDX to 9223372036854775807 .."
-$SPARK_SUBMIT --properties-file $PROPS_FILE --master "local[*]" --conf spark.source.minPartition=$S_IDX --conf spark.source.maxPartition=$E_IDX --class datastax.astra.migrate.Migrate cassandra-data-migrator-*.jar
+$SPARK_SUBMIT --properties-file $PROPS_FILE --master "local[*]" --conf spark.origin.minPartition=$S_IDX --conf spark.origin.maxPartition=$E_IDX --class datastax.astra.migrate.Migrate cassandra-data-migrator-*.jar
 echo "Completed Migration using $PROPS_FILE !!"
