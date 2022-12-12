@@ -4,51 +4,54 @@ import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
 import java.math.BigInteger
-import java.lang.Long
 
 class BaseJob extends App {
 
   val abstractLogger = LoggerFactory.getLogger(this.getClass.getName)
   val spark = SparkSession.builder
-    .appName("Datastax Data Validation")
+    .appName("Cassandra Data Migrator")
     .getOrCreate()
+  abstractLogger.info("################################################################################################")
+  abstractLogger.info("############################## Cassandra Data Migrator - Starting ##############################")
+  abstractLogger.info("################################################################################################")
 
-  val sc = spark.sparkContext
+  val sContext = spark.sparkContext
+  val sc = sContext.getConf
 
-  val sourceIsAstra = sc.getConf.get("spark.source.isAstra", "false")
-  val sourceScbPath = sc.getConf.get("spark.source.scb", "")
-  val sourceHost = sc.getConf.get("spark.source.host", "")
-  val sourceUsername = sc.getConf.get("spark.source.username", "")
-  val sourcePassword = sc.getConf.get("spark.source.password", "")
-  val sourceReadConsistencyLevel = sc.getConf.get("spark.source.read.consistency.level", "LOCAL_QUORUM")
-  val sourceTrustStorePath = sc.getConf.get("spark.source.trustStore.path", "")
-  val sourceTrustStorePassword = sc.getConf.get("spark.source.trustStore.password", "")
-  val sourceTrustStoreType = sc.getConf.get("spark.source.trustStore.type", "JKS")
-  val sourceKeyStorePath = sc.getConf.get("spark.source.keyStore.path", "")
-  val sourceKeyStorePassword = sc.getConf.get("spark.source.keyStore.password", "")
-  val sourceEnabledAlgorithms = sc.getConf.get("spark.source.enabledAlgorithms", "")
+  val consistencyLevel = Util.getSparkPropOr(sc, "spark.read.consistency.level", "LOCAL_QUORUM")
 
-  val destinationIsAstra = sc.getConf.get("spark.destination.isAstra", "true")
-  val destinationScbPath = sc.getConf.get("spark.destination.scb", "")
-  val destinationHost = sc.getConf.get("spark.destination.host", "")
-  val destinationUsername = sc.getConf.get("spark.destination.username")
-  val destinationPassword = sc.getConf.get("spark.destination.password")
-  val destinationReadConsistencyLevel = sc.getConf.get("spark.destination.read.consistency.level", "LOCAL_QUORUM")
-  val destinationTrustStorePath = sc.getConf.get("spark.destination.trustStore.path", "")
-  val destinationTrustStorePassword = sc.getConf.get("spark.destination.trustStore.password", "")
-  val destinationTrustStoreType = sc.getConf.get("spark.destination.trustStore.type", "JKS")
-  val destinationKeyStorePath = sc.getConf.get("spark.destination.keyStore.path", "")
-  val destinationKeyStorePassword = sc.getConf.get("spark.destination.keyStore.password", "")
-  val destinationEnabledAlgorithms = sc.getConf.get("spark.destination.enabledAlgorithms", "")
+  val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
+  val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")
+  val sourceUsername = Util.getSparkPropOrEmpty(sc, "spark.origin.username")
+  val sourcePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.password")
+  val sourceTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.origin.trustStore.path")
+  val sourceTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.trustStore.password")
+  val sourceTrustStoreType = Util.getSparkPropOr(sc, "spark.origin.trustStore.type", "JKS")
+  val sourceKeyStorePath = Util.getSparkPropOrEmpty(sc, "spark.origin.keyStore.path")
+  val sourceKeyStorePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.keyStore.password")
+  val sourceEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, "spark.origin.enabledAlgorithms")
 
-  val minPartition = new BigInteger(sc.getConf.get("spark.source.minPartition", "-9223372036854775808"))
-  val maxPartition = new BigInteger(sc.getConf.get("spark.source.maxPartition", "9223372036854775807"))
-  val coveragePercent = sc.getConf.get("spark.coveragePercent", "100")
-  val splitSize = sc.getConf.get("spark.splitSize", "10000")
-  val partitions = SplitPartitions.getRandomSubPartitions(BigInteger.valueOf(Long.parseLong(splitSize)), minPartition, maxPartition, Integer.parseInt(coveragePercent))
+  val destinationScbPath = Util.getSparkPropOrEmpty(sc, "spark.target.scb")
+  val destinationHost = Util.getSparkPropOrEmpty(sc, "spark.target.host")
+  val destinationUsername = Util.getSparkProp(sc, "spark.target.username")
+  val destinationPassword = Util.getSparkProp(sc, "spark.target.password")
+  val destinationTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.path")
+  val destinationTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.password")
+  val destinationTrustStoreType = Util.getSparkPropOr(sc, "spark.target.trustStore.type", "JKS")
+  val destinationKeyStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.keyStore.path")
+  val destinationKeyStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.keyStore.password")
+  val destinationEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, "spark.target.enabledAlgorithms")
+
+  val minPartition = new BigInteger(Util.getSparkPropOr(sc, "spark.origin.minPartition", "-9223372036854775808"))
+  val maxPartition = new BigInteger(Util.getSparkPropOr(sc, "spark.origin.maxPartition", "9223372036854775807"))
+  val coveragePercent = Util.getSparkPropOr(sc, "spark.coveragePercent", "100")
+  val splitSize = Integer.parseInt(Util.getSparkPropOr(sc, "spark.splitSize", "10000"))
 
   protected def exitSpark() = {
     spark.stop()
+    abstractLogger.info("################################################################################################")
+    abstractLogger.info("############################## Cassandra Data Migrator - Stopped ###############################")
+    abstractLogger.info("################################################################################################")
     sys.exit(0)
   }
 

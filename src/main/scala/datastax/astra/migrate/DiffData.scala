@@ -15,17 +15,19 @@ object DiffData extends AbstractJob {
   exitSpark
 
   private def diffTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
-    val parts = sc.parallelize(partitions.toSeq, partitions.size);
+    val partitions = SplitPartitions.getRandomSubPartitions(splitSize, minPartition, maxPartition, Integer.parseInt(coveragePercent))
+    logger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
+    val parts = sContext.parallelize(partitions.toSeq, partitions.size);
     logger.info("Spark parallelize created : " + parts.count() + " parts!");
 
     parts.foreach(part => {
       sourceConnection.withSessionDo(sourceSession =>
         destinationConnection.withSessionDo(destinationSession =>
-          DiffJobSession.getInstance(sourceSession, destinationSession, sc.getConf)
+          DiffJobSession.getInstance(sourceSession, destinationSession, sc)
             .getDataAndDiff(part.getMin, part.getMax)))
     })
 
-    DiffJobSession.getInstance(null, null, sc.getConf).printCounts("Job Final");
+    DiffJobSession.getInstance(null, null, sc).printCounts(true);
   }
 
 }
