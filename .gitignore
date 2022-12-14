@@ -4,3 +4,8 @@ target/
 .vscode/*
 dependency-reduced-pom.xml
 .idea/*
+build/*
+release.properties
+pom.xml.next
+pom.xml.releaseBackup
+pom.xml.tag

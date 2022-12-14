@@ -3,7 +3,7 @@
 
   <groupId>datastax.astra.migrate</groupId>
   <artifactId>cassandra-data-migrator</artifactId>
-  <version>2.10.1</version>
+  <version>2.10.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -24,7 +24,12 @@
       <url>https://maven.pkg.github.com/datastax/cassandra-data-migrator</url>
     </repository>
   </distributionManagement>
-
+  <scm>
+    <connection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</connection>
+    <developerConnection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</developerConnection>
+    <url>https://github.com/datastax/cassandra-data-migrator</url>
+    <tag>HEAD</tag>
+  </scm>
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -211,6 +216,11 @@
           <source>1.8</source>
           <target>1.8</target>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>3.0.0-M7</version>
       </plugin>
     </plugins>
   </build>
