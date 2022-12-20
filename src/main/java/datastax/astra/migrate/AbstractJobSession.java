@@ -24,6 +24,9 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
+        if (sourceSession == null) {
+            return;
+        }
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
