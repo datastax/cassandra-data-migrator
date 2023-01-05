@@ -43,7 +43,7 @@ public class CopyPKJobSession extends AbstractJobSession {
                 readCounter.incrementAndGet();
                 String[] pkFields = row.split(" %% ");
                 int idx = 0;
-                BoundStatement bspk = sourceSelectStatement.bind();
+                BoundStatement bspk = sourceSelectStatement.bind().setConsistencyLevel(readConsistencyLevel);
                 for (MigrateDataType tp : idColTypes) {
                     bspk = bspk.set(idx, convert(tp.typeClass, pkFields[idx]), tp.typeClass);
                     idx++;
