@@ -1,12 +1,12 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.Locale;
 import java.util.NoSuchElementException;
 
 public class Util {
@@ -43,8 +43,8 @@ public class Util {
 
     public static ConsistencyLevel mapToConsistencyLevel(String level) {
         ConsistencyLevel retVal = ConsistencyLevel.LOCAL_QUORUM;
-        if (null != level) {
-            switch (level.toUpperCase(Locale.ROOT)) {
+        if (StringUtils.isNotEmpty(level)) {
+            switch (level.toUpperCase()) {
                 case "ANY":
                     retVal = ConsistencyLevel.ANY;
                     break;
