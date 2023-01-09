@@ -1,6 +1,5 @@
 package datastax.astra.migrate;
 
-import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -61,9 +60,9 @@ public class DiffJobSession extends CopyJobSession {
 
             try {
                 // cannot do batching if the writeFilter is greater than 0
-                ResultSet resultSet = sourceSession.execute(
-                        sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
-                                .setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM).setPageSize(fetchSizeInRows));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
+                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
+                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
 
                 Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap = new HashMap<Row, CompletionStage<AsyncResultSet>>();
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(srcRow -> {
