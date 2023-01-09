@@ -24,6 +24,7 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
+        super(sc);
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
@@ -79,6 +80,8 @@ public class AbstractJobSession extends BaseJobSession {
             customWritetime = Long.parseLong(customWriteTimeStr);
         }
 
+        logger.info("PARAM -- Read Consistency: {}", readConsistencyLevel);
+        logger.info("PARAM -- Write Consistency: {}", writeConsistencyLevel);
         logger.info("PARAM -- Write Batch Size: {}", batchSize);
         logger.info("PARAM -- Read Fetch Size: {}", fetchSizeInRows);
         logger.info("PARAM -- Source Keyspace Table: {}", sourceKeyspaceTable);
@@ -98,6 +101,9 @@ public class AbstractJobSession extends BaseJobSession {
         String selectCols = Util.getSparkProp(sc, "spark.query.origin");
         String partionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
         String sourceSelectCondition = Util.getSparkPropOrEmpty(sc, "spark.query.condition");
+        if (!sourceSelectCondition.isEmpty() && !sourceSelectCondition.trim().toUpperCase().startsWith("AND")) {
+            sourceSelectCondition = " AND " + sourceSelectCondition;
+        }
 
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
         String[] allCols = selectCols.split(",");
@@ -172,7 +178,7 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
-        BoundStatement boundInsertStatement = insertStatement.bind();
+        BoundStatement boundInsertStatement = insertStatement.bind().setConsistencyLevel(writeConsistencyLevel);
 
         if (isCounterTable) {
             for (int index = 0; index < selectColTypes.size(); index++) {
@@ -232,7 +238,7 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
-        BoundStatement boundSelectStatement = selectStatement.bind();
+        BoundStatement boundSelectStatement = selectStatement.bind().setConsistencyLevel(readConsistencyLevel);
         for (int index = 0; index < idColTypes.size(); index++) {
             MigrateDataType dataType = idColTypes.get(index);
             boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, sourceRow),

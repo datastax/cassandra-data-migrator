@@ -1,9 +1,11 @@
 package datastax.astra.migrate;
 
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import org.apache.spark.SparkConf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,8 @@ public abstract class BaseJobSession {
     protected PreparedStatement sourceSelectStatement;
     protected PreparedStatement astraSelectStatement;
     protected PreparedStatement astraInsertStatement;
+    protected ConsistencyLevel readConsistencyLevel;
+    protected ConsistencyLevel writeConsistencyLevel;
 
     // Read/Write Rate limiter
     // Determine the total throughput for the entire cluster in terms of wries/sec,
@@ -54,6 +58,11 @@ public abstract class BaseJobSession {
     protected String filterColType;
     protected Integer filterColIndex;
     protected String filterColValue;
+
+    protected BaseJobSession(SparkConf sc) {
+        readConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.read"));
+        writeConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.write"));
+    }
 
     public String getKey(Row sourceRow) {
         StringBuffer key = new StringBuffer();
