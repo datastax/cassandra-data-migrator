@@ -26,41 +26,41 @@ public class OriginCountJobSession extends BaseJobSession {
     protected Integer fieldGuardraillimitMB;
     protected List<MigrateDataType> checkTableforColSizeTypes = new ArrayList<MigrateDataType>();
 
-    protected OriginCountJobSession(CqlSession sourceSession, SparkConf sparkConf) {
+    protected OriginCountJobSession(CqlSession sourceSession, SparkConf sc) {
+        super(sc);
         this.sourceSession = sourceSession;
-        batchSize = new Integer(sparkConf.get("spark.batchSize", "1"));
-        printStatsAfter = new Integer(sparkConf.get("spark.printStatsAfter", "100000"));
+        batchSize = new Integer(sc.get("spark.batchSize", "1"));
+        printStatsAfter = new Integer(sc.get("spark.printStatsAfter", "100000"));
         if (printStatsAfter < 1) {
             printStatsAfter = 100000;
         }
 
-        readLimiter = RateLimiter.create(new Integer(sparkConf.get("spark.readRateLimit", "20000")));
-        sourceKeyspaceTable = sparkConf.get("spark.origin.keyspaceTable");
+        readLimiter = RateLimiter.create(new Integer(sc.get("spark.readRateLimit", "20000")));
+        sourceKeyspaceTable = sc.get("spark.origin.keyspaceTable");
 
-        hasRandomPartitioner = Boolean.parseBoolean(sparkConf.get("spark.origin.hasRandomPartitioner", "false"));
-        isCounterTable = Boolean.parseBoolean(sparkConf.get("spark.counterTable", "false"));
+        hasRandomPartitioner = Boolean.parseBoolean(sc.get("spark.origin.hasRandomPartitioner", "false"));
+        isCounterTable = Boolean.parseBoolean(sc.get("spark.counterTable", "false"));
 
-        checkTableforColSize = Boolean.parseBoolean(sparkConf.get("spark.origin.checkTableforColSize", "false"));
-        checkTableforselectCols = sparkConf.get("spark.origin.checkTableforColSize.cols");
-        checkTableforColSizeTypes = getTypes(sparkConf.get("spark.origin.checkTableforColSize.cols.types"));
-        filterColName = Util.getSparkPropOrEmpty(sparkConf, "spark.origin.FilterColumn");
-        filterColType = Util.getSparkPropOrEmpty(sparkConf, "spark.origin.FilterColumnType");
-        filterColIndex = Integer.parseInt(sparkConf.get("spark.origin.FilterColumnIndex", "0"));
-        fieldGuardraillimitMB = Integer.parseInt(sparkConf.get("spark.fieldGuardraillimitMB", "0"));
+        checkTableforColSize = Boolean.parseBoolean(sc.get("spark.origin.checkTableforColSize", "false"));
+        checkTableforselectCols = sc.get("spark.origin.checkTableforColSize.cols");
+        checkTableforColSizeTypes = getTypes(sc.get("spark.origin.checkTableforColSize.cols.types"));
+        filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn");
+        filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType");
+        filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
+        fieldGuardraillimitMB = Integer.parseInt(sc.get("spark.fieldGuardraillimitMB", "0"));
 
-        String partionKey = sparkConf.get("spark.query.cols.partitionKey");
-        idColTypes = getTypes(sparkConf.get("spark.query.cols.id.types"));
+        String partionKey = sc.get("spark.query.cols.partitionKey");
+        idColTypes = getTypes(sc.get("spark.query.cols.id.types"));
 
-        String selectCols = sparkConf.get("spark.query.cols.select");
-        String updateSelectMappingStr = sparkConf.get("spark.counterTable.cql.index", "0");
+        String selectCols = sc.get("spark.query.cols.select");
+        String updateSelectMappingStr = sc.get("spark.counterTable.cql.index", "0");
         for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
             updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
         }
-        String sourceSelectCondition = sparkConf.get("spark.query.cols.select.condition", "");
+        String sourceSelectCondition = sc.get("spark.query.cols.select.condition", "");
         sourceSelectStatement = sourceSession.prepare(
                 "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
-
     }
 
     public static OriginCountJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
@@ -81,7 +81,10 @@ public class OriginCountJobSession extends BaseJobSession {
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact()));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
+                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
+                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
+
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
@@ -106,7 +109,6 @@ public class OriginCountJobSession extends BaseJobSession {
                             }
                         }
                     }
-
                 } else {
                     BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                     for (Row sourceRow : resultSet) {
@@ -143,7 +145,6 @@ public class OriginCountJobSession extends BaseJobSession {
                         Thread.currentThread().getId(), min, max, retryCount);
             }
         }
-
     }
 
     private int GetRowColumnLength(Row sourceRow, String filterColType, Integer filterColIndex) {
