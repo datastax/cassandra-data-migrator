@@ -13,7 +13,7 @@ RUN mkdir -p /assets/ && cd /assets && \
     tar -xzf ./spark-2.4.8-bin-hadoop2.7.tgz && \
     rm ./spark-2.4.8-bin-hadoop2.7.tgz
 
-RUN apt-get update && apt-get install -y openssh-server vim --no-install-recommends && \
+RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*  && \
     service ssh start
 

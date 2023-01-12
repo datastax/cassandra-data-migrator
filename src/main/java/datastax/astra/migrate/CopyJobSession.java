@@ -47,8 +47,10 @@ public class CopyJobSession extends AbstractJobSession {
         for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
 
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ? min : min.longValueExact(),
-                        hasRandomPartitioner ? max : max.longValueExact()).setPageSize(fetchSizeInRows));
+                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
+                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
+                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
+
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
