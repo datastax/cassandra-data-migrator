@@ -3,16 +3,16 @@
 
   <groupId>datastax.astra.migrate</groupId>
   <artifactId>cassandra-data-migrator</artifactId>
-  <version>2.11.0</version>
+  <version>3.0.0</version>
   <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>2.12.17</scala.version>
     <scala.main.version>2.12</scala.main.version>
-    <spark.version>3.1.3</spark.version>
+    <spark.version>3.3.1</spark.version>
     <scalatest.version>3.2.12</scalatest.version>
-    <connector.version>3.1.0</connector.version>
+    <connector.version>3.2.0</connector.version>
     <cassandra.version>3.11.13</cassandra.version>
     <junit.version>4.13.2</junit.version>
   </properties>
