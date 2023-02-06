@@ -20,7 +20,7 @@
 ###########################################################################################################################
 
 # Path to spark-submit
-SPARK_SUBMIT=/home/ubuntu/spark-2.4.8-bin-hadoop2.6/bin/spark-submit
+SPARK_SUBMIT=/home/ubuntu/spark-3.3.1-bin-hadoop3/bin/spark-submit
 
 # Path to spark configuration for the table
 PROPS_FILE=/home/ubuntu/sparkConf.properties

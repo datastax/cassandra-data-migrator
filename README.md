@@ -2,7 +2,7 @@
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
-> :warning: Please note this job has been tested with spark version [2.4.8](https://archive.apache.org/dist/spark/spark-2.4.8/)
+> :warning: Please note this job has been tested with spark version [3.3.1](https://archive.apache.org/dist/spark/spark-3.3.1/)
 
 ## Container Image
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator) 
@@ -16,7 +16,7 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 - Install single instance of spark on a node where you want to run this job. Spark can be installed by running the following: -
 
 ```
-wget https://downloads.apache.org/spark/spark-2.4.8/
+wget https://archive.apache.org/dist/spark/spark-3.3.1/spark-3.3.1-bin-hadoop3.tgz
 tar -xvzf <spark downloaded file name>
 ```
 
@@ -24,7 +24,7 @@ tar -xvzf <spark downloaded file name>
 1. Clone this repo
 2. Move to the repo folder `cd cassandra-data-migrator`
 3. Run the build `mvn clean package`
-4. The fat jar (`cassandra-data-migrator-2.x.x.jar`) file should now be present in the `target` folder
+4. The fat jar (`cassandra-data-migrator-3.x.x.jar`) file should now be present in the `target` folder
 
 # Steps for Data-Migration:
 
@@ -36,7 +36,7 @@ tar -xvzf <spark downloaded file name>
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.Migrate cassandra-data-migrator-2.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
 
 Note: Above command also generates a log file `logfile_name.txt` to avoid log output on the console.
@@ -49,7 +49,7 @@ Note: Above command also generates a log file `logfile_name.txt` to avoid log ou
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.DiffData cassandra-data-migrator-2.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.DiffData cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
@@ -78,7 +78,7 @@ spark.target.autocorrect.mismatch                   true|false
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-2.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
