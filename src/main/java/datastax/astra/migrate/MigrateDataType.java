@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 
 public class MigrateDataType {
@@ -81,6 +82,10 @@ public class MigrateDataType {
                 return UdtValue.class;
             case 17:
                 return BigInteger.class;
+            case 18:
+                return LocalTime.class;
+            case 19:
+                return Short.class;
         }
 
         return Object.class;
