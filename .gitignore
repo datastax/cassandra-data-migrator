@@ -4,3 +4,4 @@ target/
 .vscode/*
 dependency-reduced-pom.xml
 .idea/*
+cassandra-data-migrator.iml
