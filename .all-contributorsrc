@@ -70,6 +70,16 @@
         "maintenance",
         "test"
       ]
+    },
+    {
+      "login": "abinaya21",
+      "name": "Abinaya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17826577?v=4",
+      "profile": "https://github.com/abinaya21",
+      "contributions": [
+        "code",
+        "userTesting"
+      ]
     }
   ]
 }
