@@ -27,6 +27,17 @@
         "maintenance",
         "test"
       ]
+    },
+    {
+      "login": "faizalrub-datastax",
+      "name": "faizalrub-datastax",
+      "avatar_url": "https://avatars.githubusercontent.com/u/93143687?v=4",
+      "profile": "https://github.com/faizalrub-datastax",
+      "contributions": [
+        "code",
+        "content",
+        "review"
+      ]
     }
   ]
 }
