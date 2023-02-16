@@ -77,9 +77,9 @@ public class OriginCountJobSession extends BaseJobSession {
 
     public void getData(BigInteger min, BigInteger max) {
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
-        int maxAttempts = maxRetries;
-        for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
-
+        boolean done = false;
+        int maxAttempts = maxRetries + 1;
+        for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             try {
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
                                 min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
@@ -138,11 +138,11 @@ public class OriginCountJobSession extends BaseJobSession {
                 }
 
                 logger.info("ThreadID: {} Final Read Record Count: {}", Thread.currentThread().getId(), readCounter.get());
-                retryCount = maxAttempts;
+                done = true;
             } catch (Exception e) {
-                logger.error("Error occurred retry#: {}", retryCount, e);
-                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
-                        Thread.currentThread().getId(), min, max, retryCount);
+                logger.error("Error occurred during Attempt#: {}", attempts, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
+                        Thread.currentThread().getId(), min, max, attempts);
             }
         }
     }
