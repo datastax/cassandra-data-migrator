@@ -1,3 +1,5 @@
+[![All Contributors](https://img.shields.io/github/all-contributors/datastax/cassandra-data-migrator?color=ee8449&style=flat-square)](#contributors)
+
 # cassandra-data-migrator
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
@@ -100,3 +102,18 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Migrate from any Cassandra origin ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Custom writetime
+
+## Contributors
+Thanks to these contributors! :sparkle:
+For recognizing contributions, please follow [this documentation](https://allcontributors.org/docs/en/bot/usage) and pick a key/contribution type from [here](https://allcontributors.org/docs/en/emoji-key).
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+---
