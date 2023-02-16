@@ -13,5 +13,20 @@
   "contributorsSortAlphabetically": false,
   "linkToUsage": false,
   "skipCi": true,
-  "contributors": []
+  "contributors": [
+    {
+      "login": "pravinbhat",
+      "name": "Pravin Bhat",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2746469?v=4",
+      "profile": "https://github.com/pravinbhat",
+      "contributions": [
+        "code",
+        "content",
+        "doc",
+        "design",
+        "maintenance",
+        "test"
+      ]
+    }
+  ]
 }
