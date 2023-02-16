@@ -110,6 +110,13 @@ For recognizing contributions, please follow [this documentation](https://allcon
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/pravinbhat"><img src="https://avatars.githubusercontent.com/u/2746469?v=4?s=50" width="50px;" alt="Pravin Bhat"/><br /><sub><b>Pravin Bhat</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Code">💻</a> <a href="#content-pravinbhat" title="Content">🖋</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Documentation">📖</a> <a href="#design-pravinbhat" title="Design">🎨</a> <a href="#maintenance-pravinbhat" title="Maintenance">🚧</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Tests">⚠️</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
