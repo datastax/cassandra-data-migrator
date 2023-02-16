@@ -114,6 +114,7 @@ For recognizing contributions, please follow [this documentation](https://allcon
   <tbody>
     <tr>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/pravinbhat"><img src="https://avatars.githubusercontent.com/u/2746469?v=4?s=50" width="50px;" alt="Pravin Bhat"/><br /><sub><b>Pravin Bhat</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Code">💻</a> <a href="#content-pravinbhat" title="Content">🖋</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Documentation">📖</a> <a href="#design-pravinbhat" title="Design">🎨</a> <a href="#maintenance-pravinbhat" title="Maintenance">🚧</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/faizalrub-datastax"><img src="https://avatars.githubusercontent.com/u/93143687?v=4?s=50" width="50px;" alt="faizalrub-datastax"/><br /><sub><b>faizalrub-datastax</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=faizalrub-datastax" title="Code">💻</a> <a href="#content-faizalrub-datastax" title="Content">🖋</a> <a href="https://github.com/datastax/cassandra-data-migrator/pulls?q=is%3Apr+reviewed-by%3Afaizalrub-datastax" title="Reviewed Pull Requests">👀</a></td>
     </tr>
   </tbody>
 </table>
