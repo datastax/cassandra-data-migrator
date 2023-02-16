@@ -1,5 +1,3 @@
-[![All Contributors](https://img.shields.io/github/all-contributors/datastax/cassandra-data-migrator?color=ee8449&style=flat-square)](#contributors)
-
 # cassandra-data-migrator
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
@@ -19,7 +17,7 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 ```
 wget https://archive.apache.org/dist/spark/spark-3.3.1/spark-3.3.1-bin-hadoop3.tgz
-tar -xvzf <spark downloaded file name>
+tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 ```
 
 ### Build
@@ -104,23 +102,6 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Custom writetime
 
 ## Contributors
-Thanks to these contributors! :sparkle:
-For recognizing contributions, please follow [this documentation](https://allcontributors.org/docs/en/bot/usage) and pick a key/contribution type from [here](https://allcontributors.org/docs/en/emoji-key).
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="16.66%"><a href="https://github.com/pravinbhat"><img src="https://avatars.githubusercontent.com/u/2746469?v=4?s=50" width="50px;" alt="Pravin Bhat"/><br /><sub><b>Pravin Bhat</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Code">💻</a> <a href="#content-pravinbhat" title="Content">🖋</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Documentation">📖</a> <a href="#design-pravinbhat" title="Design">🎨</a> <a href="#maintenance-pravinbhat" title="Maintenance">🚧</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=pravinbhat" title="Tests">⚠️</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+Checkout all our wonderful contributors [here](./CONTRIBUTING.md#contributors).
 
 ---
