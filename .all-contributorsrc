@@ -58,14 +58,27 @@
       ]
     },
     {
-      "login": "abinaya21",
-      "name": "Abinaya",
-      "avatar_url": "https://avatars.githubusercontent.com/u/17826577?v=4",
-      "profile": "https://github.com/abinaya21",
+      "login": "Ankitp1342",
+      "name": "Ankitp1342",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19273939?v=4",
+      "profile": "https://github.com/Ankitp1342",
       "contributions": [
         "code",
-        "userTesting"
-      ]
-    }
+        "content",
+        "doc",
+        "design",
+        "maintenance",
+        "test"
+     },
+     {
+       "login": "abinaya21",
+       "name": "Abinaya",
+       "avatar_url": "https://avatars.githubusercontent.com/u/17826577?v=4",
+       "profile": "https://github.com/abinaya21",
+       "contributions": [
+         "code",
+         "userTesting"
+       ]
+     }
   ]
 }
