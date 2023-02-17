@@ -9,15 +9,17 @@ class AbstractJob extends BaseJob {
   abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
   abstractLogger.info("PARAM -- Split Size: " + splitSize)
   abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
+  abstractLogger.info("PARAM -- Origin SSL Enabled: {}", sourceSSLEnabled);
+  abstractLogger.info("PARAM -- Target SSL Enabled: {}", destinationSSLEnabled);
 
-  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
+  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourcePort, sourceUsername, sourcePassword, sourceSSLEnabled,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
 
-  var destinationConnection = getConnection(false, destinationScbPath, destinationHost, destinationUsername, destinationPassword,
+  var destinationConnection = getConnection(false, destinationScbPath, destinationHost, destinationPort, destinationUsername, destinationPassword, destinationSSLEnabled,
     destinationTrustStorePath, destinationTrustStorePassword, destinationTrustStoreType, destinationKeyStorePath, destinationKeyStorePassword, destinationEnabledAlgorithms);
 
-  private def getConnection(isSource: Boolean, scbPath: String, host: String, username: String, password: String,
-                            trustStorePath: String, trustStorePassword: String, trustStoreType: String,
+  private def getConnection(isSource: Boolean, scbPath: String, host: String, port: String, username: String, password: String,
+                            sslEnabled: String, trustStorePath: String, trustStorePassword: String, trustStoreType: String,
                             keyStorePath: String, keyStorePassword: String, enabledAlgorithms: String): CassandraConnector = {
     var connType: String = "Source"
     if (!isSource) {
@@ -34,7 +36,7 @@ class AbstractJob extends BaseJob {
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
     } else if (trustStorePath.nonEmpty) {
-      abstractLogger.info(connType + ": Connecting to Cassandra (or DSE) with SSL host: " + host);
+      abstractLogger.info(connType + ": Connecting (with clientAuth) to Cassandra (or DSE) host:port " + host + ":" + port);
 
       // Use defaults when not provided
       var enabledAlgorithmsVar = enabledAlgorithms
@@ -47,6 +49,7 @@ class AbstractJob extends BaseJob {
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.host", host)
+        .set("spark.cassandra.connection.port", port)
         .set("spark.cassandra.connection.ssl.enabled", "true")
         .set("spark.cassandra.connection.ssl.enabledAlgorithms", enabledAlgorithmsVar)
         .set("spark.cassandra.connection.ssl.trustStore.password", trustStorePassword)
@@ -57,12 +60,14 @@ class AbstractJob extends BaseJob {
         .set("spark.cassandra.connection.ssl.clientAuth.enabled", "true")
       )
     } else {
-      abstractLogger.info(connType + ": Connecting to Cassandra (or DSE) host: " + host);
+      abstractLogger.info(connType + ": Connecting to Cassandra (or DSE) host:port " + host + ":" + port);
 
       return CassandraConnector(config.set("spark.cassandra.auth.username", username)
+        .set("spark.cassandra.connection.ssl.enabled", sslEnabled)
         .set("spark.cassandra.auth.password", password)
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
-        .set("spark.cassandra.connection.host", host))
+        .set("spark.cassandra.connection.host", host)
+        .set("spark.cassandra.connection.port", port))
     }
 
   }
