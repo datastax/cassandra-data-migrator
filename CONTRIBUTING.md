@@ -122,6 +122,7 @@ For recognizing contributions, please follow [this documentation](https://allcon
     </tr>
     <tr>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/weideng1"><img src="https://avatars.githubusercontent.com/u/5520525?v=4?s=50" width="50px;" alt="weideng1"/><br /><sub><b>weideng1</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=weideng1" title="Code">💻</a> <a href="#tool-weideng1" title="Tools">🔧</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=weideng1" title="Tests">⚠️</a> <a href="#tutorial-weideng1" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/ssdatastax"><img src="https://avatars.githubusercontent.com/u/32074414?v=4?s=50" width="50px;" alt="Steven Smith"/><br /><sub><b>Steven Smith</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=ssdatastax" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
