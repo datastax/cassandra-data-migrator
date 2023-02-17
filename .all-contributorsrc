@@ -111,6 +111,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "vaishakhbn",
+      "name": "Vaishakh Baragur Narasimhareddy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2619002?v=4",
+      "profile": "https://github.com/vaishakhbn",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ]
 }
