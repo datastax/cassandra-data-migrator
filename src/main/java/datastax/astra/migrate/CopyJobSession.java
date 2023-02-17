@@ -44,10 +44,9 @@ public class CopyJobSession extends AbstractJobSession {
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
-        int maxAttempts = maxRetries;
         boolean done = false;
-
-        for (int retryCount = 1; retryCount <= maxAttempts && !done; retryCount++) {
+        int maxAttempts = maxRetries + 1;
+        for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             long readCnt = 0;
             long writeCnt = 0;
             long skipCnt = 0;
@@ -156,15 +155,15 @@ public class CopyJobSession extends AbstractJobSession {
                 skippedCounter.addAndGet(skipCnt);
                 done = true;
             } catch (Exception e) {
-                if (retryCount == maxAttempts) {
+                if (attempts == maxAttempts) {
                     readCounter.addAndGet(readCnt);
                     writeCounter.addAndGet(writeCnt);
                     skippedCounter.addAndGet(skipCnt);
                     errorCounter.addAndGet(readCnt - writeCnt - skipCnt);
                 }
-                logger.error("Error occurred retry#: {}", retryCount, e);
-                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Retry# {}",
-                        Thread.currentThread().getId(), min, max, retryCount);
+                logger.error("Error occurred during Attempt#: {}", attempts, e);
+                logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
+                        Thread.currentThread().getId(), min, max, attempts);
                 logger.error("Error stats Read#: {}, Wrote#: {}, Skipped#: {}, Error#: {}", readCnt, writeCnt, skipCnt, (readCnt - writeCnt - skipCnt));
             }
         }
@@ -188,7 +187,7 @@ public class CopyJobSession extends AbstractJobSession {
     private int iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
         int cnt = 0;
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
-            //wait for the writes to complete for the batch. The Retry policy, if defined,  should retry the write on timeouts.
+            //wait for the writes to complete for the batch. The Retry policy, if defined, should retry the write on timeouts.
             writeResult.toCompletableFuture().get().one();
             cnt += incrementBy;
         }

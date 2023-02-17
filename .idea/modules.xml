@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="ProjectModuleManager">
-    <modules>
-      <module fileurl="file://$PROJECT_DIR$/cassandra-data-migrator.iml" filepath="$PROJECT_DIR$/cassandra-data-migrator.iml" />
-      <module fileurl="file://$PROJECT_DIR$/migrate.iml" filepath="$PROJECT_DIR$/migrate.iml" />
-    </modules>
-  </component>
-</project>
