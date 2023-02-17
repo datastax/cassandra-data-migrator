@@ -22,6 +22,7 @@ class BaseJob extends App {
 
   val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
   val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")
+  val sourcePort = Util.getSparkPropOr(sc, "spark.origin.port", "9042")
   val sourceUsername = Util.getSparkPropOrEmpty(sc, "spark.origin.username")
   val sourcePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.password")
   val sourceSSLEnabled = Util.getSparkPropOr(sc, "spark.origin.ssl.enabled", "false")
@@ -34,6 +35,7 @@ class BaseJob extends App {
 
   val destinationScbPath = Util.getSparkPropOrEmpty(sc, "spark.target.scb")
   val destinationHost = Util.getSparkPropOrEmpty(sc, "spark.target.host")
+  val destinationPort = Util.getSparkPropOr(sc, "spark.target.port", "9042")
   val destinationUsername = Util.getSparkProp(sc, "spark.target.username")
   val destinationPassword = Util.getSparkProp(sc, "spark.target.password")
   val destinationSSLEnabled = Util.getSparkPropOr(sc, "spark.target.ssl.enabled", "false")
