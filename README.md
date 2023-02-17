@@ -1,3 +1,5 @@
+[![Star on Github](https://img.shields.io/github/stars/datastax/cassandra-data-migrator.svg?style=social)](https://github.com/datastax/cassandra-data-migrator/stargazers)
+
 # cassandra-data-migrator
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
@@ -97,11 +99,11 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Filter records from origin using writetimes, CQL conditions, token-ranges
 - Fully containerized (Docker and K8s friendly)
 - SSL Support (including custom cipher algorithms)
-- Migrate from any Cassandra origin ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra](https://cassandra.apache.org) / [DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB](https://www.datastax.com/products/datastax-astra))
+- Migrate from any Cassandra origin ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra)) to any Cassandra target ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra))
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Custom writetime
 
-## Contributors
+# Contributors
 Checkout all our wonderful contributors [here](./CONTRIBUTING.md#contributors).
 
 ---
