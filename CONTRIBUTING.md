@@ -120,6 +120,9 @@ For recognizing contributions, please follow [this documentation](https://allcon
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/abinaya21"><img src="https://avatars.githubusercontent.com/u/17826577?v=4?s=50" width="50px;" alt="Abinaya"/><br /><sub><b>Abinaya</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=abinaya21" title="Code">💻</a> <a href="#userTesting-abinaya21" title="User Testing">📓</a></td>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/anoop-datastax"><img src="https://avatars.githubusercontent.com/u/55256709?v=4?s=50" width="50px;" alt="anoop tiwari"/><br /><sub><b>anoop tiwari</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=anoop-datastax" title="Code">💻</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=anoop-datastax" title="Tests">⚠️</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/weideng1"><img src="https://avatars.githubusercontent.com/u/5520525?v=4?s=50" width="50px;" alt="weideng1"/><br /><sub><b>weideng1</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=weideng1" title="Code">💻</a> <a href="#tool-weideng1" title="Tools">🔧</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=weideng1" title="Tests">⚠️</a> <a href="#tutorial-weideng1" title="Tutorials">✅</a></td>
+    </tr>
   </tbody>
 </table>
 
