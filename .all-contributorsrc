@@ -80,6 +80,16 @@
         "code",
         "userTesting"
       ]
+    },
+    {
+      "login": "anoop-datastax",
+      "name": "anoop tiwari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55256709?v=4",
+      "profile": "https://github.com/anoop-datastax",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ]
 }
