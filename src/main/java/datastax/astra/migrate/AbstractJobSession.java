@@ -33,7 +33,7 @@ public class AbstractJobSession extends BaseJobSession {
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
-        batchSize = new Integer(Util.getSparkPropOr(sc, "spark.batchSize", "1"));
+        batchSize = new Integer(Util.getSparkPropOr(sc, "spark.batchSize", "5"));
         fetchSizeInRows = new Integer(Util.getSparkPropOr(sc, "spark.read.fetch.sizeInRows", "1000"));
         printStatsAfter = new Integer(Util.getSparkPropOr(sc, "spark.printStatsAfter", "100000"));
         if (printStatsAfter < 1) {
@@ -42,7 +42,7 @@ public class AbstractJobSession extends BaseJobSession {
 
         readLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, "spark.readRateLimit", "20000")));
         writeLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, "spark.writeRateLimit", "40000")));
-        maxRetries = Integer.parseInt(sc.get("spark.maxRetries", "10"));
+        maxRetries = Integer.parseInt(sc.get("spark.maxRetries", "0"));
 
         sourceKeyspaceTable = Util.getSparkProp(sc, "spark.origin.keyspaceTable");
         astraKeyspaceTable = Util.getSparkProp(sc, "spark.target.keyspaceTable");
@@ -88,6 +88,7 @@ public class AbstractJobSession extends BaseJobSession {
         logger.info("PARAM -- Read Consistency: {}", readConsistencyLevel);
         logger.info("PARAM -- Write Consistency: {}", writeConsistencyLevel);
         logger.info("PARAM -- Write Batch Size: {}", batchSize);
+        logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- Read Fetch Size: {}", fetchSizeInRows);
         logger.info("PARAM -- Source Keyspace Table: {}", sourceKeyspaceTable);
         logger.info("PARAM -- Destination Keyspace Table: {}", astraKeyspaceTable);
