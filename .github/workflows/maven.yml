@@ -25,4 +25,7 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-      
+    
+    - name: bump minor version
+      run: |
+        scripts/bump_minor_version
