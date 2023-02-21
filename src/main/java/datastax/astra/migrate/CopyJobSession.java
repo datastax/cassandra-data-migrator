@@ -95,8 +95,12 @@ public class CopyJobSession extends AbstractJobSession {
                             astraRow = astraReadResultSet.one();
                         }
 
-                        CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession
-                                .executeAsync(bindInsert(astraInsertStatement, sourceRow, astraRow));
+                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, astraRow);
+                        if (null == bInsert) {
+                            skipCnt++;
+                            continue;
+                        }
+                        CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession.executeAsync(bInsert);
                         writeResults.add(astraWriteResultSet);
                         if (writeResults.size() > fetchSizeInRows) {
                             writeCnt += iterateAndClearWriteResults(writeResults, 1);
@@ -124,7 +128,12 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         writeLimiter.acquire(1);
-                        batchStatement = batchStatement.add(bindInsert(astraInsertStatement, sourceRow, null));
+                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, null);
+                        if (null == bInsert) {
+                            skipCnt++;
+                            continue;
+                        }
+                        batchStatement = batchStatement.add(bInsert);
 
                         // if batch threshold is met, send the writes and clear the batch
                         if (batchStatement.size() >= batchSize) {

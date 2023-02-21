@@ -59,6 +59,10 @@ public abstract class BaseJobSession {
     protected Integer filterColIndex;
     protected String filterColValue;
 
+    protected String[] allCols;
+    protected String tsReplaceValStr;
+    protected long tsReplaceVal;
+
     protected BaseJobSession(SparkConf sc) {
         readConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.read"));
         writeConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.write"));

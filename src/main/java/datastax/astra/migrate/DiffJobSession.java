@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
@@ -74,11 +76,15 @@ public class DiffJobSession extends CopyJobSession {
                             printCounts(false);
                         }
 
-                        CompletionStage<AsyncResultSet> targetRowFuture = astraSession
-                                .executeAsync(selectFromAstra(astraSelectStatement, srcRow));
-                        srcToTargetRowMap.put(srcRow, targetRowFuture);
-                        if (srcToTargetRowMap.size() > fetchSizeInRows) {
-                            diffAndClear(srcToTargetRowMap);
+                        BoundStatement bSelect = selectFromAstra(astraSelectStatement, srcRow);
+                        if (null == bSelect) {
+                            skippedCounter.incrementAndGet();
+                        } else {
+                            CompletionStage<AsyncResultSet> targetRowFuture = astraSession.executeAsync(bSelect);
+                            srcToTargetRowMap.put(srcRow, targetRowFuture);
+                            if (srcToTargetRowMap.size() > fetchSizeInRows) {
+                                diffAndClear(srcToTargetRowMap);
+                            }
                         }
                     } else {
                         readCounter.incrementAndGet();
@@ -165,13 +171,15 @@ public class DiffJobSession extends CopyJobSession {
     private String isDifferent(Row sourceRow, Row astraRow) {
         StringBuffer diffData = new StringBuffer();
         IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
-            MigrateDataType dataType = selectColTypes.get(index);
-            Object source = getData(dataType, index, sourceRow);
-            Object astra = getData(dataType, index, astraRow);
+            MigrateDataType dataTypeObj = selectColTypes.get(index);
+            Object source = getData(dataTypeObj, index, sourceRow);
+            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
 
-            boolean isDiff = dataType.diff(source, astra);
+            Object astra = getData(dataTypeObj, index, astraRow);
+
+            boolean isDiff = dataTypeObj.diff(optionalVal.get(), astra);
             if (isDiff) {
-                if (dataType.typeClass.equals(UdtValue.class)) {
+                if (dataTypeObj.typeClass.equals(UdtValue.class)) {
                     String sourceUdtContent = ((UdtValue) source).getFormattedContents();
                     String astraUdtContent = ((UdtValue) astra).getFormattedContents();
                     if (!sourceUdtContent.equals(astraUdtContent)) {
