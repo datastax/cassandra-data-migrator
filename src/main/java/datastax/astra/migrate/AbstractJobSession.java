@@ -254,11 +254,14 @@ public class AbstractJobSession extends BaseJobSession {
         Object colData = getData(dataTypeObj, index, sourceRow);
 
         // Handle rows with blank values in primary-key fields
-        Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, dataTypeObj.typeClass, sourceRow);
-        if (!optionalVal.isPresent()) {
-            return null;
+        if (index < idColTypes.size()) {
+            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, dataTypeObj.typeClass, sourceRow);
+            if (!optionalVal.isPresent()) {
+                return null;
+            }
+            colData = optionalVal.get();
         }
-        boundSelectStatement = boundSelectStatement.set(index, optionalVal.get(), dataTypeObj.typeClass);
+        boundSelectStatement = boundSelectStatement.set(index, colData, dataTypeObj.typeClass);
         return boundSelectStatement;
     }
 
