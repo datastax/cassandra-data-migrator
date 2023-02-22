@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 public class AbstractJobSession extends BaseJobSession {
@@ -25,11 +26,11 @@ public class AbstractJobSession extends BaseJobSession {
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
         super(sc);
-        
+
         if (sourceSession == null) {
             return;
         }
-        
+
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
@@ -105,14 +106,14 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         String selectCols = Util.getSparkProp(sc, "spark.query.origin");
-        String partionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
+        String partitionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
         String sourceSelectCondition = Util.getSparkPropOrEmpty(sc, "spark.query.condition");
         if (!sourceSelectCondition.isEmpty() && !sourceSelectCondition.trim().toUpperCase().startsWith("AND")) {
             sourceSelectCondition = " AND " + sourceSelectCondition;
         }
 
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
-        String[] allCols = selectCols.split(",");
+        allCols = selectCols.split(",");
         ttlCols.forEach(col -> {
             selectTTLWriteTimeCols.append(",ttl(" + allCols[col] + ")");
         });
@@ -138,8 +139,9 @@ public class AbstractJobSession extends BaseJobSession {
 
         String fullSelectQuery;
         if (!isJobMigrateRowsFromFile) {
-            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
-                    + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING";
+            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable +
+                    " where token(" + partitionKey.trim() + ") >= ? and token(" + partitionKey.trim() + ") <= ?  " +
+                    sourceSelectCondition + " ALLOW FILTERING";
         } else {
             fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where " + insertBinds;
         }
@@ -181,6 +183,12 @@ public class AbstractJobSession extends BaseJobSession {
             }
             astraInsertStatement = astraSession.prepare(fullInsertQuery);
         }
+
+        // Handle rows with blank values for 'timestamp' data-type in primary-key fields
+        tsReplaceValStr = Util.getSparkPropOr(sc, "spark.target.replace.blankTimestampKeyUsingEpoch", "");
+        if (!tsReplaceValStr.isEmpty()) {
+            tsReplaceVal = Long.parseLong(tsReplaceValStr);
+        }
     }
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
@@ -199,21 +207,8 @@ public class AbstractJobSession extends BaseJobSession {
         } else {
             int index = 0;
             for (index = 0; index < selectColTypes.size(); index++) {
-                MigrateDataType dataTypeObj = selectColTypes.get(index);
-                Class dataType = dataTypeObj.typeClass;
-
-                try {
-                    Object colData = getData(dataTypeObj, index, sourceRow);
-                    if (index < idColTypes.size() && colData == null && dataType == String.class) {
-                        colData = "";
-                    }
-                    boundInsertStatement = boundInsertStatement.set(index, colData, dataType);
-                } catch (NullPointerException e) {
-                    // ignore the exception for map values being null
-                    if (dataType != Map.class) {
-                        throw e;
-                    }
-                }
+                boundInsertStatement = getBoundStatement(sourceRow, boundInsertStatement, index, selectColTypes);
+                if (boundInsertStatement == null) return null;
             }
 
             if (!ttlCols.isEmpty()) {
@@ -246,12 +241,60 @@ public class AbstractJobSession extends BaseJobSession {
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
         BoundStatement boundSelectStatement = selectStatement.bind().setConsistencyLevel(readConsistencyLevel);
         for (int index = 0; index < idColTypes.size(); index++) {
-            MigrateDataType dataType = idColTypes.get(index);
-            boundSelectStatement = boundSelectStatement.set(index, getData(dataType, index, sourceRow),
-                    dataType.typeClass);
+            boundSelectStatement = getBoundStatement(sourceRow, boundSelectStatement, index, idColTypes);
+            if (boundSelectStatement == null) return null;
         }
 
         return boundSelectStatement;
+    }
+
+    private BoundStatement getBoundStatement(Row sourceRow, BoundStatement boundSelectStatement, int index,
+                                             List<MigrateDataType> cols) {
+        MigrateDataType dataTypeObj = cols.get(index);
+        Object colData = getData(dataTypeObj, index, sourceRow);
+
+        // Handle rows with blank values in primary-key fields
+        if (index < idColTypes.size()) {
+            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, dataTypeObj.typeClass, sourceRow);
+            if (!optionalVal.isPresent()) {
+                return null;
+            }
+            colData = optionalVal.get();
+        }
+        boundSelectStatement = boundSelectStatement.set(index, colData, dataTypeObj.typeClass);
+        return boundSelectStatement;
+    }
+
+    protected Optional<Object> handleBlankInPrimaryKey(int index, Object colData, Class dataType, Row sourceRow) {
+        return handleBlankInPrimaryKey(index, colData, dataType, sourceRow, true);
+    }
+
+    protected Optional<Object> handleBlankInPrimaryKey(int index, Object colData, Class dataType, Row sourceRow, boolean logWarn) {
+        // Handle rows with blank values for 'String' data-type in primary-key fields
+        if (index < idColTypes.size() && colData == null && dataType == String.class) {
+            if (logWarn) {
+                logger.warn("For row with Key: {}, found String primary-key column {} with blank value",
+                        getKey(sourceRow), allCols[index]);
+            }
+            return Optional.of("");
+        }
+
+        // Handle rows with blank values for 'timestamp' data-type in primary-key fields
+        if (index < idColTypes.size() && colData == null && dataType == Instant.class) {
+            if (tsReplaceValStr.isEmpty()) {
+                logger.error("Skipping row with Key: {} as Timestamp primary-key column {} has invalid blank value. " +
+                        "Alternatively rerun the job with --conf spark.target.replace.blankTimestampKeyUsingEpoch=\"<fixed-epoch-value>\" " +
+                        "option to replace the blanks with a fixed timestamp value", getKey(sourceRow), allCols[index]);
+                return Optional.empty();
+            }
+            if (logWarn) {
+                logger.warn("For row with Key: {}, found Timestamp primary-key column {} with invalid blank value. " +
+                        "Using value {} instead", getKey(sourceRow), allCols[index], Instant.ofEpochSecond(tsReplaceVal));
+            }
+            return Optional.of(Instant.ofEpochSecond(tsReplaceVal));
+        }
+
+        return Optional.of(colData);
     }
 
 }
