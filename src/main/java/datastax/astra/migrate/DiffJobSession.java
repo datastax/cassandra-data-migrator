@@ -173,11 +173,16 @@ public class DiffJobSession extends CopyJobSession {
         IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
             MigrateDataType dataTypeObj = selectColTypes.get(index);
             Object source = getData(dataTypeObj, index, sourceRow);
-            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
+            if (index < idColTypes.size()) {
+                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
+                if (optionalVal.isPresent()) {
+                    source = optionalVal.get();
+                }
+            }
 
             Object astra = getData(dataTypeObj, index, astraRow);
 
-            boolean isDiff = dataTypeObj.diff(optionalVal.get(), astra);
+            boolean isDiff = dataTypeObj.diff(source, astra);
             if (isDiff) {
                 if (dataTypeObj.typeClass.equals(UdtValue.class)) {
                     String sourceUdtContent = ((UdtValue) source).getFormattedContents();
