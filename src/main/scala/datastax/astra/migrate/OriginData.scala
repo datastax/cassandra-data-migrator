@@ -63,7 +63,7 @@ object OriginData extends BaseJob {
   }
 
   private def analyzeSourceTable(sourceConnection: CassandraConnector) = {
-    val partitions = SplitPartitions.getRandomSubPartitions(splitSize, minPartition, maxPartition, Integer.parseInt(coveragePercent))
+    val partitions = SplitPartitions.getRandomSubPartitions(numSplits, minPartition, maxPartition, Integer.parseInt(coveragePercent))
     logger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
     val parts = sContext.parallelize(partitions.toSeq, partitions.size);
     logger.info("Spark parallelize created : " + parts.count() + " parts!");
