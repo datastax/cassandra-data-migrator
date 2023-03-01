@@ -13,7 +13,7 @@ object MigrateRowsFromFile extends AbstractJob {
   exitSpark
 
   private def migrateTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
-    val listOfPKRows = SplitPartitions.getRowPartsFromFile(splitSize)
+    val listOfPKRows = SplitPartitions.getRowPartsFromFile(numSplits)
     logger.info("PARAM Calculated -- Number of PKRows: " + listOfPKRows.size())
 
     sourceConnection.withSessionDo(sourceSession =>

@@ -7,7 +7,7 @@ class AbstractJob extends BaseJob {
 
   abstractLogger.info("PARAM -- Min Partition: " + minPartition)
   abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
-  abstractLogger.info("PARAM -- Split Size: " + splitSize)
+  abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
   abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
   abstractLogger.info("PARAM -- Origin SSL Enabled: {}", sourceSSLEnabled);
   abstractLogger.info("PARAM -- Target SSL Enabled: {}", destinationSSLEnabled);
