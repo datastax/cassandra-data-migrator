@@ -15,7 +15,11 @@ public class MigrateDataType {
     Class typeClass = Object.class;
     List<Class> subTypes = new ArrayList<Class>();
 
+    String dataType;
+    List<String> dataSubTypes = new ArrayList<String>();
+
     public MigrateDataType(String dataType) {
+        this.dataType=dataType;
         if (dataType.contains("%")) {
             int count = 1;
             for (String type : dataType.split("%")) {
@@ -23,6 +27,7 @@ public class MigrateDataType {
                     typeClass = getType(Integer.parseInt(type));
                 } else {
                     subTypes.add(getType(Integer.parseInt(type)));
+                    dataSubTypes.add(type);
                 }
                 count++;
             }
@@ -42,6 +47,14 @@ public class MigrateDataType {
         }
 
         return !source.equals(astra);
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public String getDataSubType(int index) {
+        return dataSubTypes.get(index);
     }
 
     private Class getType(int type) {

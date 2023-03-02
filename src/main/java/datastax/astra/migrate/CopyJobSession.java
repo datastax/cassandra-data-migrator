@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -95,15 +96,17 @@ public class CopyJobSession extends AbstractJobSession {
                             astraRow = astraReadResultSet.one();
                         }
 
-                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, astraRow);
-                        if (null == bInsert) {
+                        List<BoundStatement> bInsertList = bindInsert(astraInsertStatement, sourceRow, astraRow);
+                        if (null == bInsertList || bInsertList.isEmpty()) {
                             skipCnt++;
                             continue;
                         }
-                        CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession.executeAsync(bInsert);
-                        writeResults.add(astraWriteResultSet);
-                        if (writeResults.size() > fetchSizeInRows) {
-                            writeCnt += iterateAndClearWriteResults(writeResults, 1);
+                        for (BoundStatement bInsert : bInsertList) {
+                            CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession.executeAsync(bInsert);
+                            writeResults.add(astraWriteResultSet);
+                            if (writeResults.size() > fetchSizeInRows) {
+                                writeCnt += iterateAndClearWriteResults(writeResults, 1);
+                            }
                         }
                     }
 
@@ -128,22 +131,24 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         writeLimiter.acquire(1);
-                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, null);
-                        if (null == bInsert) {
+                        List<BoundStatement> bInsertList = bindInsert(astraInsertStatement, sourceRow, null);
+                        if (null == bInsertList || bInsertList.isEmpty()) {
                             skipCnt++;
                             continue;
                         }
-                        batchStatement = batchStatement.add(bInsert);
+                        for (BoundStatement bInsert : bInsertList) {
+                            batchStatement = batchStatement.add(bInsert);
 
-                        // if batch threshold is met, send the writes and clear the batch
-                        if (batchStatement.size() >= batchSize) {
-                            CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
-                            writeResults.add(writeResultSet);
-                            batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-                        }
+                            // if batch threshold is met, send the writes and clear the batch
+                            if (batchStatement.size() >= batchSize) {
+                                CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                                writeResults.add(writeResultSet);
+                                batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
+                            }
 
-                        if (writeResults.size() * batchSize > fetchSizeInRows) {
-                            writeCnt += iterateAndClearWriteResults(writeResults, batchSize);
+                            if (writeResults.size() * batchSize > fetchSizeInRows) {
+                                writeCnt += iterateAndClearWriteResults(writeResults, batchSize);
+                            }
                         }
                     }
 

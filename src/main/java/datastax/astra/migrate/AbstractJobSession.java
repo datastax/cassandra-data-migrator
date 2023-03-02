@@ -12,8 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class AbstractJobSession extends BaseJobSession {
@@ -26,6 +25,8 @@ public class AbstractJobSession extends BaseJobSession {
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
         super(sc);
+
+        boolean validBootstrap = true;
 
         if (sourceSession == null) {
             return;
@@ -124,6 +125,22 @@ public class AbstractJobSession extends BaseJobSession {
         String idCols = Util.getSparkPropOrEmpty(sc, "spark.query.target.id");
         idColTypes = selectColTypes.subList(0, idCols.split(",").length);
 
+        String explodeColumnProperty = "spark.query.origin.explodeColumn";
+        String explodeColumnString = Util.getSparkPropOrEmpty(sc, explodeColumnProperty);
+        if (null != explodeColumnString && !explodeColumnString.trim().isEmpty()) {
+            int explodeColumn = Integer.parseInt(explodeColumnString);
+            if (selectColTypes.get(explodeColumn).typeClass.equals(Map.class)) {
+                mapToExpandIndex = explodeColumn;
+                mapToExpandKeyType = selectColTypes.get(explodeColumn).subTypes.get(0);
+                mapToExpandKeyMigrateDataType = new MigrateDataType(selectColTypes.get(explodeColumn).getDataSubType(0));
+                mapToExpandValueType = selectColTypes.get(explodeColumn).subTypes.get(1);
+                mapToExpandValueMigrateDataType = new MigrateDataType(selectColTypes.get(explodeColumn).getDataSubType(1));
+            } else {
+                logger.error("{} is not a Map type.  Column: {} Type: {}", explodeColumnProperty, explodeColumn, selectColTypes.get(explodeColumn).typeClass);
+                validBootstrap = false;
+            }
+        }
+
         String insertCols = Util.getSparkPropOrEmpty(sc, "spark.query.target");
         if (null == insertCols || insertCols.trim().isEmpty()) {
             insertCols = selectCols;
@@ -189,9 +206,14 @@ public class AbstractJobSession extends BaseJobSession {
         if (!tsReplaceValStr.isEmpty()) {
             tsReplaceVal = Long.parseLong(tsReplaceValStr);
         }
+
+        if (!validBootstrap) {
+            System.out.println("Bootstrap failed - check logs.  Exiting.");
+            System.exit(1);
+        }
     }
 
-    public BoundStatement bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
+    public BoundStatement bindInsertOneToOne(PreparedStatement insertStatement, Row sourceRow, Row astraRow, Object mapKey, Object mapValue) {
         BoundStatement boundInsertStatement = insertStatement.bind().setConsistencyLevel(writeConsistencyLevel);
 
         if (isCounterTable) {
@@ -206,8 +228,17 @@ public class AbstractJobSession extends BaseJobSession {
             }
         } else {
             int index = 0;
-            for (index = 0; index < selectColTypes.size(); index++) {
-                boundInsertStatement = getBoundStatement(sourceRow, boundInsertStatement, index, selectColTypes);
+            int columnCount = selectColTypes.size();
+            for (index = 0; index < columnCount; index++) {
+                if (null!=mapKey && mapToExpandIndex == index) {
+                    boundInsertStatement = boundInsertStatement.set(index, mapKey, mapToExpandKeyType);
+                    index++;
+                    boundInsertStatement = boundInsertStatement.set(index, mapValue, mapToExpandValueType);
+                    columnCount++;
+                }
+                else {
+                    boundInsertStatement = getBoundStatement(sourceRow, boundInsertStatement, index, selectColTypes);
+                }
                 if (boundInsertStatement == null) return null;
             }
 
@@ -228,6 +259,29 @@ public class AbstractJobSession extends BaseJobSession {
         return boundInsertStatement.setTimeout(Duration.ofSeconds(10));
     }
 
+    public BoundStatement bindInsertOneToOne(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
+        return bindInsertOneToOne(insertStatement, sourceRow, astraRow, null, null);
+    }
+
+    public List<BoundStatement> bindInsert(PreparedStatement insertStatement, Row sourceRow, Row astraRow) {
+        List<BoundStatement> rtnList = new ArrayList<>();
+
+        // If there is no map column to expand, we return a single row as previously
+        if (mapToExpandIndex < 0) {
+            rtnList.add(bindInsertOneToOne(insertStatement, sourceRow, astraRow));
+            return rtnList;
+        }
+
+        // pull the map to expand out of the sourceRow
+        Map colMap = (Map) getData(selectColTypes.get(mapToExpandIndex), mapToExpandIndex, sourceRow);
+
+        // iterate over map elements, inserting one row for each map entry
+        for (Object mapKey : colMap.keySet()) {
+            rtnList.add(bindInsertOneToOne(insertStatement, sourceRow, astraRow, mapKey, colMap.get(mapKey)));
+        }
+        return rtnList;
+    }
+
     public int getLargestTTL(Row sourceRow) {
         return IntStream.range(0, ttlCols.size())
                 .map(i -> sourceRow.getInt(selectColTypes.size() + i)).max().getAsInt();
@@ -239,9 +293,17 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
+        return selectFromAstra(selectStatement, sourceRow, null);
+    }
+
+    public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow, Object mapKey) {
         BoundStatement boundSelectStatement = selectStatement.bind().setConsistencyLevel(readConsistencyLevel);
         for (int index = 0; index < idColTypes.size(); index++) {
-            boundSelectStatement = getBoundStatement(sourceRow, boundSelectStatement, index, idColTypes);
+            if (null != mapKey && index == mapToExpandIndex) {
+                boundSelectStatement = boundSelectStatement.set(index, mapKey, mapToExpandKeyType);
+            } else {
+                boundSelectStatement = getBoundStatement(sourceRow, boundSelectStatement, index, idColTypes);
+            }
             if (boundSelectStatement == null) return null;
         }
 

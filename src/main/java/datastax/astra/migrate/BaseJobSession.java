@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 public abstract class BaseJobSession {
 
@@ -48,6 +50,14 @@ public abstract class BaseJobSession {
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
+
+    // This is a hack, will support one map column only...
+    protected int mapToExpandIndex = -1;
+    protected Class mapToExpandKeyType = null;
+    protected MigrateDataType mapToExpandKeyMigrateDataType = null;
+    protected Class mapToExpandValueType = null;
+    protected MigrateDataType mapToExpandValueMigrateDataType = null;
+
 
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;

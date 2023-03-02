@@ -55,7 +55,7 @@ public class CopyPKJobSession extends AbstractJobSession {
                     return;
                 }
                 ResultSet astraWriteResultSet = astraSession
-                        .execute(bindInsert(astraInsertStatement, pkRow, null));
+                        .execute(bindInsertOneToOne(astraInsertStatement, pkRow, null));
                 writeCounter.incrementAndGet();
                 if (readCounter.get() % printStatsAfter == 0) {
                     printCounts(false);
