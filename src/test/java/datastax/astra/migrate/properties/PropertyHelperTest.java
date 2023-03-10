@@ -98,6 +98,131 @@ public class PropertyHelperTest {
         assertNull(helper.setProperty(KnownProperties.TEST_STRING, Integer.valueOf(1)));
     }
 
+    @Test
+    public void setProperty_unknownType() {
+        assertNull(helper.setProperty(KnownProperties.TEST_UNKNOWN, "abc"));
+    }
+
+    @Test
+    public void getString() {
+        helper.setProperty(KnownProperties.TEST_STRING, "test");
+        assertEquals("test", helper.getString(KnownProperties.TEST_STRING));
+    }
+
+    @Test
+    public void getStringList() {
+        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a","b","c"));
+        assertEquals(Arrays.asList("a","b","c"), helper.getStringList(KnownProperties.TEST_STRING_LIST));
+    }
+
+    @Test
+    public void getNumber() {
+        helper.setProperty(KnownProperties.TEST_NUMBER, 4321);
+        assertEquals(4321, helper.getNumber(KnownProperties.TEST_NUMBER));
+    }
+
+    @Test
+    public void getNumberList() {
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3));
+        assertEquals(Arrays.asList(1,2,3), helper.getNumberList(KnownProperties.TEST_NUMBER_LIST));
+    }
+
+    @Test
+    public void getBoolean() {
+        helper.setProperty(KnownProperties.TEST_BOOLEAN, false);
+        assertFalse(helper.getBoolean(KnownProperties.TEST_BOOLEAN));
+    }
+
+    @Test
+    public void getMigrationType() {
+        helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE, new MigrateDataType("1"));
+        assertEquals(new MigrateDataType("1"),helper.getMigrationType(KnownProperties.TEST_MIGRATE_TYPE));
+    }
+
+    @Test
+    public void getMigrationTypeList() {
+        helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, Arrays.asList(new MigrateDataType("1"),new MigrateDataType("3")));
+        assertEquals(Arrays.asList(new MigrateDataType("1"),new MigrateDataType("3")),helper.getMigrationTypeList(KnownProperties.TEST_MIGRATE_TYPE_LIST));
+    }
+
+
+    @Test
+    public void get_nullPropertyName() {
+        assertNull(helper.get(null, KnownProperties.PropertyType.STRING));
+    }
+
+    @Test
+    public void get_nullPropertyType() {
+        assertNull(helper.get(KnownProperties.TEST_STRING, null));
+    }
+
+    @Test
+    public void get_MismatchType() {
+        assertNull(helper.get(KnownProperties.TEST_STRING, KnownProperties.PropertyType.NUMBER));
+    }
+
+    @Test
+    public void get_nullPropertyValue() {
+        helper.setProperty(KnownProperties.TEST_NUMBER, null);
+        assertNull(helper.get(KnownProperties.TEST_NUMBER, KnownProperties.PropertyType.NUMBER));
+    }
+
+    @Test
+    public void get_invalidType_String() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_STRING, "abcd");
+        helper.getPropertyMap().put(KnownProperties.TEST_STRING, Integer.valueOf(1234));
+        assertNull(helper.get(KnownProperties.TEST_STRING, KnownProperties.PropertyType.STRING));
+    }
+
+    @Test
+    public void get_invalidType_StringList() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_STRING_LIST, "a,b,c,d");
+        helper.getPropertyMap().put(KnownProperties.TEST_STRING_LIST, Arrays.asList(1,2,3,4));
+        assertNull(helper.get(KnownProperties.TEST_STRING_LIST, KnownProperties.PropertyType.STRING_LIST));
+    }
+
+    @Test
+    public void get_invalidType_Number() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_NUMBER, 1234);
+        helper.getPropertyMap().put(KnownProperties.TEST_NUMBER, "1234");
+        assertNull(helper.get(KnownProperties.TEST_NUMBER, KnownProperties.PropertyType.NUMBER));
+    }
+
+    @Test
+    public void get_invalidType_NumberList() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, "1,2,3,4");
+        helper.getPropertyMap().put(KnownProperties.TEST_NUMBER_LIST, Arrays.asList("a","b","c","d"));
+        assertNull(helper.get(KnownProperties.TEST_NUMBER_LIST, KnownProperties.PropertyType.NUMBER_LIST));
+    }
+
+    @Test
+    public void get_invalidType_Boolean() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_BOOLEAN, "true");
+        helper.getPropertyMap().put(KnownProperties.TEST_BOOLEAN, Integer.valueOf(1234));
+        assertNull(helper.get(KnownProperties.TEST_BOOLEAN, KnownProperties.PropertyType.BOOLEAN));
+    }
+
+    @Test
+    public void get_invalidType_MigrateDataType() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE, "1");
+        helper.getPropertyMap().put(KnownProperties.TEST_MIGRATE_TYPE, Integer.valueOf(1));
+        assertNull(helper.get(KnownProperties.TEST_MIGRATE_TYPE, KnownProperties.PropertyType.MIGRATION_TYPE));
+    }
+
+    @Test
+    public void get_invalidType_MigrateDataTypeList() {
+        // Any code that actually does this is broken, but we should handle it gracefully
+        helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, "1,1,2");
+        helper.getPropertyMap().put(KnownProperties.TEST_MIGRATE_TYPE_LIST, Arrays.asList(1,1,2));
+        assertNull(helper.get(KnownProperties.TEST_MIGRATE_TYPE_LIST, KnownProperties.PropertyType.MIGRATION_TYPE_LIST));
+    }
+
     // TODO: breaks with error SLF4J: Class path contains multiple SLF4J bindings.
     //@Test
     public void loadSparkConf() {

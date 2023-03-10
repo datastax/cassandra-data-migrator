@@ -183,4 +183,13 @@ public class MigrateDataType {
             return false;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MigrateDataType that = (MigrateDataType) o;
+        return type == that.type &&
+                Objects.equals(subTypes, that.subTypes);
+    }
 }

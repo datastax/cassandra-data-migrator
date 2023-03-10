@@ -229,6 +229,7 @@ public class KnownProperties {
     public static final String TEST_BOOLEAN = "test.boolean";
     public static final String TEST_MIGRATE_TYPE = "test.migrateType";
     public static final String TEST_MIGRATE_TYPE_LIST = "test.migrateTypeList";
+    public static final String TEST_UNKNOWN = "test.unknown";
     static {
            types.put(TEST_STRING, PropertyType.STRING);
         defaults.put(TEST_STRING, "text");

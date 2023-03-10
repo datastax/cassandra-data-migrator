@@ -44,56 +44,14 @@ public class PropertyHelper extends KnownProperties{
      * @return propertyValue if it is of the correct type, null otherwise
      */
     public Object setProperty(String propertyName, Object propertyValue) {
+        if (null == propertyName ||
+                null == propertyValue)
+            return null;
         PropertyType expectedType = getType(propertyName);
-        if (null == expectedType || null == propertyValue) {
+        if (null == expectedType) {
             return null;
         }
-        Boolean typesMatch = false;
-        switch (expectedType) {
-            case STRING:
-                typesMatch = propertyValue instanceof String;
-                break;
-            case STRING_LIST:
-                if (propertyValue instanceof List<?>) {
-                    List<?> list = (List<?>) propertyValue;
-                    if (list.isEmpty()) {
-                        typesMatch = false;
-                    } else {
-                        typesMatch = list.get(0) instanceof String;
-                    }
-                }
-                break;
-            case NUMBER:
-                typesMatch = propertyValue instanceof Number;
-            case NUMBER_LIST:
-                if (propertyValue instanceof List<?>) {
-                    List<?> list = (List<?>) propertyValue;
-                    if (list.isEmpty()) {
-                        typesMatch = false;
-                    } else {
-                        typesMatch = list.get(0) instanceof Number;
-                    }
-                }
-                break;
-            case BOOLEAN:
-                typesMatch = propertyValue instanceof Boolean;
-                break;
-            case MIGRATION_TYPE:
-                typesMatch = propertyValue instanceof MigrateDataType;
-                break;
-            case MIGRATION_TYPE_LIST:
-                if (propertyValue instanceof List<?>) {
-                    List<?> list = (List<?>) propertyValue;
-                    if (list.isEmpty()) {
-                        typesMatch = false;
-                    } else {
-                        typesMatch = list.get(0) instanceof MigrateDataType;
-                    }
-                }
-                break;
-            default:
-                break;
-        }
+        boolean typesMatch = validateType(expectedType, propertyValue);
         if (typesMatch) {
             propertyMap.put(propertyName, propertyValue);
             return propertyValue;
@@ -101,21 +59,51 @@ public class PropertyHelper extends KnownProperties{
             return null;
         }
     }
-//
-//    public Integer getInteger(String propertyName, Boolean setDefaultIfMissing) {
-//        Object currentProperty = properties.get(propertyName);
-//        if (null == currentProperty) {
-//            if (setDefaultIfMissing) {
-//                Integer defaultValue = (Integer) super.getDefaultValue(propertyName);
-//                properties.put(propertyName, defaultValue);
-//                return defaultValue;
-//            } else {
-//                return null;
-//            }
-//        }
-//
-//        return (Integer) properties.get(propertyName);
-//    }
+
+    protected Object get(String propertyName, PropertyType expectedType) {
+        if (null == propertyName
+                || null == expectedType
+                || expectedType != getType(propertyName)) {
+            return null;
+        }
+        Object currentProperty = propertyMap.get(propertyName);
+        if (null == currentProperty) {
+            return null;
+        }
+        if (validateType(expectedType, currentProperty)) {
+            return currentProperty;
+        } else {
+            return null;
+        }
+    }
+
+    public String getString(String propertyName) {
+        return (String) get(propertyName, PropertyType.STRING);
+    }
+
+    public List<String> getStringList(String propertyName) {
+        return (List<String>) get(propertyName, PropertyType.STRING_LIST);
+    }
+
+    public Number getNumber(String propertyName) {
+        return (Number) get(propertyName, PropertyType.NUMBER);
+    }
+
+    public List<Number> getNumberList(String propertyName) {
+        return (List<Number>) get(propertyName, PropertyType.NUMBER_LIST);
+    }
+
+    public Boolean getBoolean(String propertyName) {
+        return (Boolean) get(propertyName, PropertyType.BOOLEAN);
+    }
+
+    public MigrateDataType getMigrationType(String propertyName) {
+        return (MigrateDataType) get(propertyName, PropertyType.MIGRATION_TYPE);
+    }
+
+    public List<MigrateDataType> getMigrationTypeList(String propertyName) {
+        return (List<MigrateDataType>) get(propertyName, PropertyType.MIGRATION_TYPE_LIST);
+    }
 
     protected boolean loadSparkConf() {
         boolean fullyLoaded = true;
@@ -194,5 +182,73 @@ public class PropertyHelper extends KnownProperties{
         }
         this.sparkConfFullyLoaded = fullyLoaded;
         return fullyLoaded;
+    }
+
+    protected boolean validateType(PropertyType expectedType, Object currentProperty) {
+        switch (expectedType) {
+            case STRING:
+                if (currentProperty instanceof String) {
+                    return true;
+                }
+                break;
+            case STRING_LIST:
+                if (currentProperty instanceof List<?>) {
+                    List<?> list = (List<?>) currentProperty;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        if (list.get(0) instanceof String) {
+                            return true;
+                        }
+                    }
+                }
+                break;
+            case NUMBER:
+                if (currentProperty instanceof Number) {
+                    return true;
+                }
+                break;
+            case NUMBER_LIST:
+                if (currentProperty instanceof List<?>) {
+                    List<?> list = (List<?>) currentProperty;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        if (list.get(0) instanceof Number) {
+                            return true;
+                        }
+                    }
+                }
+                break;
+            case BOOLEAN:
+                if (currentProperty instanceof Boolean) {
+                    return true;
+                }
+                break;
+            case MIGRATION_TYPE:
+                if (currentProperty instanceof MigrateDataType) {
+                    return true;
+                }
+                break;
+            case MIGRATION_TYPE_LIST:
+                if (currentProperty instanceof List<?>) {
+                    List<?> list = (List<?>) currentProperty;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        if (list.get(0) instanceof MigrateDataType) {
+                            return true;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+
+    protected Map<String,Object> getPropertyMap() {
+        return propertyMap;
     }
 }
