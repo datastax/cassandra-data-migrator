@@ -13,22 +13,41 @@ import java.util.*;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
+    int type = -1;
     List<Class> subTypes = new ArrayList<Class>();
+    private boolean isValid = false;
+    private static int minType = 0;
+    private static int maxType = 19;
+
+    private static final List<Class> COLLECTION_TYPES = Arrays.asList(List.class, Set.class, Map.class);
 
     public MigrateDataType(String dataType) {
         if (dataType.contains("%")) {
             int count = 1;
             for (String type : dataType.split("%")) {
+                int typeAsInt = Integer.parseInt(type);
                 if (count == 1) {
-                    typeClass = getType(Integer.parseInt(type));
+                    this.type = typeAsInt;
                 } else {
-                    subTypes.add(getType(Integer.parseInt(type)));
+                    subTypes.add(getType(typeAsInt));
                 }
                 count++;
             }
         } else {
-            int type = Integer.parseInt(dataType);
-            typeClass = getType(type);
+            this.type = Integer.parseInt(dataType);
+        }
+        this.typeClass = getType(this.type);
+
+        if (this.type >= minType && this.type <= maxType) {
+            isValid = true;
+            for (Object o : subTypes) {
+                if (null == o || Object.class == o) {
+                    isValid = false;
+                }
+            }
+        }
+        else {
+            isValid = false;
         }
     }
 
@@ -91,4 +110,77 @@ public class MigrateDataType {
         return Object.class;
     }
 
+    public boolean isCollection() {
+        return COLLECTION_TYPES.contains(typeClass);
+    }
+
+    public Class getType() {
+        return this.typeClass;
+    }
+
+    public List<Class> getSubTypes() {
+        return this.subTypes;
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public boolean parse(String s) {
+        try {
+            switch (this.type) {
+                case 0:
+                    return true;
+                case 1:
+                    Integer.parseInt(s);
+                    return true;
+                case 2:
+                    Long.parseLong(s);
+                    return true;
+                case 3:
+                    Double.parseDouble(s);
+                    return true;
+                case 4:
+                    Instant.parse(s);
+                    return true;
+                case 9:
+                    UUID.fromString(s);
+                    return true;
+                case 10:
+                    Boolean.parseBoolean(s);
+                    return true;
+                case 12:
+                    Float.parseFloat(s);
+                    return true;
+                case 13:
+                    Byte.parseByte(s);
+                    return true;
+                case 14:
+                    BigDecimal.valueOf(Double.parseDouble(s));
+                    return true;
+                case 15:
+                    LocalDate.parse(s);
+                    return true;
+                case 17:
+                    BigInteger.valueOf(Long.parseLong(s));
+                    return true;
+                case 18:
+                    LocalTime.parse(s);
+                    return true;
+                case 19:
+                    Short.parseShort(s);
+                    return true;
+                case 5: // Map
+                case 6: // List
+                case 7: // ByteBuffer
+                case 8: // Set
+                case 11: // TupleValue
+                case 16: // UDT
+                default:
+                    throw new IllegalArgumentException("MigrateDataType " + this.type + "(" + this.typeClass.getName() + ") cannot currently parse this type");
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }

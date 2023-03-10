@@ -1,0 +1,262 @@
+package datastax.astra.migrate.properties;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class KnownProperties {
+
+    public enum PropertyType {
+        STRING,
+        NUMBER,
+        BOOLEAN,
+        STRING_LIST,
+        NUMBER_LIST,
+        MIGRATION_TYPE,
+        MIGRATION_TYPE_LIST
+    }
+
+    private static Map<String,PropertyType> types = new HashMap<>();
+    private static Map<String,String> defaults = new HashMap<>();
+
+    //==========================================================================
+    // Properties to establish connections to the origin and target databases
+    //==========================================================================
+    public static final String ORIGIN_CONNECT_HOST           = "spark.origin.host";          // localhost
+    public static final String ORIGIN_CONNECT_PORT           = "spark.origin.port";          // 9042
+    public static final String ORIGIN_CONNECT_SCB            = "spark.origin.scb";           // file:///aaa/bbb/secure-connect-enterprise.zip
+    public static final String ORIGIN_CONNECT_USERNAME       = "spark.origin.username";      // some-username
+    public static final String ORIGIN_CONNECT_PASSWORD       = "spark.origin.password";      // some-secret-password
+    public static final String TARGET_CONNECT_HOST           = "spark.target.host";          // localhost
+    public static final String TARGET_CONNECT_PORT           = "spark.target.port";          // 9042
+    public static final String TARGET_CONNECT_SCB            = "spark.target.scb";           // file:///aaa/bbb/secure-connect-enterprise.zip
+    public static final String TARGET_CONNECT_USERNAME       = "spark.target.username";      // some-username
+    public static final String TARGET_CONNECT_PASSWORD       = "spark.target.password";      // some-secret-password
+
+    public static final String READ_CL                       = "spark.consistency.read";     // LOCAL_QUORUM
+    public static final String WRITE_CL                      = "spark.consistency.write";    // LOCAL_QUORUM
+
+    static {
+           types.put(ORIGIN_CONNECT_HOST, PropertyType.STRING);
+        defaults.put(ORIGIN_CONNECT_HOST, "localhost");
+           types.put(ORIGIN_CONNECT_PORT, PropertyType.NUMBER);
+        defaults.put(ORIGIN_CONNECT_PORT, "9042");
+           types.put(ORIGIN_CONNECT_SCB, PropertyType.STRING);
+           types.put(ORIGIN_CONNECT_USERNAME, PropertyType.STRING);
+           types.put(ORIGIN_CONNECT_PASSWORD, PropertyType.STRING);
+
+           types.put(TARGET_CONNECT_HOST, PropertyType.STRING);
+        defaults.put(TARGET_CONNECT_HOST, "localhost");
+           types.put(TARGET_CONNECT_PORT, PropertyType.NUMBER);
+        defaults.put(TARGET_CONNECT_PORT, "9042");
+           types.put(TARGET_CONNECT_SCB, PropertyType.STRING);
+           types.put(TARGET_CONNECT_USERNAME, PropertyType.STRING);
+           types.put(TARGET_CONNECT_PASSWORD, PropertyType.STRING);
+
+           types.put(READ_CL, PropertyType.STRING);
+        defaults.put(READ_CL, "LOCAL_QUORUM");
+           types.put(WRITE_CL, PropertyType.STRING);
+        defaults.put(WRITE_CL, "LOCAL_QUORUM");
+    }
+
+    //==========================================================================
+    // Properties that describe the origin table
+    //==========================================================================
+    public static final String ORIGIN_KEYSPACE_TABLE  = "spark.origin.keyspaceTable";      // test.a1
+    public static final String ORIGIN_COLUMN_NAMES    = "spark.query.origin";              // comma-separated-partition-key,comma-separated-clustering-key,comma-separated-other-columns
+    public static final String ORIGIN_PARTITION_KEY   = "spark.query.origin.partitionKey"; // comma-separated-partition-key
+    public static final String ORIGIN_COLUMN_TYPES    = "spark.query.types";               // 9,1,4,3
+    public static final String ORIGIN_TTL_COLS        = "spark.query.ttl.cols";            // 2,3
+    public static final String ORIGIN_WRITETIME_COLS  = "spark.query.writetime.cols";      // 2,3
+    public static final String ORIGIN_COUNTER         = "spark.counterTable";              // false
+    public static final String ORIGIN_COUNTER_CQL     = "spark.counterTable.cql";
+    public static final String ORIGIN_COUNTER_INDEX   = "spark.counterTable.cql.index";    // 0
+    static {
+           types.put(ORIGIN_KEYSPACE_TABLE, PropertyType.STRING);
+           types.put(ORIGIN_COLUMN_NAMES, PropertyType.STRING_LIST);
+           types.put(ORIGIN_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+           types.put(ORIGIN_PARTITION_KEY, PropertyType.STRING_LIST);
+           types.put(ORIGIN_TTL_COLS, PropertyType.NUMBER_LIST);
+           types.put(ORIGIN_WRITETIME_COLS, PropertyType.NUMBER_LIST);
+           types.put(ORIGIN_COUNTER, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_COUNTER, "false");
+           types.put(ORIGIN_COUNTER_CQL, PropertyType.STRING);
+           types.put(ORIGIN_COUNTER_INDEX, PropertyType.NUMBER);
+    }
+
+    //==========================================================================
+    // Properties that filter records from origin
+    //==========================================================================
+    public static final String ORIGIN_FILTER_CONDITION       = "spark.query.condition";
+    public static final String ORIGIN_FILTER_WRITETS_ENABLED = "spark.origin.writeTimeStampFilter";     // false
+    public static final String ORIGIN_FILTER_WRITETS_MIN     = "spark.origin.minWriteTimeStampFilter";  // 0
+    public static final String ORIGIN_FILTER_WRITETS_MAX     = "spark.origin.maxWriteTimeStampFilter";  // 4102444800000000
+    public static final String ORIGIN_FILTER_COLUMN_ENABLED  = "spark.origin.FilterData";               // false
+    public static final String ORIGIN_FILTER_COLUMN_NAME     = "spark.origin.FilterColumn";             // test
+    public static final String ORIGIN_FILTER_COLUMN_INDEX    = "spark.origin.FilterColumnIndex";        // 2
+    public static final String ORIGIN_FILTER_COLUMN_TYPE     = "spark.origin.FilterColumnType";         // 6%16
+    public static final String ORIGIN_FILTER_COLUMN_VALUE    = "spark.origin.FilterColumnValue";        // test
+    public static final String ORIGIN_COVERAGE_PERCENT       =  "spark.coveragePercent";                // 100
+
+    public static final String ORIGIN_CHECK_COLSIZE_ENABLED      = "spark.origin.checkTableforColSize";            // false
+    public static final String ORIGIN_CHECK_COLSIZE_COLUMN_NAMES = "spark.origin.checkTableforColSize.cols";       // partition-key,clustering-key
+    public static final String ORIGIN_CHECK_COLSIZE_COLUMN_TYPES = "spark.origin.checkTableforColSize.cols.types"; // 9,1
+
+    static {
+           types.put(ORIGIN_FILTER_CONDITION, PropertyType.STRING);
+           types.put(ORIGIN_FILTER_WRITETS_ENABLED, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_FILTER_WRITETS_ENABLED, "false");
+           types.put(ORIGIN_FILTER_WRITETS_MIN, PropertyType.NUMBER);
+           types.put(ORIGIN_FILTER_WRITETS_MAX, PropertyType.NUMBER);
+           types.put(ORIGIN_FILTER_COLUMN_ENABLED, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "false");
+           types.put(ORIGIN_FILTER_COLUMN_NAME, PropertyType.STRING);
+           types.put(ORIGIN_FILTER_COLUMN_INDEX, PropertyType.NUMBER);
+           types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.MIGRATION_TYPE);
+           types.put(ORIGIN_FILTER_COLUMN_VALUE, PropertyType.STRING);
+           types.put(ORIGIN_COVERAGE_PERCENT, PropertyType.NUMBER);
+        defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "100");
+
+           types.put(ORIGIN_CHECK_COLSIZE_ENABLED, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_FILTER_WRITETS_ENABLED, "false");
+           types.put(ORIGIN_CHECK_COLSIZE_COLUMN_NAMES, PropertyType.STRING_LIST);
+           types.put(ORIGIN_CHECK_COLSIZE_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+    }
+
+    //==========================================================================
+    // Properties that describe the target table
+    //==========================================================================
+    public static final String TARGET_KEYSPACE_TABLE       = "spark.target.keyspaceTable";        // test.a1
+    public static final String TARGET_PRIMARY_KEY          = "spark.query.target.id";             // comma-separated-partition-key,comma-separated-clustering-key
+    public static final String TARGET_COLUMN_NAMES         = "spark.query.target";
+    public static final String TARGET_CUSTOM_WRITETIME     = "spark.target.custom.writeTime";     // 0
+    public static final String TARGET_AUTOCORRECT_MISSING  = "spark.target.autocorrect.missing";  // false
+    public static final String TARGET_AUTOCORRECT_MISMATCH = "spark.target.autocorrect.mismatch"; // false
+    static {
+           types.put(TARGET_KEYSPACE_TABLE, PropertyType.STRING);
+           types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
+           types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
+           types.put(TARGET_CUSTOM_WRITETIME, PropertyType.NUMBER);
+           types.put(TARGET_AUTOCORRECT_MISSING, PropertyType.BOOLEAN);
+        defaults.put(TARGET_AUTOCORRECT_MISSING, "false");
+           types.put(TARGET_AUTOCORRECT_MISMATCH, PropertyType.BOOLEAN);
+        defaults.put(TARGET_AUTOCORRECT_MISMATCH, "false");
+    }
+
+    //==========================================================================
+    // Properties that adjust performance and error handling
+    //==========================================================================
+    public static final String SPARK_LIMIT_READ  = "spark.readRateLimit";   // 20000
+    public static final String SPARK_LIMIT_WRITE = "spark.writeRateLimit";  // 20000
+    public static final String SPARK_NUM_SPLITS  = "spark.numSplits";       // 10000
+    public static final String SPARK_BATCH_SIZE  = "spark.batchSize";       // 10
+    public static final String SPARK_MAX_RETRIES = "spark.maxRetries";      // 0
+    public static final String READ_FETCH_SIZE = "spark.read.fetch.sizeInRows"; //1000
+    public static final String SPARK_STATS_AFTER = "spark.printStatsAfter"; //100000
+    public static final String FIELD_GUARDRAIL = "spark.fieldGuardraillimitMB"; //10
+    static {
+           types.put(SPARK_LIMIT_READ, PropertyType.NUMBER);
+        defaults.put(SPARK_LIMIT_READ, "20000");
+           types.put(SPARK_LIMIT_WRITE, PropertyType.NUMBER);
+        defaults.put(SPARK_LIMIT_WRITE, "20000");
+           types.put(SPARK_NUM_SPLITS, PropertyType.NUMBER);
+        defaults.put(SPARK_NUM_SPLITS, "10000");
+           types.put(SPARK_BATCH_SIZE, PropertyType.NUMBER);
+        defaults.put(SPARK_BATCH_SIZE, "10");
+           types.put(SPARK_MAX_RETRIES, PropertyType.NUMBER);
+        defaults.put(SPARK_MAX_RETRIES, "0");
+           types.put(READ_FETCH_SIZE, PropertyType.NUMBER);
+        defaults.put(READ_FETCH_SIZE, "1000");
+           types.put(SPARK_STATS_AFTER, PropertyType.NUMBER);
+        defaults.put(SPARK_STATS_AFTER, "100000");
+           types.put(FIELD_GUARDRAIL, PropertyType.NUMBER);
+        defaults.put(FIELD_GUARDRAIL, "10");
+    }
+
+    //==========================================================================
+    // Properties that configure origin TLS
+    //==========================================================================
+    public static final String ORIGIN_TLS_ENABLED             = "spark.origin.ssl.enabled";         // false
+    public static final String ORIGIN_TLS_TRUSTSTORE_PATH     = "spark.origin.trustStore.path";
+    public static final String ORIGIN_TLS_TRUSTSTORE_PASSWORD = "spark.origin.trustStore.password";
+    public static final String ORIGIN_TLS_TRUSTSTORE_TYPE     = "spark.origin.trustStore.type";     // JKS
+    public static final String ORIGIN_TLS_KEYSTORE_PATH       = "spark.origin.keyStore.path";
+    public static final String ORIGIN_TLS_KEYSTORE_PASSWORD   = "spark.origin.keyStore.password";
+    public static final String ORIGIN_TLS_ALGORITHMS          = "spark.origin.enabledAlgorithms";   // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
+    static {
+           types.put(ORIGIN_TLS_ENABLED, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_TLS_ENABLED, "false");
+           types.put(ORIGIN_TLS_TRUSTSTORE_PATH, PropertyType.STRING);
+           types.put(ORIGIN_TLS_TRUSTSTORE_PASSWORD, PropertyType.STRING);
+           types.put(ORIGIN_TLS_TRUSTSTORE_TYPE, PropertyType.STRING);
+        defaults.put(ORIGIN_TLS_TRUSTSTORE_TYPE, "JKS");
+           types.put(ORIGIN_TLS_KEYSTORE_PATH, PropertyType.STRING);
+           types.put(ORIGIN_TLS_KEYSTORE_PASSWORD, PropertyType.STRING);
+           types.put(ORIGIN_TLS_ALGORITHMS, PropertyType.STRING); // This is a list but it is handled by Spark
+        defaults.put(ORIGIN_TLS_ALGORITHMS, "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA");
+    }
+
+    //==========================================================================
+    // Properties that configure target TLS
+    //==========================================================================
+    public static final String TARGET_TLS_ENABLED             = "spark.target.ssl.enabled";         // false
+    public static final String TARGET_TLS_TRUSTSTORE_PATH     = "spark.target.trustStore.path";
+    public static final String TARGET_TLS_TRUSTSTORE_PASSWORD = "spark.target.trustStore.password";
+    public static final String TARGET_TLS_TRUSTSTORE_TYPE     = "spark.target.trustStore.type";     // JKS
+    public static final String TARGET_TLS_KEYSTORE_PATH       = "spark.target.keyStore.path";
+    public static final String TARGET_TLS_KEYSTORE_PASSWORD   = "spark.target.keyStore.password";
+    public static final String TARGET_TLS_ALGORITHMS          = "spark.target.enabledAlgorithms";   // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
+    static {
+           types.put(TARGET_TLS_ENABLED, PropertyType.BOOLEAN);
+        defaults.put(TARGET_TLS_ENABLED, "false");
+           types.put(TARGET_TLS_TRUSTSTORE_PATH, PropertyType.STRING);
+           types.put(TARGET_TLS_TRUSTSTORE_PASSWORD, PropertyType.STRING);
+           types.put(TARGET_TLS_TRUSTSTORE_TYPE, PropertyType.STRING);
+        defaults.put(TARGET_TLS_TRUSTSTORE_TYPE, "JKS");
+           types.put(TARGET_TLS_KEYSTORE_PATH, PropertyType.STRING);
+           types.put(TARGET_TLS_KEYSTORE_PASSWORD, PropertyType.STRING);
+           types.put(TARGET_TLS_ALGORITHMS, PropertyType.STRING); // This is a list but it is handled by Spark
+        defaults.put(TARGET_TLS_ALGORITHMS, "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA");
+    }
+
+    //==========================================================================
+    // Properties used for Unit Testing
+    //==========================================================================
+    public static final String TEST_STRING = "test.string";
+    public static final String TEST_STRING_NO_DEFAULT = "test.string.noDefault";
+    public static final String TEST_STRING_LIST = "test.stringList";
+    public static final String TEST_NUMBER = "test.number";
+    public static final String TEST_NUMBER_LIST = "test.numberList";
+    public static final String TEST_BOOLEAN = "test.boolean";
+    public static final String TEST_MIGRATE_TYPE = "test.migrateType";
+    public static final String TEST_MIGRATE_TYPE_LIST = "test.migrateTypeList";
+    static {
+           types.put(TEST_STRING, PropertyType.STRING);
+        defaults.put(TEST_STRING, "text");
+           types.put(TEST_STRING_NO_DEFAULT, PropertyType.STRING);
+           types.put(TEST_STRING_LIST, PropertyType.STRING_LIST);
+        defaults.put(TEST_STRING_LIST, "text1,text2");
+           types.put(TEST_NUMBER, PropertyType.NUMBER);
+        defaults.put(TEST_NUMBER, "1");
+           types.put(TEST_NUMBER_LIST, PropertyType.NUMBER_LIST);
+        defaults.put(TEST_NUMBER_LIST, "1,2");
+           types.put(TEST_BOOLEAN, PropertyType.BOOLEAN);
+        defaults.put(TEST_BOOLEAN, "true");
+           types.put(TEST_MIGRATE_TYPE, PropertyType.MIGRATION_TYPE);
+        defaults.put(TEST_MIGRATE_TYPE, "0");
+           types.put(TEST_MIGRATE_TYPE_LIST, PropertyType.MIGRATION_TYPE_LIST);
+        defaults.put(TEST_MIGRATE_TYPE_LIST, "0,1,2");
+    }
+
+
+    public static Boolean isKnown(String key) {
+        return types.containsKey(key);
+    }
+
+    public static String getDefault(String key) {
+        return defaults.get(key);
+    }
+
+    public static PropertyType getType(String key) {
+        return types.get(key);
+    }
+}
