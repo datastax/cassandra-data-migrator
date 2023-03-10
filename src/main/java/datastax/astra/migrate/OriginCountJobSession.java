@@ -3,6 +3,7 @@ package datastax.astra.migrate;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -44,8 +45,8 @@ public class OriginCountJobSession extends BaseJobSession {
         checkTableforColSize = Boolean.parseBoolean(sc.get("spark.origin.checkTableforColSize", "false"));
         checkTableforselectCols = sc.get("spark.origin.checkTableforColSize.cols");
         checkTableforColSizeTypes = getTypes(sc.get("spark.origin.checkTableforColSize.cols.types"));
-        filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn");
-        filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType");
+        filterColName = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
+        filterColType = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE); // TODO: this is a string, but should be MigrationDataType?
         filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
         fieldGuardraillimitMB = Integer.parseInt(sc.get("spark.fieldGuardraillimitMB", "0"));
 

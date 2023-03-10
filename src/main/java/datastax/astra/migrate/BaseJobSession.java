@@ -5,6 +5,8 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.astra.migrate.properties.KnownProperties;
+import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
 
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.Set;
 
 public abstract class BaseJobSession {
 
+    protected PropertyHelper propertyHelper = PropertyHelper.getInstance();
     protected PreparedStatement sourceSelectStatement;
     protected PreparedStatement astraSelectStatement;
     protected PreparedStatement astraInsertStatement;
@@ -50,7 +53,7 @@ public abstract class BaseJobSession {
     protected Boolean isCounterTable;
 
     protected String sourceKeyspaceTable;
-    protected String astraKeyspaceTable;
+    protected String targetKeyspaceTable;
 
     protected Boolean hasRandomPartitioner;
     protected Boolean filterData;
@@ -59,13 +62,14 @@ public abstract class BaseJobSession {
     protected Integer filterColIndex;
     protected String filterColValue;
 
-    protected String[] allCols;
+    protected List<String> allCols;
     protected String tsReplaceValStr;
     protected long tsReplaceVal;
 
     protected BaseJobSession(SparkConf sc) {
-        readConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.read"));
-        writeConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.write"));
+        propertyHelper.initializeSparkConf(sc);
+        readConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.READ_CL));
+        writeConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));;
     }
 
     public String getKey(Row sourceRow) {

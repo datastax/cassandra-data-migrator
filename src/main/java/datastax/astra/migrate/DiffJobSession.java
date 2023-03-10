@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +37,10 @@ public class DiffJobSession extends CopyJobSession {
     private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         super(sourceSession, astraSession, sc);
 
-        autoCorrectMissing = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.missing", "false"));
+        autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISSING);
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
 
-        autoCorrectMismatch = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.mismatch", "false"));
+        autoCorrectMismatch = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISMATCH);
         logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
     }
 

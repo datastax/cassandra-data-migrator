@@ -67,7 +67,7 @@ public class KnownProperties {
     public static final String ORIGIN_COLUMN_TYPES    = "spark.query.types";               // 9,1,4,3
     public static final String ORIGIN_TTL_COLS        = "spark.query.ttl.cols";            // 2,3
     public static final String ORIGIN_WRITETIME_COLS  = "spark.query.writetime.cols";      // 2,3
-    public static final String ORIGIN_COUNTER         = "spark.counterTable";              // false
+    public static final String ORIGIN_IS_COUNTER      = "spark.counterTable";              // false
     public static final String ORIGIN_COUNTER_CQL     = "spark.counterTable.cql";
     public static final String ORIGIN_COUNTER_INDEX   = "spark.counterTable.cql.index";    // 0
     static {
@@ -77,10 +77,12 @@ public class KnownProperties {
            types.put(ORIGIN_PARTITION_KEY, PropertyType.STRING_LIST);
            types.put(ORIGIN_TTL_COLS, PropertyType.NUMBER_LIST);
            types.put(ORIGIN_WRITETIME_COLS, PropertyType.NUMBER_LIST);
-           types.put(ORIGIN_COUNTER, PropertyType.BOOLEAN);
-        defaults.put(ORIGIN_COUNTER, "false");
+           types.put(ORIGIN_IS_COUNTER, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_IS_COUNTER, "false");
            types.put(ORIGIN_COUNTER_CQL, PropertyType.STRING);
-           types.put(ORIGIN_COUNTER_INDEX, PropertyType.NUMBER);
+           types.put(ORIGIN_COUNTER_INDEX, PropertyType.NUMBER_LIST);
+        defaults.put(ORIGIN_COUNTER_INDEX, "0");
+
     }
 
     //==========================================================================
@@ -96,6 +98,7 @@ public class KnownProperties {
     public static final String ORIGIN_FILTER_COLUMN_TYPE     = "spark.origin.FilterColumnType";         // 6%16
     public static final String ORIGIN_FILTER_COLUMN_VALUE    = "spark.origin.FilterColumnValue";        // test
     public static final String ORIGIN_COVERAGE_PERCENT       =  "spark.coveragePercent";                // 100
+    public static final String ORIGIN_HAS_RANDOM_PARTITIONER = "spark.origin.hasRandomPartitioner";     // false
 
     public static final String ORIGIN_CHECK_COLSIZE_ENABLED      = "spark.origin.checkTableforColSize";            // false
     public static final String ORIGIN_CHECK_COLSIZE_COLUMN_NAMES = "spark.origin.checkTableforColSize.cols";       // partition-key,clustering-key
@@ -106,15 +109,20 @@ public class KnownProperties {
            types.put(ORIGIN_FILTER_WRITETS_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_FILTER_WRITETS_ENABLED, "false");
            types.put(ORIGIN_FILTER_WRITETS_MIN, PropertyType.NUMBER);
+        defaults.put(ORIGIN_FILTER_WRITETS_MIN, "0");
            types.put(ORIGIN_FILTER_WRITETS_MAX, PropertyType.NUMBER);
+        defaults.put(ORIGIN_FILTER_WRITETS_MAX, "0");
            types.put(ORIGIN_FILTER_COLUMN_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "false");
            types.put(ORIGIN_FILTER_COLUMN_NAME, PropertyType.STRING);
            types.put(ORIGIN_FILTER_COLUMN_INDEX, PropertyType.NUMBER);
-           types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.MIGRATION_TYPE);
+        defaults.put(ORIGIN_FILTER_COLUMN_INDEX, "0");
+           types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.STRING);
            types.put(ORIGIN_FILTER_COLUMN_VALUE, PropertyType.STRING);
            types.put(ORIGIN_COVERAGE_PERCENT, PropertyType.NUMBER);
         defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "100");
+           types.put(ORIGIN_HAS_RANDOM_PARTITIONER, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_HAS_RANDOM_PARTITIONER, "false");
 
            types.put(ORIGIN_CHECK_COLSIZE_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_FILTER_WRITETS_ENABLED, "false");
@@ -131,22 +139,25 @@ public class KnownProperties {
     public static final String TARGET_CUSTOM_WRITETIME     = "spark.target.custom.writeTime";     // 0
     public static final String TARGET_AUTOCORRECT_MISSING  = "spark.target.autocorrect.missing";  // false
     public static final String TARGET_AUTOCORRECT_MISMATCH = "spark.target.autocorrect.mismatch"; // false
+    public static final String TARGET_REPLACE_MISSING_TS   = "spark.target.replace.blankTimestampKeyUsingEpoch";
     static {
            types.put(TARGET_KEYSPACE_TABLE, PropertyType.STRING);
            types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
            types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
            types.put(TARGET_CUSTOM_WRITETIME, PropertyType.NUMBER);
+        defaults.put(TARGET_CUSTOM_WRITETIME, "0");
            types.put(TARGET_AUTOCORRECT_MISSING, PropertyType.BOOLEAN);
         defaults.put(TARGET_AUTOCORRECT_MISSING, "false");
            types.put(TARGET_AUTOCORRECT_MISMATCH, PropertyType.BOOLEAN);
         defaults.put(TARGET_AUTOCORRECT_MISMATCH, "false");
+           types.put(TARGET_REPLACE_MISSING_TS, PropertyType.NUMBER);
     }
 
     //==========================================================================
     // Properties that adjust performance and error handling
     //==========================================================================
     public static final String SPARK_LIMIT_READ  = "spark.readRateLimit";   // 20000
-    public static final String SPARK_LIMIT_WRITE = "spark.writeRateLimit";  // 20000
+    public static final String SPARK_LIMIT_WRITE = "spark.writeRateLimit";  // 40000
     public static final String SPARK_NUM_SPLITS  = "spark.numSplits";       // 10000
     public static final String SPARK_BATCH_SIZE  = "spark.batchSize";       // 10
     public static final String SPARK_MAX_RETRIES = "spark.maxRetries";      // 0
@@ -157,11 +168,11 @@ public class KnownProperties {
            types.put(SPARK_LIMIT_READ, PropertyType.NUMBER);
         defaults.put(SPARK_LIMIT_READ, "20000");
            types.put(SPARK_LIMIT_WRITE, PropertyType.NUMBER);
-        defaults.put(SPARK_LIMIT_WRITE, "20000");
+        defaults.put(SPARK_LIMIT_WRITE, "40000");
            types.put(SPARK_NUM_SPLITS, PropertyType.NUMBER);
         defaults.put(SPARK_NUM_SPLITS, "10000");
            types.put(SPARK_BATCH_SIZE, PropertyType.NUMBER);
-        defaults.put(SPARK_BATCH_SIZE, "10");
+        defaults.put(SPARK_BATCH_SIZE, "5");
            types.put(SPARK_MAX_RETRIES, PropertyType.NUMBER);
         defaults.put(SPARK_MAX_RETRIES, "0");
            types.put(READ_FETCH_SIZE, PropertyType.NUMBER);

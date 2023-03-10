@@ -11,29 +11,54 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PropertyHelper extends KnownProperties{
+public final class PropertyHelper extends KnownProperties{
+    private static PropertyHelper instance = null;
+
 //    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final Map<String,Object> propertyMap;
     private SparkConf sparkConf;
     private boolean sparkConfFullyLoaded = false;
 
-    public PropertyHelper() {
+    // As this is a singleton class, the constructor is private
+    private PropertyHelper() {
         super();
         propertyMap = new HashMap<>();
     }
 
-    public PropertyHelper(SparkConf sc) {
-        this();
-        setSparkConf(sc);
+    public static PropertyHelper getInstance() {
+        if (instance == null) {
+            synchronized (PropertyHelper.class) {
+                if (instance == null) {
+                    instance = new PropertyHelper();
+                }
+            }
+        }
+        return instance;
     }
 
-    public boolean setSparkConf(SparkConf sc) {
-        this.sparkConf = sc;
-        return loadSparkConf();
+    public static PropertyHelper destroyInstance() {
+        if (instance != null) {
+            synchronized (PropertyHelper.class) {
+                if (instance != null) {
+                    instance = null;
+                }
+            }
+        }
+        return instance;
     }
 
-    public boolean isSparkConfFullyLoaded() {
-        return sparkConfFullyLoaded;
+    /**
+     * Loads the SparkConf into the propertyMap, but only
+     * if the SparkConf has not already been loaded.
+     *
+     * @param sc
+     */
+    public void initializeSparkConf(SparkConf sc) {
+        if (null == sc)
+            throw new IllegalArgumentException("SparkConf cannot be null");
+
+        if (null == this.sparkConf)
+            this.sparkConf = sc;
     }
 
     /**
@@ -52,12 +77,11 @@ public class PropertyHelper extends KnownProperties{
             return null;
         }
         boolean typesMatch = validateType(expectedType, propertyValue);
-        if (typesMatch) {
-            propertyMap.put(propertyName, propertyValue);
-            return propertyValue;
-        } else {
+        if (!typesMatch)
             return null;
-        }
+
+        propertyMap.put(propertyName, propertyValue);
+        return propertyValue;
     }
 
     protected Object get(String propertyName, PropertyType expectedType) {
@@ -89,8 +113,40 @@ public class PropertyHelper extends KnownProperties{
         return (Number) get(propertyName, PropertyType.NUMBER);
     }
 
+    public Integer getInteger(String propertyName) {
+        if (null==getNumber(propertyName)
+                || PropertyType.NUMBER != getType(propertyName))
+            return null;
+        return toInteger(getNumber(propertyName));
+    }
+
+    public Long getLong(String propertyName) {
+        if (null==getNumber(propertyName)
+                || PropertyType.NUMBER != getType(propertyName))
+            return null;
+        return getNumber(propertyName).longValue();
+    }
+
     public List<Number> getNumberList(String propertyName) {
         return (List<Number>) get(propertyName, PropertyType.NUMBER_LIST);
+    }
+
+    public List<Integer> getIntegerList(String propertyName) {
+        List<Integer> intList = new ArrayList<>();
+        Integer i;
+        if (null==propertyName
+                || PropertyType.NUMBER_LIST != getType(propertyName)
+                || null==getNumberList(propertyName))
+            return null;
+        for (Number n : getNumberList(propertyName)) {
+            if (null == n)
+                return null;
+            i = toInteger(n);
+            if (null == i)
+                return null;
+            intList.add(i);
+        }
+        return intList;
     }
 
     public Boolean getBoolean(String propertyName) {
@@ -105,7 +161,7 @@ public class PropertyHelper extends KnownProperties{
         return (List<MigrateDataType>) get(propertyName, PropertyType.MIGRATION_TYPE_LIST);
     }
 
-    protected boolean loadSparkConf() {
+    protected void loadSparkConf() {
         boolean fullyLoaded = true;
         for (Tuple2<String,String> kvp : sparkConf.getAll()) {
             String scKey = kvp._1();
@@ -181,7 +237,6 @@ public class PropertyHelper extends KnownProperties{
             }
         }
         this.sparkConfFullyLoaded = fullyLoaded;
-        return fullyLoaded;
     }
 
     protected boolean validateType(PropertyType expectedType, Object currentProperty) {
@@ -248,7 +303,21 @@ public class PropertyHelper extends KnownProperties{
         return false;
     }
 
+    private Integer toInteger(Number n) {
+        if (n instanceof Integer
+                || n instanceof Short
+                || n instanceof Byte)
+            return n.intValue();
+        else if (n instanceof Long) {
+            if ((Long) n >= Integer.MIN_VALUE && (Long) n <= Integer.MAX_VALUE) {
+                return n.intValue();
+            }
+        }
+        return null;
+    }
+
     protected Map<String,Object> getPropertyMap() {
         return propertyMap;
     }
+
 }
