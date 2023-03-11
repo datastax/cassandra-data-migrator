@@ -326,63 +326,62 @@ public class PropertyHelperTest {
     }
 
     @Test
-    public void asString_String() {
+    public void getAsString_String() {
         helper.setProperty(KnownProperties.TEST_STRING, "abcd");
-        assertEquals("abcd", helper.asString(KnownProperties.TEST_STRING));
+        assertEquals("abcd", helper.getAsString(KnownProperties.TEST_STRING));
     }
 
     @Test
-    public void asString_StringList() {
+    public void getAsString_StringList() {
         helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a","b","c","d"));
-        assertEquals("a,b,c,d", helper.asString(KnownProperties.TEST_STRING_LIST));
+        assertEquals("a,b,c,d", helper.getAsString(KnownProperties.TEST_STRING_LIST));
     }
 
     @Test
-    public void asString_Number() {
+    public void getAsString_Number() {
         helper.setProperty(KnownProperties.TEST_NUMBER, 1234);
-        assertEquals("1234", helper.asString(KnownProperties.TEST_NUMBER));
+        assertEquals("1234", helper.getAsString(KnownProperties.TEST_NUMBER));
     }
 
     @Test
-    public void asString_NumberList() {
+    public void getAsString_NumberList() {
         helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3,4));
-        assertEquals("1,2,3,4", helper.asString(KnownProperties.TEST_NUMBER_LIST));
+        assertEquals("1,2,3,4", helper.getAsString(KnownProperties.TEST_NUMBER_LIST));
     }
 
     @Test
-    public void asString_Boolean() {
+    public void getAsString_Boolean() {
         helper.setProperty(KnownProperties.TEST_BOOLEAN, true);
-        assertEquals("true", helper.asString(KnownProperties.TEST_BOOLEAN));
+        assertEquals("true", helper.getAsString(KnownProperties.TEST_BOOLEAN));
     }
 
     @Test
-    public void asString_MigrateDataType() {
+    public void getAsString_MigrateDataType() {
         helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE, new MigrateDataType("5%0%1"));
-        assertEquals("5%0%1", helper.asString(KnownProperties.TEST_MIGRATE_TYPE));
+        assertEquals("5%0%1", helper.getAsString(KnownProperties.TEST_MIGRATE_TYPE));
     }
 
     @Test
-    public void asString_MigrateDataTypeList() {
+    public void getAsString_MigrateDataTypeList() {
         helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, Arrays.asList(new MigrateDataType("0"), new MigrateDataType("5%0%1")));
-        assertEquals("0,5%0%1", helper.asString(KnownProperties.TEST_MIGRATE_TYPE_LIST));
+        assertEquals("0,5%0%1", helper.getAsString(KnownProperties.TEST_MIGRATE_TYPE_LIST));
     }
 
     @Test
-    public void asString_valueNotSet() {
-        assertNull(helper.asString(KnownProperties.TEST_STRING));
+    public void getAsString_valueNotSet() {
+        assertNull(helper.getAsString(KnownProperties.TEST_STRING));
     }
 
     @Test
-    public void asString_nullArgument() {
-        assertNull(helper.asString(null));
+    public void getAsString_nullArgument() {
+        assertNull(helper.getAsString(null));
     }
 
     @Test
-    public void asString_nullUnhanldedType() {
+    public void getAsString_nullUnhanldedType() {
         helper.setProperty(KnownProperties.TEST_UNHANDLED_TYPE, "abcd");
-        assertNull(helper.asString(KnownProperties.TEST_UNHANDLED_TYPE));
+        assertNull(helper.getAsString(KnownProperties.TEST_UNHANDLED_TYPE));
     }
-
 
     // TODO: breaks with error SLF4J: Class path contains multiple SLF4J bindings.
     //@Test

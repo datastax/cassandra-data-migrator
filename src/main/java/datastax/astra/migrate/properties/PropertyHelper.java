@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public final class PropertyHelper extends KnownProperties{
     private static PropertyHelper instance = null;
@@ -35,6 +34,12 @@ public final class PropertyHelper extends KnownProperties{
                 }
             }
         }
+        return instance;
+    }
+
+    public static PropertyHelper getInstance(SparkConf sc) {
+        instance = getInstance();
+        instance.initializeSparkConf(sc);
         return instance;
     }
 
@@ -173,7 +178,7 @@ public final class PropertyHelper extends KnownProperties{
         return (List<MigrateDataType>) get(propertyName, PropertyType.MIGRATION_TYPE_LIST);
     }
 
-    public String asString(String propertyName) {
+    public String getAsString(String propertyName) {
         if (null == propertyName)
             return null;
         Object propertyValue = get(propertyName, getType(propertyName));

@@ -1,6 +1,8 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import datastax.astra.migrate.properties.KnownProperties;
+import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 
@@ -12,21 +14,25 @@ import java.util.NoSuchElementException;
 public class Util {
 
     public static String getSparkProp(SparkConf sc, String prop) {
-        try {
-            return sc.get(prop);
-        } catch (NoSuchElementException nse) {
-            String newProp = prop.replace("origin", "source").replace("target", "destination");
-            return sc.get(newProp);
+        if (!sc.contains(prop)) {
+            return sc.get(prop.replace("origin", "source").replace("target", "destination"));
         }
+        if (!KnownProperties.isKnown(prop)) {
+            throw new IllegalArgumentException("Unknown property: " + prop + "; this is a bug in the code: the property is not configured in KnownProperties.java");
+        }
+        return PropertyHelper.getInstance(sc).getAsString(prop);
     }
 
     public static String getSparkPropOr(SparkConf sc, String prop, String defaultVal) {
-        try {
-            return sc.get(prop);
-        } catch (NoSuchElementException nse) {
-            String newProp = prop.replace("origin", "source").replace("target", "destination");
-            return sc.get(newProp, defaultVal);
+        if (!sc.contains(prop)) {
+            return sc.get(prop.replace("origin", "source").replace("target", "destination"), defaultVal);
         }
+        String retVal = getSparkProp(sc,prop);
+        if (null == retVal) {
+            PropertyHelper.getInstance(sc).setProperty(prop, defaultVal);
+            return getSparkProp(sc,prop);
+        }
+        return retVal;
     }
 
     public static String getSparkPropOrEmpty(SparkConf sc, String prop) {

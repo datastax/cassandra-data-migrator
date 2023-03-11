@@ -18,7 +18,9 @@ class BaseJob extends App {
   val sContext = spark.sparkContext
   val sc = sContext.getConf
 
-  val consistencyLevel = Util.getSparkPropOr(sc, "spark.read.consistency.level", "LOCAL_QUORUM")
+  // TODO: this was spark.read.consistency.level, but that is not in sparkConf.properties example
+  // TODO: There is no obvious place I see where Write Consistency is set?
+  val consistencyLevel = Util.getSparkPropOr(sc, "spark.consistency.read", "LOCAL_QUORUM")
 
   val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
   val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")
