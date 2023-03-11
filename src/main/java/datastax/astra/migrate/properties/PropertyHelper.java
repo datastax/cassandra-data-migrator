@@ -3,6 +3,7 @@ package datastax.astra.migrate.properties;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 import datastax.astra.migrate.MigrateDataType;
+import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 import scala.Tuple2;
 
@@ -10,13 +11,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class PropertyHelper extends KnownProperties{
     private static PropertyHelper instance = null;
 
 //    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final Map<String,Object> propertyMap;
-    private SparkConf sparkConf;
+    private volatile SparkConf sparkConf;
     private boolean sparkConfFullyLoaded = false;
 
     // As this is a singleton class, the constructor is private
@@ -36,7 +38,7 @@ public final class PropertyHelper extends KnownProperties{
         return instance;
     }
 
-    public static PropertyHelper destroyInstance() {
+    public static void destroyInstance() {
         if (instance != null) {
             synchronized (PropertyHelper.class) {
                 if (instance != null) {
@@ -44,7 +46,6 @@ public final class PropertyHelper extends KnownProperties{
                 }
             }
         }
-        return instance;
     }
 
     /**
@@ -58,7 +59,12 @@ public final class PropertyHelper extends KnownProperties{
             throw new IllegalArgumentException("SparkConf cannot be null");
 
         if (null == this.sparkConf)
-            this.sparkConf = sc;
+            synchronized (PropertyHelper.class) {
+                if (null == this.sparkConf) {
+                    this.sparkConf = sc;
+                    loadSparkConf();
+                }
+            }
     }
 
     /**
@@ -80,7 +86,9 @@ public final class PropertyHelper extends KnownProperties{
         if (!typesMatch)
             return null;
 
-        propertyMap.put(propertyName, propertyValue);
+        synchronized (PropertyHelper.class) {
+            propertyMap.put(propertyName, propertyValue);
+        }
         return propertyValue;
     }
 
@@ -90,7 +98,11 @@ public final class PropertyHelper extends KnownProperties{
                 || expectedType != getType(propertyName)) {
             return null;
         }
-        Object currentProperty = propertyMap.get(propertyName);
+        Object currentProperty;
+        synchronized (PropertyHelper.class){
+            currentProperty = propertyMap.get(propertyName);
+        }
+
         if (null == currentProperty) {
             return null;
         }
@@ -161,6 +173,27 @@ public final class PropertyHelper extends KnownProperties{
         return (List<MigrateDataType>) get(propertyName, PropertyType.MIGRATION_TYPE_LIST);
     }
 
+    public String asString(String propertyName) {
+        if (null == propertyName)
+            return null;
+        Object propertyValue = get(propertyName, getType(propertyName));
+        if (null == propertyValue)
+            return null;
+        switch (getType(propertyName)) {
+            case STRING:
+                return (String) propertyValue;
+            case STRING_LIST:
+            case NUMBER_LIST:
+            case MIGRATION_TYPE_LIST:
+                return StringUtils.join((List<?>) propertyValue, ",");
+            case NUMBER:
+            case BOOLEAN:
+            case MIGRATION_TYPE:
+            default:
+                return propertyValue.toString();
+        }
+    }
+
     protected void loadSparkConf() {
         boolean fullyLoaded = true;
         for (Tuple2<String,String> kvp : sparkConf.getAll()) {
@@ -189,7 +222,7 @@ public final class PropertyHelper extends KnownProperties{
                         List<Number> numList = new ArrayList<>();
                         for (String s : sparkConf.get(scKey, getDefault(scKey)).split(",")) {
                             try {
-                                numList.add(Long.parseLong(s));
+                                numList.add(Long.parseLong(s.trim()));
                             } catch (NumberFormatException e) {
 //                                logger.warn("Unable to parse number: " + s + " for property: " + scKey + ", value: " + scValue + " with type: " + getType(scKey));
                                 parsedAll = false;
@@ -252,9 +285,12 @@ public final class PropertyHelper extends KnownProperties{
                     if (list.isEmpty()) {
                         return false;
                     } else {
-                        if (list.get(0) instanceof String) {
-                            return true;
+                        for (Object o : list) {
+                            if (!(o instanceof String)) {
+                                return false;
+                            }
                         }
+                        return true;
                     }
                 }
                 break;
@@ -269,9 +305,12 @@ public final class PropertyHelper extends KnownProperties{
                     if (list.isEmpty()) {
                         return false;
                     } else {
-                        if (list.get(0) instanceof Number) {
-                            return true;
+                        for (Object o : list) {
+                            if (!(o instanceof Number)) {
+                                return false;
+                            }
                         }
+                        return true;
                     }
                 }
                 break;
@@ -281,7 +320,7 @@ public final class PropertyHelper extends KnownProperties{
                 }
                 break;
             case MIGRATION_TYPE:
-                if (currentProperty instanceof MigrateDataType) {
+                if ((currentProperty instanceof MigrateDataType) && ((MigrateDataType) currentProperty).isValid()) {
                     return true;
                 }
                 break;
@@ -291,9 +330,12 @@ public final class PropertyHelper extends KnownProperties{
                     if (list.isEmpty()) {
                         return false;
                     } else {
-                        if (list.get(0) instanceof MigrateDataType) {
-                            return true;
+                        for (Object o : list) {
+                            if (!(o instanceof MigrateDataType) || !((MigrateDataType) o).isValid()) {
+                                return false;
+                            }
                         }
+                        return true;
                     }
                 }
                 break;

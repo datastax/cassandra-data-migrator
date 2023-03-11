@@ -12,7 +12,8 @@ public class KnownProperties {
         STRING_LIST,
         NUMBER_LIST,
         MIGRATION_TYPE,
-        MIGRATION_TYPE_LIST
+        MIGRATION_TYPE_LIST,
+        TEST_UNHANDLED_TYPE
     }
 
     private static Map<String,PropertyType> types = new HashMap<>();
@@ -240,7 +241,7 @@ public class KnownProperties {
     public static final String TEST_BOOLEAN = "test.boolean";
     public static final String TEST_MIGRATE_TYPE = "test.migrateType";
     public static final String TEST_MIGRATE_TYPE_LIST = "test.migrateTypeList";
-    public static final String TEST_UNKNOWN = "test.unknown";
+    public static final String TEST_UNHANDLED_TYPE = "test.unhandled.type";
     static {
            types.put(TEST_STRING, PropertyType.STRING);
         defaults.put(TEST_STRING, "text");
@@ -257,8 +258,8 @@ public class KnownProperties {
         defaults.put(TEST_MIGRATE_TYPE, "0");
            types.put(TEST_MIGRATE_TYPE_LIST, PropertyType.MIGRATION_TYPE_LIST);
         defaults.put(TEST_MIGRATE_TYPE_LIST, "0,1,2");
+           types.put(TEST_UNHANDLED_TYPE, PropertyType.TEST_UNHANDLED_TYPE);
     }
-
 
     public static Boolean isKnown(String key) {
         return types.containsKey(key);

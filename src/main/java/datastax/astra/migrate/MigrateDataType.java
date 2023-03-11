@@ -13,6 +13,7 @@ import java.util.*;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
+    String dataTypeString = "";
     int type = -1;
     List<Class> subTypes = new ArrayList<Class>();
     private boolean isValid = false;
@@ -22,6 +23,7 @@ public class MigrateDataType {
     private static final List<Class> COLLECTION_TYPES = Arrays.asList(List.class, Set.class, Map.class);
 
     public MigrateDataType(String dataType) {
+        dataTypeString = dataType;
         if (dataType.contains("%")) {
             int count = 1;
             for (String type : dataType.split("%")) {
@@ -191,5 +193,10 @@ public class MigrateDataType {
         MigrateDataType that = (MigrateDataType) o;
         return type == that.type &&
                 Objects.equals(subTypes, that.subTypes);
+    }
+
+    @Override
+    public String toString() {
+        return dataTypeString;
     }
 }

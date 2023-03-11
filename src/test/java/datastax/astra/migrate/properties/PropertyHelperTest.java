@@ -106,7 +106,7 @@ public class PropertyHelperTest {
 
     @Test
     public void setProperty_unknownType() {
-        assertNull(helper.setProperty(KnownProperties.TEST_UNKNOWN, "abc"));
+        assertNull(helper.setProperty(KnownProperties.TEST_UNHANDLED_TYPE, "abc"));
     }
 
     @Test
@@ -324,6 +324,65 @@ public class PropertyHelperTest {
         helper.getPropertyMap().put(KnownProperties.TEST_MIGRATE_TYPE_LIST, Arrays.asList(1,1,2));
         assertNull(helper.get(KnownProperties.TEST_MIGRATE_TYPE_LIST, KnownProperties.PropertyType.MIGRATION_TYPE_LIST));
     }
+
+    @Test
+    public void asString_String() {
+        helper.setProperty(KnownProperties.TEST_STRING, "abcd");
+        assertEquals("abcd", helper.asString(KnownProperties.TEST_STRING));
+    }
+
+    @Test
+    public void asString_StringList() {
+        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a","b","c","d"));
+        assertEquals("a,b,c,d", helper.asString(KnownProperties.TEST_STRING_LIST));
+    }
+
+    @Test
+    public void asString_Number() {
+        helper.setProperty(KnownProperties.TEST_NUMBER, 1234);
+        assertEquals("1234", helper.asString(KnownProperties.TEST_NUMBER));
+    }
+
+    @Test
+    public void asString_NumberList() {
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3,4));
+        assertEquals("1,2,3,4", helper.asString(KnownProperties.TEST_NUMBER_LIST));
+    }
+
+    @Test
+    public void asString_Boolean() {
+        helper.setProperty(KnownProperties.TEST_BOOLEAN, true);
+        assertEquals("true", helper.asString(KnownProperties.TEST_BOOLEAN));
+    }
+
+    @Test
+    public void asString_MigrateDataType() {
+        helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE, new MigrateDataType("5%0%1"));
+        assertEquals("5%0%1", helper.asString(KnownProperties.TEST_MIGRATE_TYPE));
+    }
+
+    @Test
+    public void asString_MigrateDataTypeList() {
+        helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, Arrays.asList(new MigrateDataType("0"), new MigrateDataType("5%0%1")));
+        assertEquals("0,5%0%1", helper.asString(KnownProperties.TEST_MIGRATE_TYPE_LIST));
+    }
+
+    @Test
+    public void asString_valueNotSet() {
+        assertNull(helper.asString(KnownProperties.TEST_STRING));
+    }
+
+    @Test
+    public void asString_nullArgument() {
+        assertNull(helper.asString(null));
+    }
+
+    @Test
+    public void asString_nullUnhanldedType() {
+        helper.setProperty(KnownProperties.TEST_UNHANDLED_TYPE, "abcd");
+        assertNull(helper.asString(KnownProperties.TEST_UNHANDLED_TYPE));
+    }
+
 
     // TODO: breaks with error SLF4J: Class path contains multiple SLF4J bindings.
     //@Test
