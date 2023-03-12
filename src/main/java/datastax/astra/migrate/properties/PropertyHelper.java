@@ -249,7 +249,7 @@ public final class PropertyHelper extends KnownProperties{
                     case MIGRATION_TYPE_LIST:
                         List<MigrateDataType> mdtList = new ArrayList<>();
                         for (String s : sparkConf.get(scKey, getDefault(scKey)).split(",")) {
-                            mdt = new MigrateDataType(sparkConf.get(scKey, getDefault(scKey)));
+                            mdt = new MigrateDataType(s);
                             if (mdt.isValid()) {
                                 mdtList.add(mdt);
                             } else {
@@ -367,4 +367,7 @@ public final class PropertyHelper extends KnownProperties{
         return propertyMap;
     }
 
+    public boolean isSparkConfFullyLoaded() {
+        return sparkConfFullyLoaded;
+    }
 }
