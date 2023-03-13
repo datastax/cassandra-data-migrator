@@ -1,0 +1,14 @@
+
+ key  | value
+------+--------
+ key1 | valueA
+ key2 | valueB
+
+(2 rows)
+
+ key  | value
+------+--------
+ key1 | valueA
+ key2 | valueB
+
+(2 rows)
