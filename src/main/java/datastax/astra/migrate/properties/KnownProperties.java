@@ -1,7 +1,8 @@
 package datastax.astra.migrate.properties;
 
-import java.util.HashMap;
-import java.util.Map;
+import datastax.astra.migrate.MigrateDataType;
+
+import java.util.*;
 
 public class KnownProperties {
 
@@ -18,6 +19,7 @@ public class KnownProperties {
 
     private static Map<String,PropertyType> types = new HashMap<>();
     private static Map<String,String> defaults = new HashMap<>();
+    private static Set<String> required = new HashSet<>();
 
     //==========================================================================
     // Properties to establish connections to the origin and target databases
@@ -38,7 +40,6 @@ public class KnownProperties {
 
     static {
            types.put(ORIGIN_CONNECT_HOST, PropertyType.STRING);
-        defaults.put(ORIGIN_CONNECT_HOST, "localhost");
            types.put(ORIGIN_CONNECT_PORT, PropertyType.NUMBER);
         defaults.put(ORIGIN_CONNECT_PORT, "9042");
            types.put(ORIGIN_CONNECT_SCB, PropertyType.STRING);
@@ -46,7 +47,6 @@ public class KnownProperties {
            types.put(ORIGIN_CONNECT_PASSWORD, PropertyType.STRING);
 
            types.put(TARGET_CONNECT_HOST, PropertyType.STRING);
-        defaults.put(TARGET_CONNECT_HOST, "localhost");
            types.put(TARGET_CONNECT_PORT, PropertyType.NUMBER);
         defaults.put(TARGET_CONNECT_PORT, "9042");
            types.put(TARGET_CONNECT_SCB, PropertyType.STRING);
@@ -73,9 +73,13 @@ public class KnownProperties {
     public static final String ORIGIN_COUNTER_INDEX   = "spark.counterTable.cql.index";    // 0
     static {
            types.put(ORIGIN_KEYSPACE_TABLE, PropertyType.STRING);
+        required.add(ORIGIN_KEYSPACE_TABLE);
            types.put(ORIGIN_COLUMN_NAMES, PropertyType.STRING_LIST);
+        required.add(ORIGIN_COLUMN_NAMES);
            types.put(ORIGIN_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+        required.add(ORIGIN_COLUMN_TYPES);
            types.put(ORIGIN_PARTITION_KEY, PropertyType.STRING_LIST);
+        required.add(ORIGIN_PARTITION_KEY);
            types.put(ORIGIN_TTL_COLS, PropertyType.NUMBER_LIST);
            types.put(ORIGIN_WRITETIME_COLS, PropertyType.NUMBER_LIST);
            types.put(ORIGIN_IS_COUNTER, PropertyType.BOOLEAN);
@@ -121,12 +125,12 @@ public class KnownProperties {
            types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.STRING);
            types.put(ORIGIN_FILTER_COLUMN_VALUE, PropertyType.STRING);
            types.put(ORIGIN_COVERAGE_PERCENT, PropertyType.NUMBER);
-        defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "100");
+        defaults.put(ORIGIN_COVERAGE_PERCENT, "100");
            types.put(ORIGIN_HAS_RANDOM_PARTITIONER, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_HAS_RANDOM_PARTITIONER, "false");
 
            types.put(ORIGIN_CHECK_COLSIZE_ENABLED, PropertyType.BOOLEAN);
-        defaults.put(ORIGIN_FILTER_WRITETS_ENABLED, "false");
+        defaults.put(ORIGIN_CHECK_COLSIZE_ENABLED, "false");
            types.put(ORIGIN_CHECK_COLSIZE_COLUMN_NAMES, PropertyType.STRING_LIST);
            types.put(ORIGIN_CHECK_COLSIZE_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
     }
@@ -143,8 +147,11 @@ public class KnownProperties {
     public static final String TARGET_REPLACE_MISSING_TS   = "spark.target.replace.blankTimestampKeyUsingEpoch";
     static {
            types.put(TARGET_KEYSPACE_TABLE, PropertyType.STRING);
+        required.add(TARGET_KEYSPACE_TABLE);
            types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
+        required.add(TARGET_PRIMARY_KEY);
            types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
+        required.add(TARGET_COLUMN_NAMES); // we need this, though it should be defaulted with ORIGIN_COLUMN_NAMES value
            types.put(TARGET_CUSTOM_WRITETIME, PropertyType.NUMBER);
         defaults.put(TARGET_CUSTOM_WRITETIME, "0");
            types.put(TARGET_AUTOCORRECT_MISSING, PropertyType.BOOLEAN);
@@ -166,7 +173,7 @@ public class KnownProperties {
     public static final String SPARK_STATS_AFTER = "spark.printStatsAfter";       //100000
     public static final String FIELD_GUARDRAIL   = "spark.fieldGuardraillimitMB"; //10
     public static final String PARTITION_MIN     = "spark.origin.minPartition";   // -9223372036854775808
-    public static final String PARTITION_MAX     = "spark.origin.minPartition";   // 9223372036854775807
+    public static final String PARTITION_MAX     = "spark.origin.maxPartition";   // 9223372036854775807
 
     static {
            types.put(SPARK_LIMIT_READ, PropertyType.NUMBER);
@@ -242,30 +249,37 @@ public class KnownProperties {
     // Properties used for Unit Testing
     //==========================================================================
     public static final String TEST_STRING = "test.string";
+    protected static final String TEST_STRING_DEFAULT = "text";
     public static final String TEST_STRING_NO_DEFAULT = "test.string.noDefault";
     public static final String TEST_STRING_LIST = "test.stringList";
+    protected static final String TEST_STRING_LIST_DEFAULT = "text1,text2";
     public static final String TEST_NUMBER = "test.number";
+    protected static final String TEST_NUMBER_DEFAULT = "1";
     public static final String TEST_NUMBER_LIST = "test.numberList";
+    protected static final String TEST_NUMBER_LIST_DEFAULT = "1,2";
     public static final String TEST_BOOLEAN = "test.boolean";
+    protected static final String TEST_BOOLEAN_DEFAULT = "true";
     public static final String TEST_MIGRATE_TYPE = "test.migrateType";
+    protected static final String TEST_MIGRATE_TYPE_DEFAULT = "0";
     public static final String TEST_MIGRATE_TYPE_LIST = "test.migrateTypeList";
+    protected static final String TEST_MIGRATE_TYPE_LIST_DEFAULT = "0,1,2";
     public static final String TEST_UNHANDLED_TYPE = "test.unhandled.type";
     static {
            types.put(TEST_STRING, PropertyType.STRING);
-        defaults.put(TEST_STRING, "text");
+        defaults.put(TEST_STRING, TEST_STRING_DEFAULT);
            types.put(TEST_STRING_NO_DEFAULT, PropertyType.STRING);
            types.put(TEST_STRING_LIST, PropertyType.STRING_LIST);
-        defaults.put(TEST_STRING_LIST, "text1,text2");
+        defaults.put(TEST_STRING_LIST, TEST_STRING_LIST_DEFAULT);
            types.put(TEST_NUMBER, PropertyType.NUMBER);
-        defaults.put(TEST_NUMBER, "1");
+        defaults.put(TEST_NUMBER, TEST_NUMBER_DEFAULT);
            types.put(TEST_NUMBER_LIST, PropertyType.NUMBER_LIST);
-        defaults.put(TEST_NUMBER_LIST, "1,2");
+        defaults.put(TEST_NUMBER_LIST, TEST_NUMBER_LIST_DEFAULT);
            types.put(TEST_BOOLEAN, PropertyType.BOOLEAN);
-        defaults.put(TEST_BOOLEAN, "true");
+        defaults.put(TEST_BOOLEAN, TEST_BOOLEAN_DEFAULT);
            types.put(TEST_MIGRATE_TYPE, PropertyType.MIGRATION_TYPE);
-        defaults.put(TEST_MIGRATE_TYPE, "0");
+        defaults.put(TEST_MIGRATE_TYPE, TEST_MIGRATE_TYPE_DEFAULT);
            types.put(TEST_MIGRATE_TYPE_LIST, PropertyType.MIGRATION_TYPE_LIST);
-        defaults.put(TEST_MIGRATE_TYPE_LIST, "0,1,2");
+        defaults.put(TEST_MIGRATE_TYPE_LIST, TEST_MIGRATE_TYPE_LIST_DEFAULT);
            types.put(TEST_UNHANDLED_TYPE, PropertyType.TEST_UNHANDLED_TYPE);
     }
 
@@ -273,11 +287,137 @@ public class KnownProperties {
         return types.containsKey(key);
     }
 
-    public static String getDefault(String key) {
+    public static Object asType(PropertyType propertyType, String propertyValue) {
+        switch (propertyType) {
+            case STRING:
+                return propertyValue;
+            case STRING_LIST:
+                return Arrays.asList(propertyValue.split(","));
+            case NUMBER:
+                try {
+                    return Long.parseLong(propertyValue);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            case NUMBER_LIST:
+                String[] numValues = propertyValue.split(",");
+                ArrayList<Number> numbers = new ArrayList<>(numValues.length);
+                try {
+                    for (String value : numValues) {
+                        numbers.add(Long.parseLong(value));
+                    }
+                    return numbers;
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            case BOOLEAN:
+                return Boolean.parseBoolean(propertyValue);
+            case MIGRATION_TYPE:
+                return new MigrateDataType(propertyValue);
+            case MIGRATION_TYPE_LIST:
+                String[] typeValues = propertyValue.split(",");
+                ArrayList<MigrateDataType> types = new ArrayList<>(typeValues.length);
+                for (String value : typeValues) {
+                    types.add(new MigrateDataType(value));
+                }
+                return types;
+            default:
+                throw new IllegalArgumentException("Unhandled property type: " + propertyType);
+        }
+    }
+
+    public static Object getDefault(String key) {
+        PropertyType type = types.get(key);
+        String value = defaults.get(key);
+        if (type == null ||
+                value == null) {
+            return null;
+        }
+        return asType(type, value);
+    }
+
+    public static String getDefaultAsString(String key) {
         return defaults.get(key);
     }
 
     public static PropertyType getType(String key) {
         return types.get(key);
+    }
+
+    public static Map<String,PropertyType> getTypeMap() { return types;}
+
+    public static Set<String> getRequired() { return required; }
+
+    public static boolean validateType(PropertyType expectedType, Object value) {
+        switch (expectedType) {
+            case STRING:
+                if (value instanceof String) {
+                    return true;
+                }
+                break;
+            case STRING_LIST:
+                if (value instanceof List<?>) {
+                    List<?> list = (List<?>) value;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        for (Object o : list) {
+                            if (!(o instanceof String)) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case NUMBER:
+                if (value instanceof Number) {
+                    return true;
+                }
+                break;
+            case NUMBER_LIST:
+                if (value instanceof List<?>) {
+                    List<?> list = (List<?>) value;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        for (Object o : list) {
+                            if (!(o instanceof Number)) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case BOOLEAN:
+                if (value instanceof Boolean) {
+                    return true;
+                }
+                break;
+            case MIGRATION_TYPE:
+                if ((value instanceof MigrateDataType) && ((MigrateDataType) value).isValid()) {
+                    return true;
+                }
+                break;
+            case MIGRATION_TYPE_LIST:
+                if (value instanceof List<?>) {
+                    List<?> list = (List<?>) value;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        for (Object o : list) {
+                            if (!(o instanceof MigrateDataType) || !((MigrateDataType) o).isValid()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        return false;
     }
 }

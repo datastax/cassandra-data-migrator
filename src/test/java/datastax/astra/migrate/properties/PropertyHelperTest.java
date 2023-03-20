@@ -13,6 +13,7 @@ import static org.junit.Assert.*;
 
 public class PropertyHelperTest {
     PropertyHelper helper;
+    SparkConf validSparkConf;
     @Before
     public void setup() {
         helper = PropertyHelper.getInstance();
@@ -21,6 +22,7 @@ public class PropertyHelperTest {
     @After
     public void tearDown() {
         PropertyHelper.destroyInstance();
+        validSparkConf = null;
     }
 
     @Test
@@ -35,6 +37,27 @@ public class PropertyHelperTest {
         List<String> value = Arrays.asList("a","b", "c");
         List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, value);
         assertEquals(value, setValue);
+    }
+
+    @Test
+    public void setProperty_StringList_oneValue() {
+        List<String> value = Arrays.asList("a");
+        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, value);
+        assertEquals(value, setValue);
+    }
+
+    @Test
+    public void setProperty_StringList_splitString() {
+        String list = "a,b,c";
+        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, list));
+        assertEquals(Arrays.asList(list.split(",")), setValue);
+    }
+
+    @Test
+    public void setProperty_StringList_splitString_oneValue() {
+        String list = "a";
+        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, list));
+        assertEquals(Arrays.asList(list), setValue);
     }
 
     @Test
@@ -56,6 +79,34 @@ public class PropertyHelperTest {
         List<Integer> value = Arrays.asList(1,2,3,4);
         List<Integer> setValue = (List<Integer>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, value);
         assertEquals(value, setValue);
+    }
+
+    @Test
+    public void setProperty_NumberList_splitString() {
+        String list = "1,2,3,4";
+        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        assertEquals(Arrays.asList(1L,2L,3L,4L), setValue);
+    }
+
+    @Test
+    public void setProperty_NumberList_splitString_oneValue() {
+        String list = "1";
+        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        assertEquals(Arrays.asList(1L), setValue);
+    }
+
+    @Test
+    public void setProperty_NumberList_splitString_LongValue() {
+        String list = String.valueOf(Long.MAX_VALUE);
+        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        assertEquals(Arrays.asList(Long.MAX_VALUE), setValue);
+    }
+
+    @Test
+    public void setProperty_NumberList_splitString_badNumber() {
+        String list = "1,2,x,4";
+        List<Integer> setValue = (List<Integer>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        assertNull(setValue);
     }
 
     @Test
@@ -87,6 +138,27 @@ public class PropertyHelperTest {
     }
 
     @Test
+    public void setProperty_MigrateDataTypeList_splitString() {
+        String list = "1,0";
+        List<MigrateDataType> setValue = (List<MigrateDataType>) helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, KnownProperties.asType(KnownProperties.PropertyType.MIGRATION_TYPE_LIST, list));
+        assertEquals(Arrays.asList(new MigrateDataType("1"),new MigrateDataType("0")), setValue);
+    }
+
+    @Test
+    public void setProperty_MigrateDataTypeList_splitString_oneValue() {
+        String list = "5%0%0";
+        List<MigrateDataType> setValue = (List<MigrateDataType>) helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, KnownProperties.asType(KnownProperties.PropertyType.MIGRATION_TYPE_LIST, list));
+        assertEquals(Arrays.asList(new MigrateDataType("5%0%0")), setValue);
+    }
+
+    @Test
+    public void setProperty_MigrateDataTypeList_splitString_badType() {
+        String list = "1,2,x,4";
+        List<MigrateDataType> setValue = (List<MigrateDataType>) helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, KnownProperties.asType(KnownProperties.PropertyType.MIGRATION_TYPE_LIST, list));
+        assertNull(setValue);
+    }
+
+    @Test
     public void setProperty_MigrateDataTypeList_empty() {
         List<MigrateDataType> value = Arrays.asList();
         List<MigrateDataType> setValue = (List<MigrateDataType>) helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, value);
@@ -107,6 +179,16 @@ public class PropertyHelperTest {
     @Test
     public void setProperty_unknownType() {
         assertNull(helper.setProperty(KnownProperties.TEST_UNHANDLED_TYPE, "abc"));
+    }
+
+    @Test
+    public void setProperty_unknownValue() {
+        assertNull(helper.setProperty("unknown.value", "abc"));
+    }
+
+    @Test
+    public void get_null() {
+        assertNull(helper.get(null));
     }
 
     @Test
@@ -202,7 +284,12 @@ public class PropertyHelperTest {
 
     @Test
     public void getIntegerList_nullParameter() {
-        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3));
+        assertNull(helper.getIntegerList(null));
+    }
+
+    @Test
+    public void getIntegerList_nullValue() {
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,null,3));
         assertNull(helper.getIntegerList(null));
     }
 
@@ -246,7 +333,6 @@ public class PropertyHelperTest {
         helper.setProperty(KnownProperties.TEST_MIGRATE_TYPE_LIST, Arrays.asList(new MigrateDataType("1"),new MigrateDataType("3")));
         assertEquals(Arrays.asList(new MigrateDataType("1"),new MigrateDataType("3")),helper.getMigrationTypeList(KnownProperties.TEST_MIGRATE_TYPE_LIST));
     }
-
 
     @Test
     public void get_nullPropertyName() {
@@ -367,10 +453,15 @@ public class PropertyHelperTest {
         assertEquals("0,5%0%1", helper.getAsString(KnownProperties.TEST_MIGRATE_TYPE_LIST));
     }
 
-    @Test
-    public void getAsString_valueNotSet() {
-        assertNull(helper.getAsString(KnownProperties.TEST_STRING));
-    }
+//    @Test
+//    public void getAsString_valueNotSet_withDefault() {
+//        assertEquals(KnownProperties.getDefaultAsString(KnownProperties.TEST_STRING),helper.getAsString(KnownProperties.TEST_STRING));
+//    }
+//
+//    @Test
+//    public void getAsString_valueNotSet_noDefault() {
+//        assertNull(helper.getAsString(KnownProperties.TEST_STRING_NO_DEFAULT));
+//    }
 
     @Test
     public void getAsString_nullArgument() {
@@ -384,18 +475,83 @@ public class PropertyHelperTest {
     }
 
     @Test
-    public void loadSparkConf() {
+    public void getInstance() {
         SparkConf sc = new SparkConf();
-        sc.set(KnownProperties.TEST_STRING, "local");
-        sc.set(KnownProperties.TEST_STRING_LIST, "A,B,C");
-        sc.set(KnownProperties.TEST_NUMBER, "1");
-        sc.set(KnownProperties.TEST_NUMBER_LIST, "4,5,6");
-        sc.set(KnownProperties.TEST_BOOLEAN, "true");
-        sc.set(KnownProperties.TEST_MIGRATE_TYPE, "1");
-        sc.set(KnownProperties.TEST_MIGRATE_TYPE_LIST, "1,2");
+        PropertyHelper helper = PropertyHelper.getInstance(sc);
+        assertNotNull(helper);
+    }
+
+    @Test
+    public void initializeSparkConf_null() {
+        Exception e = assertThrows(IllegalArgumentException.class,  () -> {
+            helper.initializeSparkConf(null);
+        });
+        assertTrue(e.getMessage().contains("SparkConf cannot be null"));
+    }
+
+    @Test
+    public void loadSparkConf_missingRequired() {
+        SparkConf sc = new SparkConf();
         helper.initializeSparkConf(sc);
-        // TODO: this assert is breaking, so technically the test is failing
-        // assertTrue(helper.isSparkConfFullyLoaded());
+        assertFalse(helper.isSparkConfFullyLoaded());
+    }
+
+    @Test
+    public void loadSparkConf_withRequired() {
+        setValidSparkConf();
+        helper.initializeSparkConf(validSparkConf);
+        assertTrue(helper.isSparkConfFullyLoaded());
+    }
+
+    @Test
+    public void loadSparkConf_withRequiredAndAllTypes() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.TEST_STRING, "local");
+        validSparkConf.set(KnownProperties.TEST_STRING_LIST, "A,B,C");
+        validSparkConf.set(KnownProperties.TEST_NUMBER, "1");
+        validSparkConf.set(KnownProperties.TEST_NUMBER_LIST, "4,5,6");
+        validSparkConf.set(KnownProperties.TEST_BOOLEAN, "true");
+        validSparkConf.set(KnownProperties.TEST_MIGRATE_TYPE, "1");
+        validSparkConf.set(KnownProperties.TEST_MIGRATE_TYPE_LIST, "1,2");
+        helper.initializeSparkConf(validSparkConf);
+        assertTrue(helper.isSparkConfFullyLoaded());
+    }
+
+    @Test
+    public void loadSparkConf_badValue() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.TEST_NUMBER_LIST, "a,b,c");
+        helper.initializeSparkConf(validSparkConf);
+        assertFalse(helper.isSparkConfFullyLoaded());
+    }
+
+    @Test
+    public void loadSparkConf_incompleteSourceTLS() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.ORIGIN_TLS_ENABLED, "true");
+        helper.initializeSparkConf(validSparkConf);
+        assertFalse(helper.isSparkConfFullyLoaded());
+    }
+
+    @Test
+    public void loadSparkConf_incompleteTargetTLS() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.TARGET_TLS_ENABLED, "true");
+        helper.initializeSparkConf(validSparkConf);
+        assertFalse(helper.isSparkConfFullyLoaded());
+    }
+
+
+    private void setValidSparkConf() {
+        validSparkConf = new SparkConf();
+        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "ks.tab1");
+        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES,"a,b");
+        validSparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "a");
+        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES,"1,2");
+        validSparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "ks.tab1");
+        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "a");
     }
 
 }

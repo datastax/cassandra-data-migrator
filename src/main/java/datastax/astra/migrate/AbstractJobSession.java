@@ -39,8 +39,8 @@ public class AbstractJobSession extends BaseJobSession {
 
         printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
         if (!meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {
-            logger.warn(KnownProperties.SPARK_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefault(KnownProperties.SPARK_STATS_AFTER));
-            propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefault(KnownProperties.SPARK_STATS_AFTER));
+            logger.warn(KnownProperties.SPARK_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
+            propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
         }
 
         readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.SPARK_LIMIT_READ));
@@ -85,19 +85,23 @@ public class AbstractJobSession extends BaseJobSession {
         String selectCols = String.join(",", propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES));
         String partitionKey = String.join(",", propertyHelper.getStringList(KnownProperties.ORIGIN_PARTITION_KEY));
         String sourceSelectCondition = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_CONDITION);
-        if (!sourceSelectCondition.isEmpty() && !sourceSelectCondition.trim().toUpperCase().startsWith("AND")) {
+        if (null != sourceSelectCondition && !sourceSelectCondition.isEmpty() && !sourceSelectCondition.trim().toUpperCase().startsWith("AND")) {
             sourceSelectCondition = " AND " + sourceSelectCondition;
             propertyHelper.setProperty(KnownProperties.ORIGIN_FILTER_CONDITION, sourceSelectCondition);
         }
 
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
         allCols = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES);
-        ttlCols.forEach(col -> {
-            selectTTLWriteTimeCols.append(",ttl(" + allCols.get(col) + ")");
-        });
-        writeTimeStampCols.forEach(col -> {
-            selectTTLWriteTimeCols.append(",writetime(" + allCols.get(col) + ")");
-        });
+        if (null != ttlCols) {
+            ttlCols.forEach(col -> {
+                selectTTLWriteTimeCols.append(",ttl(" + allCols.get(col) + ")");
+            });
+        }
+        if (null != writeTimeStampCols) {
+            writeTimeStampCols.forEach(col -> {
+                selectTTLWriteTimeCols.append(",writetime(" + allCols.get(col) + ")");
+            });
+        }
         selectColTypes = propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
         String idCols = String.join(",", propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY));
         idColTypes = selectColTypes.subList(0, idCols.split(",").length);
@@ -124,8 +128,8 @@ public class AbstractJobSession extends BaseJobSession {
         } else {
             fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where " + insertBinds;
         }
+        logger.info("PARAM -- ORIGIN SELECT Query used: {}", fullSelectQuery);
         sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
-        logger.info("PARAM -- Query used: {}", fullSelectQuery);
 
         astraSelectStatement = astraSession.prepare(
                 "select " + insertCols + " from " + targetKeyspaceTable
@@ -135,6 +139,7 @@ public class AbstractJobSession extends BaseJobSession {
         isCounterTable = propertyHelper.getBoolean(KnownProperties.ORIGIN_IS_COUNTER);
         if (isCounterTable) {
             updateSelectMapping = propertyHelper.getIntegerList(KnownProperties.ORIGIN_COUNTER_INDEX);
+            logger.info("PARAM -- TARGET INSERT Query used: {}", KnownProperties.ORIGIN_COUNTER_CQL);
             astraInsertStatement = astraSession.prepare(propertyHelper.getString(KnownProperties.ORIGIN_COUNTER_CQL));
         } else {
             insertBinds = "";
@@ -147,14 +152,15 @@ public class AbstractJobSession extends BaseJobSession {
             }
 
             String fullInsertQuery = "insert into " + targetKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")";
-            if (!ttlCols.isEmpty()) {
+            if (null != ttlCols && !ttlCols.isEmpty()) {
                 fullInsertQuery += " USING TTL ?";
-                if (!writeTimeStampCols.isEmpty()) {
+                if (null != writeTimeStampCols &&  !writeTimeStampCols.isEmpty()) {
                     fullInsertQuery += " AND TIMESTAMP ?";
                 }
-            } else if (!writeTimeStampCols.isEmpty()) {
+            } else if (null != writeTimeStampCols &&  !writeTimeStampCols.isEmpty()) {
                 fullInsertQuery += " USING TIMESTAMP ?";
             }
+            logger.info("PARAM -- TARGET INSERT Query used: {}", fullInsertQuery);
             astraInsertStatement = astraSession.prepare(fullInsertQuery);
         }
 
@@ -183,11 +189,11 @@ public class AbstractJobSession extends BaseJobSession {
                 if (boundInsertStatement == null) return null;
             }
 
-            if (!ttlCols.isEmpty()) {
+            if (null != ttlCols && !ttlCols.isEmpty()) {
                 boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
                 index++;
             }
-            if (!writeTimeStampCols.isEmpty()) {
+            if (null != writeTimeStampCols && !writeTimeStampCols.isEmpty()) {
                 if (customWritetime > 0) {
                     boundInsertStatement = boundInsertStatement.set(index, customWritetime, Long.class);
                 } else {

@@ -27,7 +27,7 @@ public class MigrateDataType {
         if (dataType.contains("%")) {
             int count = 1;
             for (String type : dataType.split("%")) {
-                int typeAsInt = Integer.parseInt(type);
+                int typeAsInt = typeAsInt(type);
                 if (count == 1) {
                     this.type = typeAsInt;
                 } else {
@@ -36,7 +36,7 @@ public class MigrateDataType {
                 count++;
             }
         } else {
-            this.type = Integer.parseInt(dataType);
+            this.type = typeAsInt(dataType);
         }
         this.typeClass = getType(this.type);
 
@@ -51,6 +51,16 @@ public class MigrateDataType {
         else {
             isValid = false;
         }
+    }
+
+    private int typeAsInt(String dataType) {
+        int rtn = -1;
+        try {
+            rtn = Integer.parseInt(dataType);
+        } catch (NumberFormatException e) {
+            rtn = -1;
+        }
+        return rtn;
     }
 
     public boolean diff(Object source, Object astra) {

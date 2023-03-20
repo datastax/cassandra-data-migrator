@@ -1,21 +1,18 @@
 package datastax.astra.migrate.properties;
 
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import datastax.astra.migrate.MigrateDataType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class PropertyHelper extends KnownProperties{
     private static PropertyHelper instance = null;
 
-//    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final Map<String,Object> propertyMap;
     private volatile SparkConf sparkConf;
     private boolean sparkConfFullyLoaded = false;
@@ -87,6 +84,7 @@ public final class PropertyHelper extends KnownProperties{
         if (null == expectedType) {
             return null;
         }
+
         boolean typesMatch = validateType(expectedType, propertyValue);
         if (!typesMatch)
             return null;
@@ -97,20 +95,25 @@ public final class PropertyHelper extends KnownProperties{
         return propertyValue;
     }
 
+    protected Object get(String propertyName) {
+        if (null == propertyName)
+            return null;
+
+        Object currentProperty;
+        synchronized (PropertyHelper.class){
+            currentProperty = propertyMap.get(propertyName);
+        }
+        return currentProperty;
+    }
+
     protected Object get(String propertyName, PropertyType expectedType) {
         if (null == propertyName
                 || null == expectedType
                 || expectedType != getType(propertyName)) {
             return null;
         }
-        Object currentProperty;
-        synchronized (PropertyHelper.class){
-            currentProperty = propertyMap.get(propertyName);
-        }
+        Object currentProperty = get(propertyName);
 
-        if (null == currentProperty) {
-            return null;
-        }
         if (validateType(expectedType, currentProperty)) {
             return currentProperty;
         } else {
@@ -119,7 +122,8 @@ public final class PropertyHelper extends KnownProperties{
     }
 
     public String getString(String propertyName) {
-        return (String) get(propertyName, PropertyType.STRING);
+        String rtn = (String) get(propertyName, PropertyType.STRING);
+        return (null == rtn) ? "" : rtn;
     }
 
     public List<String> getStringList(String propertyName) {
@@ -156,8 +160,6 @@ public final class PropertyHelper extends KnownProperties{
                 || null==getNumberList(propertyName))
             return null;
         for (Number n : getNumberList(propertyName)) {
-            if (null == n)
-                return null;
             i = toInteger(n);
             if (null == i)
                 return null;
@@ -201,153 +203,107 @@ public final class PropertyHelper extends KnownProperties{
 
     protected void loadSparkConf() {
         boolean fullyLoaded = true;
+        Object setValue;
+
+        logger.info("Processing explicitly set and known sparkConf properties");
         for (Tuple2<String,String> kvp : sparkConf.getAll()) {
             String scKey = kvp._1();
             String scValue = kvp._2();
-            Object setValue = null;
-            boolean parsedAll = true;
-            MigrateDataType mdt;
-
-            if (isKnown(scKey)) {
-                switch (getType(scKey)) {
-                    case STRING:
-                        setValue = setProperty(scKey, sparkConf.get(scKey, getDefault(scKey)));
-                        break;
-                    case STRING_LIST:
-                        setValue = setProperty(scKey, sparkConf.get(scKey, getDefault(scKey)).split(","));
-                        break;
-                    case NUMBER:
-                        try {
-                            setValue = setProperty(scKey, sparkConf.getLong(scKey, Long.parseLong(getDefault(scKey))));
-                        } catch (NumberFormatException e) {
-//                            logger.warn("Unable to parse number for property: " + scKey + ", value: " + scValue + " with type: " + getType(scKey));
-                        }
-                        break;
-                    case NUMBER_LIST:
-                        List<Number> numList = new ArrayList<>();
-                        for (String s : sparkConf.get(scKey, getDefault(scKey)).split(",")) {
-                            try {
-                                numList.add(Long.parseLong(s.trim()));
-                            } catch (NumberFormatException e) {
-//                                logger.warn("Unable to parse number: " + s + " for property: " + scKey + ", value: " + scValue + " with type: " + getType(scKey));
-                                parsedAll = false;
-                            }
-                        }
-                        if (parsedAll) {
-                            setValue = setProperty(scKey, numList);
-                        }
-                        break;
-                    case BOOLEAN:
-                        setValue = setProperty(scKey, sparkConf.getBoolean(scKey, new Boolean(getDefault(scKey))));
-                        break;
-                    case MIGRATION_TYPE:
-                        mdt = new MigrateDataType(sparkConf.get(scKey, getDefault(scKey)));
-                        if (mdt.isValid()) {
-                            setValue = setProperty(scKey, mdt);
-                        }
-                        break;
-                    case MIGRATION_TYPE_LIST:
-                        List<MigrateDataType> mdtList = new ArrayList<>();
-                        for (String s : sparkConf.get(scKey, getDefault(scKey)).split(",")) {
-                            mdt = new MigrateDataType(s);
-                            if (mdt.isValid()) {
-                                mdtList.add(mdt);
-                            } else {
-//                                logger.warn("Unable to parse MigrateDataType: " + s + " for property: " + scKey + ", value: " + scValue + " with type: " + getType(scKey));
-                                parsedAll = false;
-                            }
-                        }
-                        if (parsedAll) {
-                            setValue = setProperty(scKey, mdtList);
-                        }
-                        break;
-                    default:
-                        break;
-                }
+;
+            if (KnownProperties.isKnown(scKey)) {
+                PropertyType propertyType = KnownProperties.getType(scKey);
+                setValue = setProperty(scKey, KnownProperties.asType(propertyType,scValue));
                 if (null == setValue) {
-//                    logger.warn("Unable to set property: " + scKey + ", value: " + scValue + " with type: " + getType(scKey));
+                    logger.error("Unable to set property: [" + scKey + "], value: [" + scValue + "] with type: [" + propertyType +"]");
                     fullyLoaded = false;
+                } else {
+                    logger.info("Known property [" + scKey + "] is configured with value [" + scValue + "] and is type [" + propertyType + "]");
                 }
-            }
-            else {
-//                logger.warn("Unknown property: " + scKey + ", value: " + scValue);
-                fullyLoaded = false;
             }
         }
+
+        logger.info("Adding any missing known properties that have default values");
+        for (String knownProperty : KnownProperties.getTypeMap().keySet()) {
+            if (null == get(knownProperty)) {
+                Object defaultValue = KnownProperties.getDefault(knownProperty);
+                if (null != defaultValue) {
+                    logger.info("Setting known property [" + knownProperty + "] with default value [" + KnownProperties.getDefaultAsString(knownProperty) + "]");
+                    setProperty(knownProperty, defaultValue);
+                }
+            }
+        }
+
+        // Target column list defaults to the source column list
+        if (null == get(KnownProperties.TARGET_COLUMN_NAMES) || getAsString(KnownProperties.TARGET_COLUMN_NAMES).isEmpty()) {
+            String originColumnNames = getAsString(KnownProperties.ORIGIN_COLUMN_NAMES);
+            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_NAMES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_NAMES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + "]");
+            setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
+        }
+
+        if (fullyLoaded) {
+            fullyLoaded = isValidConfig();
+        }
+
         this.sparkConfFullyLoaded = fullyLoaded;
     }
 
-    protected boolean validateType(PropertyType expectedType, Object currentProperty) {
-        switch (expectedType) {
-            case STRING:
-                if (currentProperty instanceof String) {
-                    return true;
-                }
-                break;
-            case STRING_LIST:
-                if (currentProperty instanceof List<?>) {
-                    List<?> list = (List<?>) currentProperty;
-                    if (list.isEmpty()) {
-                        return false;
-                    } else {
-                        for (Object o : list) {
-                            if (!(o instanceof String)) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                }
-                break;
-            case NUMBER:
-                if (currentProperty instanceof Number) {
-                    return true;
-                }
-                break;
-            case NUMBER_LIST:
-                if (currentProperty instanceof List<?>) {
-                    List<?> list = (List<?>) currentProperty;
-                    if (list.isEmpty()) {
-                        return false;
-                    } else {
-                        for (Object o : list) {
-                            if (!(o instanceof Number)) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                }
-                break;
-            case BOOLEAN:
-                if (currentProperty instanceof Boolean) {
-                    return true;
-                }
-                break;
-            case MIGRATION_TYPE:
-                if ((currentProperty instanceof MigrateDataType) && ((MigrateDataType) currentProperty).isValid()) {
-                    return true;
-                }
-                break;
-            case MIGRATION_TYPE_LIST:
-                if (currentProperty instanceof List<?>) {
-                    List<?> list = (List<?>) currentProperty;
-                    if (list.isEmpty()) {
-                        return false;
-                    } else {
-                        for (Object o : list) {
-                            if (!(o instanceof MigrateDataType) || !((MigrateDataType) o).isValid()) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                }
-                break;
-            default:
-                break;
+    protected boolean isValidConfig() {
+        boolean valid = true;
+
+        // First check over the simple-to-discover required properties
+        for (String requiredProperty : KnownProperties.getRequired()) {
+            if (null == get(requiredProperty) || getAsString(requiredProperty).isEmpty()) {
+                logger.error("Missing required property: " + requiredProperty);
+                valid = false;
+            }
         }
-        return false;
+
+        // Check we have a configured origin connection
+        if ( (null == get(KnownProperties.ORIGIN_CONNECT_HOST) && null == get(KnownProperties.ORIGIN_CONNECT_SCB)) ||
+                getAsString(KnownProperties.ORIGIN_CONNECT_HOST).isEmpty() && getAsString(KnownProperties.ORIGIN_CONNECT_SCB).isEmpty()) {
+            logger.error("Missing required property: " + KnownProperties.ORIGIN_CONNECT_HOST + " or " + KnownProperties.ORIGIN_CONNECT_SCB);
+            valid = false;
+        } else {
+            // Validate TLS configuration is set if so-enabled
+            if (null == get(KnownProperties.ORIGIN_CONNECT_SCB) && null != get(KnownProperties.ORIGIN_TLS_ENABLED) && getBoolean(KnownProperties.ORIGIN_TLS_ENABLED)) {
+                for (String expectedProperty : new String[]{KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH, KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD,
+                        KnownProperties.ORIGIN_TLS_TRUSTSTORE_TYPE, KnownProperties.ORIGIN_TLS_KEYSTORE_PATH, KnownProperties.ORIGIN_TLS_KEYSTORE_PASSWORD,
+                        KnownProperties.ORIGIN_TLS_ALGORITHMS}) {
+                    if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
+                        logger.error("TLS is enabled, but required value is not set: " + expectedProperty);
+                        valid = false;
+                    }
+                }
+            }
+        }
+
+        // Check we have a configured target connection
+        if ( (null == get(KnownProperties.TARGET_CONNECT_HOST) && null == get(KnownProperties.TARGET_CONNECT_SCB)) ||
+                getAsString(KnownProperties.TARGET_CONNECT_HOST).isEmpty() && getAsString(KnownProperties.TARGET_CONNECT_SCB).isEmpty()) {
+            logger.error("Missing required property: " + KnownProperties.TARGET_CONNECT_HOST + " or " + KnownProperties.TARGET_CONNECT_SCB);
+            valid = false;
+        } else {
+            // Validate TLS configuration is set if so-enabled
+            if (null == get(KnownProperties.TARGET_CONNECT_SCB) && null != get(KnownProperties.TARGET_TLS_ENABLED) && getBoolean(KnownProperties.TARGET_TLS_ENABLED)) {
+                for (String expectedProperty : new String[]{KnownProperties.TARGET_TLS_TRUSTSTORE_PATH, KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD,
+                        KnownProperties.TARGET_TLS_TRUSTSTORE_TYPE, KnownProperties.TARGET_TLS_KEYSTORE_PATH, KnownProperties.TARGET_TLS_KEYSTORE_PASSWORD,
+                        KnownProperties.TARGET_TLS_ALGORITHMS}) {
+                    if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
+                        logger.error("TLS is enabled, but required value is not set: " + expectedProperty);
+                        valid = false;
+                    }
+                }
+            }
+        }
+        
+        // Expecting these to normally be set, but it could be a valid configuration
+        for (String expectedProperty : new String[]{KnownProperties.ORIGIN_CONNECT_USERNAME, KnownProperties.ORIGIN_CONNECT_PASSWORD, KnownProperties.TARGET_CONNECT_USERNAME, KnownProperties.TARGET_CONNECT_PASSWORD}) {
+            if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
+                logger.warn("Unusual this is not set: " + expectedProperty);
+            }
+        }
+
+        return valid;
     }
 
     private Integer toInteger(Number n) {
