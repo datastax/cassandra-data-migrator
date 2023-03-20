@@ -71,8 +71,8 @@ public class DiffJobSession extends CopyJobSession {
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(srcRow -> {
                     readLimiter.acquire(1);
                     // do not process rows less than writeTimeStampFilter
-                    if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(srcRow) < minWriteTimeStampFilter
-                            || getLargestWriteTimeStamp(srcRow) > maxWriteTimeStampFilter))) {
+                    if (!(writeTimeStampFilter && (cqlHelper.getLargestWriteTimeStamp(srcRow) < minWriteTimeStampFilter
+                            || cqlHelper.getLargestWriteTimeStamp(srcRow) > maxWriteTimeStampFilter))) {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             printCounts(false);
                         }
@@ -175,7 +175,7 @@ public class DiffJobSession extends CopyJobSession {
             MigrateDataType dataTypeObj = selectColTypes.get(index);
             Object source = getData(dataTypeObj, index, sourceRow);
             if (index < idColTypes.size()) {
-                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
+                Optional<Object> optionalVal = cqlHelper.handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
                 if (optionalVal.isPresent()) {
                     source = optionalVal.get();
                 }

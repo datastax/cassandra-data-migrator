@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Deprecated
 public class OriginCountJobSession extends BaseJobSession {
     private static OriginCountJobSession originCountJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());

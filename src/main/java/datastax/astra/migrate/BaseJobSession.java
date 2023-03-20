@@ -37,7 +37,7 @@ public abstract class BaseJobSession {
     protected CqlSession astraSession;
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
-    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
+//    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
 
     protected Integer batchSize = 1;
     protected Integer fetchSizeInRows = 1000;

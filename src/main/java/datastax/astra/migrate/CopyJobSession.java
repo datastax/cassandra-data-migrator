@@ -80,7 +80,7 @@ public class CopyJobSession extends AbstractJobSession {
                         }
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
-                            Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
+                            Long sourceWriteTimeStamp = cqlHelper.getLargestWriteTimeStamp(sourceRow);
                             if (sourceWriteTimeStamp < minWriteTimeStampFilter
                                     || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
                                 skipCnt++;

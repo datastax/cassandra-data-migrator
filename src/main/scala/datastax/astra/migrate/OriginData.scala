@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
+@Deprecated
 object OriginData extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
