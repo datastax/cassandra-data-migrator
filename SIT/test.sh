@@ -35,7 +35,7 @@ fi
 . common.sh
 
 EXPECTED_FILES="setup.cql expected.cql expected.out execute.sh"
-GENERATED_FILES='setup.out setup.err execute.out execute.err actual.out actual.err cdm.*.out cdm.*.err'
+GENERATED_FILES='setup.out setup.err execute.out execute.err actual.out actual.err cdm.*.out cdm.*.err other.*.out other.*.err'
 CDM_JAR=/local/cassandra-data-migrator.jar
 
 echo "=========================================================="
@@ -151,3 +151,4 @@ echo
 echo "=========================================================="
 echo " Phase ${PHASE} Complete"
 echo "=========================================================="
+

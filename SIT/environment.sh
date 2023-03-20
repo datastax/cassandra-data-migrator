@@ -210,7 +210,7 @@ _Setup() {
     _info "Pulling latest Docker container for ${dockerContainerVersion}"
     docker pull ${dockerContainerVersion}
     _info "Starting Docker container ${DOCKER_CASS}"
-    docker run --name $DOCKER_CASS --network ${NETWORK_NAME} --ip ${SUBNET}.2 -d ${dockerContainerVersion}
+    docker run --name $DOCKER_CASS --network ${NETWORK_NAME} --ip ${SUBNET}.2 -e "CASS_USERNAME=${CASS_USERNAME}" -e "CASS_PASSWORD=${CASS_PASSWORD}" -e "CASS_CLUSTER=${DOCKER_CASS}" -d ${dockerContainerVersion}
     attempt=1
     while [[ $attempt -le 12 && "$(_testDockerCassandra)" != "yes" ]]; do
       _info "waiting for Cassandra to start, attempt $attempt"
@@ -231,7 +231,7 @@ _Setup() {
     _info "Pulling latest Docker container for ${dockerContainerVersion}"
     docker pull ${dockerContainerVersion}
     _info "Starting Docker container ${DOCKER_CASS}"
-    docker run --name ${DOCKER_CDM} --network ${NETWORK_NAME} --ip ${SUBNET}.3 -d ${dockerContainerVersion}
+    docker run --name ${DOCKER_CDM} --network ${NETWORK_NAME} --ip ${SUBNET}.3 -e "CASS_USERNAME=${CASS_USERNAME}" -e "CASS_PASSWORD=${CASS_PASSWORD}" -e "CASS_CLUSTER=${DOCKER_CASS}" -d ${dockerContainerVersion}
     attempt=1
     while [[ $attempt -le 12 && "$(_testDockerCDM)" != "yes" ]]; do
       _info "waiting for CDM to start, attempt $attempt"
