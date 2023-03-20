@@ -542,6 +542,16 @@ public class PropertyHelperTest {
     }
 
 
+    @Test
+    public void meetsMinimum_true() {
+        assertTrue(helper.meetsMinimum("a", 100,0));
+    }
+
+    @Test
+    public void meetsMinimum_false() {
+        assertFalse(helper.meetsMinimum("a", 1,100));
+    }
+
     private void setValidSparkConf() {
         validSparkConf = new SparkConf();
         validSparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");

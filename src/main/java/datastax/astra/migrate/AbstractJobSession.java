@@ -38,7 +38,7 @@ public class AbstractJobSession extends BaseJobSession {
         fetchSizeInRows = propertyHelper.getInteger(KnownProperties.READ_FETCH_SIZE);
 
         printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
-        if (!meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {
+        if (!propertyHelper.meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {
             logger.warn(KnownProperties.SPARK_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
             propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
         }
@@ -275,10 +275,4 @@ public class AbstractJobSession extends BaseJobSession {
         return Optional.of(colData);
     }
 
-    private boolean meetsMinimum(String valueName, Integer testValue, Integer minimumValue) {
-        if (null != minimumValue && null != testValue && testValue >= minimumValue)
-            return true;
-        logger.warn(valueName + " must be greater than or equal to " + minimumValue + ".  Current value does not meet this requirement: " + testValue);
-        return false;
-    }
 }

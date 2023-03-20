@@ -326,4 +326,11 @@ public final class PropertyHelper extends KnownProperties{
     public boolean isSparkConfFullyLoaded() {
         return sparkConfFullyLoaded;
     }
+
+    public boolean meetsMinimum(String valueName, Integer testValue, Integer minimumValue) {
+        if (null != minimumValue && null != testValue && testValue >= minimumValue)
+            return true;
+        logger.warn(valueName + " must be greater than or equal to " + minimumValue + ".  Current value does not meet this requirement: " + testValue);
+        return false;
+    }
 }

@@ -1,5 +1,22 @@
 package datastax.astra.migrate;
 
+/**
+ *
+ *  NOTE: this class is broken. Per Pravin:
+ *
+ *  That class is most likely broken & thay prop spark.query.cols.id.types was used to find
+ *  the data-types of primary-key columns. The tool (Migration & Validation) was improved to
+ *  auto-detect those types from the main types, so its no longer used in the main classes
+ *  any more. It was used for iHeartMedia to check on guardrail issues during migration.
+ *
+ * Mainly Mike had coded that class, i wud like it to be rewritten & incorporated in the main
+ * class (with a param for guardrail check), so that we do not have to maintain a completely
+ * different utility.
+ *
+ * Its difficult to maintain it in the current form, but the feature itself is useful in some
+ * scenarios
+ */
+
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
