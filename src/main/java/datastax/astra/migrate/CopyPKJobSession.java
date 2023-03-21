@@ -21,15 +21,15 @@ public class CopyPKJobSession extends AbstractJobSession {
     protected AtomicLong missingCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
-    protected CopyPKJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
-        super(sourceSession, astraSession, sc, true);
+    protected CopyPKJobSession(CqlSession originSessionSession, CqlSession targetSession, SparkConf sc) {
+        super(originSessionSession, targetSession, sc, true);
     }
 
-    public static CopyPKJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
+    public static CopyPKJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         if (copyJobSession == null) {
             synchronized (CopyPKJobSession.class) {
                 if (copyJobSession == null) {
-                    copyJobSession = new CopyPKJobSession(sourceSession, astraSession, sc);
+                    copyJobSession = new CopyPKJobSession(originSession, targetSession, sc);
                 }
             }
         }
@@ -43,19 +43,19 @@ public class CopyPKJobSession extends AbstractJobSession {
                 readCounter.incrementAndGet();
                 String[] pkFields = row.split(" %% ");
                 int idx = 0;
-                BoundStatement bspk = sourceSelectStatement.bind().setConsistencyLevel(readConsistencyLevel);
-                for (MigrateDataType tp : idColTypes) {
+                BoundStatement bspk = cqlHelper.getPreparedStatement(CqlHelper.CQL.ORIGIN_SELECT).bind().setConsistencyLevel(cqlHelper.getReadConsistencyLevel());
+                for (MigrateDataType tp : cqlHelper.getIdColTypes()) {
                     bspk = bspk.set(idx, convert(tp.typeClass, pkFields[idx]), tp.typeClass);
                     idx++;
                 }
-                Row pkRow = sourceSession.execute(bspk).one();
+                Row pkRow = cqlHelper.getOriginSession().execute(bspk).one();
                 if (null == pkRow) {
                     missingCounter.incrementAndGet();
                     logger.error("Could not find row with primary-key: {}", row);
                     return;
                 }
-                ResultSet astraWriteResultSet = astraSession
-                        .execute(bindInsert(astraInsertStatement, pkRow, null));
+                ResultSet targetWriteResultSet = cqlHelper.getTargetSession()
+                        .execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null));
                 writeCounter.incrementAndGet();
                 if (readCounter.get() % printStatsAfter == 0) {
                     printCounts(false);

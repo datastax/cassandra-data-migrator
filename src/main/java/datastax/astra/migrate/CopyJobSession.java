@@ -2,7 +2,6 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
-import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,20 +21,15 @@ public class CopyJobSession extends AbstractJobSession {
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
 
-    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
-        super(sourceSession, astraSession, sc);
-        filterData = propertyHelper.getBoolean(KnownProperties.ORIGIN_FILTER_COLUMN_ENABLED);
-        filterColName = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
-        filterColType = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE); // TODO: this is a string, but should be MigrationDataType?
-        filterColIndex = propertyHelper.getInteger(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX);
-        filterColValue = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_VALUE);
+    protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+        super(originSession, targetSession, sc);
     }
 
-    public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
+    public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         if (copyJobSession == null) {
             synchronized (CopyJobSession.class) {
                 if (copyJobSession == null) {
-                    copyJobSession = new CopyJobSession(sourceSession, astraSession, sc);
+                    copyJobSession = new CopyJobSession(originSession, targetSession, sc);
                 }
             }
         }
@@ -53,57 +47,60 @@ public class CopyJobSession extends AbstractJobSession {
             long skipCnt = 0;
             long errCnt = 0;
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
-                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
-                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
+                ResultSet resultSet = cqlHelper.getOriginSession().execute(
+                        cqlHelper.getPreparedStatement(CqlHelper.CQL.ORIGIN_SELECT)
+                            .bind(cqlHelper.hasRandomPartitioner() ? min : min.longValueExact(),
+                                    cqlHelper.hasRandomPartitioner() ? max : max.longValueExact())
+                            .setConsistencyLevel(cqlHelper.getReadConsistencyLevel())
+                            .setPageSize(cqlHelper.getFetchSizeInRows()));
 
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
                 // maxWriteTimeStampFilter is less than max long
                 // do not batch for counters as it adds latency & increases chance of discrepancy
-                if (batchSize == 1 || writeTimeStampFilter || isCounterTable) {
-                    for (Row sourceRow : resultSet) {
+                if (cqlHelper.getBatchSize() == 1 || cqlHelper.hasWriteTimestampFilter() || cqlHelper.isCounterTable()) {
+                    for (Row originRow : resultSet) {
                         readLimiter.acquire(1);
                         readCnt++;
                         if (readCnt % printStatsAfter == 0) {
                             printCounts(false);
                         }
 
-                        if (filterData) {
-                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
-                            if (col.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                        if (cqlHelper.hasFilterColumn()) {
+                            String col = (String) cqlHelper.getData(cqlHelper.getFilterColType(), cqlHelper.getFilterColIndex(), originRow);
+                            if (col.trim().equalsIgnoreCase(cqlHelper.getFilterColValue())) {
+                                logger.warn("Skipping row and filtering out: {}", cqlHelper.getKey(originRow));
                                 skipCnt++;
                                 continue;
                             }
                         }
-                        if (writeTimeStampFilter) {
+                        if (cqlHelper.hasWriteTimestampFilter()) {
                             // only process rows greater than writeTimeStampFilter
-                            Long sourceWriteTimeStamp = cqlHelper.getLargestWriteTimeStamp(sourceRow);
-                            if (sourceWriteTimeStamp < minWriteTimeStampFilter
-                                    || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
+                            Long originWriteTimeStamp = cqlHelper.getLargestWriteTimeStamp(originRow);
+                            if (originWriteTimeStamp < cqlHelper.getMinWriteTimeStampFilter()
+                                    || originWriteTimeStamp > cqlHelper.getMaxWriteTimeStampFilter()) {
                                 skipCnt++;
                                 continue;
                             }
                         }
                         writeLimiter.acquire(1);
 
-                        Row astraRow = null;
-                        if (isCounterTable) {
-                            ResultSet astraReadResultSet = astraSession
-                                    .execute(selectFromAstra(astraSelectStatement, sourceRow));
-                            astraRow = astraReadResultSet.one();
+                        Row targetRow = null;
+                        if (cqlHelper.isCounterTable()) {
+                            ResultSet targetResultSet = cqlHelper.getTargetSession()
+                                    .execute(cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_BY_PK), originRow));
+                            targetRow = targetResultSet.one();
                         }
 
-                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, astraRow);
+                        BoundStatement bInsert = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
                         }
-                        CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession.executeAsync(bInsert);
-                        writeResults.add(astraWriteResultSet);
-                        if (writeResults.size() > fetchSizeInRows) {
+                        CompletionStage<AsyncResultSet> targetWriteResultSet = cqlHelper.getTargetSession().executeAsync(bInsert);
+                        writeResults.add(targetWriteResultSet);
+                        if (writeResults.size() > cqlHelper.getFetchSizeInRows()) {
                             writeCnt += iterateAndClearWriteResults(writeResults, 1);
                         }
                     }
@@ -112,24 +109,24 @@ public class CopyJobSession extends AbstractJobSession {
                     writeCnt += iterateAndClearWriteResults(writeResults, 1);
                 } else {
                     BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-                    for (Row sourceRow : resultSet) {
+                    for (Row originRow : resultSet) {
                         readLimiter.acquire(1);
                         readCnt++;
                         if (readCnt % printStatsAfter == 0) {
                             printCounts(false);
                         }
 
-                        if (filterData) {
-                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
-                            if (colValue.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                        if (cqlHelper.hasFilterColumn()) {
+                            String colValue = (String) cqlHelper.getData(cqlHelper.getFilterColType(), cqlHelper.getFilterColIndex(), originRow);
+                            if (colValue.trim().equalsIgnoreCase(cqlHelper.getFilterColValue())) {
+                                logger.warn("Skipping row and filtering out: {}", cqlHelper.getKey(originRow));
                                 skipCnt++;
                                 continue;
                             }
                         }
 
                         writeLimiter.acquire(1);
-                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, null);
+                        BoundStatement bInsert = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
@@ -137,23 +134,23 @@ public class CopyJobSession extends AbstractJobSession {
                         batchStatement = batchStatement.add(bInsert);
 
                         // if batch threshold is met, send the writes and clear the batch
-                        if (batchStatement.size() >= batchSize) {
-                            CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                        if (batchStatement.size() >= cqlHelper.getBatchSize()) {
+                            CompletionStage<AsyncResultSet> writeResultSet = cqlHelper.getTargetSession().executeAsync(batchStatement);
                             writeResults.add(writeResultSet);
                             batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                         }
 
-                        if (writeResults.size() * batchSize > fetchSizeInRows) {
-                            writeCnt += iterateAndClearWriteResults(writeResults, batchSize);
+                        if (writeResults.size() * cqlHelper.getBatchSize() > cqlHelper.getFetchSizeInRows()) {
+                            writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
                         }
                     }
 
                     // clear the write resultset
-                    writeCnt += iterateAndClearWriteResults(writeResults, batchSize);
+                    writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
 
                     // if there are any pending writes because the batchSize threshold was not met, then write and clear them
                     if (batchStatement.size() > 0) {
-                        CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                        CompletionStage<AsyncResultSet> writeResultSet = cqlHelper.getTargetSession().executeAsync(batchStatement);
                         writeResults.add(writeResultSet);
                         writeCnt += iterateAndClearWriteResults(writeResults, batchStatement.size());
                         batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);

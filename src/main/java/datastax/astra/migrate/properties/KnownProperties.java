@@ -122,7 +122,7 @@ public class KnownProperties {
            types.put(ORIGIN_FILTER_COLUMN_NAME, PropertyType.STRING);
            types.put(ORIGIN_FILTER_COLUMN_INDEX, PropertyType.NUMBER);
         defaults.put(ORIGIN_FILTER_COLUMN_INDEX, "0");
-           types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.STRING);
+           types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.MIGRATION_TYPE);
            types.put(ORIGIN_FILTER_COLUMN_VALUE, PropertyType.STRING);
            types.put(ORIGIN_COVERAGE_PERCENT, PropertyType.NUMBER);
         defaults.put(ORIGIN_COVERAGE_PERCENT, "100");
