@@ -5,21 +5,21 @@ import java.util.Arrays;
 
 import datastax.astra.migrate.MigrateDataType;
 import org.apache.spark.SparkConf;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PropertyHelperTest {
     PropertyHelper helper;
     SparkConf validSparkConf;
-    @Before
+
+    @BeforeEach
     public void setup() {
         helper = PropertyHelper.getInstance();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         PropertyHelper.destroyInstance();
         validSparkConf = null;

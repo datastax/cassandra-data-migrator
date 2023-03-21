@@ -37,7 +37,6 @@ public class CqlHelper {
 
     private boolean isJobMigrateRowsFromFile = false;
     private final PropertyHelper propertyHelper;
-    private boolean isInitialized = false;
 
     ////////////////////////////////////////////////
 
@@ -46,9 +45,6 @@ public class CqlHelper {
     }
 
     public void initialize() {
-        if (null == originSession || originSession.isClosed() || null == targetSession || targetSession.isClosed()) {
-            throw new RuntimeException("Origin and/or Target sessions are either not set, or are cloasd");
-        }
 
         readConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.READ_CL));
         writeConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));;
@@ -81,8 +77,6 @@ public class CqlHelper {
         logger.info("PARAM -- ORIGIN SELECT Query used: {}", cqlMap.get(CQL.ORIGIN_SELECT));
         logger.info("PARAM -- TARGET INSERT Query used: {}", cqlMap.get(CQL.TARGET_INSERT));
         logger.info("PARAM -- TARGET SELECT Query used: {}", cqlMap.get(CQL.TARGET_SELECT_ORIGIN_BY_PK));
-
-        isInitialized = true;
     }
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row originRow, Row targetRow) {
@@ -139,31 +133,31 @@ public class CqlHelper {
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
         if (null != getTtlCols()) {
             getTtlCols().forEach(col -> {
-                selectTTLWriteTimeCols.append(",ttl(" + getOriginColumnNames().get(col) + ")");
+                selectTTLWriteTimeCols.append(",TTL(" + getOriginColumnNames().get(col) + ")");
             });
         }
         if (null != getWriteTimeStampCols()) {
             getWriteTimeStampCols().forEach(col -> {
-                selectTTLWriteTimeCols.append(",writetime(" + getOriginColumnNames().get(col) + ")");
+                selectTTLWriteTimeCols.append(",WRITETIME(" + getOriginColumnNames().get(col) + ")");
             });
         }
 
         String fullSelectQuery;
         if (!isJobMigrateRowsFromFile) {
             String partitionKey = propertyHelper.getAsString(KnownProperties.ORIGIN_PARTITION_KEY).trim();
-            fullSelectQuery = "select " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + selectTTLWriteTimeCols + " from " + getOriginKeyspaceTable() +
-                    " where token(" + partitionKey + ") >= ? and token(" + partitionKey + ") <= ?  " +
+            fullSelectQuery = "SELECT " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + selectTTLWriteTimeCols + " FROM " + getOriginKeyspaceTable() +
+                    " WHERE TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ? " +
                     getOriginFilterCondition() + " ALLOW FILTERING";
         } else {
             String keyBinds = "";
             for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
                 if (keyBinds.isEmpty()) {
-                    keyBinds = key + "= ?";
+                    keyBinds = key + "=?";
                 } else {
-                    keyBinds += " and " + key + "= ?";
+                    keyBinds += " AND " + key + "=?";
                 }
             }
-            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + getOriginKeyspaceTable() + " where " + keyBinds;
+            fullSelectQuery = "SELECT " + selectCols + selectTTLWriteTimeCols + " FROM " + getOriginKeyspaceTable() + " WHERE " + keyBinds;
         }
         return fullSelectQuery;
     }
@@ -178,10 +172,10 @@ public class CqlHelper {
                 if (insertBinds.isEmpty()) {
                     insertBinds = "?";
                 } else {
-                    insertBinds += ", ?";
+                    insertBinds += ",?";
                 }
             }
-            targetInsertQuery = "insert into " + getTargetKeyspaceTable() + " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + ") VALUES (" + insertBinds + ")";
+            targetInsertQuery = "INSERT INTO " + getTargetKeyspaceTable() + " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + ") VALUES (" + insertBinds + ")";
             if (null != getTtlCols() && !getTtlCols().isEmpty()) {
                 targetInsertQuery += " USING TTL ?";
                 if (null != getWriteTimeStampCols() &&  !getWriteTimeStampCols().isEmpty()) {
@@ -198,13 +192,13 @@ public class CqlHelper {
         String keyBinds = "";
         for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
             if (keyBinds.isEmpty()) {
-                keyBinds = key + "= ?";
+                keyBinds = key + "=?";
             } else {
-                keyBinds += " and " + key + "= ?";
+                keyBinds += " AND " + key + "=?";
             }
         }
 
-        return "select " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + " from " + getTargetKeyspaceTable() + " where " + keyBinds;
+        return "SELECT " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + " FROM " + getTargetKeyspaceTable() + " WHERE " + keyBinds;
     }
 
     public long getLargestWriteTimeStamp(Row row) {
@@ -313,9 +307,6 @@ public class CqlHelper {
 
     // Getters
     public String getCql(CQL cql) {
-        if (!isInitialized)
-            throw new RuntimeException("CqlHelper not initialized. Call initialize() first.");
-
         if (!cqlMap.containsKey(cql)) {
             switch (cql) {
                 case ORIGIN_SELECT:
@@ -333,8 +324,7 @@ public class CqlHelper {
     }
 
     public PreparedStatement getPreparedStatement(CQL cql) {
-        if (!isInitialized)
-            throw new RuntimeException("CqlHelper not initialized. Call initialize() first.");
+        abendIfSessionsNotSet();
 
         if (!preparedStatementMap.containsKey(cql)) {
             switch (cql) {
@@ -351,10 +341,12 @@ public class CqlHelper {
     }
 
     public CqlSession getOriginSession() {
+        abendIfSessionsNotSet();
         return originSession;
     }
 
     public CqlSession getTargetSession() {
+        abendIfSessionsNotSet();
         return targetSession;
     }
 
@@ -449,5 +441,11 @@ public class CqlHelper {
 
     private String getOriginFilterCondition() {
         return propertyHelper.getString(KnownProperties.ORIGIN_FILTER_CONDITION);
+    }
+
+    private void abendIfSessionsNotSet() {
+        if (null == originSession || originSession.isClosed() || null == targetSession || targetSession.isClosed()) {
+            throw new RuntimeException("Origin and/or Target sessions are either not set, or are closed");
+        }
     }
 }

@@ -1,14 +1,13 @@
 package datastax.astra.migrate.properties;
 
 import datastax.astra.migrate.MigrateDataType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
 
 import static datastax.astra.migrate.properties.KnownProperties.TEST_NUMBER_LIST_DEFAULT;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class KnownPropertiesTest {
 
