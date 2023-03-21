@@ -240,6 +240,15 @@ public final class PropertyHelper extends KnownProperties{
             setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
         }
 
+        // Target column list defaults to the source column list
+        if (null == get(KnownProperties.TARGET_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.TARGET_PRIMARY_KEY_TYPES).isEmpty()) {
+            if (null != getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES) && !getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES).isEmpty()) {
+                List<MigrateDataType> targetPKTypes = getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES).subList(0, getStringList(KnownProperties.TARGET_PRIMARY_KEY).size());
+                logger.info("Setting known property [" + KnownProperties.TARGET_PRIMARY_KEY_TYPES + "] based on [" + KnownProperties.ORIGIN_COLUMN_TYPES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_TYPES) + "]");
+                setProperty(KnownProperties.TARGET_PRIMARY_KEY_TYPES, targetPKTypes);
+            }
+        }
+
         if (fullyLoaded) {
             fullyLoaded = isValidConfig();
         }

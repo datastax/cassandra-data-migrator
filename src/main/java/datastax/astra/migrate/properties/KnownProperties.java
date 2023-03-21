@@ -70,7 +70,7 @@ public class KnownProperties {
     public static final String ORIGIN_WRITETIME_COLS  = "spark.query.writetime.cols";      // 2,3
     public static final String ORIGIN_IS_COUNTER      = "spark.counterTable";              // false
     public static final String ORIGIN_COUNTER_CQL     = "spark.counterTable.cql";
-    public static final String ORIGIN_COUNTER_INDEX   = "spark.counterTable.cql.index";    // 0
+    public static final String ORIGIN_COUNTER_INDEXES = "spark.counterTable.cql.index";    // 0
     static {
            types.put(ORIGIN_KEYSPACE_TABLE, PropertyType.STRING);
         required.add(ORIGIN_KEYSPACE_TABLE);
@@ -85,8 +85,8 @@ public class KnownProperties {
            types.put(ORIGIN_IS_COUNTER, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_IS_COUNTER, "false");
            types.put(ORIGIN_COUNTER_CQL, PropertyType.STRING);
-           types.put(ORIGIN_COUNTER_INDEX, PropertyType.NUMBER_LIST);
-        defaults.put(ORIGIN_COUNTER_INDEX, "0");
+           types.put(ORIGIN_COUNTER_INDEXES, PropertyType.NUMBER_LIST);
+        defaults.put(ORIGIN_COUNTER_INDEXES, "0");
 
     }
 
@@ -98,11 +98,10 @@ public class KnownProperties {
     public static final String ORIGIN_FILTER_WRITETS_MIN     = "spark.origin.minWriteTimeStampFilter";  // 0
     public static final String ORIGIN_FILTER_WRITETS_MAX     = "spark.origin.maxWriteTimeStampFilter";  // 4102444800000000
     public static final String ORIGIN_FILTER_COLUMN_ENABLED  = "spark.origin.FilterData";               // false
-    public static final String ORIGIN_FILTER_COLUMN_NAME     = "spark.origin.FilterColumn";             // test
     public static final String ORIGIN_FILTER_COLUMN_INDEX    = "spark.origin.FilterColumnIndex";        // 2
     public static final String ORIGIN_FILTER_COLUMN_TYPE     = "spark.origin.FilterColumnType";         // 6%16
     public static final String ORIGIN_FILTER_COLUMN_VALUE    = "spark.origin.FilterColumnValue";        // test
-    public static final String ORIGIN_COVERAGE_PERCENT       =  "spark.coveragePercent";                // 100
+    public static final String ORIGIN_COVERAGE_PERCENT       = "spark.coveragePercent";                 // 100
     public static final String ORIGIN_HAS_RANDOM_PARTITIONER = "spark.origin.hasRandomPartitioner";     // false
 
     public static final String ORIGIN_CHECK_COLSIZE_ENABLED      = "spark.origin.checkTableforColSize";            // false
@@ -119,7 +118,6 @@ public class KnownProperties {
         defaults.put(ORIGIN_FILTER_WRITETS_MAX, "0");
            types.put(ORIGIN_FILTER_COLUMN_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "false");
-           types.put(ORIGIN_FILTER_COLUMN_NAME, PropertyType.STRING);
            types.put(ORIGIN_FILTER_COLUMN_INDEX, PropertyType.NUMBER);
         defaults.put(ORIGIN_FILTER_COLUMN_INDEX, "0");
            types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.MIGRATION_TYPE);
@@ -140,6 +138,7 @@ public class KnownProperties {
     //==========================================================================
     public static final String TARGET_KEYSPACE_TABLE       = "spark.target.keyspaceTable";        // test.a1
     public static final String TARGET_PRIMARY_KEY          = "spark.query.target.id";             // comma-separated-partition-key,comma-separated-clustering-key
+    public static final String TARGET_PRIMARY_KEY_TYPES    = "spark.query.target.id.types";       // 9,1,4,3
     public static final String TARGET_COLUMN_NAMES         = "spark.query.target";
     public static final String TARGET_CUSTOM_WRITETIME     = "spark.target.custom.writeTime";     // 0
     public static final String TARGET_AUTOCORRECT_MISSING  = "spark.target.autocorrect.missing";  // false
@@ -150,6 +149,7 @@ public class KnownProperties {
         required.add(TARGET_KEYSPACE_TABLE);
            types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
         required.add(TARGET_PRIMARY_KEY);
+           types.put(TARGET_PRIMARY_KEY_TYPES, PropertyType.MIGRATION_TYPE_LIST);
            types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
         required.add(TARGET_COLUMN_NAMES); // we need this, though it should be defaulted with ORIGIN_COLUMN_NAMES value
            types.put(TARGET_CUSTOM_WRITETIME, PropertyType.NUMBER);

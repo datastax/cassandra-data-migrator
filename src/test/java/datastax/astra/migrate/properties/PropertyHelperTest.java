@@ -210,6 +210,12 @@ public class PropertyHelperTest {
     }
 
     @Test
+    public void getNumber_NullValue() {
+        helper.setProperty(KnownProperties.TEST_NUMBER, null);
+        assertNull(helper.getNumber(KnownProperties.TEST_NUMBER));
+    }
+
+    @Test
     public void getInteger_Integer() {
         helper.setProperty(KnownProperties.TEST_NUMBER, 1234);
         assertEquals(Integer.valueOf(1234), helper.getInteger(KnownProperties.TEST_NUMBER));

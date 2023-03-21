@@ -11,8 +11,8 @@ public class AbstractJobSession extends BaseJobSession {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
-        this(sourceSession, astraSession, sc, false);
+    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+        this(originSession, targetSession, sc, false);
     }
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {

@@ -80,7 +80,7 @@ public class DiffJobSession extends CopyJobSession {
                             printCounts(false);
                         }
 
-                        BoundStatement bSelect = cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_BY_PK), srcRow);
+                        BoundStatement bSelect = cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_ORIGIN_BY_PK), srcRow);
                         if (null == bSelect) {
                             skippedCounter.incrementAndGet();
                         } else {

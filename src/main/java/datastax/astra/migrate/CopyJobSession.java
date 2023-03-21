@@ -89,7 +89,7 @@ public class CopyJobSession extends AbstractJobSession {
                         Row targetRow = null;
                         if (cqlHelper.isCounterTable()) {
                             ResultSet targetResultSet = cqlHelper.getTargetSession()
-                                    .execute(cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_BY_PK), originRow));
+                                    .execute(cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_ORIGIN_BY_PK), originRow));
                             targetRow = targetResultSet.one();
                         }
 
