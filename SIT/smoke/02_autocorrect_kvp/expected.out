@@ -1,0 +1,8 @@
+
+ key  | value
+------+--------
+ key1 | valueA
+ key3 | valueC
+ key2 | valueB
+
+(3 rows)
