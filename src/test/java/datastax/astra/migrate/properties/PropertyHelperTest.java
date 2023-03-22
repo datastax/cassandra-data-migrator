@@ -477,7 +477,7 @@ public class PropertyHelperTest {
     @Test
     public void getAsString_nullUnhanldedType() {
         helper.setProperty(KnownProperties.TEST_UNHANDLED_TYPE, "abcd");
-        assertNull(helper.getAsString(KnownProperties.TEST_UNHANDLED_TYPE));
+        assertEquals("",helper.getAsString(KnownProperties.TEST_UNHANDLED_TYPE));
     }
 
     @Test
