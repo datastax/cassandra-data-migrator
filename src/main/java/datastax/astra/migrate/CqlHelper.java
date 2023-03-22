@@ -196,7 +196,7 @@ public class CqlHelper {
             }
         }
 
-        return "SELECT " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + " FROM " + getTargetKeyspaceTable() + " WHERE " + keyBinds;
+        return "SELECT " + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + " FROM " + getTargetKeyspaceTable() + " WHERE " + keyBinds;
     }
 
     public long getLargestWriteTimeStamp(Row row) {
