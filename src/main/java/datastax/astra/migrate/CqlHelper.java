@@ -74,9 +74,9 @@ public class CqlHelper {
             logger.info("PARAM -- maxWriteTimeStampFilter: {} datetime is {}", getMaxWriteTimeStampFilter(),
                     Instant.ofEpochMilli(getMaxWriteTimeStampFilter() / 1000));
         }
-        logger.info("PARAM -- ORIGIN SELECT Query used: {}", cqlMap.get(CQL.ORIGIN_SELECT));
-        logger.info("PARAM -- TARGET INSERT Query used: {}", cqlMap.get(CQL.TARGET_INSERT));
-        logger.info("PARAM -- TARGET SELECT Query used: {}", cqlMap.get(CQL.TARGET_SELECT_ORIGIN_BY_PK));
+        logger.info("PARAM -- ORIGIN SELECT Query used: {}", getCql(CQL.ORIGIN_SELECT));
+        logger.info("PARAM -- TARGET INSERT Query used: {}", getCql(CQL.TARGET_INSERT));
+        logger.info("PARAM -- TARGET SELECT Query used: {}", getCql(CQL.TARGET_SELECT_ORIGIN_BY_PK));
     }
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row originRow, Row targetRow) {
@@ -128,8 +128,6 @@ public class CqlHelper {
     }
 
     private String cqlOriginSelect() {
-        String selectCols = propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES);
-
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
         if (null != getTtlCols()) {
             getTtlCols().forEach(col -> {
@@ -157,7 +155,7 @@ public class CqlHelper {
                     keyBinds += " AND " + key + "=?";
                 }
             }
-            fullSelectQuery = "SELECT " + selectCols + selectTTLWriteTimeCols + " FROM " + getOriginKeyspaceTable() + " WHERE " + keyBinds;
+            fullSelectQuery = "SELECT " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + selectTTLWriteTimeCols + " FROM " + getOriginKeyspaceTable() + " WHERE " + keyBinds;
         }
         return fullSelectQuery;
     }
