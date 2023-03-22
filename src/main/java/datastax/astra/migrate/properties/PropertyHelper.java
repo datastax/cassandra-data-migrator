@@ -181,24 +181,28 @@ public final class PropertyHelper extends KnownProperties{
     }
 
     public String getAsString(String propertyName) {
+        String rtn;
         if (null == propertyName)
             return null;
         Object propertyValue = get(propertyName, getType(propertyName));
         if (null == propertyValue)
-            return null;
+            return "";
         switch (getType(propertyName)) {
             case STRING:
-                return (String) propertyValue;
+                rtn = (String) propertyValue;
+                break;
             case STRING_LIST:
             case NUMBER_LIST:
             case MIGRATION_TYPE_LIST:
-                return StringUtils.join((List<?>) propertyValue, ",");
+                rtn = StringUtils.join((List<?>) propertyValue, ",");
+                break;
             case NUMBER:
             case BOOLEAN:
             case MIGRATION_TYPE:
             default:
-                return propertyValue.toString();
+                rtn = propertyValue.toString();
         }
+        return (null == rtn) ? "" : rtn;
     }
 
     protected void loadSparkConf() {

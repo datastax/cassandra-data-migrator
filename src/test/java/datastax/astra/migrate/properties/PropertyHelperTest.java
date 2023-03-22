@@ -459,15 +459,15 @@ public class PropertyHelperTest {
         assertEquals("0,5%0%1", helper.getAsString(KnownProperties.TEST_MIGRATE_TYPE_LIST));
     }
 
-//    @Test
-//    public void getAsString_valueNotSet_withDefault() {
-//        assertEquals(KnownProperties.getDefaultAsString(KnownProperties.TEST_STRING),helper.getAsString(KnownProperties.TEST_STRING));
-//    }
-//
-//    @Test
-//    public void getAsString_valueNotSet_noDefault() {
-//        assertNull(helper.getAsString(KnownProperties.TEST_STRING_NO_DEFAULT));
-//    }
+    @Test
+    public void getAsString_valueNotSet_string() {
+        assertEquals("",helper.getAsString(KnownProperties.TEST_STRING_NO_DEFAULT));
+    }
+
+    @Test
+    public void getAsString_valueNotSet_list() {
+        assertEquals("",helper.getAsString(KnownProperties.TEST_MIGRATE_TYPE_LIST));
+    }
 
     @Test
     public void getAsString_nullArgument() {
