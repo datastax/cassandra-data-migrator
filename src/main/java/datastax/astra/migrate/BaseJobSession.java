@@ -1,16 +1,18 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
-import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.SparkConf;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class BaseJobSession {
 
@@ -29,9 +31,8 @@ public abstract class BaseJobSession {
     protected RateLimiter readLimiter;
     protected RateLimiter writeLimiter;
     protected Integer maxRetries = 10;
+    protected AtomicLong readCounter = new AtomicLong(0);
 
-    protected CqlSession sourceSession;
-    protected CqlSession astraSession;
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
@@ -47,7 +48,7 @@ public abstract class BaseJobSession {
 
     protected List<Integer> writeTimeStampCols = new ArrayList<Integer>();
     protected List<Integer> ttlCols = new ArrayList<Integer>();
-    protected Boolean isCounterTable;
+    protected Boolean isCounterTable = false;
 
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
@@ -59,13 +60,35 @@ public abstract class BaseJobSession {
     protected Integer filterColIndex;
     protected String filterColValue;
 
+    protected String selectCols;
+    protected String partitionKey;
+    protected String sourceSelectCondition;
     protected String[] allCols;
+    protected String idCols;
     protected String tsReplaceValStr;
     protected long tsReplaceVal;
 
     protected BaseJobSession(SparkConf sc) {
         readConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.read"));
         writeConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.write"));
+        readLimiter = RateLimiter.create(Integer.parseInt(Util.getSparkPropOr(sc, "spark.readRateLimit", "20000")));
+        sourceKeyspaceTable = sc.get("spark.origin.keyspaceTable");
+        hasRandomPartitioner = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.origin.hasRandomPartitioner", "false"));
+
+        selectCols = Util.getSparkProp(sc, "spark.query.origin");
+        allCols = selectCols.split(",");
+        partitionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
+        sourceSelectCondition = Util.getSparkPropOrEmpty(sc, "spark.query.condition");
+        if (!sourceSelectCondition.isEmpty() && !sourceSelectCondition.trim().toUpperCase().startsWith("AND")) {
+            sourceSelectCondition = " AND " + sourceSelectCondition;
+        }
+        selectColTypes = getTypes(Util.getSparkProp(sc, "spark.query.types"));
+        idCols = Util.getSparkPropOrEmpty(sc, "spark.query.target.id");
+        idColTypes = selectColTypes.subList(0, idCols.split(",").length);
+        printStatsAfter = Integer.parseInt(Util.getSparkPropOr(sc, "spark.printStatsAfter", "100000"));
+        if (printStatsAfter < 1) {
+            printStatsAfter = 100000;
+        }
     }
 
     public String getKey(Row sourceRow) {
@@ -91,20 +114,24 @@ public abstract class BaseJobSession {
         return dataTypes;
     }
 
-    public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
+    public Object getData(MigrateDataType dataType, int index, Row row) {
         if (dataType.typeClass == Map.class) {
-            return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
+            return row.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
         } else if (dataType.typeClass == List.class) {
-            return sourceRow.getList(index, dataType.subTypes.get(0));
+            return row.getList(index, dataType.subTypes.get(0));
         } else if (dataType.typeClass == Set.class) {
-            return sourceRow.getSet(index, dataType.subTypes.get(0));
+            return row.getSet(index, dataType.subTypes.get(0));
         } else if (isCounterTable && dataType.typeClass == Long.class) {
-            Object data = sourceRow.get(index, dataType.typeClass);
+            Object data = row.get(index, dataType.typeClass);
             if (data == null) {
-                return new Long(0);
+                return Long.valueOf(0);
             }
         }
 
-        return sourceRow.get(index, dataType.typeClass);
+        return row.get(index, dataType.typeClass);
+    }
+
+    public int getFieldSize(MigrateDataType dataType, int index, Row row) {
+        return SerializationUtils.serialize((Serializable) getData(dataType, index, row)).length;
     }
 }

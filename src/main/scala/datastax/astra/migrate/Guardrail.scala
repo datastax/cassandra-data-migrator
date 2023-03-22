@@ -5,23 +5,21 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-object OriginData extends BaseJob {
+object Guardrail extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")
-  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
+  var connection = getConnection(sourceScbPath, sourceHost, sourceUsername, sourcePassword,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
-  analyzeSourceTable(sourceConnection)
+  checkGuardrails(connection)
   exitSpark
 
 
-  private def getConnection(isSource: Boolean, scbPath: String, host: String, username: String, password: String,
+  private def getConnection(scbPath: String, host: String, username: String, password: String,
                             trustStorePath: String, trustStorePassword: String, trustStoreType: String,
                             keyStorePath: String, keyStorePassword: String, enabledAlgorithms: String): CassandraConnector = {
-    var connType: String = "Source"
-
     if (scbPath.nonEmpty) {
-      abstractLogger.info(connType + ": Connected to Astra!");
+      abstractLogger.info(": Connected to Astra!");
 
       return CassandraConnector(sc
         .set("spark.cassandra.auth.username", username)
@@ -29,7 +27,7 @@ object OriginData extends BaseJob {
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", scbPath))
     } else if (trustStorePath.nonEmpty) {
-      abstractLogger.info(connType + ": Connected to Cassandra (or DSE) with SSL!");
+      abstractLogger.info(": Connected to Cassandra (or DSE) with SSL!");
 
       // Use defaults when not provided
       var enabledAlgorithmsVar = enabledAlgorithms
@@ -52,7 +50,7 @@ object OriginData extends BaseJob {
         .set("spark.cassandra.connection.ssl.clientAuth.enabled", "true")
       )
     } else {
-      abstractLogger.info(connType + ": Connected to Cassandra (or DSE)!");
+      abstractLogger.info(": Connected to Cassandra (or DSE)!");
 
       return CassandraConnector(sc.set("spark.cassandra.auth.username", username)
         .set("spark.cassandra.auth.password", password)
@@ -62,18 +60,18 @@ object OriginData extends BaseJob {
 
   }
 
-  private def analyzeSourceTable(sourceConnection: CassandraConnector) = {
+  private def checkGuardrails(connection: CassandraConnector) = {
     val partitions = SplitPartitions.getRandomSubPartitions(numSplits, minPartition, maxPartition, Integer.parseInt(coveragePercent))
     logger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
     val parts = sContext.parallelize(partitions.toSeq, partitions.size);
     logger.info("Spark parallelize created : " + parts.count() + " parts!");
 
     parts.foreach(part => {
-      sourceConnection.withSessionDo(sourceSession =>
-        OriginCountJobSession.getInstance(sourceSession, sc)
-          .getData(part.getMin, part.getMax))
+      connection.withSessionDo(session =>
+        GuardrailJobSession.getInstance(session, sc).logIssues(part.getMin, part.getMax))
     })
 
+    GuardrailJobSession.getInstance(null, sc).printCounts(true);
   }
 
 }
