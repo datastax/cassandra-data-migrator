@@ -19,6 +19,8 @@ import java.util.stream.IntStream;
 public class AbstractJobSession extends BaseJobSession {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    protected CqlSession sourceSession;
+    protected CqlSession astraSession;
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         this(sourceSession, astraSession, sc, false);
@@ -34,18 +36,11 @@ public class AbstractJobSession extends BaseJobSession {
         this.sourceSession = sourceSession;
         this.astraSession = astraSession;
 
-        batchSize = new Integer(Util.getSparkPropOr(sc, "spark.batchSize", "5"));
-        fetchSizeInRows = new Integer(Util.getSparkPropOr(sc, "spark.read.fetch.sizeInRows", "1000"));
-        printStatsAfter = new Integer(Util.getSparkPropOr(sc, "spark.printStatsAfter", "100000"));
-        if (printStatsAfter < 1) {
-            printStatsAfter = 100000;
-        }
+        batchSize = Integer.parseInt(Util.getSparkPropOr(sc, "spark.batchSize", "5"));
+        fetchSizeInRows = Integer.parseInt(Util.getSparkPropOr(sc, "spark.read.fetch.sizeInRows", "1000"));
 
-        readLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, "spark.readRateLimit", "20000")));
-        writeLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, "spark.writeRateLimit", "40000")));
+        writeLimiter = RateLimiter.create(Integer.parseInt(Util.getSparkPropOr(sc, "spark.writeRateLimit", "40000")));
         maxRetries = Integer.parseInt(sc.get("spark.maxRetries", "0"));
-
-        sourceKeyspaceTable = Util.getSparkProp(sc, "spark.origin.keyspaceTable");
         astraKeyspaceTable = Util.getSparkProp(sc, "spark.target.keyspaceTable");
 
         String ttlColsStr = Util.getSparkPropOrEmpty(sc, "spark.query.ttl.cols");
@@ -105,24 +100,13 @@ public class AbstractJobSession extends BaseJobSession {
                     Instant.ofEpochMilli(maxWriteTimeStampFilter / 1000));
         }
 
-        String selectCols = Util.getSparkProp(sc, "spark.query.origin");
-        String partitionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
-        String sourceSelectCondition = Util.getSparkPropOrEmpty(sc, "spark.query.condition");
-        if (!sourceSelectCondition.isEmpty() && !sourceSelectCondition.trim().toUpperCase().startsWith("AND")) {
-            sourceSelectCondition = " AND " + sourceSelectCondition;
-        }
-
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
-        allCols = selectCols.split(",");
         ttlCols.forEach(col -> {
             selectTTLWriteTimeCols.append(",ttl(" + allCols[col] + ")");
         });
         writeTimeStampCols.forEach(col -> {
             selectTTLWriteTimeCols.append(",writetime(" + allCols[col] + ")");
         });
-        selectColTypes = getTypes(Util.getSparkProp(sc, "spark.query.types"));
-        String idCols = Util.getSparkPropOrEmpty(sc, "spark.query.target.id");
-        idColTypes = selectColTypes.subList(0, idCols.split(",").length);
 
         String insertCols = Util.getSparkPropOrEmpty(sc, "spark.query.target");
         if (null == insertCols || insertCols.trim().isEmpty()) {
@@ -152,7 +136,6 @@ public class AbstractJobSession extends BaseJobSession {
                 "select " + insertCols + " from " + astraKeyspaceTable
                         + " where " + insertBinds);
 
-        hasRandomPartitioner = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.origin.hasRandomPartitioner", "false"));
         isCounterTable = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.counterTable", "false"));
         if (isCounterTable) {
             String updateSelectMappingStr = Util.getSparkPropOr(sc, "spark.counterTable.cql.index", "0");

@@ -4,11 +4,14 @@ curl -OL https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz
 wget https://archive.apache.org/dist/spark/spark-3.3.1/spark-3.3.1-bin-hadoop3.tgz
 
 // Migrate
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[*]" --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-3.*.jar
-spark-submit --properties-file /<path>/sparkConf.properties --master "local[*]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-3.*.jar &> table_out.log
+spark-submit --properties-file /<path>/cdm.properties --verbose --master "local[*]" --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-3.*.jar
+spark-submit --properties-file /<path>/cdm.properties --master "local[*]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-3.*.jar &> table_out.log
 
 // Random Partitioner Run Command
-spark-submit --properties-file /<path>/sparkConf.properties --verbose --master "local[*]" --conf spark.origin.minPartition=-1 --conf spark.origin.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-3.*.jar
+spark-submit --properties-file /<path>/cdm.properties --verbose --master "local[*]" --conf spark.origin.minPartition=-1 --conf spark.origin.maxPartition=170141183460469231731687303715884105728 --class datastax.astra.migrate.Migrate /<path>/cassandra-data-migrator-3.*.jar
 
 // Validate
-spark-submit --properties-file /<path>/sparkConf.properties --master "local[*]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.DiffData /<path>/cassandra-data-migrator-3.*.jar &> table_out.log
+spark-submit --properties-file /<path>/cdm.properties --master "local[*]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.DiffData /<path>/cassandra-data-migrator-3.*.jar &> table_out.log
+
+// Guardrail check (identify large fields)
+spark-submit --properties-file /<path>/cdmGuardrail.properties --master "local[*]" --driver-memory 25G --executor-memory 25G --class datastax.astra.migrate.Guardrail /<path>/cassandra-data-migrator-3.*.jar &> table_out.log

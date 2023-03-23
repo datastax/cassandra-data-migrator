@@ -22,16 +22,15 @@ import java.util.stream.StreamSupport;
 public class DiffJobSession extends CopyJobSession {
 
     private static DiffJobSession diffJobSession;
+    private final AtomicLong mismatchCounter = new AtomicLong(0);
+    private final AtomicLong missingCounter = new AtomicLong(0);
+    private final AtomicLong correctedMissingCounter = new AtomicLong(0);
+    private final AtomicLong correctedMismatchCounter = new AtomicLong(0);
+    private final AtomicLong validCounter = new AtomicLong(0);
+    private final AtomicLong skippedCounter = new AtomicLong(0);
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected Boolean autoCorrectMissing = false;
     protected Boolean autoCorrectMismatch = false;
-    private AtomicLong readCounter = new AtomicLong(0);
-    private AtomicLong mismatchCounter = new AtomicLong(0);
-    private AtomicLong missingCounter = new AtomicLong(0);
-    private AtomicLong correctedMissingCounter = new AtomicLong(0);
-    private AtomicLong correctedMismatchCounter = new AtomicLong(0);
-    private AtomicLong validCounter = new AtomicLong(0);
-    private AtomicLong skippedCounter = new AtomicLong(0);
 
     private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         super(sourceSession, astraSession, sc);

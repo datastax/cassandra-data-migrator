@@ -16,7 +16,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     private static CopyJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong skippedCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
@@ -50,7 +49,6 @@ public class CopyJobSession extends AbstractJobSession {
             long readCnt = 0;
             long writeCnt = 0;
             long skipCnt = 0;
-            long errCnt = 0;
             try {
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
                                 min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
@@ -155,7 +153,6 @@ public class CopyJobSession extends AbstractJobSession {
                         CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
                         writeResults.add(writeResultSet);
                         writeCnt += iterateAndClearWriteResults(writeResults, batchStatement.size());
-                        batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                     }
                 }
 

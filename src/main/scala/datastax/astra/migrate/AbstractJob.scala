@@ -12,6 +12,19 @@ class AbstractJob extends BaseJob {
   abstractLogger.info("PARAM -- Origin SSL Enabled: {}", sourceSSLEnabled);
   abstractLogger.info("PARAM -- Target SSL Enabled: {}", destinationSSLEnabled);
 
+  val destinationScbPath = Util.getSparkPropOrEmpty(sc, "spark.target.scb")
+  val destinationHost = Util.getSparkPropOrEmpty(sc, "spark.target.host")
+  val destinationPort = Util.getSparkPropOr(sc, "spark.target.port", "9042")
+  val destinationUsername = Util.getSparkProp(sc, "spark.target.username")
+  val destinationPassword = Util.getSparkProp(sc, "spark.target.password")
+  val destinationSSLEnabled = Util.getSparkPropOr(sc, "spark.target.ssl.enabled", "false")
+  val destinationTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.path")
+  val destinationTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.password")
+  val destinationTrustStoreType = Util.getSparkPropOr(sc, "spark.target.trustStore.type", "JKS")
+  val destinationKeyStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.keyStore.path")
+  val destinationKeyStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.keyStore.password")
+  val destinationEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, "spark.target.enabledAlgorithms")
+
   var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourcePort, sourceUsername, sourcePassword, sourceSSLEnabled,
     sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
 

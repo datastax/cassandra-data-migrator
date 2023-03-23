@@ -25,7 +25,7 @@ ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 COPY ./src /assets/src
 COPY ./pom.xml /assets/pom.xml
-COPY ./src/resources/sparkConf.properties /assets/
+COPY src/resources/cdm.properties /assets/
 COPY ./src/resources/partitions.csv /assets/
 COPY ./src/resources/primary_key_rows.csv /assets/
 COPY ./src/resources/runCommands.txt /assets/

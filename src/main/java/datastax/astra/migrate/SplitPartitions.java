@@ -138,8 +138,8 @@ public class SplitPartitions {
     public static class Partition implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        private BigInteger min;
-        private BigInteger max;
+        private final BigInteger min;
+        private final BigInteger max;
 
         public Partition(BigInteger min, BigInteger max) {
             this.min = min;
