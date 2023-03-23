@@ -19,5 +19,5 @@ jobs:
         working-directory: SIT
         run: |
           echo "Testing SIT with cdm"
-          git update-index --chmod=+x ./environment.sh
+          chmod o+rx ./environment.sh
           make -f Makefile
