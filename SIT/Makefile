@@ -13,6 +13,8 @@ test_smoke: reset test_smoke_cmd
 test_smoke_cmd:
 	./test.sh -p smoke
 
+chmod ug+x ./SIT
+
 env_setup: 
 	./environment.sh -m setup -j ../target/cassandra-data-migrator*.jar
 env_reset:
