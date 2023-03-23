@@ -1,6 +1,8 @@
 
-all: setup test_smoke env_teardown
+all: set_permissions setup test_smoke env_teardown
 
+set_permissions:
+	chmod o+rx ./environment.sh
 setup: build env_setup
 
 reset: build env_reset
