@@ -68,7 +68,7 @@ public class CopyJobSession extends AbstractJobSession {
                         if (readCnt % printStatsAfter == 0) {
                             printCounts(false);
                         }
-
+                        // exclusion filter below
                         if (filterData) {
                             String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
                             if (col.trim().equalsIgnoreCase(filterColValue)) {
