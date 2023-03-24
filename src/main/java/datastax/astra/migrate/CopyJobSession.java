@@ -21,8 +21,8 @@ public class CopyJobSession extends AbstractJobSession {
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
 
-    protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
-        super(sourceSession, astraSession, sc);
+    protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+        super(originSession, targetSession, sc);
         filterData = Boolean.parseBoolean(sc.get("spark.origin.FilterData", "false"));
         filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn");
         filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType");
@@ -30,11 +30,11 @@ public class CopyJobSession extends AbstractJobSession {
         filterColValue = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnValue");
     }
 
-    public static CopyJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
+    public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         if (copyJobSession == null) {
             synchronized (CopyJobSession.class) {
                 if (copyJobSession == null) {
-                    copyJobSession = new CopyJobSession(sourceSession, astraSession, sc);
+                    copyJobSession = new CopyJobSession(originSession, targetSession, sc);
                 }
             }
         }
@@ -52,7 +52,7 @@ public class CopyJobSession extends AbstractJobSession {
             long skipCnt = 0;
             long errCnt = 0;
             try {
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
+                ResultSet resultSet = originSessionSession.execute(originSelectStatement.bind(hasRandomPartitioner ?
                                 min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
                         .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
 
@@ -62,7 +62,7 @@ public class CopyJobSession extends AbstractJobSession {
                 // maxWriteTimeStampFilter is less than max long
                 // do not batch for counters as it adds latency & increases chance of discrepancy
                 if (batchSize == 1 || writeTimeStampFilter || isCounterTable) {
-                    for (Row sourceRow : resultSet) {
+                    for (Row originRow : resultSet) {
                         readLimiter.acquire(1);
                         readCnt++;
                         if (readCnt % printStatsAfter == 0) {
@@ -70,38 +70,38 @@ public class CopyJobSession extends AbstractJobSession {
                         }
                         // exclusion filter below
                         if (filterData) {
-                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, originRow);
                             if (col.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(originRow));
                                 skipCnt++;
                                 continue;
                             }
                         }
                         if (writeTimeStampFilter) {
                             // only process rows greater than writeTimeStampFilter
-                            Long sourceWriteTimeStamp = getLargestWriteTimeStamp(sourceRow);
-                            if (sourceWriteTimeStamp < minWriteTimeStampFilter
-                                    || sourceWriteTimeStamp > maxWriteTimeStampFilter) {
+                            Long originWriteTimeStamp = getLargestWriteTimeStamp(originRow);
+                            if (originWriteTimeStamp < minWriteTimeStampFilter
+                                    || originWriteTimeStamp > maxWriteTimeStampFilter) {
                                 skipCnt++;
                                 continue;
                             }
                         }
                         writeLimiter.acquire(1);
 
-                        Row astraRow = null;
+                        Row targetRow = null;
                         if (isCounterTable) {
-                            ResultSet astraReadResultSet = astraSession
-                                    .execute(selectFromAstra(astraSelectStatement, sourceRow));
-                            astraRow = astraReadResultSet.one();
+                            ResultSet targetReadResultSet = targetSession
+                                    .execute(selectFromTarget(targetSelectStatement, originRow));
+                            targetRow = targetReadResultSet.one();
                         }
 
-                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, astraRow);
+                        BoundStatement bInsert = bindInsert(targetInsertStatement, originRow, targetRow);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
                         }
-                        CompletionStage<AsyncResultSet> astraWriteResultSet = astraSession.executeAsync(bInsert);
-                        writeResults.add(astraWriteResultSet);
+                        CompletionStage<AsyncResultSet> targetWriteResultSet = targetSession.executeAsync(bInsert);
+                        writeResults.add(targetWriteResultSet);
                         if (writeResults.size() > fetchSizeInRows) {
                             writeCnt += iterateAndClearWriteResults(writeResults, 1);
                         }
@@ -111,7 +111,7 @@ public class CopyJobSession extends AbstractJobSession {
                     writeCnt += iterateAndClearWriteResults(writeResults, 1);
                 } else {
                     BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-                    for (Row sourceRow : resultSet) {
+                    for (Row originRow : resultSet) {
                         readLimiter.acquire(1);
                         readCnt++;
                         if (readCnt % printStatsAfter == 0) {
@@ -119,16 +119,16 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, originRow);
                             if (colValue.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(originRow));
                                 skipCnt++;
                                 continue;
                             }
                         }
 
                         writeLimiter.acquire(1);
-                        BoundStatement bInsert = bindInsert(astraInsertStatement, sourceRow, null);
+                        BoundStatement bInsert = bindInsert(targetInsertStatement, originRow, null);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
@@ -137,7 +137,7 @@ public class CopyJobSession extends AbstractJobSession {
 
                         // if batch threshold is met, send the writes and clear the batch
                         if (batchStatement.size() >= batchSize) {
-                            CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                            CompletionStage<AsyncResultSet> writeResultSet = targetSession.executeAsync(batchStatement);
                             writeResults.add(writeResultSet);
                             batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                         }
@@ -152,7 +152,7 @@ public class CopyJobSession extends AbstractJobSession {
 
                     // if there are any pending writes because the batchSize threshold was not met, then write and clear them
                     if (batchStatement.size() > 0) {
-                        CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
+                        CompletionStage<AsyncResultSet> writeResultSet = targetSession.executeAsync(batchStatement);
                         writeResults.add(writeResultSet);
                         writeCnt += iterateAndClearWriteResults(writeResults, batchStatement.size());
                         batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);

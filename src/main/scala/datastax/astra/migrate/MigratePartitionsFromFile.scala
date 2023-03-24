@@ -10,7 +10,7 @@ object MigratePartitionsFromFile extends AbstractJob {
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started MigratePartitionsFromFile App")
 
-  migrateTable(sourceConnection, destinationConnection)
+  migrateTable(originConnection, targetConnection)
 
   exitSpark
 
