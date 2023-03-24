@@ -14,25 +14,19 @@ import java.util.NoSuchElementException;
 public class Util {
 
     public static String getSparkProp(SparkConf sc, String prop) {
-        if (!sc.contains(prop)) {
-            return sc.get(prop.replace("origin", "source").replace("target", "destination"));
+        String retVal = PropertyHelper.getInstance(sc).getAsString(prop);
+        if (StringUtils.isEmpty(retVal) && (prop.contains("origin") || prop.contains("target"))) {
+            retVal = PropertyHelper.getInstance(sc).getAsString(prop.replace("origin", "source").replace("target", "destination"));
         }
         if (!KnownProperties.isKnown(prop)) {
             throw new IllegalArgumentException("Unknown property: " + prop + "; this is a bug in the code: the property is not configured in KnownProperties.java");
         }
-        return PropertyHelper.getInstance(sc).getAsString(prop);
+        return retVal;
     }
 
     public static String getSparkPropOr(SparkConf sc, String prop, String defaultVal) {
-        if (!sc.contains(prop)) {
-            return sc.get(prop.replace("origin", "source").replace("target", "destination"), defaultVal);
-        }
         String retVal = getSparkProp(sc,prop);
-        if (null == retVal) {
-            PropertyHelper.getInstance(sc).setProperty(prop, defaultVal);
-            return getSparkProp(sc,prop);
-        }
-        return retVal;
+        return StringUtils.isEmpty(retVal) ? defaultVal : retVal;
     }
 
     public static String getSparkPropOrEmpty(SparkConf sc, String prop) {

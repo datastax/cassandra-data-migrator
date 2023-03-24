@@ -51,6 +51,19 @@ public class MigrateDataType {
         else {
             isValid = false;
         }
+        this.typeClass = getType(this.type);
+
+        if (this.type >= minType && this.type <= maxType) {
+            isValid = true;
+            for (Object o : subTypes) {
+                if (null == o || Object.class == o) {
+                    isValid = false;
+                }
+            }
+        }
+        else {
+            isValid = false;
+        }
     }
 
     private int typeAsInt(String dataType) {
@@ -136,64 +149,6 @@ public class MigrateDataType {
 
     public boolean isValid() {
         return isValid;
-    }
-
-    public boolean parse(String s) {
-        try {
-            switch (this.type) {
-                case 0:
-                    return true;
-                case 1:
-                    Integer.parseInt(s);
-                    return true;
-                case 2:
-                    Long.parseLong(s);
-                    return true;
-                case 3:
-                    Double.parseDouble(s);
-                    return true;
-                case 4:
-                    Instant.parse(s);
-                    return true;
-                case 9:
-                    UUID.fromString(s);
-                    return true;
-                case 10:
-                    Boolean.parseBoolean(s);
-                    return true;
-                case 12:
-                    Float.parseFloat(s);
-                    return true;
-                case 13:
-                    Byte.parseByte(s);
-                    return true;
-                case 14:
-                    BigDecimal.valueOf(Double.parseDouble(s));
-                    return true;
-                case 15:
-                    LocalDate.parse(s);
-                    return true;
-                case 17:
-                    BigInteger.valueOf(Long.parseLong(s));
-                    return true;
-                case 18:
-                    LocalTime.parse(s);
-                    return true;
-                case 19:
-                    Short.parseShort(s);
-                    return true;
-                case 5: // Map
-                case 6: // List
-                case 7: // ByteBuffer
-                case 8: // Set
-                case 11: // TupleValue
-                case 16: // UDT
-                default:
-                    throw new IllegalArgumentException("MigrateDataType " + this.type + "(" + this.typeClass.getName() + ") cannot currently parse this type");
-            }
-        } catch (NumberFormatException e) {
-            return false;
-        }
     }
 
     @Override

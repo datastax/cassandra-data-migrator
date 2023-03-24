@@ -67,6 +67,7 @@ public class CopyJobSession extends AbstractJobSession {
                             printCounts(false);
                         }
 
+                        // exclusion filter below
                         if (cqlHelper.hasFilterColumn()) {
                             String col = (String) cqlHelper.getData(cqlHelper.getFilterColType(), cqlHelper.getFilterColIndex(), originRow);
                             if (col.trim().equalsIgnoreCase(cqlHelper.getFilterColValue())) {

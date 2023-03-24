@@ -98,6 +98,7 @@ public class KnownProperties {
     public static final String ORIGIN_FILTER_WRITETS_MIN     = "spark.origin.minWriteTimeStampFilter";  // 0
     public static final String ORIGIN_FILTER_WRITETS_MAX     = "spark.origin.maxWriteTimeStampFilter";  // 4102444800000000
     public static final String ORIGIN_FILTER_COLUMN_ENABLED  = "spark.origin.FilterData";               // false
+    public static final String ORIGIN_FILTER_COLUMN_NAME     = "spark.origin.FilterColumn";             // test
     public static final String ORIGIN_FILTER_COLUMN_INDEX    = "spark.origin.FilterColumnIndex";        // 2
     public static final String ORIGIN_FILTER_COLUMN_TYPE     = "spark.origin.FilterColumnType";         // 6%16
     public static final String ORIGIN_FILTER_COLUMN_VALUE    = "spark.origin.FilterColumnValue";        // test
@@ -118,6 +119,7 @@ public class KnownProperties {
         defaults.put(ORIGIN_FILTER_WRITETS_MAX, "0");
            types.put(ORIGIN_FILTER_COLUMN_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_FILTER_COLUMN_ENABLED, "false");
+           types.put(ORIGIN_FILTER_COLUMN_NAME, PropertyType.STRING);
            types.put(ORIGIN_FILTER_COLUMN_INDEX, PropertyType.NUMBER);
         defaults.put(ORIGIN_FILTER_COLUMN_INDEX, "0");
            types.put(ORIGIN_FILTER_COLUMN_TYPE, PropertyType.MIGRATION_TYPE);
@@ -167,6 +169,7 @@ public class KnownProperties {
     public static final String SPARK_LIMIT_READ  = "spark.readRateLimit";         // 20000
     public static final String SPARK_LIMIT_WRITE = "spark.writeRateLimit";        // 40000
     public static final String SPARK_NUM_SPLITS  = "spark.numSplits";             // 10000, was spark.splitSize
+    public static final String DEPRECATED_SPARK_SPLIT_SIZE  = "spark.splitSize";  // 10000
     public static final String SPARK_BATCH_SIZE  = "spark.batchSize";             // 5
     public static final String SPARK_MAX_RETRIES = "spark.maxRetries";            // 0
     public static final String READ_FETCH_SIZE   = "spark.read.fetch.sizeInRows"; //1000
@@ -182,6 +185,8 @@ public class KnownProperties {
         defaults.put(SPARK_LIMIT_WRITE, "40000");
            types.put(SPARK_NUM_SPLITS, PropertyType.NUMBER);
         defaults.put(SPARK_NUM_SPLITS, "10000");
+           types.put(DEPRECATED_SPARK_SPLIT_SIZE, PropertyType.NUMBER);
+        defaults.put(DEPRECATED_SPARK_SPLIT_SIZE, "10000");
            types.put(SPARK_BATCH_SIZE, PropertyType.NUMBER);
         defaults.put(SPARK_BATCH_SIZE, "5");
            types.put(SPARK_MAX_RETRIES, PropertyType.NUMBER);
