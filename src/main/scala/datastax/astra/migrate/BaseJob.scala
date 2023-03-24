@@ -18,7 +18,7 @@ class BaseJob extends App {
   val sContext = spark.sparkContext
   val sc = sContext.getConf
 
-  val consistencyLevel = Util.getSparkPropOr(sc, "spark.read.consistency.level", "LOCAL_QUORUM")
+  val consistencyLevel = Util.getSparkPropOr(sc, "spark.consistency.read", "LOCAL_QUORUM")
 
   val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
   val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")

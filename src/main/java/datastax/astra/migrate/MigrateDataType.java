@@ -13,23 +13,52 @@ import java.util.*;
 
 public class MigrateDataType {
     Class typeClass = Object.class;
+    String dataTypeString = "";
+    int type = -1;
     List<Class> subTypes = new ArrayList<Class>();
+    private boolean isValid = false;
+    private static int minType = 0;
+    private static int maxType = 19;
 
     public MigrateDataType(String dataType) {
+        dataTypeString = dataType;
         if (dataType.contains("%")) {
             int count = 1;
             for (String type : dataType.split("%")) {
+                int typeAsInt = typeAsInt(type);
                 if (count == 1) {
-                    typeClass = getType(Integer.parseInt(type));
+                    this.type = typeAsInt;
                 } else {
-                    subTypes.add(getType(Integer.parseInt(type)));
+                    subTypes.add(getType(typeAsInt));
                 }
                 count++;
             }
         } else {
-            int type = Integer.parseInt(dataType);
-            typeClass = getType(type);
+            this.type = typeAsInt(dataType);
         }
+        this.typeClass = getType(this.type);
+
+        if (this.type >= minType && this.type <= maxType) {
+            isValid = true;
+            for (Object o : subTypes) {
+                if (null == o || Object.class == o) {
+                    isValid = false;
+                }
+            }
+        }
+        else {
+            isValid = false;
+        }
+    }
+
+    private int typeAsInt(String dataType) {
+        int rtn = -1;
+        try {
+            rtn = Integer.parseInt(dataType);
+        } catch (NumberFormatException e) {
+            rtn = -1;
+        }
+        return rtn;
     }
 
     public boolean diff(Object source, Object astra) {
@@ -91,4 +120,25 @@ public class MigrateDataType {
         return Object.class;
     }
 
+    public Class getType() {
+        return this.typeClass;
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MigrateDataType that = (MigrateDataType) o;
+        return type == that.type &&
+                Objects.equals(subTypes, that.subTypes);
+    }
+
+    @Override
+    public String toString() {
+        return dataTypeString;
+    }
 }
