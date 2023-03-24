@@ -1,7 +1,7 @@
 name: Build and test jar with integration tests
-
 on: [push]
 jobs:
+  CDM-Integration-Test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -11,12 +11,8 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
           cache: maven
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
-
       - name: Test SIT with cdm
         working-directory: SIT
         run: |
           echo "Testing SIT with cdm"
-          chmod o+rx ./environment.sh
           make -f Makefile
