@@ -1,6 +1,8 @@
 
-all: setup test_smoke env_teardown
+all: set_permissions setup test_smoke env_teardown
 
+set_permissions:
+	chmod -R 777 ./*.sh
 setup: build env_setup
 
 reset: build env_reset
@@ -13,7 +15,7 @@ test_smoke: reset test_smoke_cmd
 test_smoke_cmd:
 	./test.sh -p smoke
 
-env_setup: 
+env_setup:
 	./environment.sh -m setup -j ../target/cassandra-data-migrator*.jar
 env_reset:
 	./environment.sh -m reset -j ../target/cassandra-data-migrator*.jar
