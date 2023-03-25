@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import datastax.astra.migrate.properties.KnownProperties;
+import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
 
 import java.util.ArrayList;
@@ -14,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class BaseJobSession {
+
+    protected PropertyHelper propertyHelper = PropertyHelper.getInstance();
 
     protected PreparedStatement originSelectStatement;
     protected PreparedStatement targetSelectStatement;
@@ -65,8 +68,9 @@ public abstract class BaseJobSession {
     protected long tsReplaceVal;
 
     protected BaseJobSession(SparkConf sc) {
-        readConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, KnownProperties.READ_CL));
-        writeConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, KnownProperties.WRITE_CL));
+        propertyHelper.initializeSparkConf(sc);
+        readConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.READ_CL));
+        writeConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));
     }
 
     public String getKey(Row originRow) {

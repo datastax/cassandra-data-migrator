@@ -196,7 +196,7 @@ public class KnownProperties {
            types.put(SPARK_STATS_AFTER, PropertyType.NUMBER);
         defaults.put(SPARK_STATS_AFTER, "100000");
            types.put(FIELD_GUARDRAIL_MB, PropertyType.NUMBER);
-        defaults.put(FIELD_GUARDRAIL_MB, "10");
+        defaults.put(FIELD_GUARDRAIL_MB, "0");
            types.put(PARTITION_MIN, PropertyType.NUMBER);
         defaults.put(PARTITION_MIN, "-9223372036854775808");
            types.put(PARTITION_MAX, PropertyType.NUMBER);

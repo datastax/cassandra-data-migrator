@@ -24,11 +24,11 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
-        filterData = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_ENABLED, "false"));
-        filterColName = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
-        filterColType = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
-        filterColIndex = Integer.parseInt(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX, "0"));
-        filterColValue = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_VALUE);
+        filterData = propertyHelper.getBoolean(KnownProperties.ORIGIN_FILTER_COLUMN_ENABLED);
+        filterColName = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
+        filterColType = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
+        filterColIndex = propertyHelper.getInteger(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX);
+        filterColValue = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_VALUE);
     }
 
     public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {

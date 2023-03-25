@@ -37,10 +37,10 @@ public class DiffJobSession extends CopyJobSession {
     private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
 
-        autoCorrectMissing = Boolean.parseBoolean(Util.getSparkPropOr(sc, KnownProperties.TARGET_AUTOCORRECT_MISSING, "false"));
+        autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISSING);
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
 
-        autoCorrectMismatch = Boolean.parseBoolean(Util.getSparkPropOr(sc, KnownProperties.TARGET_AUTOCORRECT_MISMATCH, "false"));
+        autoCorrectMismatch = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISMATCH);
         logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
     }
 
