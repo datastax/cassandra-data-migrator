@@ -11,7 +11,7 @@ object DiffData extends AbstractJob {
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Data Validation App")
 
-  diffTable(sourceConnection, destinationConnection, sc)
+  diffTable(originConnection, targetConnection, sc)
 
   exitSpark
 

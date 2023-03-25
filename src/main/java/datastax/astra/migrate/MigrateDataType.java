@@ -64,6 +64,19 @@ public class MigrateDataType {
         else {
             isValid = false;
         }
+        this.typeClass = getType(this.type);
+
+        if (this.type >= minType && this.type <= maxType) {
+            isValid = true;
+            for (Object o : subTypes) {
+                if (null == o || Object.class == o) {
+                    isValid = false;
+                }
+            }
+        }
+        else {
+            isValid = false;
+        }
     }
 
     private int typeAsInt(String dataType) {
@@ -76,16 +89,16 @@ public class MigrateDataType {
         return rtn;
     }
 
-    public boolean diff(Object source, Object astra) {
-        if (source == null && astra == null) {
+    public boolean diff(Object obj1, Object obj2) {
+        if (obj1 == null && obj2 == null) {
             return false;
-        } else if (source == null && astra != null) {
+        } else if (obj1 == null && obj2 != null) {
             return true;
-        } else if (source != null && astra == null) {
+        } else if (obj1 != null && obj2 == null) {
             return true;
         }
 
-        return !source.equals(astra);
+        return !obj1.equals(obj2);
     }
 
     private Class getType(int type) {

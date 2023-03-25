@@ -9,14 +9,14 @@ class AbstractJob extends BaseJob {
   abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
   abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
   abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
-  abstractLogger.info("PARAM -- Origin SSL Enabled: {}", sourceSSLEnabled);
-  abstractLogger.info("PARAM -- Target SSL Enabled: {}", destinationSSLEnabled);
+  abstractLogger.info("PARAM -- Origin SSL Enabled: {}", originSSLEnabled);
+  abstractLogger.info("PARAM -- Target SSL Enabled: {}", targetSSLEnabled);
 
-  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourcePort, sourceUsername, sourcePassword, sourceSSLEnabled,
-    sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
+  var originConnection = getConnection(true, originScbPath, originHost, originPort, originUsername, originPassword, originSSLEnabled,
+    originTrustStorePath, originTrustStorePassword, originTrustStoreType, originKeyStorePath, originKeyStorePassword, originEnabledAlgorithms);
 
-  var destinationConnection = getConnection(false, destinationScbPath, destinationHost, destinationPort, destinationUsername, destinationPassword, destinationSSLEnabled,
-    destinationTrustStorePath, destinationTrustStorePassword, destinationTrustStoreType, destinationKeyStorePath, destinationKeyStorePassword, destinationEnabledAlgorithms);
+  var targetConnection = getConnection(false, targetScbPath, targetHost, targetPort, targetUsername, targetPassword, targetSSLEnabled,
+    targetTrustStorePath, targetTrustStorePassword, targetTrustStoreType, targetKeyStorePath, targetKeyStorePassword, targetEnabledAlgorithms);
 
   private def getConnection(isSource: Boolean, scbPath: String, host: String, port: String, username: String, password: String,
                             sslEnabled: String, trustStorePath: String, trustStorePassword: String, trustStoreType: String,

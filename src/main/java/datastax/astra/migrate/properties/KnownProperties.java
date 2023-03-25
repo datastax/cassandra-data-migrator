@@ -174,7 +174,7 @@ public class KnownProperties {
     public static final String SPARK_MAX_RETRIES = "spark.maxRetries";            // 0
     public static final String READ_FETCH_SIZE   = "spark.read.fetch.sizeInRows"; //1000
     public static final String SPARK_STATS_AFTER = "spark.printStatsAfter";       //100000
-    public static final String FIELD_GUARDRAIL   = "spark.fieldGuardraillimitMB"; //10
+    public static final String FIELD_GUARDRAIL_MB = "spark.fieldGuardraillimitMB"; //10
     public static final String PARTITION_MIN     = "spark.origin.minPartition";   // -9223372036854775808
     public static final String PARTITION_MAX     = "spark.origin.maxPartition";   // 9223372036854775807
 
@@ -195,8 +195,8 @@ public class KnownProperties {
         defaults.put(READ_FETCH_SIZE, "1000");
            types.put(SPARK_STATS_AFTER, PropertyType.NUMBER);
         defaults.put(SPARK_STATS_AFTER, "100000");
-           types.put(FIELD_GUARDRAIL, PropertyType.NUMBER);
-        defaults.put(FIELD_GUARDRAIL, "10");
+           types.put(FIELD_GUARDRAIL_MB, PropertyType.NUMBER);
+        defaults.put(FIELD_GUARDRAIL_MB, "10");
            types.put(PARTITION_MIN, PropertyType.NUMBER);
         defaults.put(PARTITION_MIN, "-9223372036854775808");
            types.put(PARTITION_MAX, PropertyType.NUMBER);

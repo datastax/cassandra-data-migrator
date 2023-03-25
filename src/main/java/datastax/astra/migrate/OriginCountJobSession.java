@@ -45,48 +45,49 @@ public class OriginCountJobSession extends BaseJobSession {
 //    protected Integer fieldGuardraillimitMB;
 //    protected List<MigrateDataType> checkTableforColSizeTypes = new ArrayList<MigrateDataType>();
 //
-    protected OriginCountJobSession(CqlSession sourceSession, SparkConf sc) {
+    protected OriginCountJobSession(CqlSession originSession, SparkConf sc) {
         super(sc);
-//        this.sourceSession = sourceSession;
-//        batchSize = new Integer(sc.get("spark.batchSize", "1"));
-//        printStatsAfter = new Integer(sc.get("spark.printStatsAfter", "100000"));
+//        this.originSessionSession = originSession;
+//        batchSize = new Integer(sc.get(KnownProperties.SPARK_BATCH_SIZE, "1"));
+//        printStatsAfter = new Integer(sc.get(KnownProperties.SPARK_STATS_AFTER, "100000"));
 //        if (printStatsAfter < 1) {
 //            printStatsAfter = 100000;
 //        }
 //
-//        readLimiter = RateLimiter.create(new Integer(sc.get("spark.readRateLimit", "20000")));
-//        sourceKeyspaceTable = sc.get("spark.origin.keyspaceTable");
+//        readLimiter = RateLimiter.create(new Integer(sc.get(KnownProperties.SPARK_LIMIT_READ, "20000")));
+//        originKeyspaceTable = sc.get(KnownProperties.ORIGIN_KEYSPACE_TABLE);
 //
-//        hasRandomPartitioner = Boolean.parseBoolean(sc.get("spark.origin.hasRandomPartitioner", "false"));
-//        isCounterTable = Boolean.parseBoolean(sc.get("spark.counterTable", "false"));
+//        hasRandomPartitioner = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER, "false"));
+//        isCounterTable = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_IS_COUNTER, "false"));
 //
-//        checkTableforColSize = Boolean.parseBoolean(sc.get("spark.origin.checkTableforColSize", "false"));
-//        checkTableforselectCols = sc.get("spark.origin.checkTableforColSize.cols");
-//        checkTableforColSizeTypes = getTypes(sc.get("spark.origin.checkTableforColSize.cols.types"));
-//        filterColName = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
-//        filterColType = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE); // TODO: this is a string, but should be MigrationDataType?
-//        filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
-//        fieldGuardraillimitMB = Integer.parseInt(sc.get("spark.fieldGuardraillimitMB", "0"));
+//        checkTableforColSize = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_ENABLED, "false"));
+//        checkTableforselectCols = sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_NAMES);
+//        checkTableforColSizeTypes = getTypes(sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_TYPES));
+//        filterColName = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
+//        filterColType = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
+//        filterColIndex = Integer.parseInt(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX, "0"));
+//        fieldGuardraillimitMB = Integer.parseInt(sc.get(KnownProperties.FIELD_GUARDRAIL_MB, "0"));
 //
-//        String partionKey = sc.get("spark.query.cols.partitionKey");
-//        idColTypes = getTypes(sc.get("spark.query.cols.id.types"));
+//        String partionKey = sc.get(KnownProperties.ORIGIN_PARTITION_KEY);
+//        idColTypes = getTypes(sc.get(KnownProperties.TARGET_PRIMARY_KEY_TYPES));
 //
-//        String selectCols = sc.get("spark.query.cols.select");
-//        String updateSelectMappingStr = sc.get("spark.counterTable.cql.index", "0");
+//        String selectCols = sc.get(KnownProperties.ORIGIN_COLUMN_NAMES);
+//        String updateSelectMappingStr = sc.get(KnownProperties.ORIGIN_COUNTER_INDEXES, "0");
 //        for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
 //            updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
 //        }
-//        String sourceSelectCondition = sc.get("spark.query.cols.select.condition", "");
-//        sourceSelectStatement = sourceSession.prepare(
-//                "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partionKey.trim()
-//                        + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING");
+//        String originSelectCondition = sc.get(KnownProperties.ORIGIN_FILTER_CONDITION, "");
+//        // TODO: AbstractJobSession has some checks to ensure AND is added to the condition
+//        originSelectStatement = originSession.prepare(
+//                "select " + selectCols + " from " + originKeyspaceTable + " where token(" + partionKey.trim()
+//                        + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + originSelectCondition + " ALLOW FILTERING");
     }
 //
-//    public static OriginCountJobSession getInstance(CqlSession sourceSession, SparkConf sparkConf) {
+//    public static OriginCountJobSession getInstance(CqlSession originSession, SparkConf sparkConf) {
 //        if (originCountJobSession == null) {
 //            synchronized (OriginCountJobSession.class) {
 //                if (originCountJobSession == null) {
-//                    originCountJobSession = new OriginCountJobSession(sourceSession, sparkConf);
+//                    originCountJobSession = new OriginCountJobSession(originSession, sparkConf);
 //                }
 //            }
 //        }
@@ -100,7 +101,7 @@ public class OriginCountJobSession extends BaseJobSession {
 //        int maxAttempts = maxRetries + 1;
 //        for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
 //            try {
-//                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
+//                ResultSet resultSet = originSessionSession.execute(originSelectStatement.bind(hasRandomPartitioner ?
 //                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
 //                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
 //
@@ -110,16 +111,16 @@ public class OriginCountJobSession extends BaseJobSession {
 //                // maxWriteTimeStampFilter is less than max long
 //                // do not batch for counters as it adds latency & increases chance of discrepancy
 //                if (batchSize == 1 || writeTimeStampFilter || isCounterTable) {
-//                    for (Row sourceRow : resultSet) {
+//                    for (Row originRow : resultSet) {
 //                        readLimiter.acquire(1);
 //
 //                        if (checkTableforColSize) {
-//                            int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
+//                            int rowColcnt = GetRowColumnLength(originRow, filterColType, filterColIndex);
 //                            String result = "";
 //                            if (rowColcnt > fieldGuardraillimitMB * 1048576) {
 //                                for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
 //                                    MigrateDataType dataType = checkTableforColSizeTypes.get(index);
-//                                    Object colData = getData(dataType, index, sourceRow);
+//                                    Object colData = getData(dataType, index, originRow);
 //                                    String[] colName = checkTableforselectCols.split(",");
 //                                    result = result + " - " + colName[index] + " : " + colData;
 //                                }
@@ -130,17 +131,17 @@ public class OriginCountJobSession extends BaseJobSession {
 //                    }
 //                } else {
 //                    BatchStatement batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-//                    for (Row sourceRow : resultSet) {
+//                    for (Row originRow : resultSet) {
 //                        readLimiter.acquire(1);
 //                        writeLimiter.acquire(1);
 //
 //                        if (checkTableforColSize) {
-//                            int rowColcnt = GetRowColumnLength(sourceRow, filterColType, filterColIndex);
+//                            int rowColcnt = GetRowColumnLength(originRow, filterColType, filterColIndex);
 //                            String result = "";
 //                            if (rowColcnt > fieldGuardraillimitMB * 1048576) {
 //                                for (int index = 0; index < checkTableforColSizeTypes.size(); index++) {
 //                                    MigrateDataType dataType = checkTableforColSizeTypes.get(index);
-//                                    Object colData = getData(dataType, index, sourceRow);
+//                                    Object colData = getData(dataType, index, originRow);
 //                                    String[] colName = checkTableforselectCols.split(",");
 //                                    result = result + " - " + colName[index] + " : " + colData;
 //                                }
@@ -166,9 +167,9 @@ public class OriginCountJobSession extends BaseJobSession {
 //        }
 //    }
 //
-//    private int GetRowColumnLength(Row sourceRow, String filterColType, Integer filterColIndex) {
+//    private int GetRowColumnLength(Row originRow, String filterColType, Integer filterColIndex) {
 //        int sizeInMB = 0;
-//        Object colData = getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+//        Object colData = getData(new MigrateDataType(filterColType), filterColIndex, originRow);
 //        byte[] colBytes = SerializationUtils.serialize((Serializable) colData);
 //        sizeInMB = colBytes.length;
 //        if (sizeInMB > fieldGuardraillimitMB)

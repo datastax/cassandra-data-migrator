@@ -13,9 +13,9 @@ object OriginData extends BaseJob {
 
 //  val logger = LoggerFactory.getLogger(this.getClass.getName)
 //  logger.info("Started Migration App")
-//  var sourceConnection = getConnection(true, sourceScbPath, sourceHost, sourceUsername, sourcePassword,
-//    sourceTrustStorePath, sourceTrustStorePassword, sourceTrustStoreType, sourceKeyStorePath, sourceKeyStorePassword, sourceEnabledAlgorithms);
-//  analyzeSourceTable(sourceConnection)
+//  var originConnection = getConnection(true, originScbPath, originHost, originUsername, originPassword,
+//    originTrustStorePath, originTrustStorePassword, originTrustStoreType, originKeyStorePath, originKeyStorePassword, originEnabledAlgorithms);
+//  analyzeSourceTable(originConnection)
 //  exitSpark
 //
 //
@@ -66,19 +66,18 @@ object OriginData extends BaseJob {
 //
 //  }
 //
-//  private def analyzeSourceTable(sourceConnection: CassandraConnector) = {
+//  private def analyzeSourceTable(originConnection: CassandraConnector) = {
 //    val partitions = SplitPartitions.getRandomSubPartitions(numSplits, minPartition, maxPartition, Integer.parseInt(coveragePercent))
 //    logger.info("PARAM Calculated -- Total Partitions: " + partitions.size())
 //    val parts = sContext.parallelize(partitions.toSeq, partitions.size);
 //    logger.info("Spark parallelize created : " + parts.count() + " parts!");
 //
 //    parts.foreach(part => {
-//      sourceConnection.withSessionDo(sourceSession =>
+//      originConnection.withSessionDo(sourceSession =>
 //        OriginCountJobSession.getInstance(sourceSession, sc)
 //          .getData(part.getMin, part.getMax))
 //    })
 //
 //  }
-
 }
 

@@ -1,5 +1,6 @@
 package datastax.astra.migrate
 
+import datastax.astra.migrate.properties.KnownProperties
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
@@ -18,39 +19,39 @@ class BaseJob extends App {
   val sContext = spark.sparkContext
   val sc = sContext.getConf
 
-  val consistencyLevel = Util.getSparkPropOr(sc, "spark.consistency.read", "LOCAL_QUORUM")
+  val consistencyLevel = Util.getSparkPropOr(sc, KnownProperties.READ_CL, "LOCAL_QUORUM")
 
-  val sourceScbPath = Util.getSparkPropOrEmpty(sc, "spark.origin.scb")
-  val sourceHost = Util.getSparkPropOrEmpty(sc, "spark.origin.host")
-  val sourcePort = Util.getSparkPropOr(sc, "spark.origin.port", "9042")
-  val sourceUsername = Util.getSparkPropOrEmpty(sc, "spark.origin.username")
-  val sourcePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.password")
-  val sourceSSLEnabled = Util.getSparkPropOr(sc, "spark.origin.ssl.enabled", "false")
-  val sourceTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.origin.trustStore.path")
-  val sourceTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.trustStore.password")
-  val sourceTrustStoreType = Util.getSparkPropOr(sc, "spark.origin.trustStore.type", "JKS")
-  val sourceKeyStorePath = Util.getSparkPropOrEmpty(sc, "spark.origin.keyStore.path")
-  val sourceKeyStorePassword = Util.getSparkPropOrEmpty(sc, "spark.origin.keyStore.password")
-  val sourceEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, "spark.origin.enabledAlgorithms")
+  val originScbPath = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_CONNECT_SCB)
+  val originHost = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_CONNECT_HOST)
+  val originPort = Util.getSparkPropOr(sc, KnownProperties.ORIGIN_CONNECT_PORT, "9042")
+  val originUsername = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_CONNECT_USERNAME)
+  val originPassword = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_CONNECT_PASSWORD)
+  val originSSLEnabled = Util.getSparkPropOr(sc, KnownProperties.ORIGIN_TLS_ENABLED, "false")
+  val originTrustStorePath = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH)
+  val originTrustStorePassword = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD)
+  val originTrustStoreType = Util.getSparkPropOr(sc, KnownProperties.ORIGIN_TLS_TRUSTSTORE_TYPE, "JKS")
+  val originKeyStorePath = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_TLS_KEYSTORE_PATH)
+  val originKeyStorePassword = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_TLS_KEYSTORE_PASSWORD)
+  val originEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_TLS_ALGORITHMS)
 
-  val destinationScbPath = Util.getSparkPropOrEmpty(sc, "spark.target.scb")
-  val destinationHost = Util.getSparkPropOrEmpty(sc, "spark.target.host")
-  val destinationPort = Util.getSparkPropOr(sc, "spark.target.port", "9042")
-  val destinationUsername = Util.getSparkProp(sc, "spark.target.username")
-  val destinationPassword = Util.getSparkProp(sc, "spark.target.password")
-  val destinationSSLEnabled = Util.getSparkPropOr(sc, "spark.target.ssl.enabled", "false")
-  val destinationTrustStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.path")
-  val destinationTrustStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.trustStore.password")
-  val destinationTrustStoreType = Util.getSparkPropOr(sc, "spark.target.trustStore.type", "JKS")
-  val destinationKeyStorePath = Util.getSparkPropOrEmpty(sc, "spark.target.keyStore.path")
-  val destinationKeyStorePassword = Util.getSparkPropOrEmpty(sc, "spark.target.keyStore.password")
-  val destinationEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, "spark.target.enabledAlgorithms")
+  val targetScbPath = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_CONNECT_SCB)
+  val targetHost = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_CONNECT_HOST)
+  val targetPort = Util.getSparkPropOr(sc, KnownProperties.TARGET_CONNECT_PORT, "9042")
+  val targetUsername = Util.getSparkProp(sc, KnownProperties.TARGET_CONNECT_USERNAME)
+  val targetPassword = Util.getSparkProp(sc, KnownProperties.TARGET_CONNECT_PASSWORD)
+  val targetSSLEnabled = Util.getSparkPropOr(sc, KnownProperties.TARGET_TLS_ENABLED, "false")
+  val targetTrustStorePath = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_TLS_TRUSTSTORE_PATH)
+  val targetTrustStorePassword = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD)
+  val targetTrustStoreType = Util.getSparkPropOr(sc, KnownProperties.TARGET_TLS_TRUSTSTORE_TYPE, "JKS")
+  val targetKeyStorePath = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_TLS_KEYSTORE_PATH)
+  val targetKeyStorePassword = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_TLS_KEYSTORE_PASSWORD)
+  val targetEnabledAlgorithms = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_TLS_ALGORITHMS)
 
-  val minPartition = new BigInteger(Util.getSparkPropOr(sc, "spark.origin.minPartition", "-9223372036854775808"))
-  val maxPartition = new BigInteger(Util.getSparkPropOr(sc, "spark.origin.maxPartition", "9223372036854775807"))
-  val coveragePercent = Util.getSparkPropOr(sc, "spark.coveragePercent", "100")
-  val splitSizeBackwardCompatibility = Util.getSparkPropOr(sc, "spark.splitSize", "10000")
-  val numSplits = Integer.parseInt(Util.getSparkPropOr(sc, "spark.numSplits", splitSizeBackwardCompatibility))
+  val minPartition = new BigInteger(Util.getSparkPropOr(sc, KnownProperties.PARTITION_MIN, "-9223372036854775808"))
+  val maxPartition = new BigInteger(Util.getSparkPropOr(sc, KnownProperties.PARTITION_MAX, "9223372036854775807"))
+  val coveragePercent = Util.getSparkPropOr(sc, KnownProperties.ORIGIN_COVERAGE_PERCENT, "100")
+  val splitSizeBackwardCompatibility = Util.getSparkPropOr(sc, KnownProperties.DEPRECATED_SPARK_SPLIT_SIZE, "10000")
+  val numSplits = Integer.parseInt(Util.getSparkPropOr(sc, KnownProperties.SPARK_NUM_SPLITS, splitSizeBackwardCompatibility))
 
   protected def exitSpark() = {
     spark.stop()

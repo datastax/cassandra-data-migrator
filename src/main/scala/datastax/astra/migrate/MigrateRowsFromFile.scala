@@ -8,7 +8,7 @@ object MigrateRowsFromFile extends AbstractJob {
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started MigrateRowsFromFile App")
 
-  migrateTable(sourceConnection, destinationConnection)
+  migrateTable(originConnection, targetConnection)
 
   exitSpark
 
