@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -34,28 +35,28 @@ public class AbstractJobSession extends BaseJobSession {
         this.originSessionSession = originSession;
         this.targetSession = targetSession;
 
-        batchSize = new Integer(Util.getSparkPropOr(sc, "spark.batchSize", "5"));
-        fetchSizeInRows = new Integer(Util.getSparkPropOr(sc, "spark.read.fetch.sizeInRows", "1000"));
-        printStatsAfter = new Integer(Util.getSparkPropOr(sc, "spark.printStatsAfter", "100000"));
+        batchSize = new Integer(Util.getSparkPropOr(sc, KnownProperties.SPARK_BATCH_SIZE, "5"));
+        fetchSizeInRows = new Integer(Util.getSparkPropOr(sc, KnownProperties.READ_FETCH_SIZE, "1000"));
+        printStatsAfter = new Integer(Util.getSparkPropOr(sc, KnownProperties.SPARK_STATS_AFTER, "100000"));
         if (printStatsAfter < 1) {
             printStatsAfter = 100000;
         }
 
-        readLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, "spark.readRateLimit", "20000")));
-        writeLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, "spark.writeRateLimit", "40000")));
-        maxRetries = Integer.parseInt(sc.get("spark.maxRetries", "0"));
+        readLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, KnownProperties.SPARK_LIMIT_READ, "20000")));
+        writeLimiter = RateLimiter.create(new Integer(Util.getSparkPropOr(sc, KnownProperties.SPARK_LIMIT_WRITE, "40000")));
+        maxRetries = Integer.parseInt(sc.get(KnownProperties.SPARK_MAX_RETRIES, "0"));
 
-        originKeyspaceTable = Util.getSparkProp(sc, "spark.origin.keyspaceTable");
-        targetKeyspaceTable = Util.getSparkProp(sc, "spark.target.keyspaceTable");
+        originKeyspaceTable = Util.getSparkProp(sc, KnownProperties.ORIGIN_KEYSPACE_TABLE);
+        targetKeyspaceTable = Util.getSparkProp(sc, KnownProperties.TARGET_KEYSPACE_TABLE);
 
-        String ttlColsStr = Util.getSparkPropOrEmpty(sc, "spark.query.ttl.cols");
+        String ttlColsStr = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_TTL_COLS);
         if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
             for (String ttlCol : ttlColsStr.split(",")) {
                 ttlCols.add(Integer.parseInt(ttlCol));
             }
         }
 
-        String writeTimestampColsStr = Util.getSparkPropOrEmpty(sc, "spark.query.writetime.cols");
+        String writeTimestampColsStr = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_WRITETIME_COLS);
         if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
             for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
                 writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
@@ -63,25 +64,25 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         writeTimeStampFilter = Boolean
-                .parseBoolean(Util.getSparkPropOr(sc, "spark.origin.writeTimeStampFilter", "false"));
+                .parseBoolean(Util.getSparkPropOr(sc, KnownProperties.ORIGIN_FILTER_WRITETS_ENABLED, "false"));
         // batchsize set to 1 if there is a writeFilter
         if (writeTimeStampFilter) {
             batchSize = 1;
         }
 
         String minWriteTimeStampFilterStr =
-                Util.getSparkPropOr(sc, "spark.origin.minWriteTimeStampFilter", "0");
+                Util.getSparkPropOr(sc, KnownProperties.ORIGIN_FILTER_WRITETS_MIN, "0");
         if (null != minWriteTimeStampFilterStr && minWriteTimeStampFilterStr.trim().length() > 1) {
             minWriteTimeStampFilter = Long.parseLong(minWriteTimeStampFilterStr);
         }
         String maxWriteTimeStampFilterStr =
-                Util.getSparkPropOr(sc, "spark.origin.maxWriteTimeStampFilter", "0");
+                Util.getSparkPropOr(sc, KnownProperties.ORIGIN_FILTER_WRITETS_MAX, "0");
         if (null != maxWriteTimeStampFilterStr && maxWriteTimeStampFilterStr.trim().length() > 1) {
             maxWriteTimeStampFilter = Long.parseLong(maxWriteTimeStampFilterStr);
         }
 
         String customWriteTimeStr =
-                Util.getSparkPropOr(sc, "spark.target.custom.writeTime", "0");
+                Util.getSparkPropOr(sc, KnownProperties.TARGET_CUSTOM_WRITETIME, "0");
         if (null != customWriteTimeStr && customWriteTimeStr.trim().length() > 1 && StringUtils.isNumeric(customWriteTimeStr.trim())) {
             customWritetime = Long.parseLong(customWriteTimeStr);
         }
@@ -105,9 +106,9 @@ public class AbstractJobSession extends BaseJobSession {
                     Instant.ofEpochMilli(maxWriteTimeStampFilter / 1000));
         }
 
-        String selectCols = Util.getSparkProp(sc, "spark.query.origin");
-        String partitionKey = Util.getSparkProp(sc, "spark.query.origin.partitionKey");
-        String originSelectCondition = Util.getSparkPropOrEmpty(sc, "spark.query.condition");
+        String selectCols = Util.getSparkProp(sc, KnownProperties.ORIGIN_COLUMN_NAMES);
+        String partitionKey = Util.getSparkProp(sc, KnownProperties.ORIGIN_PARTITION_KEY);
+        String originSelectCondition = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_CONDITION);
         if (!originSelectCondition.isEmpty() && !originSelectCondition.trim().toUpperCase().startsWith("AND")) {
             originSelectCondition = " AND " + originSelectCondition;
         }
@@ -120,11 +121,11 @@ public class AbstractJobSession extends BaseJobSession {
         writeTimeStampCols.forEach(col -> {
             selectTTLWriteTimeCols.append(",writetime(" + allCols[col] + ")");
         });
-        selectColTypes = getTypes(Util.getSparkProp(sc, "spark.query.types"));
-        String idCols = Util.getSparkPropOrEmpty(sc, "spark.query.target.id");
+        selectColTypes = getTypes(Util.getSparkProp(sc, KnownProperties.ORIGIN_COLUMN_TYPES));
+        String idCols = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_PRIMARY_KEY);
         idColTypes = selectColTypes.subList(0, idCols.split(",").length);
 
-        String insertCols = Util.getSparkPropOrEmpty(sc, "spark.query.target");
+        String insertCols = Util.getSparkPropOrEmpty(sc, KnownProperties.TARGET_COLUMN_NAMES);
         if (null == insertCols || insertCols.trim().isEmpty()) {
             insertCols = selectCols;
         }
@@ -152,15 +153,15 @@ public class AbstractJobSession extends BaseJobSession {
                 "select " + insertCols + " from " + targetKeyspaceTable
                         + " where " + insertBinds);
 
-        hasRandomPartitioner = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.origin.hasRandomPartitioner", "false"));
-        isCounterTable = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.counterTable", "false"));
+        hasRandomPartitioner = Boolean.parseBoolean(Util.getSparkPropOr(sc, KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER, "false"));
+        isCounterTable = Boolean.parseBoolean(Util.getSparkPropOr(sc, KnownProperties.ORIGIN_IS_COUNTER, "false"));
         if (isCounterTable) {
-            String updateSelectMappingStr = Util.getSparkPropOr(sc, "spark.counterTable.cql.index", "0");
+            String updateSelectMappingStr = Util.getSparkPropOr(sc, KnownProperties.ORIGIN_COUNTER_INDEXES, "0");
             for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
                 updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
             }
 
-            String counterTableUpdate = Util.getSparkProp(sc, "spark.counterTable.cql");
+            String counterTableUpdate = Util.getSparkProp(sc, KnownProperties.ORIGIN_COUNTER_CQL);
             targetInsertStatement = targetSession.prepare(counterTableUpdate);
         } else {
             insertBinds = "";
@@ -185,7 +186,7 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         // Handle rows with blank values for 'timestamp' data-type in primary-key fields
-        tsReplaceValStr = Util.getSparkPropOr(sc, "spark.target.replace.blankTimestampKeyUsingEpoch", "");
+        tsReplaceValStr = Util.getSparkPropOr(sc, KnownProperties.TARGET_REPLACE_MISSING_TS, "");
         if (!tsReplaceValStr.isEmpty()) {
             tsReplaceVal = Long.parseLong(tsReplaceValStr);
         }
@@ -283,7 +284,7 @@ public class AbstractJobSession extends BaseJobSession {
         if (index < idColTypes.size() && colData == null && dataType == Instant.class) {
             if (tsReplaceValStr.isEmpty()) {
                 logger.error("Skipping row with Key: {} as Timestamp primary-key column {} has invalid blank value. " +
-                        "Alternatively rerun the job with --conf spark.target.replace.blankTimestampKeyUsingEpoch=\"<fixed-epoch-value>\" " +
+                        "Alternatively rerun the job with --conf "+KnownProperties.TARGET_REPLACE_MISSING_TS+"\"<fixed-epoch-value>\" " +
                         "option to replace the blanks with a fixed timestamp value", getKey(originRow), allCols[index]);
                 return Optional.empty();
             }
