@@ -1,5 +1,6 @@
 package datastax.astra.migrate;
 
+import datastax.astra.migrate.cql.CqlHelper;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;

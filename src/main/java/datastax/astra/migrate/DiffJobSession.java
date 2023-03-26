@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import datastax.astra.migrate.cql.CqlHelper;
 import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;

@@ -1,10 +1,12 @@
-package datastax.astra.migrate;
+package datastax.astra.migrate.cql;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.astra.migrate.MigrateDataType;
+import datastax.astra.migrate.Util;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -90,7 +92,7 @@ public class CqlHelper {
                 if (targetRow != null && index < (selectColTypesSize - getIdColTypes().size())) {
                     boundInsertStatement = boundInsertStatement.set(index, (originRow.getLong(getOriginColumnIndexes().get(index)) - targetRow.getLong(getOriginColumnIndexes().get(index))), Long.class);
                 } else {
-                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, getOriginColumnIndexes().get(index), originRow), dataType.typeClass);
+                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, getOriginColumnIndexes().get(index), originRow), dataType.getType());
                 }
             }
         } else {
@@ -248,20 +250,20 @@ public class CqlHelper {
     }
 
     public Object getData(MigrateDataType dataType, int index, Row row) {
-        if (dataType.typeClass == Map.class) {
-            return row.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
-        } else if (dataType.typeClass == List.class) {
-            return row.getList(index, dataType.subTypes.get(0));
-        } else if (dataType.typeClass == Set.class) {
-            return row.getSet(index, dataType.subTypes.get(0));
-        } else if (isCounterTable() && dataType.typeClass == Long.class) {
-            Object data = row.get(index, dataType.typeClass);
+        if (dataType.getType() == Map.class) {
+            return row.getMap(index, dataType.getSubTypes().get(0), dataType.getSubTypes().get(1));
+        } else if (dataType.getType() == List.class) {
+            return row.getList(index, dataType.getSubTypes().get(0));
+        } else if (dataType.getType() == Set.class) {
+            return row.getSet(index, dataType.getSubTypes().get(0));
+        } else if (isCounterTable() && dataType.getType() == Long.class) {
+            Object data = row.get(index, dataType.getType());
             if (data == null) {
                 return new Long(0);
             }
         }
 
-        return row.get(index, dataType.typeClass);
+        return row.get(index, dataType.getType());
     }
 
     private BoundStatement getBoundStatement(Row originRow, BoundStatement boundSelectStatement, int index,
@@ -271,13 +273,13 @@ public class CqlHelper {
 
         // Handle rows with blank values in primary-key fields
         if (index < getIdColTypes().size()) {
-            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, dataTypeObj.typeClass, originRow);
+            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, dataTypeObj.getType(), originRow);
             if (!optionalVal.isPresent()) {
                 return null;
             }
             colData = optionalVal.get();
         }
-        boundSelectStatement = boundSelectStatement.set(index, colData, dataTypeObj.typeClass);
+        boundSelectStatement = boundSelectStatement.set(index, colData, dataTypeObj.getType());
         return boundSelectStatement;
     }
 

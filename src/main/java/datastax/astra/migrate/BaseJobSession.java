@@ -1,6 +1,7 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.astra.migrate.cql.CqlHelper;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
 
