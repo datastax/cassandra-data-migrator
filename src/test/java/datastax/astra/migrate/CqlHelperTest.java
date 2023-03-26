@@ -42,9 +42,9 @@ public class CqlHelperTest {
         propertyHelper.initializeSparkConf(sparkConf);
         cqlHelper.initialize();
 
-        String originSelect = "SELECT key,val FROM origin.tab1 WHERE TOKEN(key) >= ? AND TOKEN(key) <= ? ALLOW FILTERING".replaceAll("\\s+"," ");
-        String targetInsert = "INSERT INTO target.tab1 (key,val) VALUES (?,?)".replaceAll("\\s+"," ");
-        String targetSelect = "SELECT key,val FROM target.tab1 WHERE key=?".replaceAll("\\s+"," ");
+        String originSelect = "SELECT key,val FROM origin.tab1 WHERE TOKEN(key) >= ? AND TOKEN(key) <= ? ALLOW FILTERING";
+        String targetInsert = "INSERT INTO target.tab1 (key,val) VALUES (?,?)";
+        String targetSelect = "SELECT key,val FROM target.tab1 WHERE key=?";
 
         assertAll(
             () -> assertEquals(originSelect, cqlHelper.getCql(CqlHelper.CQL.ORIGIN_SELECT).replaceAll("\\s+"," ")),
