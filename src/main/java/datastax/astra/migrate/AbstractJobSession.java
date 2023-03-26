@@ -29,7 +29,8 @@ public class AbstractJobSession extends BaseJobSession {
         printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
         if (!propertyHelper.meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {
             logger.warn(KnownProperties.SPARK_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
-            propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
+            propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefault(KnownProperties.SPARK_STATS_AFTER));
+            printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
         }
 
         readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.SPARK_LIMIT_READ));

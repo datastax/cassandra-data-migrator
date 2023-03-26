@@ -21,8 +21,8 @@ public class CopyPKJobSession extends AbstractJobSession {
     protected AtomicLong missingCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
 
-    protected CopyPKJobSession(CqlSession originSessionSession, CqlSession targetSession, SparkConf sc) {
-        super(originSessionSession, targetSession, sc, true);
+    protected CopyPKJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+        super(originSession, targetSession, sc, true);
     }
 
     public static CopyPKJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {

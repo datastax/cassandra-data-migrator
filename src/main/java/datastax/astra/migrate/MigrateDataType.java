@@ -20,8 +20,6 @@ public class MigrateDataType {
     private static int minType = 0;
     private static int maxType = 19;
 
-    private static final List<Class> COLLECTION_TYPES = Arrays.asList(List.class, Set.class, Map.class);
-
     public MigrateDataType(String dataType) {
         dataTypeString = dataType;
         if (dataType.contains("%")) {
@@ -37,32 +35,6 @@ public class MigrateDataType {
             }
         } else {
             this.type = typeAsInt(dataType);
-        }
-        this.typeClass = getType(this.type);
-
-        if (this.type >= minType && this.type <= maxType) {
-            isValid = true;
-            for (Object o : subTypes) {
-                if (null == o || Object.class == o) {
-                    isValid = false;
-                }
-            }
-        }
-        else {
-            isValid = false;
-        }
-        this.typeClass = getType(this.type);
-
-        if (this.type >= minType && this.type <= maxType) {
-            isValid = true;
-            for (Object o : subTypes) {
-                if (null == o || Object.class == o) {
-                    isValid = false;
-                }
-            }
-        }
-        else {
-            isValid = false;
         }
         this.typeClass = getType(this.type);
 
@@ -146,10 +118,6 @@ public class MigrateDataType {
         }
 
         return Object.class;
-    }
-
-    public boolean isCollection() {
-        return COLLECTION_TYPES.contains(typeClass);
     }
 
     public Class getType() {
