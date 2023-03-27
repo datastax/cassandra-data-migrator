@@ -13,7 +13,7 @@ object Migrate extends AbstractJob {
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")
 
-  migrateTable(sourceConnection, destinationConnection, sc)
+  migrateTable(originConnection, targetConnection, sc)
 
   exitSpark
 

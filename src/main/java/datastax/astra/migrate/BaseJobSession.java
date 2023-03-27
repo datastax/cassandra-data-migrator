@@ -14,9 +14,9 @@ import java.util.Set;
 
 public abstract class BaseJobSession {
 
-    protected PreparedStatement sourceSelectStatement;
-    protected PreparedStatement astraSelectStatement;
-    protected PreparedStatement astraInsertStatement;
+    protected PreparedStatement originSelectStatement;
+    protected PreparedStatement targetSelectStatement;
+    protected PreparedStatement targetInsertStatement;
     protected ConsistencyLevel readConsistencyLevel;
     protected ConsistencyLevel writeConsistencyLevel;
 
@@ -30,8 +30,8 @@ public abstract class BaseJobSession {
     protected RateLimiter writeLimiter;
     protected Integer maxRetries = 10;
 
-    protected CqlSession sourceSession;
-    protected CqlSession astraSession;
+    protected CqlSession originSessionSession;
+    protected CqlSession targetSession;
     protected List<MigrateDataType> selectColTypes = new ArrayList<MigrateDataType>();
     protected List<MigrateDataType> idColTypes = new ArrayList<MigrateDataType>();
     protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
@@ -49,8 +49,8 @@ public abstract class BaseJobSession {
     protected List<Integer> ttlCols = new ArrayList<Integer>();
     protected Boolean isCounterTable;
 
-    protected String sourceKeyspaceTable;
-    protected String astraKeyspaceTable;
+    protected String originKeyspaceTable;
+    protected String targetKeyspaceTable;
 
     protected Boolean hasRandomPartitioner;
     protected Boolean filterData;
@@ -68,14 +68,14 @@ public abstract class BaseJobSession {
         writeConsistencyLevel = Util.mapToConsistencyLevel(Util.getSparkPropOrEmpty(sc, "spark.consistency.write"));
     }
 
-    public String getKey(Row sourceRow) {
+    public String getKey(Row originRow) {
         StringBuffer key = new StringBuffer();
         for (int index = 0; index < idColTypes.size(); index++) {
             MigrateDataType dataType = idColTypes.get(index);
             if (index == 0) {
-                key.append(getData(dataType, index, sourceRow));
+                key.append(getData(dataType, index, originRow));
             } else {
-                key.append(" %% " + getData(dataType, index, sourceRow));
+                key.append(" %% " + getData(dataType, index, originRow));
             }
         }
 
@@ -91,20 +91,20 @@ public abstract class BaseJobSession {
         return dataTypes;
     }
 
-    public Object getData(MigrateDataType dataType, int index, Row sourceRow) {
+    public Object getData(MigrateDataType dataType, int index, Row originRow) {
         if (dataType.typeClass == Map.class) {
-            return sourceRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
+            return originRow.getMap(index, dataType.subTypes.get(0), dataType.subTypes.get(1));
         } else if (dataType.typeClass == List.class) {
-            return sourceRow.getList(index, dataType.subTypes.get(0));
+            return originRow.getList(index, dataType.subTypes.get(0));
         } else if (dataType.typeClass == Set.class) {
-            return sourceRow.getSet(index, dataType.subTypes.get(0));
+            return originRow.getSet(index, dataType.subTypes.get(0));
         } else if (isCounterTable && dataType.typeClass == Long.class) {
-            Object data = sourceRow.get(index, dataType.typeClass);
+            Object data = originRow.get(index, dataType.typeClass);
             if (data == null) {
                 return new Long(0);
             }
         }
 
-        return sourceRow.get(index, dataType.typeClass);
+        return originRow.get(index, dataType.typeClass);
     }
 }

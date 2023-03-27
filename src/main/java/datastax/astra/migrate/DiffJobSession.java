@@ -33,8 +33,8 @@ public class DiffJobSession extends CopyJobSession {
     private AtomicLong validCounter = new AtomicLong(0);
     private AtomicLong skippedCounter = new AtomicLong(0);
 
-    private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
-        super(sourceSession, astraSession, sc);
+    private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+        super(originSession, targetSession, sc);
 
         autoCorrectMissing = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.target.autocorrect.missing", "false"));
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
@@ -43,11 +43,11 @@ public class DiffJobSession extends CopyJobSession {
         logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
     }
 
-    public static DiffJobSession getInstance(CqlSession sourceSession, CqlSession astraSession, SparkConf sparkConf) {
+    public static DiffJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sparkConf) {
         if (diffJobSession == null) {
             synchronized (DiffJobSession.class) {
                 if (diffJobSession == null) {
-                    diffJobSession = new DiffJobSession(sourceSession, astraSession, sparkConf);
+                    diffJobSession = new DiffJobSession(originSession, targetSession, sparkConf);
                 }
             }
         }
@@ -62,7 +62,7 @@ public class DiffJobSession extends CopyJobSession {
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             try {
                 // cannot do batching if the writeFilter is greater than 0
-                ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
+                ResultSet resultSet = originSessionSession.execute(originSelectStatement.bind(hasRandomPartitioner ?
                                 min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
                         .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
 
@@ -76,11 +76,11 @@ public class DiffJobSession extends CopyJobSession {
                             printCounts(false);
                         }
 
-                        BoundStatement bSelect = selectFromAstra(astraSelectStatement, srcRow);
+                        BoundStatement bSelect = selectFromTarget(targetSelectStatement, srcRow);
                         if (null == bSelect) {
                             skippedCounter.incrementAndGet();
                         } else {
-                            CompletionStage<AsyncResultSet> targetRowFuture = astraSession.executeAsync(bSelect);
+                            CompletionStage<AsyncResultSet> targetRowFuture = targetSession.executeAsync(bSelect);
                             srcToTargetRowMap.put(srcRow, targetRowFuture);
                             if (srcToTargetRowMap.size() > fetchSizeInRows) {
                                 diffAndClear(srcToTargetRowMap);
@@ -132,34 +132,34 @@ public class DiffJobSession extends CopyJobSession {
         }
     }
 
-    private void diff(Row sourceRow, Row astraRow) {
-        if (astraRow == null) {
+    private void diff(Row originRow, Row targetRow) {
+        if (targetRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Missing target row found for key: {}", getKey(sourceRow));
+            logger.error("Missing target row found for key: {}", getKey(originRow));
             //correct data
 
             if (autoCorrectMissing) {
-                astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
+                targetSession.execute(bindInsert(targetInsertStatement, originRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Inserted missing row in target: {}", getKey(sourceRow));
+                logger.error("Inserted missing row in target: {}", getKey(originRow));
             }
 
             return;
         }
 
-        String diffData = isDifferent(sourceRow, astraRow);
+        String diffData = isDifferent(originRow, targetRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
-            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(sourceRow), diffData);
+            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(originRow), diffData);
 
             if (autoCorrectMismatch) {
                 if (isCounterTable) {
-                    astraSession.execute(bindInsert(astraInsertStatement, sourceRow, astraRow));
+                    targetSession.execute(bindInsert(targetInsertStatement, originRow, targetRow));
                 } else {
-                    astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
+                    targetSession.execute(bindInsert(targetInsertStatement, originRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Updated mismatch row in target: {}", getKey(sourceRow));
+                logger.error("Updated mismatch row in target: {}", getKey(originRow));
             }
 
             return;
@@ -168,30 +168,30 @@ public class DiffJobSession extends CopyJobSession {
         validCounter.incrementAndGet();
     }
 
-    private String isDifferent(Row sourceRow, Row astraRow) {
+    private String isDifferent(Row originRow, Row targetRow) {
         StringBuffer diffData = new StringBuffer();
         IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
             MigrateDataType dataTypeObj = selectColTypes.get(index);
-            Object source = getData(dataTypeObj, index, sourceRow);
+            Object origin = getData(dataTypeObj, index, originRow);
             if (index < idColTypes.size()) {
-                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
+                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, origin, dataTypeObj.typeClass, originRow, false);
                 if (optionalVal.isPresent()) {
-                    source = optionalVal.get();
+                    origin = optionalVal.get();
                 }
             }
 
-            Object astra = getData(dataTypeObj, index, astraRow);
+            Object target = getData(dataTypeObj, index, targetRow);
 
-            boolean isDiff = dataTypeObj.diff(source, astra);
+            boolean isDiff = dataTypeObj.diff(origin, target);
             if (isDiff) {
                 if (dataTypeObj.typeClass.equals(UdtValue.class)) {
-                    String sourceUdtContent = ((UdtValue) source).getFormattedContents();
-                    String astraUdtContent = ((UdtValue) astra).getFormattedContents();
-                    if (!sourceUdtContent.equals(astraUdtContent)) {
-                        diffData.append("(Index: " + index + " Origin: " + sourceUdtContent + " Target: " + astraUdtContent + ") ");
+                    String originUdtContent = ((UdtValue) origin).getFormattedContents();
+                    String targetUdtContent = ((UdtValue) target).getFormattedContents();
+                    if (!originUdtContent.equals(targetUdtContent)) {
+                        diffData.append("(Index: " + index + " Origin: " + originUdtContent + " Target: " + targetUdtContent + ") ");
                     }
                 } else {
-                    diffData.append("(Index: " + index + " Origin: " + source + " Target: " + astra + ") ");
+                    diffData.append("(Index: " + index + " Origin: " + origin + " Target: " + target + ") ");
                 }
             }
         });
