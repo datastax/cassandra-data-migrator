@@ -251,6 +251,24 @@ public class KnownProperties {
     }
 
     //==========================================================================
+    // Constant Column Feature
+    //==========================================================================
+    public static final String CONSTANT_COLUMN_NAMES                 = "spark.cdm.cql.feature.constantColumns.names";        // const1,const2
+    public static final String CONSTANT_COLUMN_TYPES                 = "spark.cdm.cql.feature.constantColumns.types";        // 0,1
+    public static final String CONSTANT_COLUMN_VALUES                = "spark.cdm.cql.feature.constantColumns.values";       // 'abcd',1234
+    public static final String CONSTANT_COLUMN_SPLIT_REGEX           = "spark.cdm.cql.feature.constantColumns.splitRegex";   // , : this is needed because hard-coded values can have commas in them
+    public static final String TARGET_PRIMARY_KEY_TYPES_NO_CONSTANTS = "spark.cdm.cql.feature.constantColumns.noConstants";  // 1 : this will be set within the code
+
+    static {
+        types.put(CONSTANT_COLUMN_NAMES, PropertyType.STRING_LIST);
+        types.put(CONSTANT_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+        types.put(CONSTANT_COLUMN_VALUES, PropertyType.STRING);
+        types.put(CONSTANT_COLUMN_SPLIT_REGEX, PropertyType.STRING);
+        types.put(TARGET_PRIMARY_KEY_TYPES_NO_CONSTANTS, PropertyType.MIGRATION_TYPE_LIST);
+        defaults.put(CONSTANT_COLUMN_SPLIT_REGEX, ",");
+    }
+
+    //==========================================================================
     // Properties used for Unit Testing
     //==========================================================================
     public static final String TEST_STRING = "test.string";

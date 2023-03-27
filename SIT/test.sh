@@ -34,6 +34,13 @@ fi
 # Common enviornment and functions
 . common.sh
 
+_captureOutput() {
+  docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output
+  mv ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output
+  mv ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output
+  rm -rf ${testDir}/output/$(basename ${testDir})
+}
+
 EXPECTED_FILES="setup.cql expected.cql expected.out execute.sh"
 GENERATED_FILES='setup.out setup.err execute.out execute.err actual.out actual.err cdm.*.out cdm.*.err other.*.out other.*.err'
 CDM_JAR=/local/cassandra-data-migrator.jar
@@ -58,6 +65,8 @@ for testDir in $(ls -d ${PHASE}/*); do
   for f in ${GENERATED_FILES}; do
     rm -f ${testDir}/$f
   done
+  rm -rf ${testDir}/output/*
+  mkdir -p ${testDir}/output
 done
 
 # The .jar file is expected to be present
@@ -88,13 +97,14 @@ echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   _info ${testDir} Setup tables and data 
-  docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/setup.cql > $testDir/setup.out 2>$testDir/setup.err
+  docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/setup.cql > $testDir/output/setup.out 2>$testDir/output/setup.err
   if [ $? -ne 0 ]; then
-    _error "${testDir}/setup.cql failed, see setup.out and setup.err"
+    _error "${testDir}/setup.cql failed, see $testDir/output/setup.out and $testDir/output/setup.err"
     errors=1
   fi
 done
 if [ $errors -ne 0 ]; then
+  _captureOutput
   _fatal "One or more setup.cql failed. See above ERROR(s) for details."
 fi
 
@@ -105,13 +115,14 @@ echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   _info ${testDir} Executing test
-  docker exec ${DOCKER_CDM} bash $testDir/execute.sh /$testDir > $testDir/execute.out 2>$testDir/execute.err
+  docker exec ${DOCKER_CDM} bash -e $testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err
   if [ $? -ne 0 ]; then
-    _error "${testDir}/execute.sh failed, see $testDir/execute.out and $testDir/execute.err"
+    _error "${testDir}/execute.sh failed, see $testDir/output/execute.out and $testDir/output/execute.err"
     errors=1
   fi
 done
 if [ $errors -ne 0 ]; then
+  _captureOutput
   _fatal "One or more execute.sh failed. See above ERROR(s) for details."
 fi
 
@@ -122,17 +133,17 @@ echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   _info ${testDir} Check Expected Results 
-  docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql > $testDir/actual.out 2>$testDir/actual.err
+  docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql > $testDir/output/actual.out 2>$testDir/output/actual.err
   if [ $? -ne 0 ]; then
-    _error "${testDir}/expected.cql failed, see actual.out and actual.err"
+    _error "${testDir}/expected.cql failed, see $testDir/output/actual.out $testDir/output/and actual.err"
     errors=1
     continue
   fi
-  diff -q $testDir/expected.out $testDir/actual.out > /dev/null 2>&1
+  diff -q $testDir/expected.out $testDir/output/actual.out > /dev/null 2>&1
   rtn=$?
   if [ $rtn -eq 1 ]; then
     _error "${testDir} files differ (expected vs actual):"
-    sdiff ${testDir}/expected.out ${testDir}/actual.out
+    sdiff ${testDir}/expected.out ${testDir}/output/actual.out
     errors=1
     continue
   elif [ $rtn -ne 0 ]; then
@@ -144,10 +155,14 @@ for testDir in $(ls -d ${PHASE}/*); do
   _info "PASS: ${testDir} returned expected results"
 done
 if [ $errors -ne 0 ]; then
+  _captureOutput
   _fatal "One or more expected results failed. See above ERROR(s) for details."
 fi
+
+_captureOutput
 
 echo
 echo "=========================================================="
 echo " Phase ${PHASE} Complete"
 echo "=========================================================="
+

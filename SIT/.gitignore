@@ -1,3 +1,5 @@
+output/
+
 setup.out
 setup.err
 execute.out

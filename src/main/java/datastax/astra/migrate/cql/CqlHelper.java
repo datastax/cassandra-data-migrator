@@ -184,7 +184,16 @@ public class CqlHelper {
                     insertBinds += ",?";
                 }
             }
-            targetInsertQuery = "INSERT INTO " + getTargetKeyspaceTable() + " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + ") VALUES (" + insertBinds + ")";
+
+            if (featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled()) {
+                insertBinds += "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_VALUES);
+            }
+
+            targetInsertQuery = "INSERT INTO " +
+                    getTargetKeyspaceTable() +
+                    " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) +
+                    ((featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled()) ? "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
+                    ") VALUES (" + insertBinds + ")";
             if (null != getTtlCols() && !getTtlCols().isEmpty()) {
                 targetInsertQuery += " USING TTL ?";
                 if (null != getWriteTimeStampCols() &&  !getWriteTimeStampCols().isEmpty()) {
@@ -199,14 +208,27 @@ public class CqlHelper {
 
     private String cqlTargetSelectOriginByPK() {
         String keyBinds = "";
-        for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
-            if (keyBinds.isEmpty()) {
-                keyBinds = key + "=?";
-            } else {
-                keyBinds += " AND " + key + "=?";
+        if (!featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled()){
+            for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
+                if (keyBinds.isEmpty()) {
+                    keyBinds = key + "=?";
+                } else {
+                    keyBinds += " AND " + key + "=?";
+                }
             }
         }
-
+        else {
+            List<String> constantColumnNames = featureMap.get(Featureset.CONSTANT_COLUMNS).getStringList(ConstantColumns.Property.COLUMN_NAMES);
+            List<String> constantColumnValues = featureMap.get(Featureset.CONSTANT_COLUMNS).getStringList(ConstantColumns.Property.COLUMN_VALUES);
+            for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
+                String whatToEqual = constantColumnNames.contains(key) ? constantColumnValues.get(constantColumnNames.indexOf(key)) : "?";
+                if (keyBinds.isEmpty()) {
+                    keyBinds = key + "=" + whatToEqual;
+                } else {
+                    keyBinds += " AND " + key + "=" + whatToEqual;
+                }
+            }
+        }
         return "SELECT " + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + " FROM " + getTargetKeyspaceTable() + " WHERE " + keyBinds;
     }
 
@@ -412,7 +434,10 @@ public class CqlHelper {
     }
 
     public List<MigrateDataType> getIdColTypes() {
-        return propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
+        if (featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled())
+            return featureMap.get(Featureset.CONSTANT_COLUMNS).getMigrateDataTypeList(ConstantColumns.Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT);
+        else
+            return propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
     }
 
     // These getters have no usage outside this class
