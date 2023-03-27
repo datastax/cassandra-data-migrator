@@ -59,47 +59,83 @@ public abstract class AbstractFeature implements Feature {
 
     @Override
     public String getString(Enum<?> key) {
-        return !isEnabled ? null : strings.get(key);
+        return !isEnabled ? null : getRawString(key);
+    }
+
+    protected String getRawString(Enum<?> key) {
+        return strings.get(key);
     }
 
     @Override
     public Boolean getBoolean(Enum<?> key) {
-        return !isEnabled ? null : booleans.get(key);
+        return !isEnabled ? null : getRawBoolean(key);
+    }
+
+    protected Boolean getRawBoolean(Enum<?> key) {
+        return booleans.get(key);
     }
 
     @Override
     public Number getNumber(Enum<?> key) {
-        return !isEnabled ? null : numbers.get(key);
+        return !isEnabled ? null : getRawNumber(key);
+    }
+
+    protected Number getRawNumber(Enum<?> key) {
+        return numbers.get(key);
     }
 
     @Override
     public Integer getInteger(Enum<?> key) {
-        return !isEnabled ? null : PropertyHelper.toInteger(numbers.get(key));
+        return !isEnabled ? null : getRawInteger(key);
+    }
+
+    protected Integer getRawInteger(Enum<?> key) {
+        return PropertyHelper.toInteger(getRawNumber(key));
     }
 
     @Override
     public MigrateDataType getMigrateDataType(Enum<?> key) {
-        return !isEnabled ? null : migrateDataTypes.get(key);
+        return !isEnabled ? null : getRawMigrateDataType(key);
+    }
+
+    protected MigrateDataType getRawMigrateDataType(Enum<?> key) {
+        return migrateDataTypes.get(key);
     }
 
     @Override
     public List<String> getStringList(Enum<?> key) {
-        return !isEnabled ? null : stringLists.get(key);
+        return !isEnabled ? null : getRawStringList(key);
+    }
+
+    protected List<String> getRawStringList(Enum<?> key) {
+        return stringLists.get(key);
     }
 
     @Override
     public List<Number> getNumberList(Enum<?> key) {
-        return !isEnabled ? null : numberLists.get(key);
+        return !isEnabled ? null : getRawNumberList(key);
+    }
+
+    protected List<Number> getRawNumberList(Enum<?> key) {
+        return numberLists.get(key);
     }
 
     @Override
     public List<Integer> getIntegerList(Enum<?> key) {
-        return !isEnabled ? null : PropertyHelper.toIntegerList(numberLists.get(key));
+        return !isEnabled ? null : getRawIntegerList(key);
+    }
+
+    protected List<Integer> getRawIntegerList(Enum<?> key) {
+        return PropertyHelper.toIntegerList(getRawNumberList(key));
     }
 
     @Override
     public List<MigrateDataType> getMigrateDataTypeList(Enum key) {
-        return !isEnabled ? null : migrateDataTypeLists.get(key);
+        return !isEnabled ? null : getRawMigrateDataTypeList(key);
+    }
+
+    protected List<MigrateDataType> getRawMigrateDataTypeList(Enum key) {
+        return migrateDataTypeLists.get(key);
     }
 
     protected void putString(Enum<?> key, String value) {

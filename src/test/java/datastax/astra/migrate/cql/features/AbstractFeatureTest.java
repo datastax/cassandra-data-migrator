@@ -150,7 +150,16 @@ public class AbstractFeatureTest {
                 () -> assertEquals("", testFeature.getAsString(TestProperty.MIGRATE_DATA_TYPE)),
                 () -> assertEquals("", testFeature.getAsString(TestProperty.STRING_LIST)),
                 () -> assertEquals("", testFeature.getAsString(TestProperty.NUMBER_LIST)),
-                () -> assertEquals("", testFeature.getAsString(TestProperty.MIGRATE_DATA_TYPE_LIST))
+                () -> assertEquals("", testFeature.getAsString(TestProperty.MIGRATE_DATA_TYPE_LIST)),
+                () -> assertEquals("test", testFeature.getRawString(TestProperty.STRING)),
+                () -> assertEquals(Integer.MAX_VALUE, testFeature.getRawNumber(TestProperty.NUMBER)),
+                () -> assertEquals(Integer.MAX_VALUE, testFeature.getRawInteger(TestProperty.NUMBER)),
+                () -> assertTrue(testFeature.getRawBoolean(TestProperty.BOOLEAN)),
+                () -> assertEquals(new MigrateDataType("0"), testFeature.getRawMigrateDataType(TestProperty.MIGRATE_DATA_TYPE)),
+                () -> assertEquals(Arrays.asList("a","b","c"), testFeature.getRawStringList(TestProperty.STRING_LIST)),
+                () -> assertEquals(Arrays.asList(1,2,3), testFeature.getRawNumberList(TestProperty.NUMBER_LIST)),
+                () -> assertEquals(Arrays.asList(1,2,3), testFeature.getRawIntegerList(TestProperty.NUMBER_LIST)),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("0"), new MigrateDataType("1"), new MigrateDataType("2")), testFeature.getRawMigrateDataTypeList(TestProperty.MIGRATE_DATA_TYPE_LIST))
         );
     }
 
