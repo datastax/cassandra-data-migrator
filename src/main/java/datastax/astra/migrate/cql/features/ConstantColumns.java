@@ -41,9 +41,9 @@ public class ConstantColumns extends AbstractFeature {
                         propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY));
         putMigrateDataTypeList(Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT, targetPrimaryKeyTypesWithoutConstantColumns);
 
+        isInitialized = true;
         if (!isValid(propertyHelper)) return false;
         isEnabled = null!=columnNames && !columnNames.isEmpty();
-        isInitialized = true;
         return true;
     }
 
@@ -82,28 +82,31 @@ public class ConstantColumns extends AbstractFeature {
     }
 
     private boolean isValid(PropertyHelper propertyHelper) {
-        List<String> columnNames = getStringList(Property.COLUMN_NAMES);
-        List<MigrateDataType> columnTypes = getMigrateDataTypeList(Property.COLUMN_TYPES);
-        List<String> columnValues = getStringList(Property.COLUMN_VALUES);
-        List<MigrateDataType> targetPrimaryKeyTypesWithoutConstantColumns = getMigrateDataTypeList(Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT);
+        List<String> columnNames = getRawStringList(Property.COLUMN_NAMES);
+        List<MigrateDataType> columnTypes = getRawMigrateDataTypeList(Property.COLUMN_TYPES);
+        List<String> columnValues = getRawStringList(Property.COLUMN_VALUES);
+        List<MigrateDataType> targetPrimaryKeyTypesWithoutConstantColumns = getRawMigrateDataTypeList(Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT);
+
+        boolean haveColumnNames = null!=columnNames && !columnNames.isEmpty();
+        boolean haveColumnTypes = null!=columnTypes && !columnTypes.isEmpty();
+        boolean haveColumnValues = null!=columnValues && !columnValues.isEmpty();
 
         boolean valid = true;
-        if    (!(columnNames == null || columnNames.isEmpty()) &&
-                (columnTypes == null || columnTypes.isEmpty()) &&
-                (columnValues == null || columnValues.isEmpty())
-            && !(columnNames != null && !columnNames.isEmpty() &&
-                 columnTypes != null && !columnTypes.isEmpty() &&
-                 columnValues != null && !columnValues.isEmpty())) {
+        if ((!haveColumnNames && !haveColumnTypes && !haveColumnValues) ||
+            ( haveColumnNames &&  haveColumnTypes &&  haveColumnValues)) {
+            // These are the valid conditions...anything else is not valid
+        }
+        else {
             logger.error("Properties must all be empty, or all not empty: {}={}, {}={}, {}={} (split by {}={})",
-                    KnownProperties.CONSTANT_COLUMN_NAMES, columnNames,
-                    KnownProperties.CONSTANT_COLUMN_TYPES, columnTypes,
-                    KnownProperties.CONSTANT_COLUMN_VALUES, columnValues,
-                    KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, propertyHelper.getAsString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX));
+                KnownProperties.CONSTANT_COLUMN_NAMES, columnNames,
+                KnownProperties.CONSTANT_COLUMN_TYPES, columnTypes,
+                KnownProperties.CONSTANT_COLUMN_VALUES, columnValues,
+                KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, propertyHelper.getAsString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX));
             valid =  false;
         }
 
-        if (null!=columnNames &&
-                (columnNames.size() != columnTypes.size() ||
+        if (haveColumnNames && haveColumnTypes && haveColumnValues &&
+               (columnNames.size() != columnTypes.size() ||
                 columnNames.size() != columnValues.size())) {
             logger.error("Values must have the same number of elements: {}={}, {}={}, {}={} (split by {}={})",
                     KnownProperties.CONSTANT_COLUMN_NAMES, columnNames,

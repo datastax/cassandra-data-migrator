@@ -83,4 +83,86 @@ public class ConstantColumnsTest {
                 () -> assertEquals(targetSelect, cqlHelper.getCql(CqlHelper.CQL.TARGET_SELECT_ORIGIN_BY_PK).replaceAll("\\s+"," "))
         );
     }
+
+    @Test
+    public void test_missingColumnNames() {
+        setValidSparkConf();
+        validSparkConf.remove(KnownProperties.CONSTANT_COLUMN_NAMES);
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_missingColumnValues() {
+        setValidSparkConf();
+        validSparkConf.remove(KnownProperties.CONSTANT_COLUMN_VALUES);
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_missingColumnTypes() {
+        setValidSparkConf();
+        validSparkConf.remove(KnownProperties.CONSTANT_COLUMN_TYPES);
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_mismatch_ValueCount() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd'");
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_mismatch_TypeCount() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "1");
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_wrongValueDelimiter() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, "\\|");
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_emptyDelimiter() {
+        setValidSparkConf();
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, "");
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void test_missingPrimaryKeyNames() {
+        setValidSparkConf();
+        validSparkConf.remove(KnownProperties.TARGET_PRIMARY_KEY);
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertTrue(feature.isEnabled());
+    }
+
+    @Test
+    public void test_missingPrimaryKeyTypes() {
+        setValidSparkConf();
+        validSparkConf.remove(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertTrue(feature.isEnabled());
+    }
+
 }
