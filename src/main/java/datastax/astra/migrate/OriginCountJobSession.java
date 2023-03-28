@@ -3,6 +3,7 @@ package datastax.astra.migrate;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -29,35 +30,36 @@ public class OriginCountJobSession extends BaseJobSession {
     protected OriginCountJobSession(CqlSession originSession, SparkConf sc) {
         super(sc);
         this.originSessionSession = originSession;
-        batchSize = new Integer(sc.get("spark.batchSize", "1"));
-        printStatsAfter = new Integer(sc.get("spark.printStatsAfter", "100000"));
+        batchSize = new Integer(sc.get(KnownProperties.SPARK_BATCH_SIZE, "1"));
+        printStatsAfter = new Integer(sc.get(KnownProperties.SPARK_STATS_AFTER, "100000"));
         if (printStatsAfter < 1) {
             printStatsAfter = 100000;
         }
 
-        readLimiter = RateLimiter.create(new Integer(sc.get("spark.readRateLimit", "20000")));
-        originKeyspaceTable = sc.get("spark.origin.keyspaceTable");
+        readLimiter = RateLimiter.create(new Integer(sc.get(KnownProperties.SPARK_LIMIT_READ, "20000")));
+        originKeyspaceTable = sc.get(KnownProperties.ORIGIN_KEYSPACE_TABLE);
 
-        hasRandomPartitioner = Boolean.parseBoolean(sc.get("spark.origin.hasRandomPartitioner", "false"));
-        isCounterTable = Boolean.parseBoolean(sc.get("spark.counterTable", "false"));
+        hasRandomPartitioner = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER, "false"));
+        isCounterTable = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_IS_COUNTER, "false"));
 
-        checkTableforColSize = Boolean.parseBoolean(sc.get("spark.origin.checkTableforColSize", "false"));
-        checkTableforselectCols = sc.get("spark.origin.checkTableforColSize.cols");
-        checkTableforColSizeTypes = getTypes(sc.get("spark.origin.checkTableforColSize.cols.types"));
-        filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn");
-        filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType");
-        filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
-        fieldGuardraillimitMB = Integer.parseInt(sc.get("spark.fieldGuardraillimitMB", "0"));
+        checkTableforColSize = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_ENABLED, "false"));
+        checkTableforselectCols = sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_NAMES);
+        checkTableforColSizeTypes = getTypes(sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_TYPES));
+        filterColName = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
+        filterColType = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
+        filterColIndex = Integer.parseInt(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX, "0"));
+        fieldGuardraillimitMB = Integer.parseInt(sc.get(KnownProperties.FIELD_GUARDRAIL_MB, "0"));
 
-        String partionKey = sc.get("spark.query.cols.partitionKey");
-        idColTypes = getTypes(sc.get("spark.query.cols.id.types"));
+        String partionKey = sc.get(KnownProperties.ORIGIN_PARTITION_KEY);
+        idColTypes = getTypes(sc.get(KnownProperties.TARGET_PRIMARY_KEY_TYPES));
 
-        String selectCols = sc.get("spark.query.cols.select");
-        String updateSelectMappingStr = sc.get("spark.counterTable.cql.index", "0");
+        String selectCols = sc.get(KnownProperties.ORIGIN_COLUMN_NAMES);
+        String updateSelectMappingStr = sc.get(KnownProperties.ORIGIN_COUNTER_INDEXES, "0");
         for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
             updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
         }
-        String originSelectCondition = sc.get("spark.query.cols.select.condition", "");
+        String originSelectCondition = sc.get(KnownProperties.ORIGIN_FILTER_CONDITION, "");
+        // TODO: AbstractJobSession has some checks to ensure AND is added to the condition
         originSelectStatement = originSession.prepare(
                 "select " + selectCols + " from " + originKeyspaceTable + " where token(" + partionKey.trim()
                         + ") >= ? and token(" + partionKey.trim() + ") <= ?  " + originSelectCondition + " ALLOW FILTERING");

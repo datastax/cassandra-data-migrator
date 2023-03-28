@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +24,11 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
-        filterData = Boolean.parseBoolean(sc.get("spark.origin.FilterData", "false"));
-        filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn");
-        filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType");
-        filterColIndex = Integer.parseInt(sc.get("spark.origin.FilterColumnIndex", "0"));
-        filterColValue = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnValue");
+        filterData = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_ENABLED, "false"));
+        filterColName = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
+        filterColType = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
+        filterColIndex = Integer.parseInt(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX, "0"));
+        filterColValue = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_VALUE);
     }
 
     public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
