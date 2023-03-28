@@ -1,5 +1,6 @@
 package datastax.astra.migrate.cql.features;
 
+import datastax.astra.migrate.MigrateDataType;
 import datastax.astra.migrate.cql.CqlHelper;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
@@ -7,6 +8,9 @@ import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,7 +39,7 @@ public class ConstantColumnsTest {
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "0,1");
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd',1234");
         validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "const1,key");
-        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY_TYPES, "0,0");
+        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY_TYPES, "0,4");
     }
 
     @Test
@@ -45,10 +49,13 @@ public class ConstantColumnsTest {
         feature.initialize(helper);
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals("const1,const2", feature.getAsString(ConstantColumns.Property.COLUMN_NAMES)),
-                () -> assertEquals("0,1", feature.getAsString(ConstantColumns.Property.COLUMN_TYPES)),
-                () -> assertEquals("'abcd',1234", feature.getAsString(ConstantColumns.Property.COLUMN_VALUES)),
-                () -> assertEquals("0", feature.getAsString(ConstantColumns.Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT))
+                () -> assertEquals("const1,const2", feature.getAsString(ConstantColumns.Property.COLUMN_NAMES), "COLUMN_NAMES"),
+                () -> assertEquals("0,1", feature.getAsString(ConstantColumns.Property.COLUMN_TYPES), "COLUMN_TYPES"),
+                () -> assertEquals("'abcd',1234", feature.getAsString(ConstantColumns.Property.COLUMN_VALUES), "COLUMN_VALUES"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType(("4"))), feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS,
+                        helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES),
+                        helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY))
+                        , "TARGET_PK_WITHOUT_CONSTANTS")
         );
     }
 
@@ -163,6 +170,23 @@ public class ConstantColumnsTest {
         helper.initializeSparkConf(validSparkConf);
         feature.initialize(helper);
         assertTrue(feature.isEnabled());
+    }
+
+    @Test
+    public void featureFunction_PK_invalidArgs() {
+        setValidSparkConf();
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS), "No arguments"),
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, null), "one null argument"),
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, null, null), "two null arguments"),
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, new ArrayList<MigrateDataType>(), Arrays.asList("abc")), "empty type list"),
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, Arrays.asList(1,2,3), Arrays.asList("abc")), "wrong type on type list"),
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, Arrays.asList(new MigrateDataType("0")), new ArrayList<String>()), "empty name list"),
+                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, Arrays.asList(new MigrateDataType("0")), Arrays.asList(1,2,3)), "wrong type on name list"),
+                () -> assertNull(feature.featureFunction(ConstantColumns.Function.TEST_FUNCTION, Arrays.asList(new MigrateDataType("0")), Arrays.asList("abc")), "unimplmented enum")
+                );
     }
 
 }

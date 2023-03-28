@@ -434,10 +434,12 @@ public class CqlHelper {
     }
 
     public List<MigrateDataType> getIdColTypes() {
-        if (featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled())
-            return featureMap.get(Featureset.CONSTANT_COLUMNS).getMigrateDataTypeList(ConstantColumns.Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT);
-        else
-            return propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
+        List<MigrateDataType> rtn = propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
+        rtn = (List<MigrateDataType>) featureMap.get(Featureset.CONSTANT_COLUMNS).
+                featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS,
+                        rtn,
+                        propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY));
+        return rtn;
     }
 
     // These getters have no usage outside this class

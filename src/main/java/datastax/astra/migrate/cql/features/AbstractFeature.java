@@ -138,6 +138,11 @@ public abstract class AbstractFeature implements Feature {
         return migrateDataTypeLists.get(key);
     }
 
+    @Override
+    public Object featureFunction(Enum<?> function, Object... args) {
+        return null;
+    }
+
     protected void putString(Enum<?> key, String value) {
         strings.put(key, value);
         propertyTypes.put(key, KnownProperties.PropertyType.STRING);

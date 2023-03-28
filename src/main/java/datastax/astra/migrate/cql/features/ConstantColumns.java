@@ -3,7 +3,6 @@ package datastax.astra.migrate.cql.features;
 import datastax.astra.migrate.MigrateDataType;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +16,15 @@ public class ConstantColumns extends AbstractFeature {
     public enum Property {
         COLUMN_NAMES,
         COLUMN_TYPES,
-        COLUMN_VALUES,
-        TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT
+        COLUMN_VALUES
     }
+
+    public enum Function {
+        TARGET_PK_WITHOUT_CONSTANTS,
+        TEST_FUNCTION
+    }
+
+    private boolean valid = true;
 
     @Override
     public boolean initialize(PropertyHelper propertyHelper) {
@@ -34,17 +39,26 @@ public class ConstantColumns extends AbstractFeature {
                 propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX));
         putStringList(Property.COLUMN_VALUES, columnValues);
 
-        List<MigrateDataType> targetPrimaryKeyTypesWithoutConstantColumns =
-                targetPrimaryKeyTypesWithoutConstantColumns(
-                        columnNames,
-                        propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES),
-                        propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY));
-        putMigrateDataTypeList(Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT, targetPrimaryKeyTypesWithoutConstantColumns);
-
         isInitialized = true;
-        if (!isValid(propertyHelper)) return false;
-        isEnabled = null!=columnNames && !columnNames.isEmpty();
-        return true;
+        valid = isValid(propertyHelper);
+        isEnabled = valid && null!=columnNames && !columnNames.isEmpty();
+        return valid;
+    }
+
+    @Override
+    public Object featureFunction(Enum<?> function, Object... args) {
+        switch ((Function) function) {
+            case TARGET_PK_WITHOUT_CONSTANTS:
+                // args[] should be List<MigrateDataType> targetPrimaryKeyTypes, List<String> targetPrimaryKeyNames
+                if (null==args || args.length!=2 || null==args[0] || null==args[1])
+                    throw new IllegalArgumentException("Expected 2 not-null arguments, got " + (null==args ? "1" : args.length));
+                if (!(args[0] instanceof List<?>) || ((List<?>) args[0]).isEmpty() || !(((List<?>) args[0]).get(0) instanceof MigrateDataType))
+                    throw new IllegalArgumentException("First argument should be a non-empty List<MigrateDataType>, got " + args[0]);
+                if (!(args[1] instanceof List<?>) || ((List<?>) args[1]).isEmpty() || !(((List<?>) args[1]).get(0) instanceof String))
+                    throw new IllegalArgumentException("Second argument should be a non-empty List<String>, got " + args[1]);
+                return targetPrimaryKeyTypesWithoutConstantColumns((List<MigrateDataType>)args[0], (List<String>)args[1]);
+        }
+        return null;
     }
 
     private List<String> columnValues(String columnValueString, String regexString) {
@@ -61,21 +75,17 @@ public class ConstantColumns extends AbstractFeature {
         return columnValues;
     }
 
-    private List<MigrateDataType> targetPrimaryKeyTypesWithoutConstantColumns(List<String> columnNames, List<MigrateDataType> targetPrimaryKeyTypes, List<String> targetPrimaryKeyNames) {
+    private List<MigrateDataType> targetPrimaryKeyTypesWithoutConstantColumns(List<MigrateDataType> targetPrimaryKeyTypes, List<String> targetPrimaryKeyNames) {
+        if (!isEnabled) return targetPrimaryKeyTypes;
+        if (!valid) return null;
+
+        // As this is valid, we know that the column names, types, and values are all the same size
+        List<String> columnNames = getRawStringList(Property.COLUMN_NAMES);
+
         List<MigrateDataType> rtn = new ArrayList<>();
-        if (null!=columnNames && !columnNames.isEmpty()) {
-            if (null==targetPrimaryKeyTypes || null==targetPrimaryKeyNames) {
-                if (null==targetPrimaryKeyTypes)
-                    logger.error("Target primary key types are not specified in property {}", KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-                if (null==targetPrimaryKeyNames)
-                    logger.error("Target primary key names are not specified in property {}", KnownProperties.TARGET_PRIMARY_KEY);
-            }
-            else {
-                for (String keyName : targetPrimaryKeyNames) {
-                    if (!columnNames.contains(keyName)) {
-                        rtn.add(targetPrimaryKeyTypes.get(targetPrimaryKeyNames.indexOf(keyName)));
-                    }
-                }
+        for (String keyName : targetPrimaryKeyNames) {
+            if (!columnNames.contains(keyName)) {
+                rtn.add(targetPrimaryKeyTypes.get(targetPrimaryKeyNames.indexOf(keyName)));
             }
         }
         return rtn;
@@ -85,7 +95,6 @@ public class ConstantColumns extends AbstractFeature {
         List<String> columnNames = getRawStringList(Property.COLUMN_NAMES);
         List<MigrateDataType> columnTypes = getRawMigrateDataTypeList(Property.COLUMN_TYPES);
         List<String> columnValues = getRawStringList(Property.COLUMN_VALUES);
-        List<MigrateDataType> targetPrimaryKeyTypesWithoutConstantColumns = getRawMigrateDataTypeList(Property.TARGET_PRIMARY_TYPES_WITHOUT_CONSTANT);
 
         boolean haveColumnNames = null!=columnNames && !columnNames.isEmpty();
         boolean haveColumnTypes = null!=columnTypes && !columnTypes.isEmpty();
@@ -114,11 +123,6 @@ public class ConstantColumns extends AbstractFeature {
                     KnownProperties.CONSTANT_COLUMN_VALUES, columnValues,
                     KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, propertyHelper.getAsString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX));
             valid =  false;
-        }
-
-        if (null==targetPrimaryKeyTypesWithoutConstantColumns || targetPrimaryKeyTypesWithoutConstantColumns.isEmpty()) {
-            logger.warn("There are no primary key columns specified in property {} that are not constant columns.  This may be intentional, but it is unusual."
-                    , KnownProperties.TARGET_PRIMARY_KEY);
         }
 
         return valid;

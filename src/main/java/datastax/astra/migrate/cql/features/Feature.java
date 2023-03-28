@@ -119,4 +119,12 @@ public interface Feature {
      *   3. if the property is not a MigrateDataType
      */
     public MigrateDataType getMigrateDataType(Enum<?> prop);
+
+    /**
+     * Generic feature function that can be used to implement any feature specific functionality.
+     * @param function Feature-specific name of the feature to call
+     * @param args Feature- and function-specific arguments
+     * @return Function-specific
+     */
+    public Object featureFunction(Enum<?> function, Object... args);
 }
