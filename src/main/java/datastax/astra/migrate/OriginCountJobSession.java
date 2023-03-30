@@ -30,35 +30,37 @@ public class OriginCountJobSession extends BaseJobSession {
     protected OriginCountJobSession(CqlSession originSession, SparkConf sc) {
         super(sc);
         this.originSessionSession = originSession;
-        batchSize = new Integer(sc.get(KnownProperties.SPARK_BATCH_SIZE, "1"));
-        printStatsAfter = new Integer(sc.get(KnownProperties.SPARK_STATS_AFTER, "100000"));
-        if (printStatsAfter < 1) {
-            printStatsAfter = 100000;
+        batchSize = propertyHelper.getInteger(KnownProperties.SPARK_BATCH_SIZE);
+        printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
+        if (!propertyHelper.meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {
+            logger.warn(KnownProperties.SPARK_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
+            propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefault(KnownProperties.SPARK_STATS_AFTER));
+            printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
         }
 
-        readLimiter = RateLimiter.create(new Integer(sc.get(KnownProperties.SPARK_LIMIT_READ, "20000")));
-        originKeyspaceTable = sc.get(KnownProperties.ORIGIN_KEYSPACE_TABLE);
+        readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.SPARK_LIMIT_READ));
+        originKeyspaceTable = propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE);
 
-        hasRandomPartitioner = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER, "false"));
-        isCounterTable = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_IS_COUNTER, "false"));
+        hasRandomPartitioner = propertyHelper.getBoolean(KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER);
+        isCounterTable = propertyHelper.getBoolean(KnownProperties.ORIGIN_IS_COUNTER);
 
-        checkTableforColSize = Boolean.parseBoolean(sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_ENABLED, "false"));
-        checkTableforselectCols = sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_NAMES);
-        checkTableforColSizeTypes = getTypes(sc.get(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_TYPES));
-        filterColName = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
-        filterColType = Util.getSparkPropOrEmpty(sc, KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
-        filterColIndex = Integer.parseInt(sc.get(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX, "0"));
-        fieldGuardraillimitMB = Integer.parseInt(sc.get(KnownProperties.FIELD_GUARDRAIL_MB, "0"));
+        checkTableforColSize = propertyHelper.getBoolean(KnownProperties.ORIGIN_CHECK_COLSIZE_ENABLED);
+        checkTableforselectCols = propertyHelper.getAsString(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_NAMES);
+        checkTableforColSizeTypes = getTypes(propertyHelper.getAsString(KnownProperties.ORIGIN_CHECK_COLSIZE_COLUMN_TYPES));
+        filterColName = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
+        filterColType = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
+        filterColIndex = propertyHelper.getInteger(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX);
+        fieldGuardraillimitMB = propertyHelper.getInteger(KnownProperties.FIELD_GUARDRAIL_MB);
 
-        String partionKey = sc.get(KnownProperties.ORIGIN_PARTITION_KEY);
-        idColTypes = getTypes(sc.get(KnownProperties.TARGET_PRIMARY_KEY_TYPES));
+        String partionKey = propertyHelper.getAsString(KnownProperties.ORIGIN_PARTITION_KEY);
+        idColTypes = getTypes(propertyHelper.getAsString(KnownProperties.TARGET_PRIMARY_KEY_TYPES));
 
-        String selectCols = sc.get(KnownProperties.ORIGIN_COLUMN_NAMES);
-        String updateSelectMappingStr = sc.get(KnownProperties.ORIGIN_COUNTER_INDEXES, "0");
+        String selectCols = propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES);
+        String updateSelectMappingStr = propertyHelper.getAsString(KnownProperties.ORIGIN_COUNTER_INDEXES);
         for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
             updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
         }
-        String originSelectCondition = sc.get(KnownProperties.ORIGIN_FILTER_CONDITION, "");
+        String originSelectCondition = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_CONDITION);
         // TODO: AbstractJobSession has some checks to ensure AND is added to the condition
         originSelectStatement = originSession.prepare(
                 "select " + selectCols + " from " + originKeyspaceTable + " where token(" + partionKey.trim()
