@@ -476,4 +476,11 @@ public class CqlHelper {
     public Feature getFeature(Featureset featureEnum) {
         return featureMap.get(featureEnum);
     }
+
+    public Boolean isFeatureEnabled(Featureset featureEnum) {
+        if (!featureMap.containsKey(featureEnum)) {
+            return false;
+        }
+        return featureMap.get(featureEnum).isEnabled();
+    }
 }
