@@ -55,11 +55,15 @@ public class CopyPKJobSession extends AbstractJobSession {
                     logger.error("Could not find row with primary-key: {}", row);
                     return;
                 }
-                ResultSet targetWriteResultSet = cqlHelper.getTargetSession()
-                        .execute(cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null));
-                writeCounter.incrementAndGet();
-                if (readCounter.get() % printStatsAfter == 0) {
-                    printCounts(false);
+                List<BoundStatement> boundInserts = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null);
+                if (null != boundInserts) {
+                    for (BoundStatement bs : boundInserts) {
+                        ResultSet targetWriteResultSet = cqlHelper.getTargetSession().execute(bs);
+                        writeCounter.incrementAndGet();
+                        if (readCounter.get() % printStatsAfter == 0) {
+                            printCounts(false);
+                        }
+                    }
                 }
             });
         }

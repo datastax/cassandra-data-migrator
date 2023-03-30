@@ -16,6 +16,7 @@ public class ExplodeMap extends AbstractFeature {
     public enum Property {
         MAP_COLUMN_NAME,
         MAP_COLUMN_INDEX,
+        MAP_COLUMN_TYPE,
         KEY_COLUMN_NAME,
         KEY_COLUMN_TYPE,
         VALUE_COLUMN_NAME,
@@ -39,6 +40,7 @@ public class ExplodeMap extends AbstractFeature {
             putNumber(Property.MAP_COLUMN_INDEX, helper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES).indexOf(mapColumnName));
 
             MigrateDataType columnMapDataType = getColumnMapDataType(helper);
+            putMigrateDataType(Property.MAP_COLUMN_TYPE, columnMapDataType);
             putMigrateDataType(Property.KEY_COLUMN_TYPE, columnMapDataType.getSubTypeTypes().get(0));
             putMigrateDataType(Property.VALUE_COLUMN_TYPE, columnMapDataType.getSubTypeTypes().get(1));
         }

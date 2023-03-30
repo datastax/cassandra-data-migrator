@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
@@ -95,15 +96,17 @@ public class CopyJobSession extends AbstractJobSession {
                             targetRow = targetResultSet.one();
                         }
 
-                        BoundStatement bInsert = cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow);
-                        if (null == bInsert) {
+                        List<BoundStatement> bInsertList = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow);
+                        if (null == bInsertList || bInsertList.isEmpty()) {
                             skipCnt++;
                             continue;
                         }
-                        CompletionStage<AsyncResultSet> targetWriteResultSet = cqlHelper.getTargetSession().executeAsync(bInsert);
-                        writeResults.add(targetWriteResultSet);
-                        if (writeResults.size() > cqlHelper.getFetchSizeInRows()) {
-                            writeCnt += iterateAndClearWriteResults(writeResults, 1);
+                        for (BoundStatement bInsert : bInsertList) {
+                            CompletionStage<AsyncResultSet> targetWriteResultSet = cqlHelper.getTargetSession().executeAsync(bInsert);
+                            writeResults.add(targetWriteResultSet);
+                            if (writeResults.size() > cqlHelper.getFetchSizeInRows()) {
+                                writeCnt += iterateAndClearWriteResults(writeResults, 1);
+                            }
                         }
                     }
 
@@ -128,22 +131,24 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         writeLimiter.acquire(1);
-                        BoundStatement bInsert = cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null);
-                        if (null == bInsert) {
+                        List<BoundStatement> bInsertList = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null);
+                        if (null == bInsertList || bInsertList.isEmpty()) {
                             skipCnt++;
                             continue;
                         }
-                        batchStatement = batchStatement.add(bInsert);
+                        for (BoundStatement bInsert : bInsertList) {
+                            batchStatement = batchStatement.add(bInsert);
 
-                        // if batch threshold is met, send the writes and clear the batch
-                        if (batchStatement.size() >= cqlHelper.getBatchSize()) {
-                            CompletionStage<AsyncResultSet> writeResultSet = cqlHelper.getTargetSession().executeAsync(batchStatement);
-                            writeResults.add(writeResultSet);
-                            batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
-                        }
+                            // if batch threshold is met, send the writes and clear the batch
+                            if (batchStatement.size() >= cqlHelper.getBatchSize()) {
+                                CompletionStage<AsyncResultSet> writeResultSet = cqlHelper.getTargetSession().executeAsync(batchStatement);
+                                writeResults.add(writeResultSet);
+                                batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
+                            }
 
-                        if (writeResults.size() * cqlHelper.getBatchSize() > cqlHelper.getFetchSizeInRows()) {
-                            writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
+                            if (writeResults.size() * cqlHelper.getBatchSize() > cqlHelper.getFetchSizeInRows()) {
+                                writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
+                            }
                         }
                     }
 

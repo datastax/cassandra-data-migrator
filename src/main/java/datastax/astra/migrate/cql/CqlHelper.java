@@ -96,6 +96,22 @@ public class CqlHelper {
         return validInit;
     }
 
+    public List<BoundStatement> bindInsert(PreparedStatement insertStatement, Row originRow, Row targetRow) {
+        List<BoundStatement> rtnList = new ArrayList<>();
+        if (isFeatureEnabled(Featureset.EXPLODE_MAP)) {
+            Feature explodeMapFeature = getFeature(Featureset.EXPLODE_MAP);
+            Map maptoExplode = (Map) getData(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.MAP_COLUMN_TYPE),
+                    explodeMapFeature.getInteger(ExplodeMap.Property.MAP_COLUMN_INDEX),
+                    originRow);
+            for (Object key : maptoExplode.keySet()) {
+                rtnList.add(bindInsertOneRow(insertStatement, originRow, targetRow, key, maptoExplode.get(key)));
+            }
+        } else {
+            rtnList.add(bindInsertOneRow(insertStatement, originRow, targetRow, null, null));
+        }
+        return rtnList;
+    }
+
     public BoundStatement bindInsertOneRow(PreparedStatement insertStatement, Row originRow, Row targetRow) {
         return bindInsertOneRow(insertStatement, originRow, targetRow, null, null);
     }
@@ -119,7 +135,9 @@ public class CqlHelper {
             // This loops over the selected columns and binds each type to the boundInsertStatement
             Feature explodeMapFeature = getFeature(Featureset.EXPLODE_MAP);
             for (index = 0; index < originColTypesSize; index++) {
-                if (mapKey != null && explodeMapFeature.isEnabled() && index == explodeMapFeature.getInteger(ExplodeMap.Property.MAP_COLUMN_INDEX)) {
+                if (mapKey != null &&
+                        isFeatureEnabled(Featureset.EXPLODE_MAP) &&
+                        index == explodeMapFeature.getInteger(ExplodeMap.Property.MAP_COLUMN_INDEX)) {
                     // This substitutes the map column with the key and value types of the map
                     boundInsertStatement = boundInsertStatement.set(index, mapKey, explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getType());
                     // Add an 'extra' column to the statement, which will also increase the loop limit

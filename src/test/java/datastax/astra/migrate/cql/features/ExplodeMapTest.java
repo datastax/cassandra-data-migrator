@@ -30,6 +30,7 @@ public class ExplodeMapTest {
     public void tearDown() {
         PropertyHelper.destroyInstance();
         validSparkConf = null;
+        feature = null;
     }
 
     private void setValidSparkConf() {
@@ -54,6 +55,7 @@ public class ExplodeMapTest {
                 () -> assertEquals("map_key", feature.getAsString(ExplodeMap.Property.KEY_COLUMN_NAME), "KEY_COLUMN_NAME"),
                 () -> assertEquals("map_val", feature.getAsString(ExplodeMap.Property.VALUE_COLUMN_NAME), "VALUE_COLUMN_NAME"),
                 () -> assertEquals(2, feature.getNumber(ExplodeMap.Property.MAP_COLUMN_INDEX), "MAP_COLUMN_INDEX"),
+                () -> assertEquals(new MigrateDataType("5%0%3"), feature.getMigrateDataType(ExplodeMap.Property.MAP_COLUMN_TYPE), "MAP_COLUMN_TYPE"),
                 () -> assertEquals(new MigrateDataType("0"), feature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE), "KEY_COLUMN_TYPE"),
                 () -> assertEquals(new MigrateDataType("3"), feature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE), "VALUE_COLUMN_TYPE")
         );
@@ -65,8 +67,9 @@ public class ExplodeMapTest {
         helper.initializeSparkConf(validSparkConf);
         feature.initialize(helper);
         feature.alterProperties(helper);
+
         assertAll(
-                () -> assertTrue(feature.isEnabled()),
+                () -> assertTrue(feature.isEnabled(), "isEnabled"),
                 () -> assertEquals(Arrays.asList("key","map_key"), helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY), "TARGET_PRIMARY_KEY"),
                 () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0")), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES), "TARGET_PRIMARY_KEY_TYPES"),
                 () -> assertEquals(helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY).size(), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES).size(), "sizes match"),
