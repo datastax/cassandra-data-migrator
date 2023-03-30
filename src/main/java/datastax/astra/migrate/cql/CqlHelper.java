@@ -63,6 +63,13 @@ public class CqlHelper {
                 featureMap.put(f, feature);
         }
 
+        for (Featureset f : Featureset.values()) {
+            if (f.toString().startsWith("TEST_")) continue; // Skip test features
+            Feature feature = getFeature(f);
+            if (null!=feature && feature.isEnabled())
+                feature.alterProperties(this.propertyHelper);
+        }
+
         if (hasWriteTimestampFilter()) {
             propertyHelper.setProperty(KnownProperties.SPARK_BATCH_SIZE, 1);
         }
@@ -208,27 +215,17 @@ public class CqlHelper {
 
     private String cqlTargetSelectOriginByPK() {
         String keyBinds = "";
-        if (!featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled()){
-            for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
-                if (keyBinds.isEmpty()) {
-                    keyBinds = key + "=?";
-                } else {
-                    keyBinds += " AND " + key + "=?";
-                }
+        for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
+            if (keyBinds.isEmpty()) {
+                keyBinds = key + "=?";
+            } else {
+                keyBinds += " AND " + key + "=?";
             }
         }
-        else {
-            List<String> constantColumnNames = featureMap.get(Featureset.CONSTANT_COLUMNS).getStringList(ConstantColumns.Property.COLUMN_NAMES);
-            List<String> constantColumnValues = featureMap.get(Featureset.CONSTANT_COLUMNS).getStringList(ConstantColumns.Property.COLUMN_VALUES);
-            for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
-                String whatToEqual = constantColumnNames.contains(key) ? constantColumnValues.get(constantColumnNames.indexOf(key)) : "?";
-                if (keyBinds.isEmpty()) {
-                    keyBinds = key + "=" + whatToEqual;
-                } else {
-                    keyBinds += " AND " + key + "=" + whatToEqual;
-                }
-            }
-        }
+
+        // This will be empty string if feature is disabled
+        keyBinds += featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.WHERE_CLAUSE);
+
         return "SELECT " + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + " FROM " + getTargetKeyspaceTable() + " WHERE " + keyBinds;
     }
 
@@ -434,12 +431,7 @@ public class CqlHelper {
     }
 
     public List<MigrateDataType> getIdColTypes() {
-        List<MigrateDataType> rtn = propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-        rtn = (List<MigrateDataType>) featureMap.get(Featureset.CONSTANT_COLUMNS).
-                featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS,
-                        rtn,
-                        propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY));
-        return rtn;
+        return propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
     }
 
     // These getters have no usage outside this class

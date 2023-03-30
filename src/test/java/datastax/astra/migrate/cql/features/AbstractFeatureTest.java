@@ -163,14 +163,10 @@ public class AbstractFeatureTest {
         );
     }
 
-    enum TestEnum {
-        TEST
-    }
-
     @Test
-    public void featureFunction_Null() {
+    public void alterProperties_Null() {
         TestFeature testFeature = new TestFeature();
-        testFeature.initialize_withValues();
-        assertNull(testFeature.featureFunction(TestEnum.TEST,""));
+        testFeature.alterProperties(null);
+        assertNull(testFeature.alterProperties(null));
     }
 }

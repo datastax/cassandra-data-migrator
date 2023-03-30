@@ -14,6 +14,13 @@ public interface Feature {
     public boolean initialize(PropertyHelper propertyHelper);
 
     /**
+     * Modifies properties based on feature-specific logic
+     * @param helper PropertyHelper to modify
+     * @return the modified PropertyHelper
+     */
+    public PropertyHelper alterProperties(PropertyHelper helper);
+
+    /**
      * Indicates if feature is enabled.
      * @return true if the feature is enabled, false otherwise
      * @throws RuntimeException if the feature is not initialized
@@ -120,11 +127,4 @@ public interface Feature {
      */
     public MigrateDataType getMigrateDataType(Enum<?> prop);
 
-    /**
-     * Generic feature function that can be used to implement any feature specific functionality.
-     * @param function Feature-specific name of the feature to call
-     * @param args Feature- and function-specific arguments
-     * @return Function-specific
-     */
-    public Object featureFunction(Enum<?> function, Object... args);
 }

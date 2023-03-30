@@ -140,7 +140,7 @@ public class KnownProperties {
     //==========================================================================
     public static final String TARGET_KEYSPACE_TABLE       = "spark.target.keyspaceTable";        // test.a1
     public static final String TARGET_PRIMARY_KEY          = "spark.query.target.id";             // comma-separated-partition-key,comma-separated-clustering-key
-    public static final String TARGET_PRIMARY_KEY_TYPES    = "spark.query.target.id.types";       // 9,1,4,3
+    public static final String TARGET_PRIMARY_KEY_TYPES    = "spark.cdm.cql.target.id.types";     // Code-managed, not an external property
     public static final String TARGET_COLUMN_NAMES         = "spark.query.target";
     public static final String TARGET_CUSTOM_WRITETIME     = "spark.target.custom.writeTime";     // 0
     public static final String TARGET_AUTOCORRECT_MISSING  = "spark.target.autocorrect.missing";  // false
@@ -152,6 +152,7 @@ public class KnownProperties {
            types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
         required.add(TARGET_PRIMARY_KEY);
            types.put(TARGET_PRIMARY_KEY_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+        required.add(TARGET_PRIMARY_KEY_TYPES);
            types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
         required.add(TARGET_COLUMN_NAMES); // we need this, though it should be defaulted with ORIGIN_COLUMN_NAMES value
            types.put(TARGET_CUSTOM_WRITETIME, PropertyType.NUMBER);

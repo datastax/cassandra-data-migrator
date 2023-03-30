@@ -35,27 +35,38 @@ public class ConstantColumnsTest {
 
     private void setValidSparkConf() {
         validSparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,val");
-        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_NAMES, "const1,const2");
-        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "0,1");
-        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd',1234");
-        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "const1,key");
-        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY_TYPES, "0,4");
+        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "1,4");
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_NAMES, "const1,const2,const3");
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "0,1,1");
+        validSparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd',1234,543");
+        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "const1,key,const3");
     }
 
     @Test
-    public void smokeTest() {
+    public void smokeTest_initialize() {
         setValidSparkConf();
         helper.initializeSparkConf(validSparkConf);
         feature.initialize(helper);
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals("const1,const2", feature.getAsString(ConstantColumns.Property.COLUMN_NAMES), "COLUMN_NAMES"),
-                () -> assertEquals("0,1", feature.getAsString(ConstantColumns.Property.COLUMN_TYPES), "COLUMN_TYPES"),
-                () -> assertEquals("'abcd',1234", feature.getAsString(ConstantColumns.Property.COLUMN_VALUES), "COLUMN_VALUES"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType(("4"))), feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS,
-                        helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES),
-                        helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY))
-                        , "TARGET_PK_WITHOUT_CONSTANTS")
+                () -> assertEquals("const1,const2,const3", feature.getAsString(ConstantColumns.Property.COLUMN_NAMES), "COLUMN_NAMES"),
+                () -> assertEquals("0,1,1", feature.getAsString(ConstantColumns.Property.COLUMN_TYPES), "COLUMN_TYPES"),
+                () -> assertEquals("'abcd',1234,543", feature.getAsString(ConstantColumns.Property.COLUMN_VALUES), "COLUMN_VALUES"),
+                () -> assertEquals(",", feature.getAsString(ConstantColumns.Property.SPLIT_REGEX), "SPLIT_REGEX"),
+                () -> assertEquals(" AND const1='abcd' AND const3=543", feature.getAsString(ConstantColumns.Property.WHERE_CLAUSE), "WHERE_CLAUSE")
+        );
+    }
+
+    @Test
+    public void smokeTest_alterProperties() {
+        setValidSparkConf();
+        helper.initializeSparkConf(validSparkConf);
+        feature.initialize(helper);
+        feature.alterProperties(helper);
+        assertAll(
+                () -> assertTrue(feature.isEnabled()),
+                () -> assertEquals(Arrays.asList("key"), helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY), "TARGET_PRIMARY_KEY"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("1")), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES), "TARGET_PRIMARY_KEY_TYPES")
         );
     }
 
@@ -74,7 +85,6 @@ public class ConstantColumnsTest {
         sparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "0,1");
         sparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd',1234");
         sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "const1,key");
-        sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY_TYPES, "0,0");
 
         helper.initializeSparkConf(sparkConf);
         CqlHelper cqlHelper = new CqlHelper();
@@ -82,7 +92,7 @@ public class ConstantColumnsTest {
 
         String originSelect = "SELECT key,val FROM origin.tab1 WHERE TOKEN(key) >= ? AND TOKEN(key) <= ? ALLOW FILTERING";
         String targetInsert = "INSERT INTO target.tab1 (key,val,const1,const2) VALUES (?,?,'abcd',1234)";
-        String targetSelect = "SELECT key,val FROM target.tab1 WHERE const1='abcd' AND key=?";
+        String targetSelect = "SELECT key,val FROM target.tab1 WHERE key=? AND const1='abcd'";
 
         assertAll(
                 () -> assertEquals(originSelect, cqlHelper.getCql(CqlHelper.CQL.ORIGIN_SELECT).replaceAll("\\s+"," ")),
@@ -170,23 +180,6 @@ public class ConstantColumnsTest {
         helper.initializeSparkConf(validSparkConf);
         feature.initialize(helper);
         assertTrue(feature.isEnabled());
-    }
-
-    @Test
-    public void featureFunction_PK_invalidArgs() {
-        setValidSparkConf();
-        helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertAll(
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS), "No arguments"),
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, null), "one null argument"),
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, null, null), "two null arguments"),
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, new ArrayList<MigrateDataType>(), Arrays.asList("abc")), "empty type list"),
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, Arrays.asList(1,2,3), Arrays.asList("abc")), "wrong type on type list"),
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, Arrays.asList(new MigrateDataType("0")), new ArrayList<String>()), "empty name list"),
-                () -> assertThrows(IllegalArgumentException.class, () -> feature.featureFunction(ConstantColumns.Function.TARGET_PK_WITHOUT_CONSTANTS, Arrays.asList(new MigrateDataType("0")), Arrays.asList(1,2,3)), "wrong type on name list"),
-                () -> assertNull(feature.featureFunction(ConstantColumns.Function.TEST_FUNCTION, Arrays.asList(new MigrateDataType("0")), Arrays.asList("abc")), "unimplmented enum")
-                );
     }
 
 }

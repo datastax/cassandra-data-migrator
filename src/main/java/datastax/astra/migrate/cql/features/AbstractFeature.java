@@ -34,6 +34,12 @@ public abstract class AbstractFeature implements Feature {
     }
 
     @Override
+    public PropertyHelper alterProperties(PropertyHelper helper) {
+        // Not implemented by default
+        return helper;
+    }
+
+    @Override
     public boolean isEnabled() {
         if (!isInitialized) throw new RuntimeException("Feature not initialized");
         return isEnabled;
@@ -136,11 +142,6 @@ public abstract class AbstractFeature implements Feature {
 
     protected List<MigrateDataType> getRawMigrateDataTypeList(Enum key) {
         return migrateDataTypeLists.get(key);
-    }
-
-    @Override
-    public Object featureFunction(Enum<?> function, Object... args) {
-        return null;
     }
 
     protected void putString(Enum<?> key, String value) {
