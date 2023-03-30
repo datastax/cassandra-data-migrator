@@ -1,18 +1,6 @@
 name: Build and publish to docker repo
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'pom.xml'
-      - 'Dockerfile'
-      - 'LICENSE.md'
-    tags:
-      - '*.*.*'
-      - '*.*.*-*'
+on: workflow_dispatch
 
 jobs:
   build_and_publish:

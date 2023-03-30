@@ -1,6 +1,7 @@
 package datastax.astra.migrate;
 
 import datastax.astra.migrate.cql.CqlHelper;
+import datastax.astra.migrate.cql.features.Featureset;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
@@ -8,8 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CqlHelperTest {
 
@@ -54,4 +54,10 @@ public class CqlHelperTest {
         );
     }
 
+    @Test
+    public void featureHelper_disabledWhenNull() {
+        propertyHelper.initializeSparkConf(sparkConf);
+        cqlHelper.initialize();
+        assertFalse(cqlHelper.isFeatureEnabled(Featureset.TEST_UNIMPLEMENTED_FEATURE));
+    }
 }

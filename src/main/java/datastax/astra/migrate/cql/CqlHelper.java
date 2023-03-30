@@ -66,7 +66,7 @@ public class CqlHelper {
         for (Featureset f : Featureset.values()) {
             if (f.toString().startsWith("TEST_")) continue; // Skip test features
             Feature feature = getFeature(f);
-            if (null!=feature && feature.isEnabled())
+            if (isFeatureEnabled(f))
                 feature.alterProperties(this.propertyHelper);
         }
 
@@ -211,14 +211,14 @@ public class CqlHelper {
                 }
             }
 
-            if (featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled()) {
+            if (isFeatureEnabled(Featureset.CONSTANT_COLUMNS)) {
                 insertBinds += "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_VALUES);
             }
 
             targetInsertQuery = "INSERT INTO " +
                     getTargetKeyspaceTable() +
                     " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) +
-                    ((featureMap.get(Featureset.CONSTANT_COLUMNS).isEnabled()) ? "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
+                    (isFeatureEnabled(Featureset.CONSTANT_COLUMNS) ? "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
                     ") VALUES (" + insertBinds + ")";
             if (null != getTtlCols() && !getTtlCols().isEmpty()) {
                 targetInsertQuery += " USING TTL ?";
@@ -535,5 +535,12 @@ public class CqlHelper {
 
     public Feature getFeature(Featureset featureEnum) {
         return featureMap.get(featureEnum);
+    }
+
+    public Boolean isFeatureEnabled(Featureset featureEnum) {
+        if (!featureMap.containsKey(featureEnum)) {
+            return false;
+        }
+        return featureMap.get(featureEnum).isEnabled();
     }
 }
