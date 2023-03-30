@@ -96,15 +96,19 @@ public class CqlHelper {
         return validInit;
     }
 
-    public BoundStatement bindInsert(PreparedStatement insertStatement, Row originRow, Row targetRow) {
+    public BoundStatement bindInsertOneRow(PreparedStatement insertStatement, Row originRow, Row targetRow) {
+        return bindInsertOneRow(insertStatement, originRow, targetRow, null, null);
+    }
+
+    public BoundStatement bindInsertOneRow(PreparedStatement insertStatement, Row originRow, Row targetRow, Object mapKey, Object mapValue) {
         BoundStatement boundInsertStatement = insertStatement.bind().setConsistencyLevel(writeConsistencyLevel);
 
-        int selectColTypesSize = getSelectColTypes().size();
+        int originColTypesSize = getOriginColTypes().size();
         if (isCounterTable()) {
-            for (int index = 0; index < selectColTypesSize; index++) {
-                MigrateDataType dataType = getSelectColTypes().get(getOriginColumnIndexes().get(index));
+            for (int index = 0; index < originColTypesSize; index++) {
+                MigrateDataType dataType = getOriginColTypes().get(getOriginColumnIndexes().get(index));
                 // compute the counter delta if reading from target for the difference
-                if (targetRow != null && index < (selectColTypesSize - getIdColTypes().size())) {
+                if (targetRow != null && index < (originColTypesSize - getIdColTypes().size())) {
                     boundInsertStatement = boundInsertStatement.set(index, (originRow.getLong(getOriginColumnIndexes().get(index)) - targetRow.getLong(getOriginColumnIndexes().get(index))), Long.class);
                 } else {
                     boundInsertStatement = boundInsertStatement.set(index, getData(dataType, getOriginColumnIndexes().get(index), originRow), dataType.getType());
@@ -112,8 +116,23 @@ public class CqlHelper {
             }
         } else {
             int index = 0;
-            for (index = 0; index < selectColTypesSize; index++) {
-                boundInsertStatement = getBoundStatement(originRow, boundInsertStatement, index, getSelectColTypes());
+            // This loops over the selected columns and binds each type to the boundInsertStatement
+            Feature explodeMapFeature = getFeature(Featureset.EXPLODE_MAP);
+            for (index = 0; index < originColTypesSize; index++) {
+                if (mapKey != null && explodeMapFeature.isEnabled() && index == explodeMapFeature.getInteger(ExplodeMap.Property.MAP_COLUMN_INDEX)) {
+                    // This substitutes the map column with the key and value types of the map
+                    boundInsertStatement = boundInsertStatement.set(index, mapKey, explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getType());
+                    // Add an 'extra' column to the statement, which will also increase the loop limit
+                    index++;
+                    originColTypesSize++;
+                    // And then bind the map value to the next column
+                    boundInsertStatement = boundInsertStatement.set(index, mapValue, explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getType());
+
+                }
+                else {
+                    // This is the previous behaviour, and when on any column that is not the map to explode
+                    boundInsertStatement = getBoundStatement(originRow, boundInsertStatement, index, getOriginColTypes());
+                }
                 if (boundInsertStatement == null) return null;
             }
 
@@ -231,7 +250,7 @@ public class CqlHelper {
 
     public long getLargestWriteTimeStamp(Row row) {
         return IntStream.range(0, getWriteTimeStampCols().size())
-                .mapToLong(i -> row.getLong(getSelectColTypes().size() + getTtlCols().size() + i)).max().getAsLong();
+                .mapToLong(i -> row.getLong(getOriginColTypes().size() + getTtlCols().size() + i)).max().getAsLong();
     }
 
     public Optional<Object> handleBlankInPrimaryKey(int index, Object colData, Class dataType, Row row, boolean logWarn) {
@@ -263,6 +282,35 @@ public class CqlHelper {
         return Optional.of(colData);
     }
 
+    public Optional<Object> toValidTargetColData(String colName, Object colData, Class dataType, Row row, boolean logWarn) {
+        if (null != colData || !isTargetPrimaryKeyColumn(colName)) return Optional.of(colData);
+        String dataLabel = getKey(row);
+
+        if (dataType == String.class) {
+            if (logWarn) {
+                logger.warn("For {}, found String primary-key column {} with blank value", dataLabel, colName);
+            }
+            return Optional.of("");
+        }
+
+        if (dataType == Instant.class) {
+            Long tsReplaceVal = getReplaceMissingTs();
+            if (null == tsReplaceVal) {
+                logger.error("Skipping {} as Timestamp primary-key column {} has invalid blank value. " +
+                        "Alternatively rerun the job with --conf {}=\"<fixed-epoch-value>\" " +
+                        "option to replace the blanks with a fixed timestamp value", dataLabel, colName,KnownProperties.TARGET_REPLACE_MISSING_TS);
+                return Optional.empty();
+            }
+            if (logWarn) {
+                logger.warn("For {}, found Timestamp primary-key column {} with invalid blank value. " +
+                        "Using value {} instead", dataLabel, colName, Instant.ofEpochSecond(tsReplaceVal));
+            }
+            return Optional.of(Instant.ofEpochSecond(tsReplaceVal));
+        }
+
+        return Optional.of(colData);
+    }
+
     public String getKey(Row row) {
         StringBuffer key = new StringBuffer();
         for (int index = 0; index < getIdColTypes().size(); index++) {
@@ -279,11 +327,11 @@ public class CqlHelper {
 
     public Object getData(MigrateDataType dataType, int index, Row row) {
         if (dataType.getType() == Map.class) {
-            return row.getMap(index, dataType.getSubTypes().get(0), dataType.getSubTypes().get(1));
+            return row.getMap(index, dataType.getSubTypeClasses().get(0), dataType.getSubTypeClasses().get(1));
         } else if (dataType.getType() == List.class) {
-            return row.getList(index, dataType.getSubTypes().get(0));
+            return row.getList(index, dataType.getSubTypeClasses().get(0));
         } else if (dataType.getType() == Set.class) {
-            return row.getSet(index, dataType.getSubTypes().get(0));
+            return row.getSet(index, dataType.getSubTypeClasses().get(0));
         } else if (isCounterTable() && dataType.getType() == Long.class) {
             Object data = row.get(index, dataType.getType());
             if (data == null) {
@@ -313,7 +361,7 @@ public class CqlHelper {
 
     private int getLargestTTL(Row row) {
         return IntStream.range(0, getTtlCols().size())
-                .map(i -> row.getInt(getSelectColTypes().size() + i)).max().getAsInt();
+                .map(i -> row.getInt(getOriginColTypes().size() + i)).max().getAsInt();
     }
 
     private Optional<Object> handleBlankInPrimaryKey(int index, Object colData, Class dataType, Row row) {
@@ -426,8 +474,16 @@ public class CqlHelper {
         return propertyHelper.getLong(KnownProperties.ORIGIN_FILTER_WRITETS_MAX);
     }
 
-    public List<MigrateDataType> getSelectColTypes() {
+    public List<MigrateDataType> getOriginColTypes() {
         return propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
+    }
+
+    public List<String> getTargetColNames() {
+        return propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
+    }
+
+    public List<MigrateDataType> getTargetColTypes() {
+        return propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES);
     }
 
     public List<MigrateDataType> getIdColTypes() {
@@ -471,6 +527,10 @@ public class CqlHelper {
         if (null == originSession || originSession.isClosed() || null == targetSession || targetSession.isClosed()) {
             throw new RuntimeException("Origin and/or Target sessions are either not set, or are closed");
         }
+    }
+
+    private boolean isTargetPrimaryKeyColumn(String colName) {
+        return propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY).contains(colName);
     }
 
     public Feature getFeature(Featureset featureEnum) {

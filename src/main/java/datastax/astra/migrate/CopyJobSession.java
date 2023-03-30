@@ -95,7 +95,7 @@ public class CopyJobSession extends AbstractJobSession {
                             targetRow = targetResultSet.one();
                         }
 
-                        BoundStatement bInsert = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow);
+                        BoundStatement bInsert = cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
@@ -128,7 +128,7 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         writeLimiter.acquire(1);
-                        BoundStatement bInsert = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null);
+                        BoundStatement bInsert = cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;

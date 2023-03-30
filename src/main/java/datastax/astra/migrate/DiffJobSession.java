@@ -144,7 +144,7 @@ public class DiffJobSession extends CopyJobSession {
             //correct data
 
             if (autoCorrectMissing) {
-                cqlHelper.getTargetSession().execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null));
+                cqlHelper.getTargetSession().execute(cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null));
                 correctedMissingCounter.incrementAndGet();
                 logger.error("Inserted missing row in target: {}", cqlHelper.getKey(originRow));
             }
@@ -159,9 +159,9 @@ public class DiffJobSession extends CopyJobSession {
 
             if (autoCorrectMismatch) {
                 if (cqlHelper.isCounterTable()) {
-                    cqlHelper.getTargetSession().execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow));
+                    cqlHelper.getTargetSession().execute(cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow));
                 } else {
-                    cqlHelper.getTargetSession().execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null));
+                    cqlHelper.getTargetSession().execute(cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Updated mismatch row in target: {}", cqlHelper.getKey(originRow));
@@ -175,8 +175,8 @@ public class DiffJobSession extends CopyJobSession {
 
     private String isDifferent(Row originRow, Row targetRow) {
         StringBuffer diffData = new StringBuffer();
-        IntStream.range(0, cqlHelper.getSelectColTypes().size()).parallel().forEach(index -> {
-            MigrateDataType dataTypeObj = cqlHelper.getSelectColTypes().get(index);
+        IntStream.range(0, cqlHelper.getOriginColTypes().size()).parallel().forEach(index -> {
+            MigrateDataType dataTypeObj = cqlHelper.getOriginColTypes().get(index);
             Object origin = cqlHelper.getData(dataTypeObj, index, originRow);
             if (index < cqlHelper.getIdColTypes().size()) {
                 Optional<Object> optionalVal = cqlHelper.handleBlankInPrimaryKey(index, origin, dataTypeObj.typeClass, originRow, false);

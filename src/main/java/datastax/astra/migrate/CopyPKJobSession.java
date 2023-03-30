@@ -56,7 +56,7 @@ public class CopyPKJobSession extends AbstractJobSession {
                     return;
                 }
                 ResultSet targetWriteResultSet = cqlHelper.getTargetSession()
-                        .execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null));
+                        .execute(cqlHelper.bindInsertOneRow(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null));
                 writeCounter.incrementAndGet();
                 if (readCounter.get() % printStatsAfter == 0) {
                     printCounts(false);

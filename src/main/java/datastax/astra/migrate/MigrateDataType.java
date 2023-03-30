@@ -15,7 +15,8 @@ public class MigrateDataType {
     Class typeClass = Object.class;
     String dataTypeString = "";
     int type = -1;
-    List<Class> subTypes = new ArrayList<Class>();
+    List<Class> subTypeClasses = new ArrayList<Class>();
+    List<MigrateDataType> subTypeTypes = new ArrayList<MigrateDataType>();
     private boolean isValid = false;
     private static int minType = 0;
     private static int maxType = 19;
@@ -30,7 +31,8 @@ public class MigrateDataType {
                 if (count == 1) {
                     this.type = typeAsInt;
                 } else {
-                    subTypes.add(getType(typeAsInt));
+                    subTypeClasses.add(getType(typeAsInt));
+                    subTypeTypes.add(new MigrateDataType(type));
                 }
                 count++;
             }
@@ -41,7 +43,7 @@ public class MigrateDataType {
 
         if ((this.type >= minType && this.type <= maxType) || this.type == UNKNOWN_TYPE) {
             isValid = true;
-            for (Object o : subTypes) {
+            for (Object o : subTypeClasses) {
                 if (null == o || Object.class == o) {
                     isValid = false;
                 }
@@ -132,9 +134,11 @@ public class MigrateDataType {
         return this.typeClass;
     }
 
-    public List<Class> getSubTypes() {
-        return this.subTypes;
+    public List<Class> getSubTypeClasses() {
+        return this.subTypeClasses;
     }
+
+    public List<MigrateDataType> getSubTypeTypes() {return this.subTypeTypes;}
 
     public boolean isValid() {
         return isValid;
@@ -146,7 +150,7 @@ public class MigrateDataType {
         if (o == null || getClass() != o.getClass()) return false;
         MigrateDataType that = (MigrateDataType) o;
         return type == that.type &&
-                Objects.equals(subTypes, that.subTypes);
+                Objects.equals(subTypeClasses, that.subTypeClasses);
     }
 
     @Override

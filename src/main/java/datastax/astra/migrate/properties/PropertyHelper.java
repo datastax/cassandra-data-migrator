@@ -235,13 +235,8 @@ public final class PropertyHelper extends KnownProperties{
             }
         }
 
-        // Target column list defaults to the source column list
-        if (null == get(KnownProperties.TARGET_COLUMN_NAMES) || getAsString(KnownProperties.TARGET_COLUMN_NAMES).isEmpty()) {
-            String originColumnNames = getAsString(KnownProperties.ORIGIN_COLUMN_NAMES);
-            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_NAMES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_NAMES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + "]");
-            setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
-        }
 
+        setTargetNamesAndTypes();
         setTargetPKTypes();
 
         if (fullyLoaded) {
@@ -249,6 +244,19 @@ public final class PropertyHelper extends KnownProperties{
         }
 
         this.sparkConfFullyLoaded = fullyLoaded;
+    }
+
+    // Previously, the target column names and types were assumed to match ORIGIN_COLUMN_NAMES and ORIGIN_COLUMN_TYPES
+    // This method starts on that basis, but allows features to make changes
+    private void setTargetNamesAndTypes() {
+        if (null == get(KnownProperties.TARGET_COLUMN_NAMES) || getAsString(KnownProperties.TARGET_COLUMN_NAMES).isEmpty()) {
+            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_NAMES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_NAMES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + "]");
+            setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
+        }
+        if (null == get(KnownProperties.TARGET_COLUMN_TYPES) || getAsString(KnownProperties.TARGET_COLUMN_TYPES).isEmpty()) {
+            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_TYPES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_TYPES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_TYPES) + "]");
+            setProperty(KnownProperties.TARGET_COLUMN_TYPES, get(KnownProperties.ORIGIN_COLUMN_TYPES));
+        }
     }
 
     // Previously, the target primary key types were assumed to be the first N types of ORIGIN_COLUMN_TYPES, where N = TARGET_PRIMARY_KEY.size()
@@ -287,6 +295,7 @@ public final class PropertyHelper extends KnownProperties{
             setProperty(KnownProperties.TARGET_PRIMARY_KEY_TYPES, targetPKTypes);
         }
     }
+
 
     protected boolean isValidConfig() {
         boolean valid = true;
