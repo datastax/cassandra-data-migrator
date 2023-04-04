@@ -3,9 +3,7 @@ package datastax.astra.migrate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +42,7 @@ public class SplitPartitions {
         logger.info("ThreadID: {} Splitting partitions in file: ./partitions.csv using a split-size of {}"
                 , Thread.currentThread().getId(), numSplits);
         List<Partition> partitions = new ArrayList<Partition>();
-        BufferedReader reader = Util.getfileReader("./partitions.csv");
+        BufferedReader reader = getfileReader("./partitions.csv");
         String line = null;
         while ((line = reader.readLine()) != null) {
             if (line.startsWith("#")) {
@@ -65,7 +63,7 @@ public class SplitPartitions {
         logger.info("ThreadID: {} Splitting rows in file: ./primary_key_rows.csv using a split-size of {}"
                 , Thread.currentThread().getId(), numSplits);
         List<String> pkRows = new ArrayList<String>();
-        BufferedReader reader = Util.getfileReader("./primary_key_rows.csv");
+        BufferedReader reader = getfileReader("./primary_key_rows.csv");
         String pkRow = null;
         while ((pkRow = reader.readLine()) != null) {
             if (pkRow.startsWith("#")) {
@@ -158,4 +156,13 @@ public class SplitPartitions {
             return "Processing partition for token range " + min + " to " + max;
         }
     }
+
+    private static BufferedReader getfileReader(String fileName) {
+        try {
+            return new BufferedReader(new FileReader(fileName));
+        } catch (FileNotFoundException fnfe) {
+            throw new RuntimeException("No '" + fileName + "' file found!! Add this file in the current folder & rerun!");
+        }
+    }
+
 }

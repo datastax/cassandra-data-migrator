@@ -5,8 +5,13 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import datastax.astra.migrate.cql.EnhancedPK;
 import datastax.astra.migrate.cql.PKFactory;
 import datastax.astra.migrate.cql.Record;
+import datastax.astra.migrate.cql.features.ExplodeMap;
+import datastax.astra.migrate.cql.features.Feature;
+import datastax.astra.migrate.cql.features.FeatureFactory;
+import datastax.astra.migrate.cql.features.Featureset;
 import datastax.astra.migrate.cql.statements.OriginSelectByPartitionRangeStatement;
 import datastax.astra.migrate.cql.statements.TargetSelectByPKStatement;
 import datastax.astra.migrate.properties.KnownProperties;
@@ -36,6 +41,10 @@ public class DiffJobSession extends CopyJobSession {
     private final AtomicLong skippedCounter = new AtomicLong(0);
 
     private final boolean isCounterTable;
+    private final List<Integer> targetToOriginColumnIndexes;
+    private final List<MigrateDataType> targetColumnTypes;
+    private final int explodeMapKeyIndex;
+    private final int explodeMapValueIndex;
 
     private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -46,7 +55,20 @@ public class DiffJobSession extends CopyJobSession {
         autoCorrectMismatch = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISMATCH);
         logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
 
-        isCounterTable = cqlHelper.isCounterTable();
+        this.isCounterTable = cqlHelper.isCounterTable();
+        this.targetToOriginColumnIndexes = cqlHelper.getPKFactory().getTargetToOriginColumnIndexes();
+        this.targetColumnTypes = cqlHelper.getPKFactory().getTargetColumnTypes();
+
+        Feature explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
+        if (FeatureFactory.isEnabled(explodeMapFeature)) {
+            List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
+            this.explodeMapKeyIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME));
+            this.explodeMapValueIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME));
+        }
+        else {
+            this.explodeMapKeyIndex = -1;
+            this.explodeMapValueIndex = -1;
+        }
     }
 
     public static DiffJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sparkConf) {
@@ -138,6 +160,7 @@ public class DiffJobSession extends CopyJobSession {
     }
 
     private void diff(Record record) {
+        EnhancedPK originPK = record.getPk();
         Row originRow = record.getOriginRow();
         Row targetRow = record.getTargetRow();
 
@@ -156,7 +179,7 @@ public class DiffJobSession extends CopyJobSession {
             return;
         }
 
-        String diffData = isDifferent(originRow, targetRow);
+        String diffData = isDifferent(originPK, originRow, targetRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
             logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
@@ -174,30 +197,27 @@ public class DiffJobSession extends CopyJobSession {
         }
     }
 
-    private String isDifferent(Row originRow, Row targetRow) {
+    private String isDifferent(EnhancedPK pk, Row originRow, Row targetRow) {
         StringBuffer diffData = new StringBuffer();
-        IntStream.range(0, cqlHelper.getOriginColTypes().size()).parallel().forEach(index -> {
-            MigrateDataType dataTypeObj = cqlHelper.getOriginColTypes().get(index);
-            Object origin = cqlHelper.getData(dataTypeObj, index, originRow);
-            if (index < cqlHelper.getIdColTypes().size()) {
-                Optional<Object> optionalVal = cqlHelper.handleBlankInPrimaryKey(index, origin, dataTypeObj.typeClass, originRow, false);
-                if (optionalVal.isPresent()) {
-                    origin = optionalVal.get();
-                }
-            }
+        IntStream.range(0, targetColumnTypes.size()).parallel().forEach(targetIndex -> {
+            MigrateDataType dataTypeObj = targetColumnTypes.get(targetIndex);
+            Object target = cqlHelper.getData(dataTypeObj, targetIndex, targetRow);
 
-            Object target = cqlHelper.getData(dataTypeObj, index, targetRow);
+            Object origin;
+            if (targetIndex == explodeMapKeyIndex) origin = pk.getExplodeMapKey();
+            else if (targetIndex == explodeMapValueIndex) origin = pk.getExplodeMapValue();
+            else origin = cqlHelper.getData(dataTypeObj, targetToOriginColumnIndexes.get(targetIndex), originRow);
 
             boolean isDiff = dataTypeObj.diff(origin, target);
             if (isDiff) {
-                if (dataTypeObj.typeClass.equals(UdtValue.class)) {
+                if (dataTypeObj.getTypeClass().equals(UdtValue.class)) {
                     String originUdtContent = ((UdtValue) origin).getFormattedContents();
                     String targetUdtContent = ((UdtValue) target).getFormattedContents();
                     if (!originUdtContent.equals(targetUdtContent)) {
-                        diffData.append("(Index: " + index + " Origin: " + originUdtContent + " Target: " + targetUdtContent + ") ");
+                        diffData.append("(Target Index: " + targetIndex + " Origin: " + originUdtContent + " Target: " + targetUdtContent + ") ");
                     }
                 } else {
-                    diffData.append("(Index: " + index + " Origin: " + origin + " Target: " + target + ") ");
+                    diffData.append("Target Index: " + targetIndex + " Origin: " + origin + " Target: " + target + ") ");
                 }
             }
         });

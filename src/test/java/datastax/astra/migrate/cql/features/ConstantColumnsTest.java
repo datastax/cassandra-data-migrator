@@ -7,12 +7,9 @@ import datastax.astra.migrate.cql.PKFactory;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
-import org.datanucleus.store.types.wrappers.backed.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
@@ -24,14 +21,11 @@ public class ConstantColumnsTest {
     SparkConf validSparkConf;
     Feature feature;
 
-    CqlSession mockCqlSession = mock(CqlSession.class);
-
     @BeforeEach
     public void setup() {
         helper = PropertyHelper.getInstance();
         validSparkConf = new SparkConf();
         feature = FeatureFactory.getFeature(Featureset.CONSTANT_COLUMNS);
-        when(mockCqlSession.isClosed()).thenReturn(false);
     }
 
     @AfterEach

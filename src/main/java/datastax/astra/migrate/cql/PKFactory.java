@@ -39,6 +39,7 @@ public class PKFactory {
     private final String targetWhereClause;
 
     private final List<Integer> targetToOriginColumnIndexes;
+    private final List<MigrateDataType> targetColumnTypes;
     private final List<Integer> targetToOriginPKIndexes;
 
     private final List<String> originPKNames = new ArrayList<>();
@@ -60,6 +61,7 @@ public class PKFactory {
 
         setPKNamesAndTypes(propertyHelper);
 
+        this.targetColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES);
         this.targetToOriginColumnIndexes = targetToOriginColumnIndexes(propertyHelper);
 
         this.targetPKLookupMethods = new ArrayList<>(targetPKNames.size());
@@ -252,10 +254,9 @@ public class PKFactory {
         List<String> originColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES);
         List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
         List<MigrateDataType> originColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
-        List<MigrateDataType> targetColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES);
         if (null==originColumnNames || null==targetColumnNames || originColumnNames.size()==0 || targetColumnNames.size()==0)
             throw new RuntimeException("Origin and target column names are not the same size, see "+KnownProperties.ORIGIN_COLUMN_NAMES+" and "+KnownProperties.TARGET_COLUMN_NAMES);
-        if (null==originColumnTypes || null==targetColumnTypes || originColumnTypes.size()==0 || targetColumnTypes.size()==0)
+        if (null==originColumnTypes || null==this.targetColumnTypes || originColumnTypes.size()==0 || this.targetColumnTypes.size()==0)
             throw new RuntimeException("Origin and target column types are not the same size, see "+KnownProperties.ORIGIN_COLUMN_TYPES+" and "+KnownProperties.TARGET_COLUMN_TYPES);
 
         List<Integer> targetToOriginColumnIndexes = new ArrayList<>(targetColumnNames.size());
@@ -270,13 +271,21 @@ public class PKFactory {
             String targetColumnName = targetColumnNames.get(i);
             if (originColumnNames.contains(targetColumnName)) {
                 targetToOriginColumnIndexes.add(originColumnNames.indexOf(targetColumnName));
-            } else if (i < originColumnTypes.size() && targetColumnTypes.get(i).equals(originColumnTypes.get(i))) {
+            } else if (i < originColumnTypes.size() && this.targetColumnTypes.get(i).equals(originColumnTypes.get(i))) {
                 targetToOriginColumnIndexes.add(i);
             } else {
                 targetToOriginColumnIndexes.add(null);
             }
         }
         return targetToOriginColumnIndexes;
+    }
+
+    public List<Integer> getTargetToOriginColumnIndexes() {
+        return targetToOriginColumnIndexes;
+    }
+
+    public List<MigrateDataType> getTargetColumnTypes() {
+        return targetColumnTypes;
     }
 
     private List<Integer> targetToOriginPKIndexes(PropertyHelper propertyHelper) {

@@ -235,7 +235,6 @@ public final class PropertyHelper extends KnownProperties{
             }
         }
 
-
         setTargetNamesAndTypes();
         setTargetPKTypes();
         setOriginPKNamesAndTypes();
