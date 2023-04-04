@@ -167,7 +167,7 @@ public class ExplodeMap extends AbstractFeature {
     private boolean isMapType(PropertyHelper helper) {
         MigrateDataType mdt = getColumnMapDataType(helper);
         if (mdt == null) return false;
-        return mdt.getType() == Map.class;
+        return mdt.getTypeClass() == Map.class;
     }
 
     private boolean isValid(PropertyHelper helper) {

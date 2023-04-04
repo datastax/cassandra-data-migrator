@@ -24,7 +24,6 @@ public class AbstractJobSession extends BaseJobSession {
 
         cqlHelper.setOriginSession(originSession);
         cqlHelper.setTargetSession(targetSession);
-        cqlHelper.setJobMigrateRowsFromFile(isJobMigrateRowsFromFile);
 
         printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
         if (!propertyHelper.meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {

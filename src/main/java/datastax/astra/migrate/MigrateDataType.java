@@ -31,7 +31,7 @@ public class MigrateDataType {
                 if (count == 1) {
                     this.type = typeAsInt;
                 } else {
-                    subTypeClasses.add(getType(typeAsInt));
+                    subTypeClasses.add(getTypeClass(typeAsInt));
                     subTypeTypes.add(new MigrateDataType(type));
                 }
                 count++;
@@ -39,7 +39,7 @@ public class MigrateDataType {
         } else {
             this.type = typeAsInt(dataType);
         }
-        this.typeClass = getType(this.type);
+        this.typeClass = getTypeClass(this.type);
 
         if ((this.type >= minType && this.type <= maxType) || this.type == UNKNOWN_TYPE) {
             isValid = true;
@@ -57,7 +57,7 @@ public class MigrateDataType {
     public MigrateDataType() {
         this.dataTypeString = "UNKNOWN";
         this.type = UNKNOWN_TYPE;
-        this.typeClass = getType(this.type);
+        this.typeClass = getTypeClass(this.type);
         isValid = true;
     }
 
@@ -83,7 +83,7 @@ public class MigrateDataType {
         return !obj1.equals(obj2);
     }
 
-    private Class getType(int type) {
+    private Class getTypeClass(int type) {
         switch (type) {
             case 0:
                 return String.class;
@@ -130,7 +130,7 @@ public class MigrateDataType {
         return Object.class;
     }
 
-    public Class getType() {
+    public Class getTypeClass() {
         return this.typeClass;
     }
 

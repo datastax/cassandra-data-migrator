@@ -10,4 +10,8 @@ public class FeatureFactory {
                 throw new IllegalArgumentException("Unknown feature: " + feature);
         }
     }
+
+    public static Boolean isEnabled(Feature f) {
+        return null != f && f.isEnabled();
+    }
 }
