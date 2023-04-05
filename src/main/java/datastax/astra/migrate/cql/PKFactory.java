@@ -38,8 +38,9 @@ public class PKFactory {
     private final List<Object> targetDefaultValues;
     private final String targetWhereClause;
 
-    private final List<Integer> targetToOriginColumnIndexes;
     private final List<MigrateDataType> targetColumnTypes;
+    private final List<MigrateDataType> originColumnTypes;
+    private final List<Integer> targetToOriginColumnIndexes;
     private final List<Integer> targetToOriginPKIndexes;
 
     private final List<String> originPKNames = new ArrayList<>();
@@ -48,7 +49,9 @@ public class PKFactory {
     private final List<LookupMethod> originPKLookupMethods;
     private final String originWhereClause;
 
+    private final Integer explodeMapOriginColumnIndex;
     private final Integer explodeMapTargetKeyColumnIndex;
+    private final Integer explodeMapTargetPKIndex;
 
     // These defaults address the problem where we cannot insert null values into a PK column
     private final Long defaultForMissingTimestamp;
@@ -62,6 +65,7 @@ public class PKFactory {
         setPKNamesAndTypes(propertyHelper);
 
         this.targetColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES);
+        this.originColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
         this.targetToOriginColumnIndexes = targetToOriginColumnIndexes(propertyHelper);
 
         this.targetPKLookupMethods = new ArrayList<>(targetPKNames.size());
@@ -82,6 +86,8 @@ public class PKFactory {
         setOriginColumnLookupMethod(propertyHelper);
         setConstantColumns();
         this.explodeMapTargetKeyColumnIndex = setExplodeMapMethods_getTargetKeyColumnIndex();
+        this.explodeMapOriginColumnIndex = getExplodeMapOriginColumnIndex();
+        this.explodeMapTargetPKIndex = targetPKLookupMethods.indexOf(LookupMethod.EXPLODE_MAP);
 
         // These need to be set once all the features have been processed
         scrubLookupMethods();
@@ -215,6 +221,8 @@ public class PKFactory {
         return defaultForMissingString;
     }
 
+    public Integer getExplodeMapTargetPKIndex() {return explodeMapTargetPKIndex;}
+
     private List<Object> getTargetPKValuesFromOriginColumnLookupMethod(Row originRow, List<Object> defaultValues) {
         List<Object> newValues = new ArrayList<>(defaultValues);
         for (int i = 0; i< targetPKLookupMethods.size(); i++) {
@@ -245,7 +253,7 @@ public class PKFactory {
         if (explodeMapTargetKeyColumnIndex < 0) {
             return null;
         }
-        return (Map<Object,Object>) cqlHelper.getData(targetPKTypes.get(explodeMapTargetKeyColumnIndex), targetToOriginColumnIndexes.get(explodeMapTargetKeyColumnIndex),originRow);
+        return (Map<Object,Object>) cqlHelper.getData(originColumnTypes.get(explodeMapOriginColumnIndex), explodeMapOriginColumnIndex,originRow);
     }
 
     // As target columns can be renamed, but we expect the positions of origin and target columns to be the same
@@ -253,10 +261,9 @@ public class PKFactory {
     private List<Integer> targetToOriginColumnIndexes(PropertyHelper propertyHelper) {
         List<String> originColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES);
         List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
-        List<MigrateDataType> originColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
         if (null==originColumnNames || null==targetColumnNames || originColumnNames.size()==0 || targetColumnNames.size()==0)
             throw new RuntimeException("Origin and target column names are not the same size, see "+KnownProperties.ORIGIN_COLUMN_NAMES+" and "+KnownProperties.TARGET_COLUMN_NAMES);
-        if (null==originColumnTypes || null==this.targetColumnTypes || originColumnTypes.size()==0 || this.targetColumnTypes.size()==0)
+        if (null==this.originColumnTypes || null==this.targetColumnTypes || this.originColumnTypes.size()==0 || this.targetColumnTypes.size()==0)
             throw new RuntimeException("Origin and target column types are not the same size, see "+KnownProperties.ORIGIN_COLUMN_TYPES+" and "+KnownProperties.TARGET_COLUMN_TYPES);
 
         List<Integer> targetToOriginColumnIndexes = new ArrayList<>(targetColumnNames.size());
@@ -271,7 +278,7 @@ public class PKFactory {
             String targetColumnName = targetColumnNames.get(i);
             if (originColumnNames.contains(targetColumnName)) {
                 targetToOriginColumnIndexes.add(originColumnNames.indexOf(targetColumnName));
-            } else if (i < originColumnTypes.size() && this.targetColumnTypes.get(i).equals(originColumnTypes.get(i))) {
+            } else if (i < this.originColumnTypes.size() && this.targetColumnTypes.get(i).equals(this.originColumnTypes.get(i))) {
                 targetToOriginColumnIndexes.add(i);
             } else {
                 targetToOriginColumnIndexes.add(null);
@@ -364,6 +371,15 @@ public class PKFactory {
                     return i;
                 }
             }
+        }
+        return -1;
+    }
+
+    private Integer getExplodeMapOriginColumnIndex() {
+        Feature explodeMapFeature;
+        if (cqlHelper.isFeatureEnabled(Featureset.EXPLODE_MAP)) {
+            explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
+            return explodeMapFeature.getInteger(ExplodeMap.Property.MAP_COLUMN_INDEX);
         }
         return -1;
     }

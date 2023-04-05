@@ -26,8 +26,33 @@ public class CopyJobSession extends AbstractJobSession {
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
 
+    private final OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement;
+    private final TargetInsertStatement targetInsertStatement;
+    private final TargetUpdateStatement targetUpdateStatement;
+    private final TargetSelectByPKStatement targetSelectByPKStatement;
+    private final PKFactory pkFactory;
+    private final boolean isCounterTable;
+    private final Integer batchSize;
+    private final Integer fetchSize;
+    private final Collection<CompletionStage<AsyncResultSet>> writeResults;
+
+    private BatchStatement batch;
+    private int unflushedWrites = 0;
+
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
+
+        pkFactory = cqlHelper.getPKFactory();
+        originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement();
+        targetInsertStatement = cqlHelper.getTargetInsertStatement();
+        targetUpdateStatement = cqlHelper.getTargetUpdateStatement();
+        targetSelectByPKStatement = cqlHelper.getTargetSelectByPKStatement();
+        batchSize = cqlHelper.getBatchSize();
+        isCounterTable = cqlHelper.isCounterTable();
+        fetchSize = cqlHelper.getFetchSizeInRows();
+
+        batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+        writeResults = new ArrayList<>();
     }
 
     public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
@@ -45,32 +70,14 @@ public class CopyJobSession extends AbstractJobSession {
     public void getDataAndInsert(BigInteger min, BigInteger max) {
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         boolean done = false;
-        boolean batching = false;
         int maxAttempts = maxRetries + 1;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             long readCnt = 0;
-            long writeCnt = 0;
+            long flushedWriteCnt = 0;
             long skipCnt = 0;
             long errCnt = 0;
             try {
-                PKFactory pkFactory = cqlHelper.getPKFactory();
-                OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement();
                 ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
-
-                TargetInsertStatement targetInsertStatement = cqlHelper.getTargetInsertStatement();
-                TargetUpdateStatement targetUpdateStatement = cqlHelper.getTargetUpdateStatement();
-                TargetSelectByPKStatement targetSelectByPKStatement = cqlHelper.getTargetSelectByPKStatement();
-
-                Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
-
-                // cannot do batching if the writeFilter is greater than 0 or
-                // maxWriteTimeStampFilter is less than max long
-                // do not batch for counters as it adds latency & increases chance of discrepancy
-                batching = !(cqlHelper.getBatchSize() == 1 || cqlHelper.hasWriteTimestampFilter() || cqlHelper.isCounterTable());
-                BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED); // this may not be used
-
-                boolean isCounterTable = cqlHelper.isCounterTable();
-                CompletionStage<AsyncResultSet> writeResultSet;
 
                 for (Row originRow : resultSet) {
                     readLimiter.acquire(1);
@@ -88,73 +95,33 @@ public class CopyJobSession extends AbstractJobSession {
                     for (Record r : pkFactory.toValidRecordList(record)) {
                         writeLimiter.acquire(1);
 
-                        BoundStatement boundUpsert;
-                        if (isCounterTable) {
-                            Record targetRecord = targetSelectByPKStatement.getRecord(r.getPk());
-                            if (null != targetRecord) {
-                                r.setTargetRow(targetRecord.getTargetRow());
-                            }
-                            boundUpsert = targetUpdateStatement.bindRecord(r);
-                        }
-                        else {
-                            boundUpsert = targetInsertStatement.bindRecord(r);
-                        }
-
+                        BoundStatement boundUpsert = bind(r);
                         if (null == boundUpsert) {
                             skipCnt++; // TODO: this previously skipped, why not errCnt?
                             continue;
                         }
 
-                        if (batching) {
-                            batch = batch.add(boundUpsert);
-                            if (batch.size() >= cqlHelper.getBatchSize()) {
-                                writeResultSet = isCounterTable ? targetUpdateStatement.executeAsync(batch) : targetInsertStatement.executeAsync(batch);
-                                writeResults.add(writeResultSet);
-                                batch = BatchStatement.newInstance(BatchType.UNLOGGED);
-                            }
-
-                            if (writeResults.size() * cqlHelper.getBatchSize() > cqlHelper.getFetchSizeInRows()) {
-                                writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
-                            }
-                        }
-                        else {
-                            writeResultSet = isCounterTable ? targetUpdateStatement.executeAsync(boundUpsert) : targetInsertStatement.executeAsync(boundUpsert);
-                            writeResults.add(writeResultSet);
-                            if (writeResults.size() > cqlHelper.getFetchSizeInRows()) {
-                                writeCnt += iterateAndClearWriteResults(writeResults, 1);
-                            }
-                        }
+                        flushedWriteCnt += writeAsync(boundUpsert);
                     }
                 }
 
-                // Flush pending writes
-                if (batching) {
-                    if (batch.size() > 0) {
-                        writeResultSet = isCounterTable ? targetUpdateStatement.executeAsync(batch) : targetInsertStatement.executeAsync(batch);
-                        writeResults.add(writeResultSet);
-                        writeCnt += iterateAndClearWriteResults(writeResults, batch.size());
-                    }
-                }
-                else {
-                    // clear the write resultset
-                    writeCnt += iterateAndClearWriteResults(writeResults, 1);
-                }
+                flushedWriteCnt += flushAndClearWrites();
 
                 readCounter.addAndGet(readCnt);
-                writeCounter.addAndGet(writeCnt);
+                writeCounter.addAndGet(flushedWriteCnt);
                 skippedCounter.addAndGet(skipCnt);
                 done = true;
             } catch (Exception e) {
                 if (attempts == maxAttempts) {
                     readCounter.addAndGet(readCnt);
-                    writeCounter.addAndGet(writeCnt);
+                    writeCounter.addAndGet(flushedWriteCnt);
                     skippedCounter.addAndGet(skipCnt);
-                    errorCounter.addAndGet(readCnt - writeCnt - skipCnt);
+                    errorCounter.addAndGet(readCnt - flushedWriteCnt - skipCnt);
                 }
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts);
-                logger.error("Error stats Read#: {}, Wrote#: {}, Skipped#: {}, Error#: {}", readCnt, writeCnt, skipCnt, (readCnt - writeCnt - skipCnt));
+                logger.error("Error stats Read#: {}, Wrote#: {}, Skipped#: {}, Error#: {}", readCnt, flushedWriteCnt, skipCnt, (readCnt - flushedWriteCnt - skipCnt));
             }
         }
     }
@@ -174,16 +141,57 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
-    private int iterateAndClearWriteResults(Collection<CompletionStage<AsyncResultSet>> writeResults, int incrementBy) throws Exception {
-        int cnt = 0;
-        for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
-            //wait for the writes to complete for the batch. The Retry policy, if defined, should retry the write on timeouts.
-            writeResult.toCompletableFuture().get().one();
-            cnt += incrementBy;
+    private int flushAndClearWrites() throws Exception {
+        int cnt = unflushedWrites;
+        if (batch.size() > 0) {
+            writeResults.add(executeAsync(batch));
         }
-        writeResults.clear();
-
+        if (unflushedWrites > 0) {
+            for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
+                //wait for the writes to complete for the batch. The Retry policy, if defined, should retry the write on timeouts.
+                writeResult.toCompletableFuture().get().one();
+            }
+            writeResults.clear();
+            unflushedWrites = 0;
+        }
         return cnt;
+    }
+
+    private BoundStatement bind(Record r) {
+        if (isCounterTable) {
+            Record targetRecord = targetSelectByPKStatement.getRecord(r.getPk());
+            if (null != targetRecord) {
+                r.setTargetRow(targetRecord.getTargetRow());
+            }
+            return targetUpdateStatement.bindRecord(r);
+        }
+        else {
+            return targetInsertStatement.bindRecord(r);
+        }
+    }
+
+    private int writeAsync(BoundStatement boundUpsert) throws Exception {
+        if (batchSize > 1) {
+            batch = batch.add(boundUpsert);
+            if (batch.size() >= batchSize) {
+                writeResults.add(executeAsync(batch));
+                batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+            }
+        }
+        else {
+            writeResults.add(executeAsync(boundUpsert));
+        }
+        unflushedWrites++;
+
+        if (unflushedWrites > fetchSize) {
+            return flushAndClearWrites();
+        }
+        else
+            return 0;
+    }
+
+    private CompletionStage<AsyncResultSet> executeAsync(Statement<?> statement) {
+        return isCounterTable ? targetUpdateStatement.executeAsync(statement) : targetInsertStatement.executeAsync(statement);
     }
 
 }

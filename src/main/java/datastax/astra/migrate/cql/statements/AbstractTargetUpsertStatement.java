@@ -8,12 +8,15 @@ import datastax.astra.migrate.cql.Record;
 import datastax.astra.migrate.cql.features.*;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     protected final List<String> targetColumnNames = new ArrayList<>();
     protected final List<String> originColumnNames = new ArrayList<>();
@@ -67,12 +70,8 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         return bind(originRow, targetRow, pk.getTTL(), pk.getWriteTimestamp(), pk.getExplodeMapKey(), pk.getExplodeMapValue());
     }
 
-    public CompletionStage<AsyncResultSet> executeAsync(BatchStatement batchStatement) {
-        return session.executeAsync(batchStatement);
-    }
-
-    public CompletionStage<AsyncResultSet> executeAsync(BoundStatement boundStatement) {
-        return session.executeAsync(boundStatement);
+    public CompletionStage<AsyncResultSet> executeAsync(Statement<?> statement) {
+        return session.executeAsync(statement);
     }
 
     public ResultSet putRecord(Record record) {
@@ -177,14 +176,13 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
             if (null==explodeMapKey)
                 throw new RuntimeException("ExplodeMap is enabled, but no map key was provided");
-            else if (!(explodeMapKey.getClass().equals(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getClass())))
-                throw new RuntimeException("ExplodeMap is enabled, but the map key provided is not of the correct type");
+            else if (!(explodeMapKey.getClass().equals(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getTypeClass())))
+                throw new RuntimeException("ExplodeMap is enabled, but the map key type provided "+explodeMapKey.getClass().getName()+" is not of the expected type "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getTypeClass().getName());
 
             if (null==explodeMapValue)
                 throw new RuntimeException("ExplodeMap is enabled, but no map value was provided");
-            else if (!(explodeMapValue.getClass().equals(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getClass())))
-                throw new RuntimeException("ExplodeMap is enabled, but the map value provided is not of the correct type");
-
+            else if (!(explodeMapValue.getClass().equals(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass())))
+                throw new RuntimeException("ExplodeMap is enabled, but the map value type provided "+explodeMapValue.getClass().getName()+" is not of the expected type "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass().getName());
         }
     }
 }

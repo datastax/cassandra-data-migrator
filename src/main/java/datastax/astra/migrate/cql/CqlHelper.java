@@ -140,7 +140,14 @@ public class CqlHelper {
     }
 
     public Integer getBatchSize() {
-        return propertyHelper.getInteger(KnownProperties.SPARK_BATCH_SIZE);
+        // cannot do batching if the writeFilter is greater than 0 or maxWriteTimeStampFilter is less than max long
+        // do not batch for counters as it adds latency & increases chance of discrepancy
+        if (hasWriteTimestampFilter() || isCounterTable())
+            return 1;
+        else {
+            Integer rtn = propertyHelper.getInteger(KnownProperties.SPARK_BATCH_SIZE);
+            return (null==rtn || rtn < 1) ? 5 : rtn;
+        }
     }
 
     // -------------- Schema ----------------------

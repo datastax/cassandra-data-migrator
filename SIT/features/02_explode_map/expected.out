@@ -1,0 +1,17 @@
+
+ key  | fruit   | fruit_qty | value
+------+---------+-----------+--------
+ key1 |  apples |         3 | valueA
+ key1 | bananas |         2 | valueA
+ key1 |  grapes |        11 | valueA
+ key1 | oranges |         5 | valueA
+ key3 |  apples |         5 | valueC
+ key3 | bananas |         4 | valueC
+ key3 |    kiwi |        42 | valueC
+ key3 | oranges |         7 | valueC
+ key2 |  apples |         4 | valueB
+ key2 | bananas |         3 | valueB
+ key2 | oranges |         6 | valueB
+ key2 |   pears |         7 | valueB
+
+(12 rows)
