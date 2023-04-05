@@ -13,3 +13,6 @@ cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD $CASS_CLUSTER -f $workingDir/breakData
 
 /local/cdm.sh -f cdm.txt -s fixData -d "$workingDir" > cdm.fixData.out 2>cdm.fixData.err
 /local/cdm-assert.sh -f cdm.fixData.out -a cdm.fixData.assert -d "$workingDir"
+
+/local/cdm.sh -f cdm.txt -s fixForce -d "$workingDir" > cdm.fixForce.out 2>cdm.fixForce.err
+/local/cdm-assert.sh -f cdm.fixForce.out -a cdm.fixForce.assert -d "$workingDir"

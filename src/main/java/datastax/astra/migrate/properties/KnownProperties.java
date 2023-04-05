@@ -71,6 +71,7 @@ public class KnownProperties {
     public static final String ORIGIN_IS_COUNTER      = "spark.counterTable";              // false
     public static final String ORIGIN_COUNTER_CQL     = "spark.counterTable.cql";
     public static final String ORIGIN_COUNTER_INDEXES = "spark.counterTable.cql.index";    // 0
+    public static final String ORIGIN_COUNTER_FORCE_WHEN_MISSING = "spark.counterTable.missing.force";    // false
     public static final String ORIGIN_PRIMARY_KEY        = "spark.query.origin.id";         // Defaults to TARGET_PRIMARY_KEY, same config rules
     public static final String ORIGIN_PRIMARY_KEY_TYPES  = "spark.cdm.cql.origin.id.types"; // Code-managed, not an external property
 
@@ -89,6 +90,8 @@ public class KnownProperties {
         defaults.put(ORIGIN_IS_COUNTER, "false");
            types.put(ORIGIN_COUNTER_CQL, PropertyType.STRING);
            types.put(ORIGIN_COUNTER_INDEXES, PropertyType.NUMBER_LIST);
+           types.put(ORIGIN_COUNTER_FORCE_WHEN_MISSING, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_COUNTER_FORCE_WHEN_MISSING, "false");
            types.put(ORIGIN_PRIMARY_KEY, PropertyType.STRING_LIST);
         required.add(ORIGIN_PRIMARY_KEY);
            types.put(ORIGIN_PRIMARY_KEY_TYPES, PropertyType.MIGRATION_TYPE_LIST);
