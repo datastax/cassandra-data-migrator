@@ -1,0 +1,1 @@
+SELECT key,t_col1,tw_col2,w_col3,col4, writetime(col4) as wt_col4, ttl(col4) as ttl_col4 FROM target.smoke_ttl_writetime;

@@ -9,36 +9,45 @@ import datastax.astra.migrate.cql.features.ExplodeMap;
 import datastax.astra.migrate.cql.features.FeatureFactory;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
 public class TargetInsertStatement extends AbstractTargetUpsertStatement {
+    public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     public TargetInsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
     }
 
     @Override
-    protected BoundStatement bind(Row originRow, Row targetRow, Long ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
+    protected BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
         if (null == originRow)
             throw new RuntimeException("Origin row is null");
         if (usingCounter)
             throw new RuntimeException("Cannot INSERT onto a counter table, use UPDATE instead");
 
-        checkBindInputs(writeTime, ttl, explodeMapKey, explodeMapValue);
+        checkBindInputs(ttl, writeTime, explodeMapKey, explodeMapValue);
         BoundStatement boundStatement = prepareStatement().bind();
 
-        for (int index = 0; index < bindIndex; index++) {
+        int currentBindIndex = 0;
+        Object bindValue;
+        for (int index = 0; index < targetColumnTypes.size(); index++) {
             MigrateDataType dataType = targetColumnTypes.get(index);
-            Object bindValue;
 
-            if (index==ttlBindIndex) bindValue = ttl;
-            else if (index==writeTimeBindIndex) bindValue = writeTime;
-            else if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
+            if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
             else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
             else bindValue = cqlHelper.getData(dataType, index, originRow);
 
-            boundStatement = boundStatement.set(index, bindValue, dataType.getTypeClass());
+            boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
+        }
+
+        if (usingTTL) {
+            boundStatement = boundStatement.set(currentBindIndex++, ttl, Integer.class);
+        }
+        if (usingWriteTime) {
+            boundStatement = boundStatement.set(currentBindIndex++, writeTime, Long.class);
         }
 
         return boundStatement
@@ -74,18 +83,8 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
                 (FeatureFactory.isEnabled(constantColumnFeature) ? "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
                 ") VALUES (" + valuesList + ")";
 
-        if (usingTTL || usingWriteTime)
-            targetUpdateCQL += " USING ";
-        if (usingTTL) {
-            targetUpdateCQL += "TTL ?";
-            ttlBindIndex = bindIndex++;
-        }
-        if (usingTTL && usingWriteTime)
-            targetUpdateCQL += " AND ";
-        if (usingWriteTime) {
-            targetUpdateCQL += "TIMESTAMP ?";
-            writeTimeBindIndex = bindIndex++;
-        }
+        targetUpdateCQL += usingTTLTimestamp();
+
         return targetUpdateCQL;
     }
 }

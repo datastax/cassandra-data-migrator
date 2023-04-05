@@ -183,6 +183,7 @@ public class DiffJobSession extends CopyJobSession {
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
             logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
+            logger.info("record.pk ttl = {}, ts = {}", record.getPk().getTTL(), record.getPk().getWriteTimestamp());
 
             if (autoCorrectMismatch) {
                 writeLimiter.acquire(1);

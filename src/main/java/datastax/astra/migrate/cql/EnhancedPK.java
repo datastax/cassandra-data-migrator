@@ -15,7 +15,7 @@ public class EnhancedPK {
     private final List<Object> values;
     private final List<MigrateDataType> types;
     private final Long writeTimestamp;
-    private final Long ttl;
+    private final Integer ttl;
     private boolean errorState = false;
     private boolean warningState = false;
     private List<String> messages;
@@ -24,7 +24,7 @@ public class EnhancedPK {
     private final Object explodeMapKey;
     private final Object explodeMapValue;
 
-    public EnhancedPK(PKFactory factory, List<Object> values, List<MigrateDataType> types, Long writeTimestamp, Long ttl, Object explodeMapKey, Object explodeMapValue) {
+    public EnhancedPK(PKFactory factory, List<Object> values, List<MigrateDataType> types, Integer ttl, Long writeTimestamp, Object explodeMapKey, Object explodeMapValue) {
         this.factory = factory;
         this.values = (null==explodeMapValue? values : new ArrayList<>(values)); // copy the list when we will modify it
         this.types = types;
@@ -39,21 +39,21 @@ public class EnhancedPK {
         validate();
     }
 
-    public EnhancedPK(PKFactory factory, List<Object> values, List<MigrateDataType> types, Long writeTimestamp, Long ttl) {
-        this(factory, values, types, writeTimestamp, ttl, null, null);
+    public EnhancedPK(PKFactory factory, List<Object> values, List<MigrateDataType> types, Integer ttl, Long writeTimestamp) {
+        this(factory, values, types, ttl, writeTimestamp, null, null);
     }
 
-    public EnhancedPK(PKFactory factory, List<Object> values, List<MigrateDataType> types, Long writeTimestamp, Long ttl, Map explodeMap) {
-        this(factory, values, types, writeTimestamp, ttl, null, null);
+    public EnhancedPK(PKFactory factory, List<Object> values, List<MigrateDataType> types, Integer ttl, Long writeTimestamp, Map<Object,Object> explodeMap) {
+        this(factory, values, types, ttl, writeTimestamp, null, null);
         this.explodeMap = explodeMap;
     }
 
     public List<EnhancedPK> explode() {
         if (null == explodeMap || explodeMap.isEmpty()) {
-            return Arrays.asList(this);
+            return Collections.singletonList(this);
         }
         return explodeMap.entrySet().stream()
-                .map(entry -> new EnhancedPK(factory, values, types, writeTimestamp, ttl, entry.getKey(), entry.getValue()))
+                .map(entry -> new EnhancedPK(factory, values, types, ttl, writeTimestamp, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -71,7 +71,7 @@ public class EnhancedPK {
     public Long getWriteTimestamp() {
         return this.writeTimestamp;
     }
-    public Long getTTL() {
+    public Integer getTTL() {
         return this.ttl;
     }
 
