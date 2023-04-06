@@ -54,6 +54,7 @@ echo " Removing generated files:"
 echo "   ${GENERATED_FILES}"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
+  export testDir
   for f in ${EXPECTED_FILES}; do
     if [[ ! -f ${testDir}/$f ]]; then
       _error "${testDir} is missing ${f}"
@@ -96,6 +97,7 @@ echo " Setting up tables and data (Cassandra container)"
 echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
+  export testDir
   _info ${testDir} Setup tables and data 
   docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/setup.cql > $testDir/output/setup.out 2>$testDir/output/setup.err
   if [ $? -ne 0 ]; then
@@ -114,6 +116,7 @@ echo " Executing test (CDM container)"
 echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
+  export testDir
   _info ${testDir} Executing test
   docker exec ${DOCKER_CDM} bash -e $testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err
   if [ $? -ne 0 ]; then
@@ -132,8 +135,16 @@ echo " Checking for expected results (Cassandra container)"
 echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
-  _info ${testDir} Check Expected Results 
-  docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql > $testDir/output/actual.out 2>$testDir/output/actual.err
+  export testDir
+  if [ -x ${testDir}/alternateCheckResults.sh ]; then
+    _info ${testDir} Running Alternate Check Expected Results 
+    # This provides a mechanism that allows a more nuanced means of generating actual.out
+    # as not every assertion can be based on a simple "dump from cqlsh"
+    ${testDir}/alternateCheckResults.sh > $testDir/output/actual.out 2>$testDir/output/actual.err
+  else 
+    _info ${testDir} Check Expected Results 
+    docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql > $testDir/output/actual.out 2>$testDir/output/actual.err
+  fi
   if [ $? -ne 0 ]; then
     _error "${testDir}/expected.cql failed, see $testDir/output/actual.out $testDir/output/and actual.err"
     errors=1
@@ -143,7 +154,7 @@ for testDir in $(ls -d ${PHASE}/*); do
   rtn=$?
   if [ $rtn -eq 1 ]; then
     _error "${testDir} files differ (expected vs actual):"
-    sdiff ${testDir}/expected.out ${testDir}/output/actual.out
+    sdiff -w 200 ${testDir}/expected.out ${testDir}/output/actual.out
     errors=1
     continue
   elif [ $rtn -ne 0 ]; then
@@ -158,6 +169,7 @@ if [ $errors -ne 0 ]; then
   _captureOutput
   _fatal "One or more expected results failed. See above ERROR(s) for details."
 fi
+
 
 _captureOutput
 

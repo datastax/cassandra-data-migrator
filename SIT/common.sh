@@ -1,10 +1,10 @@
-DOCKER_CASS=cdm-sit-cass
-DOCKER_CDM=cdm-sit-cdm
-CASS_USERNAME=cassandra
-CASS_PASSWORD=cassandra
-KEYSPACES="source target"
-CDM_DIRECTORY=/local
-CDM_JARFILE=cassandra-data-migrator.jar
+export DOCKER_CASS=cdm-sit-cass
+export DOCKER_CDM=cdm-sit-cdm
+export CASS_USERNAME=cassandra
+export CASS_PASSWORD=cassandra
+export KEYSPACES="source target"
+export CDM_DIRECTORY=/local
+export CDM_JARFILE=cassandra-data-migrator.jar
 
 _info() {
   echo "INFO $*"

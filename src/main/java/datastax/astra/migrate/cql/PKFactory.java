@@ -105,13 +105,13 @@ public class PKFactory {
     public EnhancedPK getTargetPK(Row originRow) {
         List<Object> newValues = getTargetPKValuesFromOriginColumnLookupMethod(originRow, targetDefaultValues);
         Long originWriteTimeStamp = getOriginSelectByPartitionRangeStatement().getLargestWriteTimeStamp(originRow);
-        Long originTTL = getOriginSelectByPartitionRangeStatement().getLargestTTL(originRow);
+        Integer originTTL = getOriginSelectByPartitionRangeStatement().getLargestTTL(originRow);
         if (explodeMapTargetKeyColumnIndex < 0) {
-            return new EnhancedPK(this, newValues, getPKTypes(Side.TARGET), originWriteTimeStamp, originTTL);
+            return new EnhancedPK(this, newValues, getPKTypes(Side.TARGET), originTTL, originWriteTimeStamp);
         }
         else {
             Map<Object, Object> explodeMap = getExplodeMap(originRow);
-            return new EnhancedPK(this, newValues, getPKTypes(Side.TARGET), originWriteTimeStamp, originTTL, explodeMap);
+            return new EnhancedPK(this, newValues, getPKTypes(Side.TARGET), originTTL, originWriteTimeStamp, explodeMap);
         }
     }
 

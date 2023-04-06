@@ -9,12 +9,15 @@ import datastax.astra.migrate.cql.features.ExplodeMap;
 import datastax.astra.migrate.cql.features.FeatureFactory;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
+    public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     private final List<Integer> columnIndexesToBind;
     private boolean usingTTL;
@@ -29,16 +32,19 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
     }
 
     @Override
-    protected BoundStatement bind(Row originRow, Row targetRow, Long ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
+    protected BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
         if (null == originRow)
             throw new RuntimeException("Origin row is null");
-        checkBindInputs(writeTime, ttl, explodeMapKey, explodeMapValue);
+        checkBindInputs(ttl, writeTime, explodeMapKey, explodeMapValue);
 
         BoundStatement boundStatement = prepareStatement().bind();
 
         int currentBindIndex = 0;
         if (usingTTL) {
-            boundStatement = boundStatement.set(currentBindIndex++, ttl, Long.class);
+            boundStatement = boundStatement.set(currentBindIndex++, ttl, Integer.class);
+        }
+        if (usingWriteTime) {
+            boundStatement = boundStatement.set(currentBindIndex++, writeTime, Long.class);
         }
 
         for (int index : columnIndexesToBind) {
@@ -70,7 +76,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
         PKFactory pkFactory = cqlHelper.getPKFactory();
         StringBuilder targetUpdateCQL = new StringBuilder("UPDATE ");
         targetUpdateCQL.append(propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE));
-        if (usingTTL) targetUpdateCQL.append(" USING TTL ?");
+        targetUpdateCQL.append(usingTTLTimestamp());
         targetUpdateCQL.append(" SET ");
         int currentColumn = 0;
         for (String key : targetColumnNames) {

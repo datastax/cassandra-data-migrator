@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
     protected final List<String> targetColumnNames = new ArrayList<>();
     protected final List<String> originColumnNames = new ArrayList<>();
     protected final List<String> constantColumnNames = new ArrayList<>();
@@ -41,7 +39,7 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     protected int explodeMapValueIndex = -1;
 
     protected abstract String buildStatement();
-    protected abstract BoundStatement bind(Row originRow, Row targetRow, Long ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
+    protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
 
     public AbstractTargetUpsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
@@ -77,6 +75,25 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     public ResultSet putRecord(Record record) {
         BoundStatement boundStatement = bindRecord(record);
         return session.execute(boundStatement);
+    }
+
+    protected String usingTTLTimestamp() {
+        StringBuilder sb;
+        if (usingTTL || usingWriteTime)
+            sb = new StringBuilder(" USING ");
+        else
+            return "";
+
+        if (usingTTL)
+            sb.append("TTL ?");
+
+        if (usingTTL && usingWriteTime)
+            sb.append(" AND ");
+
+        if (usingWriteTime)
+            sb.append("TIMESTAMP ?");
+
+        return sb.toString();
     }
 
     /**
@@ -138,9 +155,9 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     }
 
     private void setTTLAndWriteTimeNames() {
-        List<String> ttlColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_COLS);
+        List<Integer> ttlColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_COLS);
         usingTTL = null!= ttlColumnNames && !ttlColumnNames.isEmpty();
-        List<String> writeTimeColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_COLS);
+        List<Integer> writeTimeColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_COLS);
         usingWriteTime = null!= writeTimeColumnNames && !writeTimeColumnNames.isEmpty();
     }
 
@@ -166,7 +183,7 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         }
     }
 
-    protected void checkBindInputs(Long ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
+    protected void checkBindInputs(Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
         if (usingTTL && null==ttl)
             throw new RuntimeException(KnownProperties.ORIGIN_TTL_COLS+" specified, but no TTL value was provided");
 
