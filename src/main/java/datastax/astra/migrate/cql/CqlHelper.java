@@ -7,6 +7,7 @@ import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import datastax.astra.migrate.MigrateDataType;
 import datastax.astra.migrate.Util;
+import datastax.astra.migrate.cql.features.*;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ public class CqlHelper {
     // Values with public Getters
     private final Map<CQL,String> cqlMap = new HashMap<>(CQL.values().length);
     private final Map<CQL,PreparedStatement> preparedStatementMap = new HashMap<>(CQL.values().length);
+    private final Map<Featureset, Feature> featureMap = new HashMap<>(Featureset.values().length);
 
     private CqlSession originSession;
     private CqlSession targetSession;
@@ -46,19 +48,23 @@ public class CqlHelper {
         this.propertyHelper = PropertyHelper.getInstance();
     }
 
-    public void initialize() {
+    public boolean initialize() {
+        boolean validInit = true;
 
         readConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.READ_CL));
         writeConsistencyLevel = Util.mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));;
 
-        if (hasWriteTimestampFilter()) {
-            propertyHelper.setProperty(KnownProperties.SPARK_BATCH_SIZE, 1);
+        for (Featureset f : Featureset.values()) {
+            if (f.toString().startsWith("TEST_")) continue; // Skip test features
+            Feature feature = FeatureFactory.getFeature(f); // FeatureFactory throws an RTE if the feature is not implemented
+            if (!feature.initialize(this.propertyHelper))
+                validInit = false;
+            else
+                featureMap.put(f, feature);
         }
 
-        String originSelectCondition = getOriginFilterCondition();
-        if (null != originSelectCondition && !originSelectCondition.isEmpty() && !originSelectCondition.trim().toUpperCase().startsWith("AND")) {
-            originSelectCondition = " AND " + originSelectCondition;
-            propertyHelper.setProperty(KnownProperties.ORIGIN_FILTER_CONDITION, originSelectCondition);
+        if (hasWriteTimestampFilter()) {
+            propertyHelper.setProperty(KnownProperties.SPARK_BATCH_SIZE, 1);
         }
 
         logger.info("PARAM -- Read Consistency: {}", readConsistencyLevel);
@@ -79,6 +85,8 @@ public class CqlHelper {
         logger.info("PARAM -- ORIGIN SELECT Query used: {}", getCql(CQL.ORIGIN_SELECT));
         logger.info("PARAM -- TARGET INSERT Query used: {}", getCql(CQL.TARGET_INSERT));
         logger.info("PARAM -- TARGET SELECT Query used: {}", getCql(CQL.TARGET_SELECT_ORIGIN_BY_PK));
+
+        return validInit;
     }
 
     public BoundStatement bindInsert(PreparedStatement insertStatement, Row originRow, Row targetRow) {
@@ -147,7 +155,8 @@ public class CqlHelper {
             String partitionKey = propertyHelper.getAsString(KnownProperties.ORIGIN_PARTITION_KEY).trim();
             fullSelectQuery = "SELECT " + propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + selectTTLWriteTimeCols + " FROM " + getOriginKeyspaceTable() +
                     " WHERE TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ? " +
-                    getOriginFilterCondition() + " ALLOW FILTERING";
+                    getFeature(Featureset.ORIGIN_FILTER).getAsString(OriginFilterCondition.Property.CONDITION) +
+                    " ALLOW FILTERING";
         } else {
             String keyBinds = "";
             for (String key : propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY)) {
@@ -439,13 +448,20 @@ public class CqlHelper {
         return propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE);
     }
 
-    private String getOriginFilterCondition() {
-        return propertyHelper.getString(KnownProperties.ORIGIN_FILTER_CONDITION);
-    }
-
     private void abendIfSessionsNotSet() {
         if (null == originSession || originSession.isClosed() || null == targetSession || targetSession.isClosed()) {
             throw new RuntimeException("Origin and/or Target sessions are either not set, or are closed");
         }
+    }
+
+    public Feature getFeature(Featureset featureEnum) {
+        return featureMap.get(featureEnum);
+    }
+
+    public Boolean isFeatureEnabled(Featureset featureEnum) {
+        if (!featureMap.containsKey(featureEnum)) {
+            return false;
+        }
+        return featureMap.get(featureEnum).isEnabled();
     }
 }

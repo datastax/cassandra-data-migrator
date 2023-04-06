@@ -159,13 +159,7 @@ public final class PropertyHelper extends KnownProperties{
                 || PropertyType.NUMBER_LIST != getType(propertyName)
                 || null==getNumberList(propertyName))
             return null;
-        for (Number n : getNumberList(propertyName)) {
-            i = toInteger(n);
-            if (null == i)
-                return null;
-            intList.add(i);
-        }
-        return intList;
+        return toIntegerList(getNumberList(propertyName));
     }
 
     public Boolean getBoolean(String propertyName) {
@@ -184,23 +178,27 @@ public final class PropertyHelper extends KnownProperties{
         String rtn;
         if (null == propertyName)
             return null;
-        Object propertyValue = get(propertyName, getType(propertyName));
-        if (null == propertyValue)
-            return "";
-        switch (getType(propertyName)) {
+        PropertyType t = getType(propertyName);
+        return asString(get(propertyName, t), t);
+    }
+
+    public static String asString(Object o, PropertyType t) {
+        if (null==o || null==t) return "";
+        String rtn = "";
+        switch (t) {
             case STRING:
-                rtn = (String) propertyValue;
+                rtn = (String) o;
                 break;
             case STRING_LIST:
             case NUMBER_LIST:
             case MIGRATION_TYPE_LIST:
-                rtn = StringUtils.join((List<?>) propertyValue, ",");
+                rtn = StringUtils.join((List<?>) o, ",");
                 break;
             case NUMBER:
             case BOOLEAN:
             case MIGRATION_TYPE:
             default:
-                rtn = propertyValue.toString();
+                rtn = o.toString();
         }
         return (null == rtn) ? "" : rtn;
     }
@@ -319,7 +317,7 @@ public final class PropertyHelper extends KnownProperties{
         return valid;
     }
 
-    private Integer toInteger(Number n) {
+    public static Integer toInteger(Number n) {
         if (n instanceof Integer
                 || n instanceof Short
                 || n instanceof Byte)
@@ -330,6 +328,18 @@ public final class PropertyHelper extends KnownProperties{
             }
         }
         return null;
+    }
+
+    public static List<Integer> toIntegerList(List<Number> numberList) {
+        List<Integer> intList = new ArrayList<>();
+        Integer i;
+        for (Number n : numberList) {
+            i = toInteger(n);
+            if (null == i)
+                return null;
+            intList.add(i);
+        }
+        return intList;
     }
 
     protected Map<String,Object> getPropertyMap() {
