@@ -24,7 +24,9 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 
 # Steps for Data-Migration:
 
-1. `sparkConf.properties` file needs to be configured as applicable for the environment
+> :warning: Note that Version 4 of the tool is not backward-compatible with .properties files created in previous versions, and that package names have changed.
+
+1. `sparkConf.properties` file needs to be configured as applicable for the environment. Parameter descriptions and defaults are described in the file.
    > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
 2. Place the conf file where it can be accessed while running the job via spark-submit.
 3. Run the below job using `spark-submit` command as shown below:
@@ -32,7 +34,7 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
 ```
 
 Note: 
@@ -41,26 +43,26 @@ Note:
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" --driver-memory 25G --executor-memory 25G /
---class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
 ```
 
 # Steps for Data-Validation:
 
-- To run the job in Data validation mode, use class option `--class datastax.astra.migrate.DiffData` as shown below
+- To run the job in Data validation mode, use class option `--class datastax.cdm.job.DiffData` as shown below
 
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.DiffData cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
 
 ```
-22/10/27 23:25:29 ERROR DiffJobSession: Missing target row found for key: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% Aliquam faucibus
-22/10/27 23:25:29 ERROR DiffJobSession: Inserted missing row in target: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% Aliquam faucibus
-22/10/27 23:25:30 ERROR DiffJobSession: Mismatch row found for key: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% augue odio at quam Data:  (Index: 8 Origin: Hello 3 Target: Hello 2 )
-22/10/27 23:25:30 ERROR DiffJobSession: Updated mismatch row in target: Grapes %% 1 %% 2020-05-22 %% 2020-05-23T00:05:09.353Z %% skuid %% augue odio at quam
+23/04/06 08:43:06 ERROR DiffJobSession: Mismatch row found for key: [key3] Mismatch: Target Index: 1 Origin: valueC Target: value999) 
+23/04/06 08:43:06 ERROR DiffJobSession: Corrected mismatch row in target: [key3]
+23/04/06 08:43:06 ERROR DiffJobSession: Missing target row found for key: [key2]
+23/04/06 08:43:06 ERROR DiffJobSession: Inserted missing row in target: [key2]
 ```
 
 - Please grep for all `ERROR` from the output log files to get the list of missing and mismatched records.
@@ -70,18 +72,18 @@ Note:
   - Update any mismatched records between origin and target (makes target same as origin). 
 - Enable/disable this feature using one or both of the below setting in the config file
 ```
-spark.target.autocorrect.missing                    true|false
-spark.target.autocorrect.mismatch                   true|false
+spark.cdm.autocorrect.missing                     false|true
+spark.cdm.autocorrect.mismatch                    false|true
 ```
 Note:
 - The validation job will never delete records from target i.e. it only adds or updates data on target
 
 # Migrating specific partition ranges
-- You can also use the tool to migrate specific partition ranges using class option `--class datastax.astra.migrate.MigratePartitionsFromFile` as shown below
+- You can also use the tool to migrate specific partition ranges using class option `--class datastax.cdm.job.MigratePartitionsFromFile` as shown below
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.cdm.job.MigratePartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
@@ -99,6 +101,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Supports migration/validation of advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
 - Filter records from `Origin` using `writetimes` and/or CQL conditions and/or min/max token-range
 - Supports adding `constants` as new columns on `Target`
+- Supports expanding `Map` columns on `Origin` into multiple records on `Target`
 - Fully containerized (Docker and K8s friendly)
 - SSL Support (including custom cipher algorithms)
 - Migrate from any Cassandra `Origin` ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra)) to any Cassandra `Target` ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra))
@@ -110,7 +113,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 1. Clone this repo
 2. Move to the repo folder `cd cassandra-data-migrator`
 3. Run the build `mvn clean package` (Needs Maven 3.8.x)
-4. The fat jar (`cassandra-data-migrator-3.x.x.jar`) file should now be present in the `target` folder
+4. The fat jar (`cassandra-data-migrator-4.x.x.jar`) file should now be present in the `target` folder
 
 # Contributors
 Checkout all our wonderful contributors [here](./CONTRIBUTING.md#contributors).
