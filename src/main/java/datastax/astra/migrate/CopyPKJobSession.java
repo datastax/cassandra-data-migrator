@@ -1,16 +1,18 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.BoundStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import datastax.astra.migrate.cql.CqlHelper;
+import datastax.astra.migrate.cql.EnhancedPK;
+import datastax.astra.migrate.cql.PKFactory;
+import datastax.astra.migrate.cql.Record;
+import datastax.astra.migrate.cql.statements.OriginSelectByPKStatement;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -20,10 +22,20 @@ public class CopyPKJobSession extends AbstractJobSession {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong missingCounter = new AtomicLong(0);
+    protected AtomicLong skipCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
+
+    private final PKFactory pkFactory;
+    private final List<MigrateDataType> originPKTypes;
+    private final boolean isCounterTable;
+    private final OriginSelectByPKStatement originSelectByPKStatement;
 
     protected CopyPKJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc, true);
+        pkFactory = cqlHelper.getPKFactory();
+        originPKTypes = pkFactory.getPKTypes(PKFactory.Side.ORIGIN);
+        isCounterTable = cqlHelper.isCounterTable();
+        originSelectByPKStatement = cqlHelper.getOriginSelectByPKStatement();
     }
 
     public static CopyPKJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
@@ -42,22 +54,32 @@ public class CopyPKJobSession extends AbstractJobSession {
         for (SplitPartitions.PKRows rows : rowsList) {
             rows.pkRows.parallelStream().forEach(row -> {
                 readCounter.incrementAndGet();
-                String[] pkFields = row.split(" %% ");
-                int idx = 0;
-                BoundStatement bspk = cqlHelper.getPreparedStatement(CqlHelper.CQL.ORIGIN_SELECT).bind().setConsistencyLevel(cqlHelper.getReadConsistencyLevel());
-                for (MigrateDataType tp : cqlHelper.getIdColTypes()) {
-                    bspk = bspk.set(idx, convert(tp.typeClass, pkFields[idx]), tp.typeClass);
-                    idx++;
-                }
-                Row pkRow = cqlHelper.getOriginSession().execute(bspk).one();
-                if (null == pkRow) {
+                EnhancedPK pk = toEnhancedPK(row);
+                if (null == pk || pk.isError()) {
                     missingCounter.incrementAndGet();
-                    logger.error("Could not find row with primary-key: {}", row);
+                    logger.error("Could not build PK object with value <{}>; error is: {}", row, (null == pk ? "null" : pk.getMessages()));
                     return;
                 }
-                ResultSet targetWriteResultSet = cqlHelper.getTargetSession()
-                        .execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null));
+
+                Record recordFromOrigin = originSelectByPKStatement.getRecord(pk);
+                if (null == recordFromOrigin) {
+                    missingCounter.incrementAndGet();
+                    logger.error("Could not find origin row with primary-key: {}", row);
+                    return;
+                }
+                Row originRow = recordFromOrigin.getOriginRow();
+
+                Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
+                if (originSelectByPKStatement.shouldFilterRecord(record)) {
+                    skipCounter.incrementAndGet();
+                    return;
+                }
+
+                writeLimiter.acquire(1);
+                if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
+                else cqlHelper.getTargetInsertStatement().putRecord(record);
                 writeCounter.incrementAndGet();
+
                 if (readCounter.get() % printStatsAfter == 0) {
                     printCounts(false);
                 }
@@ -73,16 +95,22 @@ public class CopyPKJobSession extends AbstractJobSession {
         }
         logger.info("ThreadID: {} Read Record Count: {}", Thread.currentThread().getId(), readCounter.get());
         logger.info("ThreadID: {} Missing Record Count: {}", Thread.currentThread().getId(), missingCounter.get());
+        logger.info("ThreadID: {} Skipped Record Count: {}", Thread.currentThread().getId(), skipCounter.get());
         logger.info("ThreadID: {} Inserted Record Count: {}", Thread.currentThread().getId(), writeCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
         }
     }
 
-    private Object convert(Class<?> targetType, String text) {
-        PropertyEditor editor = PropertyEditorManager.findEditor(targetType);
-        editor.setAsText(text);
-        return editor.getValue();
+    private EnhancedPK toEnhancedPK(String rowString) {
+        String[] pkFields = rowString.split(" %% ");
+        List<Object> values = new ArrayList<>(originPKTypes.size());
+        for (int i=0; i<pkFields.length; i++) {
+            PropertyEditor editor = PropertyEditorManager.findEditor(originPKTypes.get(i).getTypeClass());
+            editor.setAsText(pkFields[i]);
+            values.add(editor.getValue());
+        }
+        return pkFactory.toEnhancedPK(values, pkFactory.getPKTypes(PKFactory.Side.ORIGIN));
     }
 
 }

@@ -17,8 +17,7 @@ public class ConstantColumns extends AbstractFeature {
         COLUMN_NAMES,
         COLUMN_TYPES,
         COLUMN_VALUES,
-        SPLIT_REGEX,
-        WHERE_CLAUSE
+        SPLIT_REGEX
     }
 
     private boolean valid = true;
@@ -39,8 +38,6 @@ public class ConstantColumns extends AbstractFeature {
                 splitRegex);
         putStringList(Property.COLUMN_VALUES, columnValues);
 
-        setWhereClause(propertyHelper);
-
         valid = isValid();
         isInitialized = true;
         isEnabled = valid && null!=columnNames && !columnNames.isEmpty();
@@ -50,10 +47,6 @@ public class ConstantColumns extends AbstractFeature {
     @Override
     public PropertyHelper alterProperties(PropertyHelper helper) {
         if (!valid) return null;
-        if (!isEnabled) return helper;
-
-        clean_targetPK(helper);
-
         return helper;
     }
 
@@ -69,51 +62,6 @@ public class ConstantColumns extends AbstractFeature {
             }
         }
         return columnValues;
-    }
-
-    private void setWhereClause(PropertyHelper helper) {
-        if (!isValid()) return;
-
-        List<String> columnNames = getRawStringList(Property.COLUMN_NAMES);
-        List<String> columnValues = getRawStringList(Property.COLUMN_VALUES);
-
-        if (null != columnNames && !columnNames.isEmpty()
-                && null != columnValues && !columnValues.isEmpty()) {
-            List<String> targetPKNames = helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY);
-
-            String whereClause = "";
-            for (String columnName : columnNames) {
-                if (null!=targetPKNames && targetPKNames.contains(columnName)) {
-                    if (!whereClause.isEmpty())
-                        whereClause += " AND ";
-                    whereClause += columnName + "=" + columnValues.get(columnNames.indexOf(columnName));
-                }
-            }
-            putString(Property.WHERE_CLAUSE, " AND " + whereClause);
-        }
-    }
-
-    // Constant columns do not belong on the PK, as they are hard-coded to WHERE_CLAUSE
-    private void clean_targetPK(PropertyHelper helper) {
-        List<String> constantColumnNames = getRawStringList(Property.COLUMN_NAMES);
-        List<String> currentPKNames = helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY);
-        List<MigrateDataType> currentPKTypes = helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-
-        List<String> newPKNames = new ArrayList<>();
-        List<MigrateDataType> newPKTypes = new ArrayList<>();
-
-        for (String keyName : currentPKNames) {
-            if (!constantColumnNames.contains(keyName)) {
-                newPKNames.add(keyName);
-                newPKTypes.add(currentPKTypes.get(currentPKNames.indexOf(keyName)));
-            }
-            else {
-                logger.info("Removing constant column {} from target PK", keyName);
-            }
-        }
-
-        helper.setProperty(KnownProperties.TARGET_PRIMARY_KEY, newPKNames);
-        helper.setProperty(KnownProperties.TARGET_PRIMARY_KEY_TYPES, newPKTypes);
     }
 
     private boolean isValid() {

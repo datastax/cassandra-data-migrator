@@ -1,7 +1,9 @@
 package datastax.astra.migrate.cql.features;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import datastax.astra.migrate.MigrateDataType;
 import datastax.astra.migrate.cql.CqlHelper;
+import datastax.astra.migrate.cql.PKFactory;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
@@ -9,7 +11,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,21 +53,7 @@ public class ConstantColumnsTest {
                 () -> assertEquals("const1,const2,const3", feature.getAsString(ConstantColumns.Property.COLUMN_NAMES), "COLUMN_NAMES"),
                 () -> assertEquals("0,1,1", feature.getAsString(ConstantColumns.Property.COLUMN_TYPES), "COLUMN_TYPES"),
                 () -> assertEquals("'abcd',1234,543", feature.getAsString(ConstantColumns.Property.COLUMN_VALUES), "COLUMN_VALUES"),
-                () -> assertEquals(",", feature.getAsString(ConstantColumns.Property.SPLIT_REGEX), "SPLIT_REGEX"),
-                () -> assertEquals(" AND const1='abcd' AND const3=543", feature.getAsString(ConstantColumns.Property.WHERE_CLAUSE), "WHERE_CLAUSE")
-        );
-    }
-
-    @Test
-    public void smokeTest_alterProperties() {
-        setValidSparkConf();
-        helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        feature.alterProperties(helper);
-        assertAll(
-                () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals(Arrays.asList("key"), helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY), "TARGET_PRIMARY_KEY"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("1")), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES), "TARGET_PRIMARY_KEY_TYPES")
+                () -> assertEquals(",", feature.getAsString(ConstantColumns.Property.SPLIT_REGEX), "SPLIT_REGEX")
         );
     }
 
@@ -91,15 +78,51 @@ public class ConstantColumnsTest {
         cqlHelper.initialize();
 
         String originSelect = "SELECT key,val FROM origin.tab1 WHERE TOKEN(key) >= ? AND TOKEN(key) <= ? ALLOW FILTERING";
+        String originSelectByPK = "SELECT key,val FROM origin.tab1 WHERE key=?";
         String targetInsert = "INSERT INTO target.tab1 (key,val,const1,const2) VALUES (?,?,'abcd',1234)";
-        String targetSelect = "SELECT key,val FROM target.tab1 WHERE key=? AND const1='abcd'";
+        String targetUpdate = "UPDATE target.tab1 SET val=?,const2=1234 WHERE const1='abcd' AND key=?";
+        String targetSelect = "SELECT key,val FROM target.tab1 WHERE const1='abcd' AND key=?";
 
         assertAll(
-                () -> assertEquals(originSelect, cqlHelper.getCql(CqlHelper.CQL.ORIGIN_SELECT).replaceAll("\\s+"," ")),
-                () -> assertEquals(targetInsert, cqlHelper.getCql(CqlHelper.CQL.TARGET_INSERT).replaceAll("\\s+"," ")),
-                () -> assertEquals(targetSelect, cqlHelper.getCql(CqlHelper.CQL.TARGET_SELECT_ORIGIN_BY_PK).replaceAll("\\s+"," "))
+                () -> assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement().getCQL().replaceAll("\\s+"," ")),
+                () -> assertEquals(originSelectByPK, cqlHelper.getOriginSelectByPKStatement().getCQL().replaceAll("\\s+"," ")),
+                () -> assertEquals(targetInsert, cqlHelper.getTargetInsertStatement().getCQL().replaceAll("\\s+"," ")),
+                () -> assertEquals(targetUpdate, cqlHelper.getTargetUpdateStatement().getCQL().replaceAll("\\s+"," ")),
+                () -> assertEquals(targetSelect, cqlHelper.getTargetSelectByPKStatement().getCQL().replaceAll("\\s+"," "))
         );
     }
+
+    @Test
+    public void smokePK() {
+        SparkConf sparkConf = new SparkConf();
+        sparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");
+        sparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "origin.tab1");
+        sparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,val");
+        sparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "key");
+        sparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "0,0");
+        sparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "localhost");
+        sparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "target.tab1");
+
+        sparkConf.set(KnownProperties.CONSTANT_COLUMN_NAMES, "const1,const2");
+        sparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "0,1");
+        sparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd',1234");
+        sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "const1,key");
+
+        helper.initializeSparkConf(sparkConf);
+        CqlHelper cqlHelper = new CqlHelper();
+        cqlHelper.initialize();
+
+        PKFactory pkFactory = cqlHelper.getPKFactory();
+        assertAll(
+                () -> assertEquals(Arrays.asList("const1","key"), pkFactory.getPKNames(PKFactory.Side.TARGET), "Target Names"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType(), new MigrateDataType("0")), pkFactory.getPKTypes(PKFactory.Side.TARGET), "Target Types"),
+                () -> assertEquals(Arrays.asList(1), pkFactory.getPKIndexesToBind(PKFactory.Side.TARGET), "Target Bind Indexes"),
+                () -> assertEquals(Arrays.asList("key"), pkFactory.getPKNames(PKFactory.Side.ORIGIN), "Origin Names"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("0")), pkFactory.getPKTypes(PKFactory.Side.ORIGIN), "Origin Types"),
+                () -> assertEquals(Arrays.asList(0), pkFactory.getPKIndexesToBind(PKFactory.Side.ORIGIN), "Origin Bind Indexes")
+        );
+    }
+
 
     @Test
     public void test_missingColumnNames() {
