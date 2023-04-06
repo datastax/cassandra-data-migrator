@@ -12,6 +12,7 @@ class AbstractJob extends BaseJob {
   abstractLogger.info("PARAM -- Origin SSL Enabled: {}", originSSLEnabled);
   abstractLogger.info("PARAM -- Target SSL Enabled: {}", targetSSLEnabled);
 
+  // TODO: CDM-31 - add localDC configuration support
   var originConnection = getConnection(true, originScbPath, originHost, originPort, originUsername, originPassword, originSSLEnabled,
     originTrustStorePath, originTrustStorePassword, originTrustStoreType, originKeyStorePath, originKeyStorePassword, originEnabledAlgorithms);
 

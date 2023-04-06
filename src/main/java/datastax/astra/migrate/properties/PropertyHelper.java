@@ -269,9 +269,9 @@ public final class PropertyHelper extends KnownProperties{
     }
 
     private void setOriginPKNamesAndTypes() {
-        if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.ORIGIN_PRIMARY_KEY + "] with value from [" + KnownProperties.TARGET_PRIMARY_KEY + "], which is [" + getAsString(KnownProperties.TARGET_PRIMARY_KEY) + "]");
-            setProperty(KnownProperties.ORIGIN_PRIMARY_KEY, get(KnownProperties.TARGET_PRIMARY_KEY));
+        if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES).isEmpty()) {
+            logger.info("Setting known property [" + KnownProperties.ORIGIN_PRIMARY_KEY_NAMES + "] with value from [" + KnownProperties.TARGET_PRIMARY_KEY + "], which is [" + getAsString(KnownProperties.TARGET_PRIMARY_KEY) + "]");
+            setProperty(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES, get(KnownProperties.TARGET_PRIMARY_KEY));
         }
         if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES).isEmpty()) {
             setKeyTypes(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
@@ -288,7 +288,7 @@ public final class PropertyHelper extends KnownProperties{
             columnTypesKey = KnownProperties.TARGET_COLUMN_TYPES;
         }
         else if (KnownProperties.ORIGIN_PRIMARY_KEY_TYPES.equals(pkTypesToSet)) {
-            pkNamesKey = KnownProperties.ORIGIN_PRIMARY_KEY;
+            pkNamesKey = KnownProperties.ORIGIN_PRIMARY_KEY_NAMES;
             columnNameKey = KnownProperties.ORIGIN_COLUMN_NAMES;
             columnTypesKey = KnownProperties.ORIGIN_COLUMN_TYPES;
         }

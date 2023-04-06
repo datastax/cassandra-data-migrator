@@ -50,9 +50,8 @@ class BaseJob extends App {
 
   val minPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MIN))
   val maxPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MAX))
-  val coveragePercent = propertyHelper.getAsString(KnownProperties.ORIGIN_COVERAGE_PERCENT)
-  val numSplitsFromProperty = propertyHelper.getInteger(KnownProperties.SPARK_NUM_SPLITS)
-  val numSplits = if (null!=numSplitsFromProperty) numSplitsFromProperty else propertyHelper.getInteger(KnownProperties.DEPRECATED_SPARK_SPLIT_SIZE)
+  val coveragePercent = propertyHelper.getAsString(KnownProperties.TOKEN_COVERAGE_PERCENT)
+  val numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
 
   protected def exitSpark() = {
     spark.stop()

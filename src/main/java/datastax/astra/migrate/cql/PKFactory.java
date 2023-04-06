@@ -80,7 +80,7 @@ public class PKFactory {
             originPKLookupMethods.add(null);
         }
 
-        this.defaultForMissingTimestamp = propertyHelper.getLong(KnownProperties.TARGET_REPLACE_MISSING_TS);
+        this.defaultForMissingTimestamp = propertyHelper.getLong(KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
         this.defaultForMissingString = "";
 
         setOriginColumnLookupMethod(propertyHelper);
@@ -242,10 +242,10 @@ public class PKFactory {
             throw new RuntimeException("Target primary key and/or types is not defined or not valid, see "+KnownProperties.TARGET_PRIMARY_KEY+" and "+KnownProperties.TARGET_PRIMARY_KEY_TYPES);
         }
 
-        originPKNames.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_PRIMARY_KEY));
+        originPKNames.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES));
         originPKTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES));
         if (originPKNames.isEmpty() || originPKNames.size() != originPKTypes.size()) {
-            throw new RuntimeException("Origin primary key and/or types is not defined or not valid, see "+KnownProperties.ORIGIN_PRIMARY_KEY+" and "+KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
+            throw new RuntimeException("Origin primary key and/or types is not defined or not valid, see "+KnownProperties.ORIGIN_PRIMARY_KEY_NAMES +" and "+KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
         }
     }
 

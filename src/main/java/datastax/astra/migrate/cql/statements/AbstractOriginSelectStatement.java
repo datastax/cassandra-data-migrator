@@ -11,6 +11,7 @@ import datastax.astra.migrate.properties.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 
 public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
@@ -19,12 +20,40 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
     protected final List<Integer> writeTimestampIndexes = new ArrayList<>();
     protected final List<Integer> ttlIndexes = new ArrayList<>();
 
+    private final Boolean writeTimestampFilterEnabled;
+    private final Long minWriteTimeStampFilter;
+    private final Long maxWriteTimeStampFilter;
+
+    private final Boolean filterColumnEnabled;
+    private final Integer filterColumnIndex;
+    private final MigrateDataType filterColumnType;
+    private final String filterColumnString;
+
     public AbstractOriginSelectStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
         this.session = cqlHelper.getOriginSession();
 
         resultColumns.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES));
         resultTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES));
+
+        minWriteTimeStampFilter = getMinWriteTimeStampFilter();
+        maxWriteTimeStampFilter = getMaxWriteTimeStampFilter();
+        writeTimestampFilterEnabled = hasWriteTimestampFilter();
+        if (writeTimestampFilterEnabled) {
+            logger.info("PARAM -- {}: {} datetime is {}", KnownProperties.FILTER_WRITETS_MIN, getMinWriteTimeStampFilter(),
+                    Instant.ofEpochMilli(getMinWriteTimeStampFilter() / 1000));
+            logger.info("PARAM -- {}: {} datetime is {}", KnownProperties.FILTER_WRITETS_MAX, getMaxWriteTimeStampFilter(),
+                    Instant.ofEpochMilli(getMaxWriteTimeStampFilter() / 1000));
+        }
+
+        filterColumnString = getFilterColumnString();
+        filterColumnIndex = getFilterColumnIndex();
+        filterColumnType = getFilterColumnType();
+        filterColumnEnabled = (null != filterColumnIndex && null != filterColumnType && null != filterColumnString && !filterColumnString.isEmpty());
+        if (filterColumnEnabled) {
+            logger.info("PARAM -- {}: {} ", KnownProperties.FILTER_COLUMN_NAME, filterColumnString);
+            logger.info("PARAM -- {}: {} ", KnownProperties.FILTER_COLUMN_VALUE, filterColumnString);
+        }
 
         this.statement = buildStatement();
     }
@@ -54,19 +83,22 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
         if (null==record || !isRecordValid(record))
             return true;
 
-        if (cqlHelper.hasFilterColumn()) {
-            String col = (String) cqlHelper.getData(cqlHelper.getFilterColType(), cqlHelper.getFilterColIndex(), record.getOriginRow());
-            if (col.trim().equalsIgnoreCase(cqlHelper.getFilterColValue())) {
+        if (this.filterColumnEnabled) {
+            String col = (String) cqlHelper.getData(this.filterColumnType, this.filterColumnIndex, record.getOriginRow());
+            if (this.filterColumnString.equalsIgnoreCase(col.trim())) {
                 if (logger.isInfoEnabled()) logger.info("Filter Column removing: {}", record.getPk());
                 return true;
             }
         }
 
-        if (cqlHelper.hasWriteTimestampFilter()) {
+        if (this.writeTimestampFilterEnabled) {
             // only process rows greater than writeTimeStampFilter
             Long originWriteTimeStamp = record.getPk().getWriteTimestamp();
-            if (originWriteTimeStamp < cqlHelper.getMinWriteTimeStampFilter()
-                    || originWriteTimeStamp > cqlHelper.getMaxWriteTimeStampFilter()) {
+            if (null==originWriteTimeStamp) {
+                return false;
+            }
+            if (originWriteTimeStamp < minWriteTimeStampFilter
+                    || originWriteTimeStamp > maxWriteTimeStampFilter) {
                 if (logger.isInfoEnabled()) logger.info("Timestamp filter removing: {}", record.getPk());
                 return true;
             }
@@ -115,10 +147,44 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
 
     protected String buildStatement() {
         final StringBuilder sb = new StringBuilder("SELECT ");
-        sb.append(propertyHelper.getAsString(KnownProperties.ORIGIN_COLUMN_NAMES)).append(ttlAndWritetimeCols());
+        sb.append(PropertyHelper.asString(this.resultColumns, KnownProperties.PropertyType.STRING_LIST)).append(ttlAndWritetimeCols());
         sb.append(" FROM ").append(propertyHelper.getAsString(KnownProperties.ORIGIN_KEYSPACE_TABLE));
         sb.append(" WHERE ").append(whereBinds());
         return sb.toString();
+    }
+
+    private Long getMinWriteTimeStampFilter() {
+        return propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN);
+    }
+    private Long getMaxWriteTimeStampFilter() {
+        return propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX);
+    }
+    public boolean hasWriteTimestampFilter() {
+        Long min = getMinWriteTimeStampFilter();
+        Long max = getMaxWriteTimeStampFilter();
+        List<Integer> writetimeCols = cqlHelper.getWriteTimeStampCols();
+        return (null != min && null != max &&
+                min > 0 && max > 0 && min < max &&
+                null != writetimeCols && !writetimeCols.isEmpty());
+    }
+
+    private String getFilterColumnString() {
+        String rtn = propertyHelper.getString(KnownProperties.FILTER_COLUMN_VALUE);
+        if (null!=rtn) return rtn.trim();
+        return null;
+    }
+    private Integer getFilterColumnIndex() {
+        String filterColumnName = propertyHelper.getAsString(KnownProperties.FILTER_COLUMN_NAME);
+        if (null==filterColumnName || null==this.resultColumns || this.resultColumns.isEmpty()) {
+            return null;
+        }
+        return this.resultColumns.indexOf(filterColumnName);
+    }
+    private MigrateDataType getFilterColumnType() {
+        if (null==filterColumnIndex || this.filterColumnIndex < 0 || null==this.resultTypes || this.resultTypes.isEmpty()) {
+            return null;
+        }
+        return this.resultTypes.get(filterColumnIndex);
     }
 
 }

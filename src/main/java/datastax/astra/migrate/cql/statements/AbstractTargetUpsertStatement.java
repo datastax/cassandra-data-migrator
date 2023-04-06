@@ -8,8 +8,6 @@ import datastax.astra.migrate.cql.Record;
 import datastax.astra.migrate.cql.features.*;
 import datastax.astra.migrate.properties.KnownProperties;
 import datastax.astra.migrate.properties.PropertyHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,9 +153,9 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     }
 
     private void setTTLAndWriteTimeNames() {
-        List<Integer> ttlColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_COLS);
+        List<Integer> ttlColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_INDEXES);
         usingTTL = null!= ttlColumnNames && !ttlColumnNames.isEmpty();
-        List<Integer> writeTimeColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_COLS);
+        List<Integer> writeTimeColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES);
         usingWriteTime = null!= writeTimeColumnNames && !writeTimeColumnNames.isEmpty();
     }
 
@@ -185,10 +183,10 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
 
     protected void checkBindInputs(Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
         if (usingTTL && null==ttl)
-            throw new RuntimeException(KnownProperties.ORIGIN_TTL_COLS+" specified, but no TTL value was provided");
+            throw new RuntimeException(KnownProperties.ORIGIN_TTL_INDEXES +" specified, but no TTL value was provided");
 
         if (usingWriteTime && null==writeTime)
-            throw new RuntimeException(KnownProperties.ORIGIN_WRITETIME_COLS+ " specified, but no WriteTime value was provided");
+            throw new RuntimeException(KnownProperties.ORIGIN_WRITETIME_INDEXES + " specified, but no WriteTime value was provided");
 
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
             if (null==explodeMapKey)

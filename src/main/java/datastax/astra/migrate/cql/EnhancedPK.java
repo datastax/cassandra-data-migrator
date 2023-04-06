@@ -105,7 +105,7 @@ public class EnhancedPK {
                     warningState = true;
                 }
                 else {
-                    messages.add(String.format("ERROR: Null value for position %d, consider setting %s", i, KnownProperties.TARGET_REPLACE_MISSING_TS));
+                    messages.add(String.format("ERROR: Null value for position %d, consider setting %s", i, KnownProperties.TRANSFORM_REPLACE_MISSING_TS));
                     errorState = true;
                 }
             }

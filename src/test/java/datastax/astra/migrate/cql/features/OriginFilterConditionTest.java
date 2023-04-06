@@ -30,7 +30,7 @@ public class OriginFilterConditionTest {
     @Test
     public void smokeTest() {
         String conditionIn = "AND a > 1";
-        validSparkConf.set(KnownProperties.ORIGIN_FILTER_CONDITION, conditionIn);
+        validSparkConf.set(KnownProperties.FILTER_CQL_WHERE_CONDITION, conditionIn);
         helper.initializeSparkConf(validSparkConf);
         feature.initialize(helper);
 
@@ -45,7 +45,7 @@ public class OriginFilterConditionTest {
     @Test
     public void andIsPrepended() {
         String conditionIn = "a > 1";
-        validSparkConf.set(KnownProperties.ORIGIN_FILTER_CONDITION, conditionIn);
+        validSparkConf.set(KnownProperties.FILTER_CQL_WHERE_CONDITION, conditionIn);
         helper.initializeSparkConf(validSparkConf);
         feature.initialize(helper);
 

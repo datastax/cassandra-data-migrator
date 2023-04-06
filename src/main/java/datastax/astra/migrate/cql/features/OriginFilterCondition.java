@@ -11,7 +11,7 @@ public class OriginFilterCondition extends AbstractFeature  {
         @Override
         public boolean initialize(PropertyHelper propertyHelper) {
 
-            String filterCondition = propertyHelper.getString(KnownProperties.ORIGIN_FILTER_CONDITION);
+            String filterCondition = propertyHelper.getString(KnownProperties.FILTER_CQL_WHERE_CONDITION);
             if (null!=filterCondition && !filterCondition.isEmpty()) {
                 filterCondition = filterCondition.trim();
                 if (!filterCondition.toUpperCase().startsWith("AND")) {

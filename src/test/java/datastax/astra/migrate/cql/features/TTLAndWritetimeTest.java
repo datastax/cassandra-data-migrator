@@ -32,8 +32,8 @@ public class TTLAndWritetimeTest {
     private void setValidSparkConf() {
         validSparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,col1,col2,col3,col4");
         validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,2,4,3");
-        validSparkConf.set(KnownProperties.ORIGIN_TTL_COLS, "1,2");
-        validSparkConf.set(KnownProperties.ORIGIN_WRITETIME_COLS, "2,3");
+        validSparkConf.set(KnownProperties.ORIGIN_TTL_INDEXES, "1,2");
+        validSparkConf.set(KnownProperties.ORIGIN_WRITETIME_INDEXES, "2,3");
 
         validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key");
     }
@@ -43,8 +43,8 @@ public class TTLAndWritetimeTest {
         setValidSparkConf();
         helper.initializeSparkConf(validSparkConf);
         assertAll(
-                () -> assertEquals(Arrays.asList(1,2), helper.getIntegerList(KnownProperties.ORIGIN_TTL_COLS), "ORIGIN_TTL_COLS"),
-                () -> assertEquals(Arrays.asList(2,3), helper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_COLS), "ORIGIN_WRITETIME_COLS")
+                () -> assertEquals(Arrays.asList(1,2), helper.getIntegerList(KnownProperties.ORIGIN_TTL_INDEXES), "ORIGIN_TTL_COLS"),
+                () -> assertEquals(Arrays.asList(2,3), helper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES), "ORIGIN_WRITETIME_COLS")
         );
     }
 
@@ -56,7 +56,7 @@ public class TTLAndWritetimeTest {
         sparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,t_col1,tw_col2,w_col3,col4");
         sparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,2,4,3");
         sparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "key");
-        sparkConf.set(KnownProperties.ORIGIN_TTL_COLS, "1,2");
+        sparkConf.set(KnownProperties.ORIGIN_TTL_INDEXES, "1,2");
 
         sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key");
         sparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "target.tab1");
@@ -92,7 +92,7 @@ public class TTLAndWritetimeTest {
         sparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,t_col1,tw_col2,w_col3,col4");
         sparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,2,4,3");
         sparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "key");
-        sparkConf.set(KnownProperties.ORIGIN_WRITETIME_COLS, "2,3");
+        sparkConf.set(KnownProperties.ORIGIN_WRITETIME_INDEXES, "2,3");
 
         sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key");
         sparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "target.tab1");
@@ -128,8 +128,8 @@ public class TTLAndWritetimeTest {
         sparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,t_col1,tw_col2,w_col3,col4");
         sparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,2,4,3");
         sparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "key");
-        sparkConf.set(KnownProperties.ORIGIN_TTL_COLS, "1,2");
-        sparkConf.set(KnownProperties.ORIGIN_WRITETIME_COLS, "2,3");
+        sparkConf.set(KnownProperties.ORIGIN_TTL_INDEXES, "1,2");
+        sparkConf.set(KnownProperties.ORIGIN_WRITETIME_INDEXES, "2,3");
 
         sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key");
         sparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "target.tab1");

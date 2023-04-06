@@ -11,7 +11,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.*;
 
 import datastax.astra.migrate.cql.statements.*;
@@ -76,13 +75,6 @@ public class CqlHelper {
         logger.info("PARAM -- Target Keyspace Table: {}", getTargetKeyspaceTable());
         logger.info("PARAM -- TTLCols: {}", getTtlCols());
         logger.info("PARAM -- WriteTimestampCols: {}", getWriteTimeStampCols());
-        logger.info("PARAM -- WriteTimestampFilter: {}", hasWriteTimestampFilter());
-        if (hasWriteTimestampFilter()) {
-            logger.info("PARAM -- minWriteTimeStampFilter: {} datetime is {}", getMinWriteTimeStampFilter(),
-                    Instant.ofEpochMilli(getMinWriteTimeStampFilter() / 1000));
-            logger.info("PARAM -- maxWriteTimeStampFilter: {} datetime is {}", getMaxWriteTimeStampFilter(),
-                    Instant.ofEpochMilli(getMaxWriteTimeStampFilter() / 1000));
-        }
         logger.info("PARAM -- ORIGIN SELECT Query used: {}", originSelectByPartitionRangeStatement.getCQL());
         logger.info("PARAM -- TARGET INSERT Query used: {}", targetInsertStatement.getCQL());
         logger.info("PARAM -- TARGET UPDATE Query used: {}", targetUpdateStatement.getCQL());
@@ -136,16 +128,16 @@ public class CqlHelper {
     }
 
     public Integer getFetchSizeInRows() {
-        return propertyHelper.getInteger(KnownProperties.READ_FETCH_SIZE);
+        return propertyHelper.getInteger(KnownProperties.PERF_FETCH_SIZE);
     }
 
     public Integer getBatchSize() {
         // cannot do batching if the writeFilter is greater than 0 or maxWriteTimeStampFilter is less than max long
         // do not batch for counters as it adds latency & increases chance of discrepancy
-        if (hasWriteTimestampFilter() || isCounterTable())
+        if (originSelectByPartitionRangeStatement.hasWriteTimestampFilter() || isCounterTable())
             return 1;
         else {
-            Integer rtn = propertyHelper.getInteger(KnownProperties.SPARK_BATCH_SIZE);
+            Integer rtn = propertyHelper.getInteger(KnownProperties.PERF_BATCH_SIZE);
             return (null==rtn || rtn < 1) ? 5 : rtn;
         }
     }
@@ -170,41 +162,15 @@ public class CqlHelper {
 
     //--------------- TTL & Writetime Feature ---------------
     public List<Integer> getTtlCols() {
-        return propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_COLS);
+        return propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_INDEXES);
     }
 
     public List<Integer> getWriteTimeStampCols() {
-        return propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_COLS);
+        return propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES);
     }
 
-    //-------------------- Filter Feature --------------------
-    public boolean hasWriteTimestampFilter() {
-        return propertyHelper.getBoolean(KnownProperties.ORIGIN_FILTER_WRITETS_ENABLED);
-    }
+    //-------------------- Java Filters  --------------------
 
-    public boolean hasFilterColumn() {
-        return propertyHelper.getBoolean(KnownProperties.ORIGIN_FILTER_COLUMN_ENABLED);
-    }
-
-    public MigrateDataType getFilterColType() {
-        return propertyHelper.getMigrationType(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
-    }
-
-    public Integer getFilterColIndex() {
-        return propertyHelper.getInteger(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX);
-    }
-
-    public String getFilterColValue() {
-        return propertyHelper.getString(KnownProperties.ORIGIN_FILTER_COLUMN_VALUE);
-    }
-
-    public Long getMinWriteTimeStampFilter() {
-        return propertyHelper.getLong(KnownProperties.ORIGIN_FILTER_WRITETS_MIN);
-    }
-
-    public Long getMaxWriteTimeStampFilter() {
-        return propertyHelper.getLong(KnownProperties.ORIGIN_FILTER_WRITETS_MAX);
-    }
 
     //----------- General Utilities --------------
     public Object getData(MigrateDataType dataType, int index, Row row) {

@@ -50,14 +50,14 @@ public class DiffJobSession extends CopyJobSession {
     private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
 
-        autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISSING);
+        autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING);
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
 
-        autoCorrectMismatch = propertyHelper.getBoolean(KnownProperties.TARGET_AUTOCORRECT_MISMATCH);
+        autoCorrectMismatch = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISMATCH);
         logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
 
         this.isCounterTable = cqlHelper.isCounterTable();
-        this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.ORIGIN_COUNTER_FORCE_WHEN_MISSING);
+        this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING_COUNTER);
         this.targetToOriginColumnIndexes = cqlHelper.getPKFactory().getTargetToOriginColumnIndexes();
         this.targetColumnTypes = cqlHelper.getPKFactory().getTargetColumnTypes();
 
@@ -170,7 +170,7 @@ public class DiffJobSession extends CopyJobSession {
             missingCounter.incrementAndGet();
             logger.error("Missing target row found for key: {}", record.getPk());
             if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
-                logger.error("{} is true, but not Inserting as {} is not enabled; key : {}", KnownProperties.TARGET_AUTOCORRECT_MISSING, KnownProperties.ORIGIN_COUNTER_FORCE_WHEN_MISSING, record.getPk());
+                logger.error("{} is true, but not Inserting as {} is not enabled; key : {}", KnownProperties.AUTOCORRECT_MISSING, KnownProperties.AUTOCORRECT_MISSING_COUNTER, record.getPk());
                 return;
             }
 
@@ -189,7 +189,6 @@ public class DiffJobSession extends CopyJobSession {
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
             logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
-            logger.info("record.pk ttl = {}, ts = {}", record.getPk().getTTL(), record.getPk().getWriteTimestamp());
 
             if (autoCorrectMismatch) {
                 writeLimiter.acquire(1);

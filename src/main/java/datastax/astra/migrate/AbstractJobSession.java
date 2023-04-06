@@ -25,16 +25,16 @@ public class AbstractJobSession extends BaseJobSession {
         cqlHelper.setOriginSession(originSession);
         cqlHelper.setTargetSession(targetSession);
 
-        printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
-        if (!propertyHelper.meetsMinimum(KnownProperties.SPARK_STATS_AFTER, printStatsAfter, 1)) {
-            logger.warn(KnownProperties.SPARK_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.SPARK_STATS_AFTER));
-            propertyHelper.setProperty(KnownProperties.SPARK_STATS_AFTER, KnownProperties.getDefault(KnownProperties.SPARK_STATS_AFTER));
-            printStatsAfter = propertyHelper.getInteger(KnownProperties.SPARK_STATS_AFTER);
+        printStatsAfter = propertyHelper.getInteger(KnownProperties.PRINT_STATS_AFTER);
+        if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1)) {
+            logger.warn(KnownProperties.PRINT_STATS_AFTER +" must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.PRINT_STATS_AFTER));
+            propertyHelper.setProperty(KnownProperties.PRINT_STATS_AFTER, KnownProperties.getDefault(KnownProperties.PRINT_STATS_AFTER));
+            printStatsAfter = propertyHelper.getInteger(KnownProperties.PRINT_STATS_AFTER);
         }
 
-        readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.SPARK_LIMIT_READ));
-        writeLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.SPARK_LIMIT_WRITE));
-        maxRetries = propertyHelper.getInteger(KnownProperties.SPARK_MAX_RETRIES);
+        readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_READ));
+        writeLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_WRITE));
+        maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
 
         logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());

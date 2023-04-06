@@ -27,7 +27,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
         this.columnIndexesToBind = new ArrayList<>();
         setExplodeMapColumnsAndColumnIndexesToBind();
 
-        List<String> ttlColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_COLS);
+        List<String> ttlColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_INDEXES);
         if (null != ttlColumnNames && !ttlColumnNames.isEmpty()) usingTTL = true;
     }
 
