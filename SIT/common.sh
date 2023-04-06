@@ -2,7 +2,7 @@ export DOCKER_CASS=cdm-sit-cass
 export DOCKER_CDM=cdm-sit-cdm
 export CASS_USERNAME=cassandra
 export CASS_PASSWORD=cassandra
-export KEYSPACES="source target"
+export KEYSPACES="origin target"
 export CDM_DIRECTORY=/local
 export CDM_JARFILE=cassandra-data-migrator.jar
 

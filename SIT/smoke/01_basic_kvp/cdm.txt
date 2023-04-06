@@ -1,2 +1,2 @@
-migrateData datastax.astra.migrate.Migrate migrate.properties
-validateData datastax.astra.migrate.DiffData migrate.properties
+migrateData datastax.cdm.job.Migrate migrate.properties
+validateData datastax.cdm.job.DiffData migrate.properties
