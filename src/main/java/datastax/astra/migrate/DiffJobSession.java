@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import datastax.astra.migrate.cql.CqlHelper;
 import datastax.astra.migrate.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -63,27 +64,30 @@ public class DiffJobSession extends CopyJobSession {
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             try {
                 // cannot do batching if the writeFilter is greater than 0
-                ResultSet resultSet = originSessionSession.execute(originSelectStatement.bind(hasRandomPartitioner ?
-                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
-                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
+                ResultSet resultSet = cqlHelper.getOriginSession().execute(
+                        cqlHelper.getPreparedStatement(CqlHelper.CQL.ORIGIN_SELECT)
+                                .bind(cqlHelper.hasRandomPartitioner() ? min : min.longValueExact(),
+                                        cqlHelper.hasRandomPartitioner() ? max : max.longValueExact())
+                                .setConsistencyLevel(cqlHelper.getReadConsistencyLevel())
+                                .setPageSize(cqlHelper.getFetchSizeInRows()));
 
                 Map<Row, CompletionStage<AsyncResultSet>> srcToTargetRowMap = new HashMap<Row, CompletionStage<AsyncResultSet>>();
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(srcRow -> {
                     readLimiter.acquire(1);
                     // do not process rows less than writeTimeStampFilter
-                    if (!(writeTimeStampFilter && (getLargestWriteTimeStamp(srcRow) < minWriteTimeStampFilter
-                            || getLargestWriteTimeStamp(srcRow) > maxWriteTimeStampFilter))) {
+                    if (!(cqlHelper.hasWriteTimestampFilter() && (cqlHelper.getLargestWriteTimeStamp(srcRow) < cqlHelper.getMinWriteTimeStampFilter()
+                            || cqlHelper.getLargestWriteTimeStamp(srcRow) > cqlHelper.getMaxWriteTimeStampFilter()))) {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {
                             printCounts(false);
                         }
 
-                        BoundStatement bSelect = selectFromTarget(targetSelectStatement, srcRow);
+                        BoundStatement bSelect = cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_ORIGIN_BY_PK), srcRow);
                         if (null == bSelect) {
                             skippedCounter.incrementAndGet();
                         } else {
-                            CompletionStage<AsyncResultSet> targetRowFuture = targetSession.executeAsync(bSelect);
+                            CompletionStage<AsyncResultSet> targetRowFuture = cqlHelper.getTargetSession().executeAsync(bSelect);
                             srcToTargetRowMap.put(srcRow, targetRowFuture);
-                            if (srcToTargetRowMap.size() > fetchSizeInRows) {
+                            if (srcToTargetRowMap.size() > cqlHelper.getFetchSizeInRows()) {
                                 diffAndClear(srcToTargetRowMap);
                             }
                         }
@@ -109,7 +113,7 @@ public class DiffJobSession extends CopyJobSession {
                 Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
                 diff(srcRow, targetRow);
             } catch (Exception e) {
-                logger.error("Could not perform diff for Key: {}", getKey(srcRow), e);
+                logger.error("Could not perform diff for Key: {}", cqlHelper.getKey(srcRow), e);
             }
         }
         srcToTargetRowMap.clear();
@@ -136,13 +140,13 @@ public class DiffJobSession extends CopyJobSession {
     private void diff(Row originRow, Row targetRow) {
         if (targetRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Missing target row found for key: {}", getKey(originRow));
+            logger.error("Missing target row found for key: {}", cqlHelper.getKey(originRow));
             //correct data
 
             if (autoCorrectMissing) {
-                targetSession.execute(bindInsert(targetInsertStatement, originRow, null));
+                cqlHelper.getTargetSession().execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Inserted missing row in target: {}", getKey(originRow));
+                logger.error("Inserted missing row in target: {}", cqlHelper.getKey(originRow));
             }
 
             return;
@@ -151,16 +155,16 @@ public class DiffJobSession extends CopyJobSession {
         String diffData = isDifferent(originRow, targetRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
-            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(originRow), diffData);
+            logger.error("Mismatch row found for key: {} Mismatch: {}", cqlHelper.getKey(originRow), diffData);
 
             if (autoCorrectMismatch) {
-                if (isCounterTable) {
-                    targetSession.execute(bindInsert(targetInsertStatement, originRow, targetRow));
+                if (cqlHelper.isCounterTable()) {
+                    cqlHelper.getTargetSession().execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow));
                 } else {
-                    targetSession.execute(bindInsert(targetInsertStatement, originRow, null));
+                    cqlHelper.getTargetSession().execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Updated mismatch row in target: {}", getKey(originRow));
+                logger.error("Updated mismatch row in target: {}", cqlHelper.getKey(originRow));
             }
 
             return;
@@ -171,17 +175,17 @@ public class DiffJobSession extends CopyJobSession {
 
     private String isDifferent(Row originRow, Row targetRow) {
         StringBuffer diffData = new StringBuffer();
-        IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
-            MigrateDataType dataTypeObj = selectColTypes.get(index);
-            Object origin = getData(dataTypeObj, index, originRow);
-            if (index < idColTypes.size()) {
-                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, origin, dataTypeObj.typeClass, originRow, false);
+        IntStream.range(0, cqlHelper.getSelectColTypes().size()).parallel().forEach(index -> {
+            MigrateDataType dataTypeObj = cqlHelper.getSelectColTypes().get(index);
+            Object origin = cqlHelper.getData(dataTypeObj, index, originRow);
+            if (index < cqlHelper.getIdColTypes().size()) {
+                Optional<Object> optionalVal = cqlHelper.handleBlankInPrimaryKey(index, origin, dataTypeObj.typeClass, originRow, false);
                 if (optionalVal.isPresent()) {
                     origin = optionalVal.get();
                 }
             }
 
-            Object target = getData(dataTypeObj, index, targetRow);
+            Object target = cqlHelper.getData(dataTypeObj, index, targetRow);
 
             boolean isDiff = dataTypeObj.diff(origin, target);
             if (isDiff) {

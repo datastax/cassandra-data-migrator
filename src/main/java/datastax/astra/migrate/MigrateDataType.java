@@ -124,6 +124,10 @@ public class MigrateDataType {
         return this.typeClass;
     }
 
+    public List<Class> getSubTypes() {
+        return this.subTypes;
+    }
+
     public boolean isValid() {
         return isValid;
     }

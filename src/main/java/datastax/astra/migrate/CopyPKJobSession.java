@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.astra.migrate.cql.CqlHelper;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,19 +44,19 @@ public class CopyPKJobSession extends AbstractJobSession {
                 readCounter.incrementAndGet();
                 String[] pkFields = row.split(" %% ");
                 int idx = 0;
-                BoundStatement bspk = originSelectStatement.bind().setConsistencyLevel(readConsistencyLevel);
-                for (MigrateDataType tp : idColTypes) {
+                BoundStatement bspk = cqlHelper.getPreparedStatement(CqlHelper.CQL.ORIGIN_SELECT).bind().setConsistencyLevel(cqlHelper.getReadConsistencyLevel());
+                for (MigrateDataType tp : cqlHelper.getIdColTypes()) {
                     bspk = bspk.set(idx, convert(tp.typeClass, pkFields[idx]), tp.typeClass);
                     idx++;
                 }
-                Row pkRow = originSessionSession.execute(bspk).one();
+                Row pkRow = cqlHelper.getOriginSession().execute(bspk).one();
                 if (null == pkRow) {
                     missingCounter.incrementAndGet();
                     logger.error("Could not find row with primary-key: {}", row);
                     return;
                 }
-                ResultSet targetWriteResultSet = targetSession
-                        .execute(bindInsert(targetInsertStatement, pkRow, null));
+                ResultSet targetWriteResultSet = cqlHelper.getTargetSession()
+                        .execute(cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), pkRow, null));
                 writeCounter.incrementAndGet();
                 if (readCounter.get() % printStatsAfter == 0) {
                     printCounts(false);

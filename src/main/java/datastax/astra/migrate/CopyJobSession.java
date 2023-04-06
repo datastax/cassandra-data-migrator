@@ -2,7 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
-import datastax.astra.migrate.properties.KnownProperties;
+import datastax.astra.migrate.cql.CqlHelper;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +24,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
-        filterData = propertyHelper.getBoolean(KnownProperties.ORIGIN_FILTER_COLUMN_ENABLED);
-        filterColName = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_NAME);
-        filterColType = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_TYPE);
-        filterColIndex = propertyHelper.getInteger(KnownProperties.ORIGIN_FILTER_COLUMN_INDEX);
-        filterColValue = propertyHelper.getAsString(KnownProperties.ORIGIN_FILTER_COLUMN_VALUE);
     }
 
     public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
@@ -53,36 +48,40 @@ public class CopyJobSession extends AbstractJobSession {
             long skipCnt = 0;
             long errCnt = 0;
             try {
-                ResultSet resultSet = originSessionSession.execute(originSelectStatement.bind(hasRandomPartitioner ?
-                                min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
-                        .setConsistencyLevel(readConsistencyLevel).setPageSize(fetchSizeInRows));
+                ResultSet resultSet = cqlHelper.getOriginSession().execute(
+                        cqlHelper.getPreparedStatement(CqlHelper.CQL.ORIGIN_SELECT)
+                            .bind(cqlHelper.hasRandomPartitioner() ? min : min.longValueExact(),
+                                    cqlHelper.hasRandomPartitioner() ? max : max.longValueExact())
+                            .setConsistencyLevel(cqlHelper.getReadConsistencyLevel())
+                            .setPageSize(cqlHelper.getFetchSizeInRows()));
 
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<CompletionStage<AsyncResultSet>>();
 
                 // cannot do batching if the writeFilter is greater than 0 or
                 // maxWriteTimeStampFilter is less than max long
                 // do not batch for counters as it adds latency & increases chance of discrepancy
-                if (batchSize == 1 || writeTimeStampFilter || isCounterTable) {
+                if (cqlHelper.getBatchSize() == 1 || cqlHelper.hasWriteTimestampFilter() || cqlHelper.isCounterTable()) {
                     for (Row originRow : resultSet) {
                         readLimiter.acquire(1);
                         readCnt++;
                         if (readCnt % printStatsAfter == 0) {
                             printCounts(false);
                         }
+
                         // exclusion filter below
-                        if (filterData) {
-                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, originRow);
-                            if (col.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(originRow));
+                        if (cqlHelper.hasFilterColumn()) {
+                            String col = (String) cqlHelper.getData(cqlHelper.getFilterColType(), cqlHelper.getFilterColIndex(), originRow);
+                            if (col.trim().equalsIgnoreCase(cqlHelper.getFilterColValue())) {
+                                logger.warn("Skipping row and filtering out: {}", cqlHelper.getKey(originRow));
                                 skipCnt++;
                                 continue;
                             }
                         }
-                        if (writeTimeStampFilter) {
+                        if (cqlHelper.hasWriteTimestampFilter()) {
                             // only process rows greater than writeTimeStampFilter
-                            Long originWriteTimeStamp = getLargestWriteTimeStamp(originRow);
-                            if (originWriteTimeStamp < minWriteTimeStampFilter
-                                    || originWriteTimeStamp > maxWriteTimeStampFilter) {
+                            Long originWriteTimeStamp = cqlHelper.getLargestWriteTimeStamp(originRow);
+                            if (originWriteTimeStamp < cqlHelper.getMinWriteTimeStampFilter()
+                                    || originWriteTimeStamp > cqlHelper.getMaxWriteTimeStampFilter()) {
                                 skipCnt++;
                                 continue;
                             }
@@ -90,20 +89,20 @@ public class CopyJobSession extends AbstractJobSession {
                         writeLimiter.acquire(1);
 
                         Row targetRow = null;
-                        if (isCounterTable) {
-                            ResultSet targetReadResultSet = targetSession
-                                    .execute(selectFromTarget(targetSelectStatement, originRow));
-                            targetRow = targetReadResultSet.one();
+                        if (cqlHelper.isCounterTable()) {
+                            ResultSet targetResultSet = cqlHelper.getTargetSession()
+                                    .execute(cqlHelper.selectFromTargetByPK(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_SELECT_ORIGIN_BY_PK), originRow));
+                            targetRow = targetResultSet.one();
                         }
 
-                        BoundStatement bInsert = bindInsert(targetInsertStatement, originRow, targetRow);
+                        BoundStatement bInsert = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, targetRow);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
                         }
-                        CompletionStage<AsyncResultSet> targetWriteResultSet = targetSession.executeAsync(bInsert);
+                        CompletionStage<AsyncResultSet> targetWriteResultSet = cqlHelper.getTargetSession().executeAsync(bInsert);
                         writeResults.add(targetWriteResultSet);
-                        if (writeResults.size() > fetchSizeInRows) {
+                        if (writeResults.size() > cqlHelper.getFetchSizeInRows()) {
                             writeCnt += iterateAndClearWriteResults(writeResults, 1);
                         }
                     }
@@ -119,17 +118,17 @@ public class CopyJobSession extends AbstractJobSession {
                             printCounts(false);
                         }
 
-                        if (filterData) {
-                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, originRow);
-                            if (colValue.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(originRow));
+                        if (cqlHelper.hasFilterColumn()) {
+                            String colValue = (String) cqlHelper.getData(cqlHelper.getFilterColType(), cqlHelper.getFilterColIndex(), originRow);
+                            if (colValue.trim().equalsIgnoreCase(cqlHelper.getFilterColValue())) {
+                                logger.warn("Skipping row and filtering out: {}", cqlHelper.getKey(originRow));
                                 skipCnt++;
                                 continue;
                             }
                         }
 
                         writeLimiter.acquire(1);
-                        BoundStatement bInsert = bindInsert(targetInsertStatement, originRow, null);
+                        BoundStatement bInsert = cqlHelper.bindInsert(cqlHelper.getPreparedStatement(CqlHelper.CQL.TARGET_INSERT), originRow, null);
                         if (null == bInsert) {
                             skipCnt++;
                             continue;
@@ -137,23 +136,23 @@ public class CopyJobSession extends AbstractJobSession {
                         batchStatement = batchStatement.add(bInsert);
 
                         // if batch threshold is met, send the writes and clear the batch
-                        if (batchStatement.size() >= batchSize) {
-                            CompletionStage<AsyncResultSet> writeResultSet = targetSession.executeAsync(batchStatement);
+                        if (batchStatement.size() >= cqlHelper.getBatchSize()) {
+                            CompletionStage<AsyncResultSet> writeResultSet = cqlHelper.getTargetSession().executeAsync(batchStatement);
                             writeResults.add(writeResultSet);
                             batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                         }
 
-                        if (writeResults.size() * batchSize > fetchSizeInRows) {
-                            writeCnt += iterateAndClearWriteResults(writeResults, batchSize);
+                        if (writeResults.size() * cqlHelper.getBatchSize() > cqlHelper.getFetchSizeInRows()) {
+                            writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
                         }
                     }
 
                     // clear the write resultset
-                    writeCnt += iterateAndClearWriteResults(writeResults, batchSize);
+                    writeCnt += iterateAndClearWriteResults(writeResults, cqlHelper.getBatchSize());
 
                     // if there are any pending writes because the batchSize threshold was not met, then write and clear them
                     if (batchStatement.size() > 0) {
-                        CompletionStage<AsyncResultSet> writeResultSet = targetSession.executeAsync(batchStatement);
+                        CompletionStage<AsyncResultSet> writeResultSet = cqlHelper.getTargetSession().executeAsync(batchStatement);
                         writeResults.add(writeResultSet);
                         writeCnt += iterateAndClearWriteResults(writeResults, batchStatement.size());
                         batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
