@@ -164,7 +164,8 @@ public class CqlHelper {
     }
 
     public boolean isCounterTable() {
-        return propertyHelper.getBoolean(KnownProperties.ORIGIN_IS_COUNTER);
+        List<Integer> rtn = propertyHelper.getIntegerList(KnownProperties.ORIGIN_COUNTER_INDEXES);
+        return (null != rtn && rtn.size() > 0);
     }
 
     //--------------- TTL & Writetime Feature ---------------

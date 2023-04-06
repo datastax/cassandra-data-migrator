@@ -1,0 +1,4 @@
+migrateData datastax.astra.migrate.Migrate migrate.properties
+validateData datastax.astra.migrate.DiffData migrate.properties
+fixData datastax.astra.migrate.DiffData fix.properties
+fixForce datastax.astra.migrate.DiffData fix-force.properties

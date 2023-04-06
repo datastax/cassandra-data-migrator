@@ -1,0 +1,1 @@
+SELECT key,col1,col2 FROM target.smoke_counters;

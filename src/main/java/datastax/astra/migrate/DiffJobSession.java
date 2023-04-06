@@ -41,6 +41,7 @@ public class DiffJobSession extends CopyJobSession {
     private final AtomicLong skippedCounter = new AtomicLong(0);
 
     private final boolean isCounterTable;
+    private final boolean forceCounterWhenMissing;
     private final List<Integer> targetToOriginColumnIndexes;
     private final List<MigrateDataType> targetColumnTypes;
     private final int explodeMapKeyIndex;
@@ -56,6 +57,7 @@ public class DiffJobSession extends CopyJobSession {
         logger.info("PARAM -- Autocorrect Mismatch: {}", autoCorrectMismatch);
 
         this.isCounterTable = cqlHelper.isCounterTable();
+        this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.ORIGIN_COUNTER_FORCE_WHEN_MISSING);
         this.targetToOriginColumnIndexes = cqlHelper.getPKFactory().getTargetToOriginColumnIndexes();
         this.targetColumnTypes = cqlHelper.getPKFactory().getTargetColumnTypes();
 
@@ -167,6 +169,10 @@ public class DiffJobSession extends CopyJobSession {
         if (targetRow == null) {
             missingCounter.incrementAndGet();
             logger.error("Missing target row found for key: {}", record.getPk());
+            if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
+                logger.error("{} is true, but not Inserting as {} is not enabled; key : {}", KnownProperties.TARGET_AUTOCORRECT_MISSING, KnownProperties.ORIGIN_COUNTER_FORCE_WHEN_MISSING, record.getPk());
+                return;
+            }
 
             //correct data
             if (autoCorrectMissing) {
