@@ -19,6 +19,7 @@ public class MigrateDataType {
     private boolean isValid = false;
     private static int minType = 0;
     private static int maxType = 19;
+    public static final int UNKNOWN_TYPE = 99;
 
     public MigrateDataType(String dataType) {
         dataTypeString = dataType;
@@ -38,7 +39,7 @@ public class MigrateDataType {
         }
         this.typeClass = getType(this.type);
 
-        if (this.type >= minType && this.type <= maxType) {
+        if ((this.type >= minType && this.type <= maxType) || this.type == UNKNOWN_TYPE) {
             isValid = true;
             for (Object o : subTypes) {
                 if (null == o || Object.class == o) {
@@ -49,6 +50,13 @@ public class MigrateDataType {
         else {
             isValid = false;
         }
+    }
+
+    public MigrateDataType() {
+        this.dataTypeString = "UNKNOWN";
+        this.type = UNKNOWN_TYPE;
+        this.typeClass = getType(this.type);
+        isValid = true;
     }
 
     private int typeAsInt(String dataType) {

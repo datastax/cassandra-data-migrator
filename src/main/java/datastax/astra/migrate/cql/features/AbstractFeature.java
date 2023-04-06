@@ -34,6 +34,12 @@ public abstract class AbstractFeature implements Feature {
     }
 
     @Override
+    public PropertyHelper alterProperties(PropertyHelper helper) {
+        // Not implemented by default
+        return helper;
+    }
+
+    @Override
     public boolean isEnabled() {
         if (!isInitialized) throw new RuntimeException("Feature not initialized");
         return isEnabled;

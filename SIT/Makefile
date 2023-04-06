@@ -1,5 +1,5 @@
 
-all: setup test_smoke env_teardown
+all: setup test_smoke_cmd test_features_cmd env_teardown
 
 setup: build env_setup
 
@@ -12,6 +12,10 @@ build:
 test_smoke: reset test_smoke_cmd
 test_smoke_cmd:
 	./test.sh -p smoke
+
+test_features: reset test_features_cmd
+test_features_cmd:
+	./test.sh -p features
 
 env_setup:
 	chmod -R 777 ./*.sh

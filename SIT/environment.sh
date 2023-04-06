@@ -184,6 +184,7 @@ _createDockerCDM_Directory() {
   docker exec ${DOCKER_CDM} mkdir -p ${CDM_DIRECTORY}
   docker cp ${JAR} ${DOCKER_CDM}:${CDM_DIRECTORY}/${CDM_JARFILE}
   docker cp cdm.sh ${DOCKER_CDM}:${CDM_DIRECTORY}/cdm.sh
+  docker cp cdm-assert.sh ${DOCKER_CDM}:${CDM_DIRECTORY}/cdm-assert.sh
   if [[ "$(_testDockerCDM_Directory)" != "yes" ]]; then
     _fatal "Directory ${CDM_DIRECTORY} cannot be created, or ${JAR} cannot be copied to ${CDM_DIRECTORY}"
   fi  

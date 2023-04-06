@@ -140,7 +140,7 @@ public class KnownProperties {
     //==========================================================================
     public static final String TARGET_KEYSPACE_TABLE       = "spark.target.keyspaceTable";        // test.a1
     public static final String TARGET_PRIMARY_KEY          = "spark.query.target.id";             // comma-separated-partition-key,comma-separated-clustering-key
-    public static final String TARGET_PRIMARY_KEY_TYPES    = "spark.query.target.id.types";       // 9,1,4,3
+    public static final String TARGET_PRIMARY_KEY_TYPES    = "spark.cdm.cql.target.id.types";     // Code-managed, not an external property
     public static final String TARGET_COLUMN_NAMES         = "spark.query.target";
     public static final String TARGET_CUSTOM_WRITETIME     = "spark.target.custom.writeTime";     // 0
     public static final String TARGET_AUTOCORRECT_MISSING  = "spark.target.autocorrect.missing";  // false
@@ -152,6 +152,7 @@ public class KnownProperties {
            types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
         required.add(TARGET_PRIMARY_KEY);
            types.put(TARGET_PRIMARY_KEY_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+        required.add(TARGET_PRIMARY_KEY_TYPES);
            types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
         required.add(TARGET_COLUMN_NAMES); // we need this, though it should be defaulted with ORIGIN_COLUMN_NAMES value
            types.put(TARGET_CUSTOM_WRITETIME, PropertyType.NUMBER);
@@ -248,6 +249,24 @@ public class KnownProperties {
            types.put(TARGET_TLS_KEYSTORE_PASSWORD, PropertyType.STRING);
            types.put(TARGET_TLS_ALGORITHMS, PropertyType.STRING); // This is a list but it is handled by Spark
         defaults.put(TARGET_TLS_ALGORITHMS, "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA");
+    }
+
+    //==========================================================================
+    // Constant Column Feature
+    //==========================================================================
+    public static final String CONSTANT_COLUMN_NAMES                 = "spark.cdm.cql.feature.constantColumns.names";        // const1,const2
+    public static final String CONSTANT_COLUMN_TYPES                 = "spark.cdm.cql.feature.constantColumns.types";        // 0,1
+    public static final String CONSTANT_COLUMN_VALUES                = "spark.cdm.cql.feature.constantColumns.values";       // 'abcd',1234
+    public static final String CONSTANT_COLUMN_SPLIT_REGEX           = "spark.cdm.cql.feature.constantColumns.splitRegex";   // , : this is needed because hard-coded values can have commas in them
+    public static final String TARGET_PRIMARY_KEY_TYPES_NO_CONSTANTS = "spark.cdm.cql.feature.constantColumns.noConstants";  // 1 : this will be set within the code
+
+    static {
+        types.put(CONSTANT_COLUMN_NAMES, PropertyType.STRING_LIST);
+        types.put(CONSTANT_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
+        types.put(CONSTANT_COLUMN_VALUES, PropertyType.STRING);
+        types.put(CONSTANT_COLUMN_SPLIT_REGEX, PropertyType.STRING);
+        types.put(TARGET_PRIMARY_KEY_TYPES_NO_CONSTANTS, PropertyType.MIGRATION_TYPE_LIST);
+        defaults.put(CONSTANT_COLUMN_SPLIT_REGEX, ",");
     }
 
     //==========================================================================

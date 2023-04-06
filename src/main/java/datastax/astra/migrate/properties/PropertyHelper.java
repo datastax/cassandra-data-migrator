@@ -242,20 +242,50 @@ public final class PropertyHelper extends KnownProperties{
             setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
         }
 
-        // Target column key list defaults to the first N columns of the source column list, where N is the size of the target primary key list
-        if (null == get(KnownProperties.TARGET_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.TARGET_PRIMARY_KEY_TYPES).isEmpty()) {
-            if (null != getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES) && !getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES).isEmpty()) {
-                List<MigrateDataType> targetPKTypes = getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES).subList(0, getStringList(KnownProperties.TARGET_PRIMARY_KEY).size());
-                logger.info("Setting known property [" + KnownProperties.TARGET_PRIMARY_KEY_TYPES + "] based on [" + KnownProperties.ORIGIN_COLUMN_TYPES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_TYPES) + "]");
-                setProperty(KnownProperties.TARGET_PRIMARY_KEY_TYPES, targetPKTypes);
-            }
-        }
+        setTargetPKTypes();
 
         if (fullyLoaded) {
             fullyLoaded = isValidConfig();
         }
 
         this.sparkConfFullyLoaded = fullyLoaded;
+    }
+
+    // Previously, the target primary key types were assumed to be the first N types of ORIGIN_COLUMN_TYPES, where N = TARGET_PRIMARY_KEY.size()
+    // This updated method references the ORIGIN_COLUMN_NAMES and looks up the ORIGIN_COLUMN_TYPE, based on the name
+    // If the name is not found, the PK type will be set to UNKNOWN.
+    private void setTargetPKTypes() {
+        if (null == get(KnownProperties.TARGET_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.TARGET_PRIMARY_KEY_TYPES).isEmpty()) {
+
+            List<String> targetPK = getStringList(KnownProperties.TARGET_PRIMARY_KEY);
+            if (null==targetPK || targetPK.isEmpty()) {
+                logger.error("Unable to set {}, because {} is not set",KnownProperties.TARGET_PRIMARY_KEY_TYPES,KnownProperties.TARGET_PRIMARY_KEY);
+                return;
+            }
+
+            List<String> originColumnNames = getStringList(KnownProperties.ORIGIN_COLUMN_NAMES);
+            List<MigrateDataType> originColumnTypes = getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
+            if (null == originColumnNames || originColumnNames.isEmpty()
+                    || null == originColumnTypes || originColumnTypes.isEmpty()
+                    || originColumnNames.size() != originColumnTypes.size()) {
+                logger.error("Unable to set {}, because {} and {} are not both set and of the same length",KnownProperties.TARGET_PRIMARY_KEY_TYPES,KnownProperties.ORIGIN_COLUMN_NAMES,KnownProperties.ORIGIN_COLUMN_TYPES);
+                return;
+            }
+
+            List<MigrateDataType> targetPKTypes = new ArrayList<>();
+
+            for (String targetPKColumn : targetPK) {
+                int originIndex = originColumnNames.indexOf(targetPKColumn);
+                if (originIndex < 0) {
+                    targetPKTypes.add(new MigrateDataType());
+                }
+                else {
+                    targetPKTypes.add(originColumnTypes.get(originIndex));
+                }
+            }
+
+            setProperty(KnownProperties.TARGET_PRIMARY_KEY_TYPES, targetPKTypes);
+        }
     }
 
     protected boolean isValidConfig() {

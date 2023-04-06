@@ -63,6 +63,13 @@ public class CqlHelper {
                 featureMap.put(f, feature);
         }
 
+        for (Featureset f : Featureset.values()) {
+            if (f.toString().startsWith("TEST_")) continue; // Skip test features
+            Feature feature = getFeature(f);
+            if (isFeatureEnabled(f))
+                feature.alterProperties(this.propertyHelper);
+        }
+
         if (hasWriteTimestampFilter()) {
             propertyHelper.setProperty(KnownProperties.SPARK_BATCH_SIZE, 1);
         }
@@ -184,7 +191,16 @@ public class CqlHelper {
                     insertBinds += ",?";
                 }
             }
-            targetInsertQuery = "INSERT INTO " + getTargetKeyspaceTable() + " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + ") VALUES (" + insertBinds + ")";
+
+            if (isFeatureEnabled(Featureset.CONSTANT_COLUMNS)) {
+                insertBinds += "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_VALUES);
+            }
+
+            targetInsertQuery = "INSERT INTO " +
+                    getTargetKeyspaceTable() +
+                    " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) +
+                    (isFeatureEnabled(Featureset.CONSTANT_COLUMNS) ? "," + featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
+                    ") VALUES (" + insertBinds + ")";
             if (null != getTtlCols() && !getTtlCols().isEmpty()) {
                 targetInsertQuery += " USING TTL ?";
                 if (null != getWriteTimeStampCols() &&  !getWriteTimeStampCols().isEmpty()) {
@@ -206,6 +222,9 @@ public class CqlHelper {
                 keyBinds += " AND " + key + "=?";
             }
         }
+
+        // This will be empty string if feature is disabled
+        keyBinds += featureMap.get(Featureset.CONSTANT_COLUMNS).getAsString(ConstantColumns.Property.WHERE_CLAUSE);
 
         return "SELECT " + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) + " FROM " + getTargetKeyspaceTable() + " WHERE " + keyBinds;
     }
