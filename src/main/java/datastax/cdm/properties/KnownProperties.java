@@ -94,18 +94,16 @@ public class KnownProperties {
         defaults.put(ORIGIN_HAS_RANDOM_PARTITIONER, "false");
            types.put(ORIGIN_COUNTER_INDEXES, PropertyType.NUMBER_LIST);
            types.put(ORIGIN_PRIMARY_KEY_TYPES, PropertyType.MIGRATION_TYPE_LIST);
-        required.add(ORIGIN_PRIMARY_KEY_TYPES);
-
            types.put(ORIGIN_PRIMARY_KEY_NAMES, PropertyType.STRING_LIST);
-        required.add(ORIGIN_PRIMARY_KEY_NAMES);
     }
 
     //==========================================================================
     // Properties that describe the target schema
     //==========================================================================
-    public static final String TARGET_KEYSPACE_TABLE       = "spark.cdm.schema.target.keyspaceTable";
-    public static final String TARGET_PRIMARY_KEY          = "spark.cdm.schema.target.column.id.names";
-    public static final String TARGET_COLUMN_NAMES         = "spark.cdm.schema.target.column.names";
+    public static final String TARGET_KEYSPACE_TABLE         = "spark.cdm.schema.target.keyspaceTable";
+    public static final String TARGET_PRIMARY_KEY            = "spark.cdm.schema.target.column.id.names";
+    public static final String TARGET_COLUMN_NAMES           = "spark.cdm.schema.target.column.names";
+    public static final String TARGET_COLUMN_NAMES_TO_ORIGIN = "spark.cdm.schema.target.column.names.to.origin";
 
     // Not exposed in .properties
     public static final String TARGET_COLUMN_TYPES         = "spark.cdm.schema.target.column.types";
@@ -117,12 +115,10 @@ public class KnownProperties {
            types.put(TARGET_PRIMARY_KEY, PropertyType.STRING_LIST);
         required.add(TARGET_PRIMARY_KEY);
            types.put(TARGET_COLUMN_NAMES, PropertyType.STRING_LIST);
-        required.add(TARGET_COLUMN_NAMES); // we need this, though it should be defaulted with ORIGIN_COLUMN_NAMES value
+           types.put(TARGET_COLUMN_NAMES_TO_ORIGIN, PropertyType.STRING_LIST);
 
            types.put(TARGET_PRIMARY_KEY_TYPES, PropertyType.MIGRATION_TYPE_LIST);
-        required.add(TARGET_PRIMARY_KEY_TYPES);
            types.put(TARGET_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
-        required.add(TARGET_COLUMN_TYPES);
     }
 
     //==========================================================================

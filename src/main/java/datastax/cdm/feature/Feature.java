@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.PropertyHelper;
 import java.util.List;
@@ -18,7 +19,7 @@ public interface Feature {
      * @param helper PropertyHelper to modify
      * @return the modified PropertyHelper
      */
-    public PropertyHelper alterProperties(PropertyHelper helper);
+    public PropertyHelper alterProperties(PropertyHelper helper, PKFactory pkFactory);
 
     /**
      * Indicates if feature is enabled.

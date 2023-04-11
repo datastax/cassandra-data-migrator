@@ -128,16 +128,20 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
         StringBuilder sb = new StringBuilder();
         if (null != cqlHelper.getTtlCols()) {
             cqlHelper.getTtlCols().forEach(col -> {
-                sb.append(",TTL(").append(resultColumns.get(col)).append(") as ttl_").append(resultColumns.get(col));
-                resultColumns.add("ttl_" + resultColumns.get(col));
+                String ttlCol = resultColumns.get(col);
+                String cleanCol = ttlCol.replaceAll("-", "_").replace("\"", "");
+                sb.append(",TTL(").append(ttlCol).append(") as ttl_").append(cleanCol);
+                resultColumns.add("ttl_" + cleanCol);
                 resultTypes.add(new MigrateDataType("1")); // int
                 ttlIndexes.add(resultColumns.size()-1);
             });
         }
         if (null != cqlHelper.getWriteTimeStampCols()) {
             cqlHelper.getWriteTimeStampCols().forEach(col -> {
-                sb.append(",WRITETIME(").append(resultColumns.get(col)).append(") as writetime_").append(resultColumns.get(col));
-                resultColumns.add("writetime_" + resultColumns.get(col));
+                String wtCol = resultColumns.get(col);
+                String cleanCol = wtCol.replaceAll("-", "_").replace("\"", "");
+                sb.append(",WRITETIME(").append(wtCol).append(") as writetime_").append(cleanCol);
+                resultColumns.add("writetime_" + cleanCol);
                 resultTypes.add(new MigrateDataType("2")); // application using as <long>, though Cassandra uses <timestamp>
                 writeTimestampIndexes.add(resultColumns.size()-1);
             });

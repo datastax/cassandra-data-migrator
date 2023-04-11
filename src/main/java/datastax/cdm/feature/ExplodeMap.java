@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
@@ -7,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +39,7 @@ public class ExplodeMap extends AbstractFeature {
         putString(Property.VALUE_COLUMN_NAME, valueColumnName);
 
         if (isValidColumn(helper) && isMapType(helper)) {
-            putNumber(Property.MAP_COLUMN_INDEX, helper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES).indexOf(mapColumnName));
+            putNumber(Property.MAP_COLUMN_INDEX, helper.getOriginColumnNames().indexOf(mapColumnName));
 
             MigrateDataType columnMapDataType = getColumnMapDataType(helper);
             putMigrateDataType(Property.MAP_COLUMN_TYPE, columnMapDataType);
@@ -52,49 +54,29 @@ public class ExplodeMap extends AbstractFeature {
     }
 
     @Override
-    public PropertyHelper alterProperties(PropertyHelper helper) {
+    public PropertyHelper alterProperties(PropertyHelper helper, PKFactory pkFactory) {
             if (!valid) return null;
             if (!isEnabled) return helper;
 
-            clean_targetPKTypes(helper);
-            clean_targetColumnNamesAndTypes(helper);
+            pkFactory.registerTypes(Arrays.asList(getRawString(Property.KEY_COLUMN_NAME),getRawString(Property.VALUE_COLUMN_NAME)),
+                    Arrays.asList(getRawMigrateDataType(Property.KEY_COLUMN_TYPE),getRawMigrateDataType(Property.VALUE_COLUMN_TYPE)));
+            clean_targetColumnNamesAndTypes(helper, KnownProperties.TARGET_COLUMN_NAMES);
+            clean_targetColumnNamesAndTypes(helper, KnownProperties.TARGET_PRIMARY_KEY);
             return helper;
     }
 
-    // The target PK can reference KEY_COLUMN_NAME and/or VALUE_COLUMN_NAME, but these could be
-    // unknown types.
-    private void clean_targetPKTypes(PropertyHelper helper) {
-        String keyColumnName = getRawString(Property.KEY_COLUMN_NAME);
-        String valueColumnName = getRawString(Property.VALUE_COLUMN_NAME);
-
-        List<String> currentPKNames = helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY);
-        List<MigrateDataType> currentPKTypes = helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-
-        List<MigrateDataType> newPKTypes = new ArrayList<>();
-
-        for (int i=0; i<currentPKNames.size(); i++) {
-            String pkName = currentPKNames.get(i);
-            MigrateDataType pkType = currentPKTypes.get(i);
-
-            if (pkName.equals(keyColumnName)) {
-                newPKTypes.add(getRawMigrateDataType(Property.KEY_COLUMN_TYPE));
-            } else if (pkName.equals(valueColumnName)) {
-                newPKTypes.add(getRawMigrateDataType(Property.VALUE_COLUMN_TYPE));
-            } else {
-                newPKTypes.add(pkType);
-            }
-        }
-
-        helper.setProperty(KnownProperties.TARGET_PRIMARY_KEY_TYPES, newPKTypes);
-    }
-
-    private void clean_targetColumnNamesAndTypes(PropertyHelper helper) {
+    // The exploded key and value are expected to be on Target, but they may not be configured.
+    // Similarly, the exploded map column is not expected to be on Target.
+    private void clean_targetColumnNamesAndTypes(PropertyHelper helper, String nameProperty) {
         String mapColumnName = getRawString(Property.MAP_COLUMN_NAME);
         String keyColumnName = getRawString(Property.KEY_COLUMN_NAME);
         String valueColumnName = getRawString(Property.VALUE_COLUMN_NAME);
 
-        List<String> currentColumnNames = helper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
-        List<MigrateDataType> currentColumnTypes = helper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES);
+        boolean isKey = nameProperty.equals(KnownProperties.TARGET_PRIMARY_KEY);
+        String typeProperty = (isKey ? KnownProperties.TARGET_PRIMARY_KEY_TYPES : KnownProperties.TARGET_COLUMN_TYPES);
+
+        List<String> currentColumnNames = (isKey ? helper.getTargetPKNames() : helper.getTargetColumnNames());
+        List<MigrateDataType> currentColumnTypes = (isKey ? helper.getTargetPKTypes() : helper.getTargetColumnTypes());
 
         List<String> newColumnNames = new ArrayList<>();
         List<MigrateDataType> newColumnTypes = new ArrayList<>();
@@ -126,13 +108,13 @@ public class ExplodeMap extends AbstractFeature {
             newColumnNames.add(keyColumnName);
             newColumnTypes.add(getRawMigrateDataType(Property.KEY_COLUMN_TYPE));
         }
-        if (!foundValueColumn) {
+        if (!foundValueColumn && !isKey) {
             newColumnNames.add(valueColumnName);
             newColumnTypes.add(getRawMigrateDataType(Property.VALUE_COLUMN_TYPE));
         }
 
-        helper.setProperty(KnownProperties.TARGET_COLUMN_NAMES, newColumnNames);
-        helper.setProperty(KnownProperties.TARGET_COLUMN_TYPES, newColumnTypes);
+        helper.setProperty(nameProperty, newColumnNames);
+        helper.setProperty(typeProperty, newColumnTypes);
     }
 
     private boolean isValidColumn(PropertyHelper helper) {

@@ -31,8 +31,6 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     protected Feature explodeMapFeature;
 
     protected int bindIndex = 0;
-    protected int ttlBindIndex = -1;
-    protected int writeTimeBindIndex = -1;
     protected int explodeMapKeyIndex = -1;
     protected int explodeMapValueIndex = -1;
 
@@ -101,10 +99,10 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
      */
     private void setAndAlignNamesAndTypes() {
 
-        originColumnNames.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES));
-        originColumnTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES));
-        targetColumnNames.addAll(propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES));
-        targetColumnTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES));
+        originColumnNames.addAll(propertyHelper.getOriginColumnNames());
+        originColumnTypes.addAll(propertyHelper.getOriginColumnTypes());
+        targetColumnNames.addAll(propertyHelper.getTargetColumnNames());
+        targetColumnTypes.addAll(propertyHelper.getTargetColumnTypes());
 
         // is this because of the explode map feature? in which case, we will insert a extra column
         if (originColumnNames.size() != targetColumnNames.size() && FeatureFactory.isEnabled(explodeMapFeature)) {
@@ -133,11 +131,6 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
                 originColumnNames.add(mapColumnIndex+1, "");
                 originColumnTypes.add(mapColumnIndex+1, new MigrateDataType());
             }
-        }
-
-        // at the end, we want to assure that the origin and column names and types are of the right size
-        if (originColumnNames.size() != targetColumnNames.size() || originColumnTypes.size() != targetColumnTypes.size()) {
-            throw new RuntimeException("Origin and target column name and/or type lists are not the same size, and failed to make them the same size.");
         }
     }
 

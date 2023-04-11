@@ -20,7 +20,7 @@ public class OriginSelectByPKStatement extends AbstractOriginSelectStatement {
 
     public OriginSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
-        originPKTypes = cqlHelper.getPKFactory().getPKTypes(PKFactory.Side.ORIGIN);
+        originPKTypes = propertyHelper.getOriginPKTypes();
     }
 
     public Record getRecord(EnhancedPK pk) {
@@ -48,16 +48,9 @@ public class OriginSelectByPKStatement extends AbstractOriginSelectStatement {
             throw new RuntimeException("Expected 1 nullable bind of type EnhancedPK, got " + binds.length);
 
         EnhancedPK pk = (EnhancedPK) binds[0];
-        if (pk.isError() || pk.getPKValues().size() != originPKTypes.size())
-            throw new RuntimeException("PK is in Error state, or the number of values does not match the number of bind types");
 
         BoundStatement boundStatement = prepareStatement().bind();
-        for (int i = 0; i< originPKTypes.size(); i++) {
-            if (originPKTypes.get(i).getTypeClass() != pk.getPKValues().get(i).getClass())
-                throw new RuntimeException("PK value at index " + i + " does not match the expected type");
-
-            boundStatement = boundStatement.set(i,pk.getPKValues().get(i), originPKTypes.get(i).getTypeClass());
-        }
+        boundStatement = cqlHelper.getPKFactory().bindWhereClause(PKFactory.Side.ORIGIN, pk, boundStatement, 0);
 
         return boundStatement
             .setConsistencyLevel(cqlHelper.getReadConsistencyLevel())

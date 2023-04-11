@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.properties.KnownProperties;
@@ -16,12 +17,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ExplodeMapTest {
 
     PropertyHelper helper;
+    CqlHelper cqlHelper;
     SparkConf validSparkConf;
     Feature feature;
 
     @BeforeEach
     public void setup() {
         helper = PropertyHelper.getInstance();
+        cqlHelper = new CqlHelper();
         validSparkConf = new SparkConf();
         feature = FeatureFactory.getFeature(Featureset.EXPLODE_MAP);
     }
@@ -48,7 +51,9 @@ public class ExplodeMapTest {
     public void smokeTest_initialize() {
         setValidSparkConf();
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        cqlHelper.initialize();
+        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
+
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
                 () -> assertEquals("map_col", feature.getAsString(ExplodeMap.Property.MAP_COLUMN_NAME), "MAP_COLUMN_NAME"),
@@ -65,8 +70,8 @@ public class ExplodeMapTest {
     public void smokeTest_alterProperties() {
         setValidSparkConf();
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        feature.alterProperties(helper);
+        cqlHelper.initialize();
+        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
 
         assertAll(
                 () -> assertTrue(feature.isEnabled(), "isEnabled"),
@@ -122,8 +127,8 @@ public class ExplodeMapTest {
         validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key");
 
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        cqlHelper.initialize();
+        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
     }
 
     @Test
@@ -133,8 +138,9 @@ public class ExplodeMapTest {
         validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,5%0%3");
         validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key,map_key,map_val");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        feature.alterProperties(helper);
+        cqlHelper.initialize();
+        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
+
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
                 () -> assertEquals(Arrays.asList("key","map_key","map_val"), helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY), "TARGET_PRIMARY_KEY"),
@@ -149,8 +155,8 @@ public class ExplodeMapTest {
         validSparkConf.set(KnownProperties.TARGET_COLUMN_NAMES, "key,val,map_key,map_val");
         validSparkConf.set(KnownProperties.TARGET_COLUMN_TYPES, "4,1,0,3");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        feature.alterProperties(helper);
+        cqlHelper.initialize();
+        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
                 () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), helper.getStringList(KnownProperties.TARGET_COLUMN_NAMES), "TARGET_COLUMN_NAMES"),
@@ -165,8 +171,8 @@ public class ExplodeMapTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,6%0");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        cqlHelper.initialize();
+        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
     }
 
     @Test
@@ -174,8 +180,8 @@ public class ExplodeMapTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME, "map_col_not_on_list");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        cqlHelper.initialize();
+        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
     }
 
     @Test
@@ -183,7 +189,7 @@ public class ExplodeMapTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME, "");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        cqlHelper.initialize();
+        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
     }
 }

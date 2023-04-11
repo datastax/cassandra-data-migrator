@@ -12,6 +12,7 @@ import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.time.Duration;
 
 public class TargetInsertStatement extends AbstractTargetUpsertStatement {
@@ -79,7 +80,7 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
         }
 
         targetUpdateCQL = "INSERT INTO " + propertyHelper.getAsString(KnownProperties.TARGET_KEYSPACE_TABLE) +
-                " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) +
+                " (" + PropertyHelper.asString(propertyHelper.getTargetColumnNames(), KnownProperties.PropertyType.STRING_LIST) +
                 (FeatureFactory.isEnabled(constantColumnFeature) ? "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
                 ") VALUES (" + valuesList + ")";
 

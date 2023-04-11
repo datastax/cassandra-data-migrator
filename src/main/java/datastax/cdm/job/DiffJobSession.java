@@ -58,12 +58,12 @@ public class DiffJobSession extends CopyJobSession {
 
         this.isCounterTable = cqlHelper.isCounterTable();
         this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING_COUNTER);
-        this.targetToOriginColumnIndexes = cqlHelper.getPKFactory().getTargetToOriginColumnIndexes();
-        this.targetColumnTypes = cqlHelper.getPKFactory().getTargetColumnTypes();
+        this.targetToOriginColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
+        this.targetColumnTypes = propertyHelper.getTargetColumnTypes(); // .getPKFactory().getTargetColumnTypes();
 
         Feature explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
-            List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
+            List<String> targetColumnNames = propertyHelper.getTargetColumnNames();
             this.explodeMapKeyIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME));
             this.explodeMapValueIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME));
         }
@@ -212,10 +212,14 @@ public class DiffJobSession extends CopyJobSession {
             Object origin;
             if (targetIndex == explodeMapKeyIndex) origin = pk.getExplodeMapKey();
             else if (targetIndex == explodeMapValueIndex) origin = pk.getExplodeMapValue();
-            else origin = cqlHelper.getData(dataTypeObj, targetToOriginColumnIndexes.get(targetIndex), originRow);
+            else {
+                int originIndex = targetToOriginColumnIndexes.get(targetIndex);
+                // if originIndex is -1, then this column is not in the origin table
+                origin = (originIndex < 0) ? null : cqlHelper.getData(dataTypeObj, originIndex, originRow);
+            }
 
-            boolean isDiff = dataTypeObj.diff(origin, target);
-            if (isDiff) {
+            if (null != origin &&
+                    dataTypeObj.diff(origin, target))  {
                 if (dataTypeObj.getTypeClass().equals(UdtValue.class)) {
                     String originUdtContent = ((UdtValue) origin).getFormattedContents();
                     String targetUdtContent = ((UdtValue) target).getFormattedContents();

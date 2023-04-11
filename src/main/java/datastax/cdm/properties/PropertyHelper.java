@@ -235,95 +235,11 @@ public final class PropertyHelper extends KnownProperties{
             }
         }
 
-        setTargetNamesAndTypes();
-        setTargetPKTypes();
-        setOriginPKNamesAndTypes();
-
         if (fullyLoaded) {
             fullyLoaded = isValidConfig();
         }
 
         this.sparkConfFullyLoaded = fullyLoaded;
-    }
-
-    // Previously, the target column names and types were assumed to match ORIGIN_COLUMN_NAMES and ORIGIN_COLUMN_TYPES
-    // This method starts on that basis, but allows features to make changes
-    private void setTargetNamesAndTypes() {
-        if (null == get(KnownProperties.TARGET_COLUMN_NAMES) || getAsString(KnownProperties.TARGET_COLUMN_NAMES).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_NAMES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_NAMES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + "]");
-            setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
-        }
-        if (null == get(KnownProperties.TARGET_COLUMN_TYPES) || getAsString(KnownProperties.TARGET_COLUMN_TYPES).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_TYPES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_TYPES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_TYPES) + "]");
-            setProperty(KnownProperties.TARGET_COLUMN_TYPES, get(KnownProperties.ORIGIN_COLUMN_TYPES));
-        }
-    }
-
-    // Previously, the target primary key types were assumed to be the first N types of ORIGIN_COLUMN_TYPES, where N = TARGET_PRIMARY_KEY.size()
-    // This updated method references the ORIGIN_COLUMN_NAMES and looks up the ORIGIN_COLUMN_TYPE, based on the name
-    // If the name is not found, the PK type will be set to UNKNOWN.
-    private void setTargetPKTypes() {
-        if (null == get(KnownProperties.TARGET_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.TARGET_PRIMARY_KEY_TYPES).isEmpty()) {
-            setKeyTypes(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-        }
-    }
-
-    private void setOriginPKNamesAndTypes() {
-        if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.ORIGIN_PRIMARY_KEY_NAMES + "] with value from [" + KnownProperties.TARGET_PRIMARY_KEY + "], which is [" + getAsString(KnownProperties.TARGET_PRIMARY_KEY) + "]");
-            setProperty(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES, get(KnownProperties.TARGET_PRIMARY_KEY));
-        }
-        if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES).isEmpty()) {
-            setKeyTypes(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
-        }
-    }
-
-    private void setKeyTypes(String pkTypesToSet) {
-        String pkNamesKey;
-        String columnNameKey;
-        String columnTypesKey;
-        if (KnownProperties.TARGET_PRIMARY_KEY_TYPES.equals(pkTypesToSet)) {
-            pkNamesKey = KnownProperties.TARGET_PRIMARY_KEY;
-            columnNameKey = KnownProperties.TARGET_COLUMN_NAMES;
-            columnTypesKey = KnownProperties.TARGET_COLUMN_TYPES;
-        }
-        else if (KnownProperties.ORIGIN_PRIMARY_KEY_TYPES.equals(pkTypesToSet)) {
-            pkNamesKey = KnownProperties.ORIGIN_PRIMARY_KEY_NAMES;
-            columnNameKey = KnownProperties.ORIGIN_COLUMN_NAMES;
-            columnTypesKey = KnownProperties.ORIGIN_COLUMN_TYPES;
-        }
-        else {
-            throw new IllegalArgumentException("pkTypesToSet must be either " + KnownProperties.ORIGIN_PRIMARY_KEY_TYPES + " or " + KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-        }
-
-        List<String> pkNames = getStringList(pkNamesKey);
-        List<String> columnNames = getStringList(columnNameKey);
-        List<MigrateDataType> columnTypes = getMigrationTypeList(columnTypesKey);
-
-        if (null==pkNames || pkNames.isEmpty()) {
-            logger.error("Unable to set {}, because {} is not set",pkTypesToSet,pkNamesKey);
-            return;
-        }
-
-        if (null == columnNames || columnNames.isEmpty()
-                || null == columnTypes || columnTypes.isEmpty()
-                || columnNames.size() != columnTypes.size()) {
-            logger.error("Unable to set {}, because {} and {} are not both set and of the same length",pkTypesToSet,columnNameKey,columnTypesKey);
-            return;
-        }
-
-        List<MigrateDataType> keyTypes = new ArrayList<>();
-        for (String pkName : pkNames) {
-            int columnIndex = columnNames.indexOf(pkName);
-            if (columnIndex < 0) {
-                keyTypes.add(new MigrateDataType());
-            }
-            else {
-                keyTypes.add(columnTypes.get(columnIndex));
-            }
-        }
-
-        setProperty(pkTypesToSet, keyTypes);
     }
 
     protected boolean isValidConfig() {
@@ -423,5 +339,163 @@ public final class PropertyHelper extends KnownProperties{
             return true;
         logger.warn(valueName + " must be greater than or equal to " + minimumValue + ".  Current value does not meet this requirement: " + testValue);
         return false;
+    }
+
+    public Map<String,String> getTargetColumnName_OriginColumnNameMap() {
+        Map<String,String> effectiveTargetToOriginColumnNameMap = new HashMap<>();
+
+        List<String> targetColumnNamesToOrigin = getStringList(KnownProperties.TARGET_COLUMN_NAMES_TO_ORIGIN);
+        List<String> targetColumnNames = getTargetColumnNames();
+        List<String> originColumnNames = getOriginColumnNames();
+
+        // Prefer configured mapping over a default mapping
+        if (null!=targetColumnNamesToOrigin && !targetColumnNamesToOrigin.isEmpty()) {
+            for (String pair: targetColumnNamesToOrigin) {
+                String[] parts = pair.split(":");
+                if (parts.length!=2 || null==parts[0] || null==parts[1] ||
+                        parts[0].isEmpty() || parts[1].isEmpty() ||
+                        !targetColumnNames.contains(parts[0]) || !originColumnNames.contains(parts[1]))
+                    throw new RuntimeException(KnownProperties.TARGET_COLUMN_NAMES_TO_ORIGIN + " contains invalid target column name to origin column name mapping: "+pair);
+                effectiveTargetToOriginColumnNameMap.put(parts[0], parts[1]);
+            }
+        }
+
+        // If no configured mapping, use default mapping based on column names
+        for (String targetColumnName : targetColumnNames) {
+            if (originColumnNames.contains(targetColumnName) && !effectiveTargetToOriginColumnNameMap.containsKey(targetColumnName))
+                effectiveTargetToOriginColumnNameMap.put(targetColumnName, targetColumnName);
+        }
+
+        return effectiveTargetToOriginColumnNameMap;
+    }
+
+    // As target columns can be renamed, but we expect the positions of origin and target columns to be the same
+    // we first look up the index on the target, then we look up the name of the column at this index on the origin
+    public List<Integer> getTargetToOriginColumnIndexes() {
+        List<String> originColumnNames = getOriginColumnNames();
+        List<String> targetColumnNames = getTargetColumnNames();
+        Map<String,String> targetColumnNamesToOriginMap = getTargetColumnName_OriginColumnNameMap();
+        List<Integer> targetToOriginColumnIndexes = new ArrayList<>(targetColumnNames.size());
+
+        // Iterate over the target column names
+        for (String targetColumnName : targetColumnNames) {
+            // this will be -1 if the target column name is not in the origin column names
+            targetToOriginColumnIndexes.add(originColumnNames.indexOf(targetColumnNamesToOriginMap.get(targetColumnName)));
+        }
+        return targetToOriginColumnIndexes;
+    }
+
+
+    // These must be set in config, so return them as-is
+    public List<String> getOriginColumnNames() {
+        List<String> currentColumnNames = getStringList(ORIGIN_COLUMN_NAMES);
+        return currentColumnNames;
+    }
+
+    // These must be set in config, so return them as-is
+    public List<MigrateDataType> getOriginColumnTypes() {
+        List<MigrateDataType> currentColumnTypes = getMigrationTypeList(ORIGIN_COLUMN_TYPES);
+        return currentColumnTypes;
+    }
+
+    // These must be set in config, so return them as-is
+    public List<String> getTargetPKNames() {
+        List<String> currentPKNames = getStringList(TARGET_PRIMARY_KEY);
+        return currentPKNames;
+    }
+
+    public List<String> getOriginPKNames() {
+        List<String> currentPKNames = getStringList(ORIGIN_PRIMARY_KEY_NAMES);
+        if (null==currentPKNames || currentPKNames.isEmpty()) {
+            Map<String,String> targetToOriginNameMap = getTargetColumnName_OriginColumnNameMap();
+            currentPKNames = new ArrayList<>();
+            for (String targetPKName : getTargetPKNames()) {
+                String originPKName = targetToOriginNameMap.get(targetPKName);
+                if (null!=originPKName)
+                    currentPKNames.add(targetToOriginNameMap.get(targetPKName));
+            }
+        }
+        return currentPKNames;
+    }
+
+    public List<MigrateDataType> getOriginPKTypes() {
+        List<MigrateDataType> currentPKTypes = getMigrationTypeList(ORIGIN_PRIMARY_KEY_TYPES);
+        if (null==currentPKTypes || currentPKTypes.isEmpty()) {
+            currentPKTypes = new ArrayList<>();
+            Map<String,MigrateDataType> originColumnNameToTypeMap = getOriginColumnNameToTypeMap();
+            for (String originPKName : getOriginPKNames()) {
+                MigrateDataType type = originColumnNameToTypeMap.get(originPKName);
+                if (null!=type)
+                    currentPKTypes.add(originColumnNameToTypeMap.get(originPKName));
+            }
+        }
+        return currentPKTypes;
+    }
+
+    public Map<String,MigrateDataType> getOriginColumnNameToTypeMap() {
+        Map<String,MigrateDataType> columnNameToTypeMap = new HashMap<>();
+        List<String> originColumnNames = getOriginColumnNames();
+        List<MigrateDataType> originColumnTypes = getOriginColumnTypes();
+        if (null!=originColumnNames && null!=originColumnTypes && originColumnNames.size() == originColumnTypes.size()) {
+            for (int i=0; i<originColumnNames.size(); i++) {
+                columnNameToTypeMap.put(originColumnNames.get(i), originColumnTypes.get(i));
+            }
+        }
+        else
+            throw new RuntimeException(ORIGIN_COLUMN_NAMES + " and " + ORIGIN_COLUMN_TYPES + " must be the same size and not null");
+        return columnNameToTypeMap;
+    }
+
+
+    public List<String> getTargetColumnNames() {
+        List<String> currentColumnNames = getStringList(TARGET_COLUMN_NAMES);
+        if (null==currentColumnNames || currentColumnNames.isEmpty())
+            currentColumnNames = getOriginColumnNames();
+        return currentColumnNames;
+    }
+
+    public List<MigrateDataType> getTargetColumnTypes() {
+        List<MigrateDataType> currentColumnTypes = getMigrationTypeList(TARGET_COLUMN_TYPES);
+        if (null==currentColumnTypes || currentColumnTypes.isEmpty() || currentColumnTypes.size() != getTargetColumnNames().size()) {
+            currentColumnTypes = new ArrayList<>();
+            for (String targetColumnName : getTargetColumnNames()) {
+                String originColumnName = getTargetColumnName_OriginColumnNameMap().get(targetColumnName);
+                if (null==originColumnName) {
+                    // We don't know what type this maps to, so set as null
+                    currentColumnTypes.add(null);
+                    continue;
+                }
+                MigrateDataType originDataType = getOriginColumnNameToTypeMap().get(originColumnName);
+                // This could be null as well, as it may come from a Feature
+                currentColumnTypes.add(originDataType);
+            }
+        }
+        return currentColumnTypes;
+    }
+
+    public List<MigrateDataType> getTargetPKTypes() {
+        List<String> targetPKNames = getTargetPKNames();
+        List<MigrateDataType> currentPKTypes = getMigrationTypeList(TARGET_PRIMARY_KEY_TYPES);
+        if (null!=targetPKNames && null!=currentPKTypes && currentPKTypes.size() == targetPKNames.size())
+            return currentPKTypes;
+
+        Map<String,MigrateDataType> originColumnNameToTypeMap = getOriginColumnNameToTypeMap();
+        Map<String,String> targetToOriginColumnNameMap = getTargetColumnName_OriginColumnNameMap();
+        currentPKTypes = new ArrayList<>();
+        for (String targetPKName : targetPKNames) {
+            String originPKName = targetToOriginColumnNameMap.get(targetPKName);
+            if (null==originPKName) {
+                currentPKTypes.add(null);
+                continue;
+            }
+            MigrateDataType originPKType = originColumnNameToTypeMap.get(originPKName);
+            if (null==originPKType) {
+                currentPKTypes.add(null);
+                continue;
+            }
+            currentPKTypes.add(originPKType);
+        }
+
+        return currentPKTypes;
     }
 }

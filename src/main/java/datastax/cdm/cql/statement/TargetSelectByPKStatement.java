@@ -20,15 +20,10 @@ import java.util.concurrent.CompletionStage;
 public class TargetSelectByPKStatement extends BaseCdmStatement {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    private final List<MigrateDataType> bindTypes;
-    private final List<Integer> bindIndexes;
-
     public TargetSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
 
         this.session = cqlHelper.getTargetSession();
-        this.bindTypes = cqlHelper.getPKFactory().getPKTypes(PKFactory.Side.TARGET);
-        this.bindIndexes = cqlHelper.getPKFactory().getPKIndexesToBind(PKFactory.Side.TARGET);
 
         this.statement = buildStatement();
 
@@ -60,17 +55,13 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
     private BoundStatement bind(EnhancedPK pk) {
         BoundStatement boundStatement = prepareStatement().bind()
                 .setConsistencyLevel(cqlHelper.getReadConsistencyLevel());
-        int bindIndex = 0;
-        for (Integer pkIndexToBind : bindIndexes) {
-            MigrateDataType type = bindTypes.get(pkIndexToBind);
-            Object value = pk.getPKValues().get(pkIndexToBind);
-            boundStatement = boundStatement.set(bindIndex++, value, type.getTypeClass());
-        }
+
+        boundStatement = cqlHelper.getPKFactory().bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, 0);
         return boundStatement;
     }
 
     private String buildStatement() {
-        return "SELECT " + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES)
+        return "SELECT " + PropertyHelper.asString(propertyHelper.getTargetColumnNames(), KnownProperties.PropertyType.STRING_LIST)
                 + " FROM " + propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
                 + " WHERE " + cqlHelper.getPKFactory().getWhereClause(PKFactory.Side.TARGET);
     }

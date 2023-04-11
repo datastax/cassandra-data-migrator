@@ -2,6 +2,7 @@ package datastax.cdm.cql.statement;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
@@ -60,11 +61,8 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
         }
 
         PKFactory pkFactory = cqlHelper.getPKFactory();
-        for (int index : pkFactory.getPKIndexesToBind(PKFactory.Side.TARGET)) {
-            MigrateDataType dataType = targetColumnTypes.get(index);
-            Object bindValue = cqlHelper.getData(dataType, index, originRow);
-            boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
-        }
+        EnhancedPK pk = pkFactory.getTargetPK(originRow);
+        boundStatement = pkFactory.bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, currentBindIndex);
 
         return boundStatement
                 .setConsistencyLevel(cqlHelper.getWriteConsistencyLevel())
@@ -103,7 +101,6 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
     }
 
     private void setExplodeMapColumnsAndColumnIndexesToBind() {
-        PKFactory pkFactory = cqlHelper.getPKFactory();
         int currentColumn = 0;
         for (String key : targetColumnNames) {
             if (FeatureFactory.isEnabled(explodeMapFeature)) {
@@ -113,7 +110,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
                     explodeMapValueIndex = currentColumn;
             }
 
-            if (!pkFactory.getPKNames(PKFactory.Side.TARGET).contains(key)) {
+            if (!propertyHelper.getTargetPKNames().contains(key)) {
                 columnIndexesToBind.add(currentColumn);
             }
             currentColumn++;

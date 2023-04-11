@@ -1,5 +1,6 @@
 package datastax.cdm.data;
 
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
@@ -13,10 +14,7 @@ import datastax.cdm.feature.Featureset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class PKFactory {
@@ -68,9 +66,9 @@ public class PKFactory {
 
         setPKNamesAndTypes(propertyHelper);
 
-        this.targetColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES);
-        this.originColumnTypes = propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES);
-        this.targetToOriginColumnIndexes = targetToOriginColumnIndexes(propertyHelper);
+        this.targetColumnTypes = propertyHelper.getTargetColumnTypes();
+        this.originColumnTypes = propertyHelper.getOriginColumnTypes();
+        this.targetToOriginColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
 
         this.targetPKLookupMethods = new ArrayList<>(targetPKNames.size());
         this.targetDefaultValues = new ArrayList<>(targetPKNames.size());
@@ -168,6 +166,33 @@ public class PKFactory {
         return null;
     }
 
+    public BoundStatement bindWhereClause(Side side, EnhancedPK pk, BoundStatement boundStatement, int startingBindIndex) {
+        List<Integer> indexesToBind;
+        List<MigrateDataType> types;
+        switch (side) {
+            case ORIGIN:
+                indexesToBind = originPKIndexesToBind;
+                types = originPKTypes;
+                break;
+            case TARGET:
+                indexesToBind = targetPKIndexesToBind;
+                types = targetPKTypes;
+                break;
+            default:
+                throw new RuntimeException("Unknown side: "+side);
+        }
+
+        if (pk.isError() || pk.getPKValues().size() != types.size())
+            throw new RuntimeException("PK is in Error state, or the number of values does not match the number of bind types");
+
+        for (int i=0; i<indexesToBind.size(); i++) {
+            int index = indexesToBind.get(i);
+            boundStatement = boundStatement.set(startingBindIndex++, pk.getPKValues().get(index), types.get(index).getTypeClass());
+        }
+
+        return boundStatement;
+    }
+
     public List<String> getPKNames(Side side) {
         switch (side) {
             case ORIGIN:
@@ -217,6 +242,24 @@ public class PKFactory {
         return recordSet;
     }
 
+    public void registerTypes(List<String> names, List<MigrateDataType> types) {
+        if (null==names || null==types || names.size()!=types.size())
+            throw new RuntimeException("Unable to register types as names and types are null and/or not the same size");
+
+        for (int i=0; i<names.size(); i++) {
+            String name = names.get(i);
+            MigrateDataType type = types.get(i);
+            if (originPKNames.contains(name)) {
+                int index = originPKNames.indexOf(name);
+                originPKTypes.set(index, type);
+            }
+            if (targetPKNames.contains(name)) {
+                int index = targetPKNames.indexOf(name);
+                targetPKTypes.set(index, type);
+            }
+        }
+    }
+
     protected Long getDefaultForMissingTimestamp() {
         return defaultForMissingTimestamp;
     }
@@ -240,14 +283,14 @@ public class PKFactory {
     }
 
     private void setPKNamesAndTypes(PropertyHelper propertyHelper) {
-        targetPKNames.addAll(propertyHelper.getStringList(KnownProperties.TARGET_PRIMARY_KEY));
-        targetPKTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES));
+        targetPKNames.addAll(propertyHelper.getTargetPKNames());
+        targetPKTypes.addAll(propertyHelper.getTargetPKTypes());
         if (targetPKNames.isEmpty() || targetPKTypes.size() != targetPKNames.size()) {
             throw new RuntimeException("Target primary key and/or types is not defined or not valid, see "+KnownProperties.TARGET_PRIMARY_KEY+" and "+KnownProperties.TARGET_PRIMARY_KEY_TYPES);
         }
 
-        originPKNames.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES));
-        originPKTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES));
+        originPKNames.addAll(propertyHelper.getOriginPKNames());
+        originPKTypes.addAll(propertyHelper.getOriginPKTypes());
         if (originPKNames.isEmpty() || originPKNames.size() != originPKTypes.size()) {
             throw new RuntimeException("Origin primary key and/or types is not defined or not valid, see "+KnownProperties.ORIGIN_PRIMARY_KEY_NAMES +" and "+KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
         }
@@ -260,47 +303,9 @@ public class PKFactory {
         return (Map<Object,Object>) cqlHelper.getData(originColumnTypes.get(explodeMapOriginColumnIndex), explodeMapOriginColumnIndex,originRow);
     }
 
-    // As target columns can be renamed, but we expect the positions of origin and target columns to be the same
-    // we first look up the index on the target, then we look up the name of the column at this index on the origin
-    private List<Integer> targetToOriginColumnIndexes(PropertyHelper propertyHelper) {
-        List<String> originColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES);
-        List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
-        if (null==originColumnNames || null==targetColumnNames || originColumnNames.size()==0 || targetColumnNames.size()==0)
-            throw new RuntimeException("Origin and target column names are not the same size, see "+KnownProperties.ORIGIN_COLUMN_NAMES+" and "+KnownProperties.TARGET_COLUMN_NAMES);
-        if (null==this.originColumnTypes || null==this.targetColumnTypes || this.originColumnTypes.size()==0 || this.targetColumnTypes.size()==0)
-            throw new RuntimeException("Origin and target column types are not the same size, see "+KnownProperties.ORIGIN_COLUMN_TYPES+" and "+KnownProperties.TARGET_COLUMN_TYPES);
-
-        List<Integer> targetToOriginColumnIndexes = new ArrayList<>(targetColumnNames.size());
-        // Iterate over the target column names
-        for (int i = 0; i< targetColumnNames.size(); i++) {
-            /*
-             * 1. If the target name is found on the origin, consider these the same; the indexes may not match.
-             * 2. If the target name is not found on the origin, but the target type at element i matches the
-             *    origin type at element i, consider these the same.
-             * 3. Otherwise, they are not a match.
-             */
-            String targetColumnName = targetColumnNames.get(i);
-            if (originColumnNames.contains(targetColumnName)) {
-                targetToOriginColumnIndexes.add(originColumnNames.indexOf(targetColumnName));
-            } else if (i < this.originColumnTypes.size() && this.targetColumnTypes.get(i).equals(this.originColumnTypes.get(i))) {
-                targetToOriginColumnIndexes.add(i);
-            } else {
-                targetToOriginColumnIndexes.add(null);
-            }
-        }
-        return targetToOriginColumnIndexes;
-    }
-
-    public List<Integer> getTargetToOriginColumnIndexes() {
-        return targetToOriginColumnIndexes;
-    }
-
-    public List<MigrateDataType> getTargetColumnTypes() {
-        return targetColumnTypes;
-    }
-
     private List<Integer> targetToOriginPKIndexes(PropertyHelper propertyHelper) {
-        List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
+        List<Integer> targetToColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
+        List<String> targetColumnNames = propertyHelper.getTargetColumnNames();
         List<Integer> rtn = new ArrayList<>();
         for (int i = 0; i< targetPKNames.size(); i++) {
             if (targetPKLookupMethods.get(i) != LookupMethod.ORIGIN_COLUMN) {
@@ -308,7 +313,7 @@ public class PKFactory {
             }
             else {
                 int targetIndex = targetColumnNames.indexOf(targetPKNames.get(i));
-                rtn.add(targetToOriginColumnIndexes.get(targetIndex));
+                rtn.add(targetToColumnIndexes.get(targetIndex));
             }
         }
         return rtn;
@@ -316,8 +321,8 @@ public class PKFactory {
 
     // This fills the PKLookupMethods lists with either ORIGIN_COLUMN or null.
     private void setOriginColumnLookupMethod(PropertyHelper propertyHelper) {
-        List<String> originColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES);
-        List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
+        List<String> originColumnNames = propertyHelper.getOriginColumnNames();
+        List<String> targetColumnNames = propertyHelper.getTargetColumnNames();
         if (null==originColumnNames || originColumnNames.isEmpty() || null==targetColumnNames || targetColumnNames.isEmpty())
             throw new RuntimeException("Origin and/or column names are not set, see "+KnownProperties.ORIGIN_COLUMN_NAMES+" and "+KnownProperties.TARGET_COLUMN_NAMES);
 
@@ -351,12 +356,14 @@ public class PKFactory {
             constantColumnFeature = cqlHelper.getFeature(Featureset.CONSTANT_COLUMNS);
             List<String> constantColumnNames = constantColumnFeature.getStringList(ConstantColumns.Property.COLUMN_NAMES);
             List<String> constantColumnValues = constantColumnFeature.getStringList(ConstantColumns.Property.COLUMN_VALUES);
+            List<MigrateDataType> constantColumnTypes = constantColumnFeature.getMigrateDataTypeList(ConstantColumns.Property.COLUMN_TYPES);
 
             for (int i = 0; i< targetPKNames.size(); i++) {
                 String pkColumn = targetPKNames.get(i);
                 if (constantColumnNames.contains(pkColumn)) {
                     this.targetDefaultValues.set(i, constantColumnValues.get(constantColumnNames.indexOf(pkColumn)));
                     this.targetPKLookupMethods.set(i, LookupMethod.CONSTANT_COLUMN);
+                    this.targetPKTypes.set(i, constantColumnTypes.get(constantColumnNames.indexOf(pkColumn)));
                 }
             }
         }
