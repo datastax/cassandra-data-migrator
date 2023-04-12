@@ -14,6 +14,7 @@ import datastax.cdm.feature.FeatureFactory;
 import datastax.cdm.feature.Featureset;
 import datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import datastax.cdm.cql.statement.TargetSelectByPKStatement;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -59,13 +60,13 @@ public class DiffJobSession extends CopyJobSession {
 
         this.isCounterTable = cqlHelper.isCounterTable();
         this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING_COUNTER);
-        this.targetToOriginColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
-        this.targetColumnTypes = propertyHelper.getTargetColumnTypes(); // .getPKFactory().getTargetColumnTypes();
-        this.targetColumnNames = propertyHelper.getTargetColumnNames();
+        this.targetToOriginColumnIndexes = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper);
+        this.targetColumnTypes = ColumnsKeysTypes.getTargetColumnTypes(propertyHelper);
+        this.targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
 
         Feature explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
-            List<String> targetColumnNames = propertyHelper.getTargetColumnNames();
+            List<String> targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
             this.explodeMapKeyIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME));
             this.explodeMapValueIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME));
         }

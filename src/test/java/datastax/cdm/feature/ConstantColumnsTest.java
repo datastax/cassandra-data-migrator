@@ -186,8 +186,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, "");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        assertThrows(RuntimeException.class, () -> feature.initialize(helper));
     }
 
     @Test

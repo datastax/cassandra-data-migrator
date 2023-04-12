@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.feature.Featureset;
 import datastax.cdm.feature.OriginFilterCondition;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class OriginSelectByPartitionRangeStatement extends AbstractOriginSelectS
 
     @Override
     protected String whereBinds() {
-        String partitionKey = PropertyHelper.asString(propertyHelper.getOriginPartitionKeyNames(), KnownProperties.PropertyType.STRING_LIST).trim();
+        String partitionKey = PropertyHelper.asString(ColumnsKeysTypes.getOriginPartitionKeyNames(propertyHelper), KnownProperties.PropertyType.STRING_LIST).trim();
         return "TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ?";
     }
 

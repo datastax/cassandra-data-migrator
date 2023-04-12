@@ -9,6 +9,7 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.data.Record;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -61,7 +62,7 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
     }
 
     private String buildStatement() {
-        return "SELECT " + PropertyHelper.asString(propertyHelper.getTargetColumnNames(), KnownProperties.PropertyType.STRING_LIST)
+        return "SELECT " + PropertyHelper.asString(ColumnsKeysTypes.getTargetColumnNames(propertyHelper), KnownProperties.PropertyType.STRING_LIST)
                 + " FROM " + propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
                 + " WHERE " + cqlHelper.getPKFactory().getWhereClause(PKFactory.Side.TARGET);
     }

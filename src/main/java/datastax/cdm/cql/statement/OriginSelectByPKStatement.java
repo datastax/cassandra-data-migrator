@@ -8,6 +8,7 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.data.Record;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ public class OriginSelectByPKStatement extends AbstractOriginSelectStatement {
 
     public OriginSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
-        originPKTypes = propertyHelper.getOriginPKTypes();
+        originPKTypes = ColumnsKeysTypes.getOriginPKTypes(propertyHelper);
     }
 
     public Record getRecord(EnhancedPK pk) {

@@ -6,8 +6,7 @@ import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
-import datastax.cdm.feature.ExplodeMap;
-import datastax.cdm.feature.FeatureFactory;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -26,7 +25,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
     public TargetUpdateStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
         this.columnIndexesToBind = new ArrayList<>();
-        setExplodeMapColumnIndexesToBind();
+        setColumnIndexesToBind();
 
         List<String> ttlColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_INDEXES);
         if (null != ttlColumnNames && !ttlColumnNames.isEmpty()) usingTTL = true;
@@ -101,10 +100,10 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
         return targetUpdateCQL.toString();
     }
 
-    private void setExplodeMapColumnIndexesToBind() {
+    private void setColumnIndexesToBind() {
         int currentColumn = 0;
         for (String key : targetColumnNames) {
-            if (!propertyHelper.getTargetPKNames().contains(key)) {
+            if (!ColumnsKeysTypes.getTargetPKNames(propertyHelper).contains(key)) {
                 columnIndexesToBind.add(currentColumn);
             }
             currentColumn++;

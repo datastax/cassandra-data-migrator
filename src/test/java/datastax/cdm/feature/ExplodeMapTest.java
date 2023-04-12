@@ -3,6 +3,7 @@ package datastax.cdm.feature;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.apache.spark.SparkConf;
@@ -75,10 +76,10 @@ public class ExplodeMapTest {
 
         assertAll(
                 () -> assertTrue(feature.isEnabled(), "isEnabled"),
-                () -> assertEquals(Arrays.asList("key","map_key"), helper.getTargetPKNames(), "TARGET_PRIMARY_KEY"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0")), helper.getTargetPKTypes(), "TARGET_PRIMARY_KEY_TYPES"),
-                () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), helper.getTargetColumnNames(), "TARGET_COLUMN_NAMES"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("1"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getTargetColumnTypes(), "TARGET_COLUMN_TYPES")
+                () -> assertEquals(Arrays.asList("key","map_key"), ColumnsKeysTypes.getTargetPKNames(helper), "TARGET_PRIMARY_KEY"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0")), ColumnsKeysTypes.getTargetPKTypes(helper), "TARGET_PRIMARY_KEY_TYPES"),
+                () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), ColumnsKeysTypes.getTargetColumnNames(helper), "TARGET_COLUMN_NAMES"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("1"),new MigrateDataType("0"),new MigrateDataType("3")), ColumnsKeysTypes.getTargetColumnTypes(helper), "TARGET_COLUMN_TYPES")
                 );
     }
 
@@ -141,8 +142,8 @@ public class ExplodeMapTest {
 
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals(Arrays.asList("key","map_key","map_val"), helper.getTargetPKNames(), "TARGET_PRIMARY_KEY"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getTargetPKTypes(), "TARGET_PRIMARY_KEY_TYPES")
+                () -> assertEquals(Arrays.asList("key","map_key","map_val"), ColumnsKeysTypes.getTargetPKNames(helper), "TARGET_PRIMARY_KEY"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0"),new MigrateDataType("3")), ColumnsKeysTypes.getTargetPKTypes(helper), "TARGET_PRIMARY_KEY_TYPES")
         );
     }
 

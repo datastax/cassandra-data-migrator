@@ -7,6 +7,7 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.feature.ConstantColumns;
 import datastax.cdm.feature.ExplodeMap;
 import datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import datastax.cdm.feature.Feature;
@@ -66,9 +67,9 @@ public class PKFactory {
 
         setPKNamesAndTypes(propertyHelper);
 
-        this.targetColumnTypes = propertyHelper.getTargetColumnTypes();
-        this.originColumnTypes = propertyHelper.getOriginColumnTypes();
-        this.targetToOriginColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
+        this.targetColumnTypes = ColumnsKeysTypes.getTargetColumnTypes(propertyHelper);
+        this.originColumnTypes = ColumnsKeysTypes.getOriginColumnTypes(propertyHelper);
+        this.targetToOriginColumnIndexes = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper);
 
         this.targetPKLookupMethods = new ArrayList<>(targetPKNames.size());
         this.targetDefaultValues = new ArrayList<>(targetPKNames.size());
@@ -283,14 +284,14 @@ public class PKFactory {
     }
 
     private void setPKNamesAndTypes(PropertyHelper propertyHelper) {
-        targetPKNames.addAll(propertyHelper.getTargetPKNames());
-        targetPKTypes.addAll(propertyHelper.getTargetPKTypes());
+        targetPKNames.addAll(ColumnsKeysTypes.getTargetPKNames(propertyHelper));
+        targetPKTypes.addAll(ColumnsKeysTypes.getTargetPKTypes(propertyHelper));
         if (targetPKNames.isEmpty() || targetPKTypes.size() != targetPKNames.size()) {
             throw new RuntimeException("Target primary key and/or types is not defined or not valid, see "+KnownProperties.TARGET_PRIMARY_KEY+" and "+KnownProperties.TARGET_PRIMARY_KEY_TYPES + "; feature configuration may also be to blame.");
         }
 
-        originPKNames.addAll(propertyHelper.getOriginPKNames());
-        originPKTypes.addAll(propertyHelper.getOriginPKTypes());
+        originPKNames.addAll(ColumnsKeysTypes.getOriginPKNames(propertyHelper));
+        originPKTypes.addAll(ColumnsKeysTypes.getOriginPKTypes(propertyHelper));
         if (originPKNames.isEmpty() || originPKNames.size() != originPKTypes.size()) {
             throw new RuntimeException("Origin primary key and/or types is not defined or not valid; these are internally managed values so this is likely a bug.  Please report it.");
         }
@@ -304,8 +305,8 @@ public class PKFactory {
     }
 
     private List<Integer> targetToOriginPKIndexes(PropertyHelper propertyHelper) {
-        List<Integer> targetToColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
-        List<String> targetColumnNames = propertyHelper.getTargetColumnNames();
+        List<Integer> targetToColumnIndexes = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper);
+        List<String> targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
         List<Integer> rtn = new ArrayList<>();
         for (int i = 0; i< targetPKNames.size(); i++) {
             if (targetPKLookupMethods.get(i) != LookupMethod.ORIGIN_COLUMN) {
@@ -321,8 +322,8 @@ public class PKFactory {
 
     // This fills the PKLookupMethods lists with either ORIGIN_COLUMN or null.
     private void setOriginColumnLookupMethod(PropertyHelper propertyHelper) {
-        List<String> originColumnNames = propertyHelper.getOriginColumnNames();
-        List<String> targetColumnNames = propertyHelper.getTargetColumnNames();
+        List<String> originColumnNames = ColumnsKeysTypes.getOriginColumnNames(propertyHelper);
+        List<String> targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
         if (null==originColumnNames || originColumnNames.isEmpty() || null==targetColumnNames || targetColumnNames.isEmpty())
             throw new RuntimeException("Origin and/or column names are not set, see "+KnownProperties.ORIGIN_COLUMN_NAMES+" and "+KnownProperties.TARGET_COLUMN_NAMES);
 
