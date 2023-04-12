@@ -173,16 +173,15 @@ public class KnownProperties {
     // Guardrails and Transformations
     //==========================================================================
     public static final String TRANSFORM_REPLACE_MISSING_TS     = "spark.cdm.transform.missing.key.ts.replace.value";
+    public static final String TRANSFORM_CUSTOM_WRITETIME       = "spark.cdm.transform.custom.writetime";
 
-//    TODO: this was previously in the configuration but not referenced in 3.3.0 other than in config
-//    public static final String TRANSFORM_WRITETIME_CUSTOM_VALUE = "spark.target.custom.writeTime";  // 0
 //    TODO: 3.3.0 refactored how guardrails are handled, this needs to be merged forward
 //    public static final String GUARDRAIL_FIELD_LIMIT_MB         = "spark.guardrail.colSizeInKB"; //10
 
     static {
         types.put(TRANSFORM_REPLACE_MISSING_TS, PropertyType.NUMBER);
-//        types.put(TRANSFORM_WRITETIME_CUSTOM_VALUE, PropertyType.NUMBER);
-//        defaults.put(TRANSFORM_WRITETIME_CUSTOM_VALUE, "0");
+        types.put(TRANSFORM_CUSTOM_WRITETIME, PropertyType.NUMBER);
+     defaults.put(TRANSFORM_CUSTOM_WRITETIME, "0");
 //           types.put(GUARDRAIL_FIELD_LIMIT_MB, PropertyType.NUMBER);
 //        defaults.put(GUARDRAIL_FIELD_LIMIT_MB, "0");
     }
