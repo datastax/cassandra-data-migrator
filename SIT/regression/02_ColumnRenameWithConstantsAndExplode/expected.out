@@ -1,0 +1,17 @@
+
+ customer | year | key_name | fruit   | fruit_qty
+----------+------+----------+---------+-----------
+ CUSTOMER | 2023 |     key2 |  apples |         4
+ CUSTOMER | 2023 |     key2 | bananas |         3
+ CUSTOMER | 2023 |     key2 | oranges |         6
+ CUSTOMER | 2023 |     key2 |   pears |         7
+ CUSTOMER | 2023 |     key1 |  apples |         3
+ CUSTOMER | 2023 |     key1 | bananas |         2
+ CUSTOMER | 2023 |     key1 |  grapes |        11
+ CUSTOMER | 2023 |     key1 | oranges |         5
+ CUSTOMER | 2023 |     key3 |  apples |         5
+ CUSTOMER | 2023 |     key3 | bananas |         4
+ CUSTOMER | 2023 |     key3 |    kiwi |        42
+ CUSTOMER | 2023 |     key3 | oranges |         7
+
+(12 rows)

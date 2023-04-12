@@ -84,7 +84,7 @@ public class ConstantColumnsTest {
         String originSelectByPK = "SELECT key,val FROM origin.tab1 WHERE key=?";
         String targetInsert = "INSERT INTO target.tab1 (key,val,const1,const2) VALUES (?,?,'abcd',1234)";
         String targetUpdate = "UPDATE target.tab1 SET val=?,const2=1234 WHERE const1='abcd' AND key=?";
-        String targetSelect = "SELECT key,val FROM target.tab1 WHERE const1='abcd' AND key=?";
+        String targetSelect = "SELECT key,val,const1,const2 FROM target.tab1 WHERE const1='abcd' AND key=?";
 
         assertAll(
                 () -> Assertions.assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement().getCQL().replaceAll("\\s+"," ")),

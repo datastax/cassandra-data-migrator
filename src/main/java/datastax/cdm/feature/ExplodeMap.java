@@ -60,8 +60,8 @@ public class ExplodeMap extends AbstractFeature {
 
             pkFactory.registerTypes(Arrays.asList(getRawString(Property.KEY_COLUMN_NAME),getRawString(Property.VALUE_COLUMN_NAME)),
                     Arrays.asList(getRawMigrateDataType(Property.KEY_COLUMN_TYPE),getRawMigrateDataType(Property.VALUE_COLUMN_TYPE)));
-            clean_targetColumnNamesAndTypes(helper, KnownProperties.TARGET_COLUMN_NAMES);
-            clean_targetColumnNamesAndTypes(helper, KnownProperties.TARGET_PRIMARY_KEY);
+//            clean_targetColumnNamesAndTypes(helper, KnownProperties.TARGET_COLUMN_NAMES);
+//            clean_targetColumnNamesAndTypes(helper, KnownProperties.TARGET_PRIMARY_KEY);
             return helper;
     }
 
@@ -80,6 +80,8 @@ public class ExplodeMap extends AbstractFeature {
 
         List<String> newColumnNames = new ArrayList<>();
         List<MigrateDataType> newColumnTypes = new ArrayList<>();
+
+        logger.info("DEBUG : currentColumnNames = {}, currentColumnTypes = {}",currentColumnNames, currentColumnTypes);
 
         boolean foundKeyColumn = false;
         boolean foundValueColumn = false;

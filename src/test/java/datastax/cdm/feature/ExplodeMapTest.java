@@ -75,12 +75,10 @@ public class ExplodeMapTest {
 
         assertAll(
                 () -> assertTrue(feature.isEnabled(), "isEnabled"),
-                () -> assertEquals(Arrays.asList("key","map_key"), helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY), "TARGET_PRIMARY_KEY"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0")), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES), "TARGET_PRIMARY_KEY_TYPES"),
-                () -> assertEquals(helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY).size(), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES).size(), "sizes match"),
-                () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), helper.getStringList(KnownProperties.TARGET_COLUMN_NAMES), "TARGET_COLUMN_NAMES"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("1"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES), "TARGET_COLUMN_TYPES"),
-                () -> assertEquals(helper.getStringList(KnownProperties.TARGET_COLUMN_NAMES).size(), helper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES).size(), "sizes match")
+                () -> assertEquals(Arrays.asList("key","map_key"), helper.getTargetPKNames(), "TARGET_PRIMARY_KEY"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0")), helper.getTargetPKTypes(), "TARGET_PRIMARY_KEY_TYPES"),
+                () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), helper.getTargetColumnNames(), "TARGET_COLUMN_NAMES"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("1"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getTargetColumnTypes(), "TARGET_COLUMN_TYPES")
                 );
     }
 
@@ -143,8 +141,8 @@ public class ExplodeMapTest {
 
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals(Arrays.asList("key","map_key","map_val"), helper.getStringList(KnownProperties.TARGET_PRIMARY_KEY), "TARGET_PRIMARY_KEY"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getMigrationTypeList(KnownProperties.TARGET_PRIMARY_KEY_TYPES), "TARGET_PRIMARY_KEY_TYPES")
+                () -> assertEquals(Arrays.asList("key","map_key","map_val"), helper.getTargetPKNames(), "TARGET_PRIMARY_KEY"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getTargetPKTypes(), "TARGET_PRIMARY_KEY_TYPES")
         );
     }
 

@@ -56,7 +56,7 @@ public class ColumnRenameWithConstantsAndExplode {
         validSparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "\"parameter-name\"");
 
         validSparkConf.set(KnownProperties.TARGET_COLUMN_NAMES, "customer,parameter_name,id,value");
-        validSparkConf.set(KnownProperties.TARGET_COLUMN_NAMES_TO_ORIGIN, "parameter_name:\"parameter-name\"");
+        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES_TO_TARGET, "\"parameter-name\":parameter_name");
 
         validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "customer,parameter_name,id");
 
@@ -78,9 +78,9 @@ public class ColumnRenameWithConstantsAndExplode {
 
         String originSelect = "SELECT \"parameter-name\",\"parameter-value\" FROM \"CUSTOMER\".\"Index\" WHERE TOKEN(\"parameter-name\") >= ? AND TOKEN(\"parameter-name\") <= ? ALLOW FILTERING";
         String originSelectByPK = "SELECT \"parameter-name\",\"parameter-value\" FROM \"CUSTOMER\".\"Index\" WHERE \"parameter-name\"=?";
-        String targetInsert = "INSERT INTO astra.indextable (customer,parameter_name,id,value,customer) VALUES (?,?,?,?,'CUSTOMER')";
+        String targetInsert = "INSERT INTO astra.indextable (parameter_name,id,value,customer) VALUES (?,?,?,'CUSTOMER')";
         String targetUpdate = "UPDATE astra.indextable SET value=? WHERE customer='CUSTOMER' AND parameter_name=? AND id=?";
-        String targetSelect = "SELECT customer,parameter_name,id,value FROM astra.indextable WHERE customer='CUSTOMER' AND parameter_name=? AND id=?";
+        String targetSelect = "SELECT parameter_name,id,value,customer FROM astra.indextable WHERE customer='CUSTOMER' AND parameter_name=? AND id=?";
 
         assertAll(
                 () -> assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement().getCQL().replaceAll("\\s+"," "), "originSelect"),

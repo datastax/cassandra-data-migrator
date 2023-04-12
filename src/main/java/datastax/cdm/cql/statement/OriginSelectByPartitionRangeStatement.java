@@ -46,7 +46,7 @@ public class OriginSelectByPartitionRangeStatement extends AbstractOriginSelectS
 
     @Override
     protected String whereBinds() {
-        String partitionKey = propertyHelper.getAsString(KnownProperties.ORIGIN_PARTITION_KEY).trim();
+        String partitionKey = PropertyHelper.asString(propertyHelper.getOriginPartitionKeyNames(), KnownProperties.PropertyType.STRING_LIST).trim();
         return "TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ?";
     }
 

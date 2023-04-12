@@ -286,13 +286,13 @@ public class PKFactory {
         targetPKNames.addAll(propertyHelper.getTargetPKNames());
         targetPKTypes.addAll(propertyHelper.getTargetPKTypes());
         if (targetPKNames.isEmpty() || targetPKTypes.size() != targetPKNames.size()) {
-            throw new RuntimeException("Target primary key and/or types is not defined or not valid, see "+KnownProperties.TARGET_PRIMARY_KEY+" and "+KnownProperties.TARGET_PRIMARY_KEY_TYPES);
+            throw new RuntimeException("Target primary key and/or types is not defined or not valid, see "+KnownProperties.TARGET_PRIMARY_KEY+" and "+KnownProperties.TARGET_PRIMARY_KEY_TYPES + "; feature configuration may also be to blame.");
         }
 
         originPKNames.addAll(propertyHelper.getOriginPKNames());
         originPKTypes.addAll(propertyHelper.getOriginPKTypes());
         if (originPKNames.isEmpty() || originPKNames.size() != originPKTypes.size()) {
-            throw new RuntimeException("Origin primary key and/or types is not defined or not valid, see "+KnownProperties.ORIGIN_PRIMARY_KEY_NAMES +" and "+KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
+            throw new RuntimeException("Origin primary key and/or types is not defined or not valid; these are internally managed values so this is likely a bug.  Please report it.");
         }
     }
 

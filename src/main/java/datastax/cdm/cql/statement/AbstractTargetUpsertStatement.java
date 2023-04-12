@@ -48,6 +48,7 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         setTTLAndWriteTimeNames();
         setAndAlignNamesAndTypes();
         setConstantColumns();
+        setExplodeMapIndexes();
         setCounterIndexes();
 
         this.statement = buildStatement();
@@ -193,4 +194,18 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
                 throw new RuntimeException("ExplodeMap is enabled, but the map value type provided "+explodeMapValue.getClass().getName()+" is not of the expected type "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass().getName());
         }
     }
+
+    private void setExplodeMapIndexes() {
+        int currentColumn = 0;
+        for (String key : targetColumnNames) {
+            if (FeatureFactory.isEnabled(explodeMapFeature)) {
+                if (key.equals(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME)))
+                    explodeMapKeyIndex = currentColumn;
+                else if (key.equals(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME)))
+                    explodeMapValueIndex = currentColumn;
+            }
+            currentColumn++;
+        }
+    }
+
 }

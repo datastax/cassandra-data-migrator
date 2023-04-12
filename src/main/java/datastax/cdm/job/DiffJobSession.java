@@ -43,6 +43,7 @@ public class DiffJobSession extends CopyJobSession {
     private final boolean isCounterTable;
     private final boolean forceCounterWhenMissing;
     private final List<Integer> targetToOriginColumnIndexes;
+    private final List<String> targetColumnNames;
     private final List<MigrateDataType> targetColumnTypes;
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
@@ -60,6 +61,7 @@ public class DiffJobSession extends CopyJobSession {
         this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING_COUNTER);
         this.targetToOriginColumnIndexes = propertyHelper.getTargetToOriginColumnIndexes();
         this.targetColumnTypes = propertyHelper.getTargetColumnTypes(); // .getPKFactory().getTargetColumnTypes();
+        this.targetColumnNames = propertyHelper.getTargetColumnNames();
 
         Feature explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
@@ -224,10 +226,10 @@ public class DiffJobSession extends CopyJobSession {
                     String originUdtContent = ((UdtValue) origin).getFormattedContents();
                     String targetUdtContent = ((UdtValue) target).getFormattedContents();
                     if (!originUdtContent.equals(targetUdtContent)) {
-                        diffData.append("(Target Index: " + targetIndex + " Origin: " + originUdtContent + " Target: " + targetUdtContent + ") ");
+                        diffData.append("Target column:" + targetColumnNames.get(targetIndex) + "; origin[" + originUdtContent + "]; target[" + targetUdtContent + "] ");
                     }
                 } else {
-                    diffData.append("Target Index: " + targetIndex + " Origin: " + origin + " Target: " + target + ") ");
+                    diffData.append("Target column:" + targetColumnNames.get(targetIndex) + "; origin[" + origin + "]; target[" + target + "] ");
                 }
             }
         });
