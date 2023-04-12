@@ -6,6 +6,7 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.data.Record;
 import datastax.cdm.feature.*;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 
@@ -31,8 +32,6 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     protected Feature explodeMapFeature;
 
     protected int bindIndex = 0;
-    protected int ttlBindIndex = -1;
-    protected int writeTimeBindIndex = -1;
     protected int explodeMapKeyIndex = -1;
     protected int explodeMapValueIndex = -1;
 
@@ -48,8 +47,9 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
 
         setTTLAndWriteTimeNames();
-        setAndAlignNamesAndTypes();
+        setNamesAndTypes();
         setConstantColumns();
+        setExplodeMapIndexes();
         setCounterIndexes();
 
         this.statement = buildStatement();
@@ -94,51 +94,11 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         return sb.toString();
     }
 
-    /**
-     * The expectation is that the target and origin column lists are in the same order, and of the
-     * same types. Column names may or may not be aligned. However, some features (such as ExplodeMap)
-     * may change the target columns.
-     */
-    private void setAndAlignNamesAndTypes() {
-
-        originColumnNames.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES));
-        originColumnTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES));
-        targetColumnNames.addAll(propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES));
-        targetColumnTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES));
-
-        // is this because of the explode map feature? in which case, we will insert a extra column
-        if (originColumnNames.size() != targetColumnNames.size() && FeatureFactory.isEnabled(explodeMapFeature)) {
-            String mapColumnName = explodeMapFeature.getString(ExplodeMap.Property.MAP_COLUMN_NAME);
-            if (!originColumnNames.contains(mapColumnName)) {
-                throw new RuntimeException(KnownProperties.ORIGIN_COLUMN_NAMES+ " does not contain configured map column name: " + ExplodeMap.Property.MAP_COLUMN_NAME +": "+ mapColumnName);
-            }
-
-            String mapKeyColumnName = explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME);
-            if (!targetColumnNames.contains(mapKeyColumnName)) {
-                throw new RuntimeException(KnownProperties.TARGET_COLUMN_NAMES+ " does not contain configured map key column name: "  + ExplodeMap.Property.KEY_COLUMN_NAME + ": " + mapKeyColumnName);
-            }
-
-            String mapValueColumnName = explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME);
-            if (!targetColumnNames.contains(mapValueColumnName)) {
-                throw new RuntimeException(KnownProperties.TARGET_COLUMN_NAMES+ " does not contain configured map value column name: " + ExplodeMap.Property.VALUE_COLUMN_NAME + ": "+ mapValueColumnName);
-            }
-
-            // On the origin column list, we expect the column next to the origin map column to be the empty string
-            int mapColumnIndex = originColumnNames.indexOf(mapColumnName);
-            if (originColumnNames.size() <= mapColumnIndex+1) {
-                originColumnNames.add("");
-                originColumnTypes.add(new MigrateDataType());
-            }
-            else if (!originColumnNames.get(mapColumnIndex+1).equals("")) {
-                originColumnNames.add(mapColumnIndex+1, "");
-                originColumnTypes.add(mapColumnIndex+1, new MigrateDataType());
-            }
-        }
-
-        // at the end, we want to assure that the origin and column names and types are of the right size
-        if (originColumnNames.size() != targetColumnNames.size() || originColumnTypes.size() != targetColumnTypes.size()) {
-            throw new RuntimeException("Origin and target column name and/or type lists are not the same size, and failed to make them the same size.");
-        }
+    private void setNamesAndTypes() {
+        originColumnNames.addAll(ColumnsKeysTypes.getOriginColumnNames(propertyHelper));
+        originColumnTypes.addAll(ColumnsKeysTypes.getOriginColumnTypes(propertyHelper));
+        targetColumnNames.addAll(ColumnsKeysTypes.getTargetColumnNames(propertyHelper));
+        targetColumnTypes.addAll(ColumnsKeysTypes.getTargetColumnTypes(propertyHelper));
     }
 
     private void setConstantColumns() {
@@ -200,4 +160,18 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
                 throw new RuntimeException("ExplodeMap is enabled, but the map value type provided "+explodeMapValue.getClass().getName()+" is not of the expected type "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass().getName());
         }
     }
+
+    private void setExplodeMapIndexes() {
+        int currentColumn = 0;
+        for (String key : targetColumnNames) {
+            if (FeatureFactory.isEnabled(explodeMapFeature)) {
+                if (key.equals(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME)))
+                    explodeMapKeyIndex = currentColumn;
+                else if (key.equals(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME)))
+                    explodeMapValueIndex = currentColumn;
+            }
+            currentColumn++;
+        }
+    }
+
 }

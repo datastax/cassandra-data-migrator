@@ -14,6 +14,7 @@ import datastax.cdm.feature.FeatureFactory;
 import datastax.cdm.feature.Featureset;
 import datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import datastax.cdm.cql.statement.TargetSelectByPKStatement;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ public class DiffJobSession extends CopyJobSession {
     private final boolean isCounterTable;
     private final boolean forceCounterWhenMissing;
     private final List<Integer> targetToOriginColumnIndexes;
+    private final List<String> targetColumnNames;
     private final List<MigrateDataType> targetColumnTypes;
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
@@ -58,12 +60,13 @@ public class DiffJobSession extends CopyJobSession {
 
         this.isCounterTable = cqlHelper.isCounterTable();
         this.forceCounterWhenMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING_COUNTER);
-        this.targetToOriginColumnIndexes = cqlHelper.getPKFactory().getTargetToOriginColumnIndexes();
-        this.targetColumnTypes = cqlHelper.getPKFactory().getTargetColumnTypes();
+        this.targetToOriginColumnIndexes = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper);
+        this.targetColumnTypes = ColumnsKeysTypes.getTargetColumnTypes(propertyHelper);
+        this.targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
 
         Feature explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
-            List<String> targetColumnNames = propertyHelper.getStringList(KnownProperties.TARGET_COLUMN_NAMES);
+            List<String> targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
             this.explodeMapKeyIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME));
             this.explodeMapValueIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME));
         }
@@ -212,18 +215,22 @@ public class DiffJobSession extends CopyJobSession {
             Object origin;
             if (targetIndex == explodeMapKeyIndex) origin = pk.getExplodeMapKey();
             else if (targetIndex == explodeMapValueIndex) origin = pk.getExplodeMapValue();
-            else origin = cqlHelper.getData(dataTypeObj, targetToOriginColumnIndexes.get(targetIndex), originRow);
+            else {
+                int originIndex = targetToOriginColumnIndexes.get(targetIndex);
+                // if originIndex is -1, then this column is not in the origin table
+                origin = (originIndex < 0) ? null : cqlHelper.getData(dataTypeObj, originIndex, originRow);
+            }
 
-            boolean isDiff = dataTypeObj.diff(origin, target);
-            if (isDiff) {
+            if (null != origin &&
+                    dataTypeObj.diff(origin, target))  {
                 if (dataTypeObj.getTypeClass().equals(UdtValue.class)) {
                     String originUdtContent = ((UdtValue) origin).getFormattedContents();
                     String targetUdtContent = ((UdtValue) target).getFormattedContents();
                     if (!originUdtContent.equals(targetUdtContent)) {
-                        diffData.append("(Target Index: " + targetIndex + " Origin: " + originUdtContent + " Target: " + targetUdtContent + ") ");
+                        diffData.append("Target column:" + targetColumnNames.get(targetIndex) + "; origin[" + originUdtContent + "]; target[" + targetUdtContent + "] ");
                     }
                 } else {
-                    diffData.append("Target Index: " + targetIndex + " Origin: " + origin + " Target: " + target + ") ");
+                    diffData.append("Target column:" + targetColumnNames.get(targetIndex) + "; origin[" + origin + "]; target[" + target + "] ");
                 }
             }
         });

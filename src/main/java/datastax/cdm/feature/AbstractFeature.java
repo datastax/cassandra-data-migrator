@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
@@ -34,7 +35,7 @@ public abstract class AbstractFeature implements Feature {
     }
 
     @Override
-    public PropertyHelper alterProperties(PropertyHelper helper) {
+    public PropertyHelper alterProperties(PropertyHelper helper, PKFactory pkFactory) {
         // Not implemented by default
         return helper;
     }

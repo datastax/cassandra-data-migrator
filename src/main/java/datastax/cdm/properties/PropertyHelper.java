@@ -235,95 +235,11 @@ public final class PropertyHelper extends KnownProperties{
             }
         }
 
-        setTargetNamesAndTypes();
-        setTargetPKTypes();
-        setOriginPKNamesAndTypes();
-
         if (fullyLoaded) {
             fullyLoaded = isValidConfig();
         }
 
         this.sparkConfFullyLoaded = fullyLoaded;
-    }
-
-    // Previously, the target column names and types were assumed to match ORIGIN_COLUMN_NAMES and ORIGIN_COLUMN_TYPES
-    // This method starts on that basis, but allows features to make changes
-    private void setTargetNamesAndTypes() {
-        if (null == get(KnownProperties.TARGET_COLUMN_NAMES) || getAsString(KnownProperties.TARGET_COLUMN_NAMES).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_NAMES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_NAMES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_NAMES) + "]");
-            setProperty(KnownProperties.TARGET_COLUMN_NAMES, get(KnownProperties.ORIGIN_COLUMN_NAMES));
-        }
-        if (null == get(KnownProperties.TARGET_COLUMN_TYPES) || getAsString(KnownProperties.TARGET_COLUMN_TYPES).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.TARGET_COLUMN_TYPES + "] with value from [" + KnownProperties.ORIGIN_COLUMN_TYPES + "], which is [" + getAsString(KnownProperties.ORIGIN_COLUMN_TYPES) + "]");
-            setProperty(KnownProperties.TARGET_COLUMN_TYPES, get(KnownProperties.ORIGIN_COLUMN_TYPES));
-        }
-    }
-
-    // Previously, the target primary key types were assumed to be the first N types of ORIGIN_COLUMN_TYPES, where N = TARGET_PRIMARY_KEY.size()
-    // This updated method references the ORIGIN_COLUMN_NAMES and looks up the ORIGIN_COLUMN_TYPE, based on the name
-    // If the name is not found, the PK type will be set to UNKNOWN.
-    private void setTargetPKTypes() {
-        if (null == get(KnownProperties.TARGET_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.TARGET_PRIMARY_KEY_TYPES).isEmpty()) {
-            setKeyTypes(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-        }
-    }
-
-    private void setOriginPKNamesAndTypes() {
-        if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES).isEmpty()) {
-            logger.info("Setting known property [" + KnownProperties.ORIGIN_PRIMARY_KEY_NAMES + "] with value from [" + KnownProperties.TARGET_PRIMARY_KEY + "], which is [" + getAsString(KnownProperties.TARGET_PRIMARY_KEY) + "]");
-            setProperty(KnownProperties.ORIGIN_PRIMARY_KEY_NAMES, get(KnownProperties.TARGET_PRIMARY_KEY));
-        }
-        if (null == get(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES) || getAsString(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES).isEmpty()) {
-            setKeyTypes(KnownProperties.ORIGIN_PRIMARY_KEY_TYPES);
-        }
-    }
-
-    private void setKeyTypes(String pkTypesToSet) {
-        String pkNamesKey;
-        String columnNameKey;
-        String columnTypesKey;
-        if (KnownProperties.TARGET_PRIMARY_KEY_TYPES.equals(pkTypesToSet)) {
-            pkNamesKey = KnownProperties.TARGET_PRIMARY_KEY;
-            columnNameKey = KnownProperties.TARGET_COLUMN_NAMES;
-            columnTypesKey = KnownProperties.TARGET_COLUMN_TYPES;
-        }
-        else if (KnownProperties.ORIGIN_PRIMARY_KEY_TYPES.equals(pkTypesToSet)) {
-            pkNamesKey = KnownProperties.ORIGIN_PRIMARY_KEY_NAMES;
-            columnNameKey = KnownProperties.ORIGIN_COLUMN_NAMES;
-            columnTypesKey = KnownProperties.ORIGIN_COLUMN_TYPES;
-        }
-        else {
-            throw new IllegalArgumentException("pkTypesToSet must be either " + KnownProperties.ORIGIN_PRIMARY_KEY_TYPES + " or " + KnownProperties.TARGET_PRIMARY_KEY_TYPES);
-        }
-
-        List<String> pkNames = getStringList(pkNamesKey);
-        List<String> columnNames = getStringList(columnNameKey);
-        List<MigrateDataType> columnTypes = getMigrationTypeList(columnTypesKey);
-
-        if (null==pkNames || pkNames.isEmpty()) {
-            logger.error("Unable to set {}, because {} is not set",pkTypesToSet,pkNamesKey);
-            return;
-        }
-
-        if (null == columnNames || columnNames.isEmpty()
-                || null == columnTypes || columnTypes.isEmpty()
-                || columnNames.size() != columnTypes.size()) {
-            logger.error("Unable to set {}, because {} and {} are not both set and of the same length",pkTypesToSet,columnNameKey,columnTypesKey);
-            return;
-        }
-
-        List<MigrateDataType> keyTypes = new ArrayList<>();
-        for (String pkName : pkNames) {
-            int columnIndex = columnNames.indexOf(pkName);
-            if (columnIndex < 0) {
-                keyTypes.add(new MigrateDataType());
-            }
-            else {
-                keyTypes.add(columnTypes.get(columnIndex));
-            }
-        }
-
-        setProperty(pkTypesToSet, keyTypes);
     }
 
     protected boolean isValidConfig() {
@@ -424,4 +340,5 @@ public final class PropertyHelper extends KnownProperties{
         logger.warn(valueName + " must be greater than or equal to " + minimumValue + ".  Current value does not meet this requirement: " + testValue);
         return false;
     }
+
 }

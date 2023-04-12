@@ -12,10 +12,15 @@ import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.time.Duration;
 
 public class TargetInsertStatement extends AbstractTargetUpsertStatement {
     public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+
+    private List<String> bindColumnNames;
+    private List<Integer> bindColumnIndexes;
 
     public TargetInsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
@@ -34,11 +39,16 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
         int currentBindIndex = 0;
         Object bindValue;
         for (int index = 0; index < targetColumnTypes.size(); index++) {
+            if (!bindColumnIndexes.contains(index)) {
+                continue;
+            }
+
             MigrateDataType dataType = targetColumnTypes.get(index);
 
             if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
             else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
-            else bindValue = cqlHelper.getData(dataType, index, originRow);
+            else if (index < originColumnTypes.size()) bindValue = cqlHelper.getData(dataType, index, originRow);
+            else continue;
 
             boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
         }
@@ -58,7 +68,10 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
     protected String buildStatement() {
         String targetUpdateCQL;
         String valuesList = "";
-        for (String key : targetColumnNames) {
+
+        setBindColumnNamesAndIndexes();
+
+        for (String key : bindColumnNames) {
             if (valuesList.isEmpty()) {
                 valuesList = "?";
             } else {
@@ -79,12 +92,25 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
         }
 
         targetUpdateCQL = "INSERT INTO " + propertyHelper.getAsString(KnownProperties.TARGET_KEYSPACE_TABLE) +
-                " (" + propertyHelper.getAsString(KnownProperties.TARGET_COLUMN_NAMES) +
+                " (" + PropertyHelper.asString(bindColumnNames, KnownProperties.PropertyType.STRING_LIST) +
                 (FeatureFactory.isEnabled(constantColumnFeature) ? "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
                 ") VALUES (" + valuesList + ")";
 
         targetUpdateCQL += usingTTLTimestamp();
 
         return targetUpdateCQL;
+    }
+
+    private void setBindColumnNamesAndIndexes() {
+        this.bindColumnNames = new ArrayList<>();
+        this.bindColumnIndexes = new ArrayList<>();
+
+        for (String targetColumnName : this.targetColumnNames) {
+            if (!FeatureFactory.isEnabled(this.constantColumnFeature)
+                    || !this.constantColumnFeature.getStringList(ConstantColumns.Property.COLUMN_NAMES).contains(targetColumnName)) {
+                this.bindColumnNames.add(targetColumnName);
+                this.bindColumnIndexes.add(this.targetColumnNames.indexOf(targetColumnName));
+            }
+        }
     }
 }

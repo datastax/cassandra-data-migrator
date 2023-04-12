@@ -26,7 +26,7 @@ public class CqlHelper {
     private ConsistencyLevel readConsistencyLevel;
     private ConsistencyLevel writeConsistencyLevel;
 
-    private final PropertyHelper propertyHelper;
+    public final PropertyHelper propertyHelper;
     private final Map<Featureset, Feature> featureMap = new HashMap<>(Featureset.values().length);
     private PKFactory pkFactory;
     private OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement;
@@ -55,14 +55,15 @@ public class CqlHelper {
                 featureMap.put(f, feature);
         }
 
+        pkFactory = new PKFactory(propertyHelper, this);
+
         for (Featureset f : Featureset.values()) {
             if (f.toString().startsWith("TEST_")) continue; // Skip test features
             Feature feature = getFeature(f);
             if (isFeatureEnabled(f))
-                feature.alterProperties(this.propertyHelper);
+                feature.alterProperties(this.propertyHelper, this.pkFactory);
         }
 
-        pkFactory = new PKFactory(propertyHelper, this);
         originSelectByPartitionRangeStatement = new OriginSelectByPartitionRangeStatement(propertyHelper,this);
         originSelectByPKStatement = new OriginSelectByPKStatement(propertyHelper,this);
         targetInsertStatement = new TargetInsertStatement(propertyHelper,this);
@@ -149,9 +150,11 @@ public class CqlHelper {
         return propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE);
     }
 
+
     private String getTargetKeyspaceTable() {
         return propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE);
     }
+
 
     public boolean hasRandomPartitioner() {
         return propertyHelper.getBoolean(KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER);
@@ -170,9 +173,6 @@ public class CqlHelper {
     public List<Integer> getWriteTimeStampCols() {
         return propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES);
     }
-
-    //-------------------- Java Filters  --------------------
-
 
     //----------- General Utilities --------------
     public Object getData(MigrateDataType dataType, int index, Row row) {

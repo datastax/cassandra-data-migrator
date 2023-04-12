@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
@@ -24,19 +25,12 @@ public class ConstantColumns extends AbstractFeature {
 
     @Override
     public boolean initialize(PropertyHelper propertyHelper) {
-        List<String> columnNames = propertyHelper.getStringList(KnownProperties.CONSTANT_COLUMN_NAMES);
+        List<String> columnNames = getConstantColumnNames(propertyHelper);
+
         putStringList(Property.COLUMN_NAMES, columnNames);
-
-        List<MigrateDataType> columnTypes = propertyHelper.getMigrationTypeList(KnownProperties.CONSTANT_COLUMN_TYPES);
-        putMigrateDataTypeList(Property.COLUMN_TYPES, columnTypes);
-
-        String splitRegex = propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
-        putString(Property.SPLIT_REGEX, splitRegex);
-
-        List<String> columnValues = columnValues(
-                propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES),
-                splitRegex);
-        putStringList(Property.COLUMN_VALUES, columnValues);
+        putMigrateDataTypeList(Property.COLUMN_TYPES, getConstantColumnTypes(propertyHelper));
+        putString(Property.SPLIT_REGEX, getSplitRegex(propertyHelper));
+        putStringList(Property.COLUMN_VALUES, getConstantColumnValues(propertyHelper));
 
         valid = isValid();
         isInitialized = true;
@@ -45,23 +39,49 @@ public class ConstantColumns extends AbstractFeature {
     }
 
     @Override
-    public PropertyHelper alterProperties(PropertyHelper helper) {
+    public PropertyHelper alterProperties(PropertyHelper helper, PKFactory pkFactory) {
         if (!valid) return null;
+        pkFactory.registerTypes(getRawStringList(Property.COLUMN_NAMES), getRawMigrateDataTypeList(Property.COLUMN_TYPES));
         return helper;
     }
 
-    private List<String> columnValues(String columnValueString, String regexString) {
+    public static List<String> getConstantColumnNames(PropertyHelper propertyHelper) {
+        return propertyHelper.getStringList(KnownProperties.CONSTANT_COLUMN_NAMES);
+    }
+
+    public static List<MigrateDataType> getConstantColumnTypes(PropertyHelper propertyHelper) {
+        return propertyHelper.getMigrationTypeList(KnownProperties.CONSTANT_COLUMN_TYPES);
+    }
+
+    public static String getSplitRegex(PropertyHelper propertyHelper) {
+        return propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
+    }
+
+    public static List<String> getConstantColumnValues(PropertyHelper propertyHelper) {
+        String columnValueString = propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES);
+        String regexString = getSplitRegex(propertyHelper);
+
         List<String> columnValues = new ArrayList<>();
         if (null!=columnValueString && !columnValueString.isEmpty()) {
             if (null==regexString || regexString.isEmpty()) {
-                logger.error("Constant column values are specified [{}], but no split regex is provided in property {}"
-                        , columnValueString
-                        , KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
+                throw new RuntimeException("Constant column values are specified [" + columnValueString + "], but no split regex is provided in property " + KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
             } else {
                 columnValues = Arrays.asList(columnValueString.split(regexString));
             }
         }
+
         return columnValues;
+    }
+
+    public static MigrateDataType getConstantColumnType(PropertyHelper helper, String columnName) {
+        List<String> constantColumnNames = getConstantColumnNames(helper);
+        List<MigrateDataType> constantColumnTypes = getConstantColumnTypes(helper);
+        if (null!=constantColumnNames && null!=constantColumnTypes && constantColumnNames.size() == constantColumnTypes.size()) {
+            int index = constantColumnNames.indexOf(columnName);
+            if (index >= 0)
+                return constantColumnTypes.get(index);
+        }
+        return null;
     }
 
     private boolean isValid() {

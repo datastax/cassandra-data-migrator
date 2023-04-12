@@ -166,7 +166,7 @@ public class AbstractFeatureTest {
     @Test
     public void alterProperties_Null() {
         TestFeature testFeature = new TestFeature();
-        testFeature.alterProperties(null);
-        assertNull(testFeature.alterProperties(null));
+        testFeature.alterProperties(null, null);
+        assertNull(testFeature.alterProperties(null, null));
     }
 }

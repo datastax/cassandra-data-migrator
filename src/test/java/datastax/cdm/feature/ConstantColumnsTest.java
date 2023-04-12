@@ -18,12 +18,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ConstantColumnsTest {
 
     PropertyHelper helper;
+    CqlHelper cqlHelper;
     SparkConf validSparkConf;
     Feature feature;
 
     @BeforeEach
     public void setup() {
         helper = PropertyHelper.getInstance();
+        cqlHelper = new CqlHelper();
         validSparkConf = new SparkConf();
         feature = FeatureFactory.getFeature(Featureset.CONSTANT_COLUMNS);
     }
@@ -47,7 +49,8 @@ public class ConstantColumnsTest {
     public void smokeTest_initialize() {
         setValidSparkConf();
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        cqlHelper.initialize();
+        feature = cqlHelper.getFeature(Featureset.CONSTANT_COLUMNS);
         assertAll(
                 () -> assertTrue(feature.isEnabled()),
                 () -> assertEquals("const1,const2,const3", feature.getAsString(ConstantColumns.Property.COLUMN_NAMES), "COLUMN_NAMES"),
@@ -81,7 +84,7 @@ public class ConstantColumnsTest {
         String originSelectByPK = "SELECT key,val FROM origin.tab1 WHERE key=?";
         String targetInsert = "INSERT INTO target.tab1 (key,val,const1,const2) VALUES (?,?,'abcd',1234)";
         String targetUpdate = "UPDATE target.tab1 SET val=?,const2=1234 WHERE const1='abcd' AND key=?";
-        String targetSelect = "SELECT key,val FROM target.tab1 WHERE const1='abcd' AND key=?";
+        String targetSelect = "SELECT key,val,const1,const2 FROM target.tab1 WHERE const1='abcd' AND key=?";
 
         assertAll(
                 () -> Assertions.assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement().getCQL().replaceAll("\\s+"," ")),
@@ -115,7 +118,7 @@ public class ConstantColumnsTest {
         PKFactory pkFactory = cqlHelper.getPKFactory();
         assertAll(
                 () -> assertEquals(Arrays.asList("const1","key"), pkFactory.getPKNames(PKFactory.Side.TARGET), "Target Names"),
-                () -> assertEquals(Arrays.asList(new MigrateDataType(), new MigrateDataType("0")), pkFactory.getPKTypes(PKFactory.Side.TARGET), "Target Types"),
+                () -> assertEquals(Arrays.asList(new MigrateDataType("0"), new MigrateDataType("0")), pkFactory.getPKTypes(PKFactory.Side.TARGET), "Target Types"),
                 () -> assertEquals(Arrays.asList(1), pkFactory.getPKIndexesToBind(PKFactory.Side.TARGET), "Target Bind Indexes"),
                 () -> assertEquals(Arrays.asList("key"), pkFactory.getPKNames(PKFactory.Side.ORIGIN), "Origin Names"),
                 () -> assertEquals(Arrays.asList(new MigrateDataType("0")), pkFactory.getPKTypes(PKFactory.Side.ORIGIN), "Origin Types"),
@@ -129,8 +132,8 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.remove(KnownProperties.CONSTANT_COLUMN_NAMES);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        cqlHelper.initialize();
+        assertNull(cqlHelper.getFeature(Featureset.CONSTANT_COLUMNS));
     }
 
     @Test
@@ -183,8 +186,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, "");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
-        assertFalse(feature.isEnabled());
+        assertThrows(RuntimeException.class, () -> feature.initialize(helper));
     }
 
     @Test

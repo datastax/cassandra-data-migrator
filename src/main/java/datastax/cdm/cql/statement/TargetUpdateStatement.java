@@ -2,11 +2,11 @@ package datastax.cdm.cql.statement;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
-import datastax.cdm.feature.ExplodeMap;
-import datastax.cdm.feature.FeatureFactory;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -25,7 +25,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
     public TargetUpdateStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
         this.columnIndexesToBind = new ArrayList<>();
-        setExplodeMapColumnsAndColumnIndexesToBind();
+        setColumnIndexesToBind();
 
         List<String> ttlColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_INDEXES);
         if (null != ttlColumnNames && !ttlColumnNames.isEmpty()) usingTTL = true;
@@ -60,11 +60,8 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
         }
 
         PKFactory pkFactory = cqlHelper.getPKFactory();
-        for (int index : pkFactory.getPKIndexesToBind(PKFactory.Side.TARGET)) {
-            MigrateDataType dataType = targetColumnTypes.get(index);
-            Object bindValue = cqlHelper.getData(dataType, index, originRow);
-            boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
-        }
+        EnhancedPK pk = pkFactory.getTargetPK(originRow);
+        boundStatement = pkFactory.bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, currentBindIndex);
 
         return boundStatement
                 .setConsistencyLevel(cqlHelper.getWriteConsistencyLevel())
@@ -83,37 +80,30 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
             if (!pkFactory.getPKNames(PKFactory.Side.TARGET).contains(key)) {
                 if (bindIndex > 0)
                     targetUpdateCQL.append(",");
-                if (counterIndexes.contains(currentColumn))
-                    targetUpdateCQL.append(key).append("=").append(key).append("+?");
-                else
-                    targetUpdateCQL.append(key).append("=?");
 
-                bindIndex++;
+                targetUpdateCQL.append(key).append("=");
+                if (constantColumnNames.contains(key))
+                    targetUpdateCQL.append(constantColumnValues.get(constantColumnNames.indexOf(key)));
+                else {
+                    if (usingCounter && counterIndexes.contains(currentColumn))
+                        targetUpdateCQL.append(key).append("+?");
+                    else
+                        targetUpdateCQL.append("?");
+
+                    bindIndex++;
+                }
             }
             currentColumn++;
-        }
-
-        for (int i=0; i<constantColumnNames.size(); i++) {
-            if (!pkFactory.getPKNames(PKFactory.Side.TARGET).contains(constantColumnNames.get(i)))
-                targetUpdateCQL.append(",").append(constantColumnNames.get(i)).append("=").append(constantColumnValues.get(i));
         }
 
         targetUpdateCQL.append(" WHERE ").append(pkFactory.getWhereClause(PKFactory.Side.TARGET));
         return targetUpdateCQL.toString();
     }
 
-    private void setExplodeMapColumnsAndColumnIndexesToBind() {
-        PKFactory pkFactory = cqlHelper.getPKFactory();
+    private void setColumnIndexesToBind() {
         int currentColumn = 0;
         for (String key : targetColumnNames) {
-            if (FeatureFactory.isEnabled(explodeMapFeature)) {
-                if (key.equals(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME)))
-                    explodeMapKeyIndex = currentColumn;
-                else if (key.equals(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME)))
-                    explodeMapValueIndex = currentColumn;
-            }
-
-            if (!pkFactory.getPKNames(PKFactory.Side.TARGET).contains(key)) {
+            if (!ColumnsKeysTypes.getTargetPKNames(propertyHelper).contains(key)) {
                 columnIndexesToBind.add(currentColumn);
             }
             currentColumn++;
