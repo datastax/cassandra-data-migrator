@@ -3,6 +3,10 @@ package datastax.cdm.cql;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
+import datastax.cdm.cql.codec.CodecFactory;
+import datastax.cdm.cql.codec.Codecset;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.feature.Feature;
@@ -64,6 +68,8 @@ public class CqlHelper {
                 feature.alterProperties(this.propertyHelper, this.pkFactory);
         }
 
+        registerTargetCodecs();
+
         originSelectByPartitionRangeStatement = new OriginSelectByPartitionRangeStatement(propertyHelper,this);
         originSelectByPKStatement = new OriginSelectByPKStatement(propertyHelper,this);
         targetInsertStatement = new TargetInsertStatement(propertyHelper,this);
@@ -104,6 +110,23 @@ public class CqlHelper {
     public TargetInsertStatement getTargetInsertStatement() {return targetInsertStatement;}
     public TargetUpdateStatement getTargetUpdateStatement() {return targetUpdateStatement;}
     public TargetSelectByPKStatement getTargetSelectByPKStatement() {return targetSelectByPKStatement;}
+
+    // ----------------- Codec Functions --------------
+    private void registerTargetCodecs() {
+        List<String> codecList = propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS);
+        if (null!=codecList && !codecList.isEmpty()) {
+            MutableCodecRegistry registry =
+                    (MutableCodecRegistry) targetSession.getContext().getCodecRegistry();
+
+            StringBuilder sb = new StringBuilder("PARAM -- Codecs Enabled: ");
+            for (String codec : codecList) {
+                TypeCodec<?> typeCodec = CodecFactory.getCodec(Codecset.valueOf(codec));
+                registry.register(typeCodec);
+                sb.append(codec).append(" ");
+            }
+            logger.info(sb.toString());
+        }
+    }
 
 
     // --------------- Session and Performance -------------------------
