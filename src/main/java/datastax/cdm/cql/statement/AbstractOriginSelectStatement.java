@@ -23,6 +23,7 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
     private final Boolean writeTimestampFilterEnabled;
     private final Long minWriteTimeStampFilter;
     private final Long maxWriteTimeStampFilter;
+    private final Long customWritetime;
 
     private final Boolean filterColumnEnabled;
     private final Integer filterColumnIndex;
@@ -45,6 +46,11 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
             logger.info("PARAM -- {}: {} datetime is {}", KnownProperties.FILTER_WRITETS_MAX, getMaxWriteTimeStampFilter(),
                     Instant.ofEpochMilli(getMaxWriteTimeStampFilter() / 1000));
         }
+
+        customWritetime = getCustomWritetime();
+        if (customWritetime > 0)
+            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime,
+                    Instant.ofEpochMilli(customWritetime / 1000));
 
         filterColumnString = getFilterColumnString();
         filterColumnIndex = getFilterColumnIndex();
@@ -107,6 +113,7 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
     }
 
     public Long getLargestWriteTimeStamp(Row row) {
+        if (customWritetime > 0) return customWritetime;
         if (null==writeTimestampIndexes || writeTimestampIndexes.isEmpty()) return null;
         OptionalLong max = writeTimestampIndexes.stream()
                 .mapToLong(row::getLong)
@@ -170,6 +177,11 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
         return (null != min && null != max &&
                 min > 0 && max > 0 && min < max &&
                 null != writetimeCols && !writetimeCols.isEmpty());
+    }
+
+    private Long getCustomWritetime() {
+        Long rtn = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME);
+        return (null==rtn || rtn < 0) ? 0L : rtn;
     }
 
     private String getFilterColumnString() {

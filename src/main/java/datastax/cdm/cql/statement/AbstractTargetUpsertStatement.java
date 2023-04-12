@@ -116,7 +116,9 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         List<Integer> ttlColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_INDEXES);
         usingTTL = null!= ttlColumnNames && !ttlColumnNames.isEmpty();
         List<Integer> writeTimeColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES);
-        usingWriteTime = null!= writeTimeColumnNames && !writeTimeColumnNames.isEmpty();
+        Long customWritetime = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME);
+        usingWriteTime = (null!= writeTimeColumnNames && !writeTimeColumnNames.isEmpty()
+                || null != customWritetime && customWritetime > 0);
     }
 
     private void setCounterIndexes() {
