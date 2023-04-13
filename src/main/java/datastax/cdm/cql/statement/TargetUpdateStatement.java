@@ -72,7 +72,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
     protected String buildStatement() {
         PKFactory pkFactory = cqlHelper.getPKFactory();
         StringBuilder targetUpdateCQL = new StringBuilder("UPDATE ");
-        targetUpdateCQL.append(propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE));
+        targetUpdateCQL.append(ColumnsKeysTypes.getTargetKeyspaceTable(propertyHelper));
         targetUpdateCQL.append(usingTTLTimestamp());
         targetUpdateCQL.append(" SET ");
         int currentColumn = 0;

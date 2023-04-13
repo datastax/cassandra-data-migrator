@@ -1,5 +1,6 @@
 package datastax.cdm.properties;
 
+import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.job.MigrateDataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

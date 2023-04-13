@@ -2,11 +2,13 @@ package datastax.cdm.cql.statement;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.feature.ConstantColumns;
 import datastax.cdm.feature.ExplodeMap;
 import datastax.cdm.feature.FeatureFactory;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -91,7 +93,7 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
             valuesList += "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_VALUES);
         }
 
-        targetUpdateCQL = "INSERT INTO " + propertyHelper.getAsString(KnownProperties.TARGET_KEYSPACE_TABLE) +
+        targetUpdateCQL = "INSERT INTO " + ColumnsKeysTypes.getTargetKeyspaceTable(propertyHelper) +
                 " (" + PropertyHelper.asString(bindColumnNames, KnownProperties.PropertyType.STRING_LIST) +
                 (FeatureFactory.isEnabled(constantColumnFeature) ? "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
                 ") VALUES (" + valuesList + ")";

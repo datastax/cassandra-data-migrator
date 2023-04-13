@@ -11,6 +11,42 @@ import java.util.Map;
 
 public class ColumnsKeysTypes {
 
+    public static String getOriginKeyspaceTable(PropertyHelper helper) {
+        return helper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE).trim();
+    }
+
+    public static String getOriginKeyspace(PropertyHelper helper) {
+        String keyspaceTable = getOriginKeyspaceTable(helper);
+        if (null==keyspaceTable || keyspaceTable.isEmpty())
+            return "";
+        return keyspaceTable.split("\\.")[0];
+    }
+
+    public static String getOriginTable(PropertyHelper helper) {
+        String keyspaceTable = getOriginKeyspaceTable(helper);
+        if (null==keyspaceTable || keyspaceTable.isEmpty())
+            return "";
+        return keyspaceTable.split("\\.")[1];
+    }
+
+    public static String getTargetKeyspaceTable(PropertyHelper helper) {
+        return helper.getString(KnownProperties.TARGET_KEYSPACE_TABLE).trim();
+    }
+
+    public static String getTargetKeyspace(PropertyHelper helper) {
+        String keyspaceTable = getTargetKeyspaceTable(helper);
+        if (null==keyspaceTable || keyspaceTable.isEmpty())
+            return "";
+        return keyspaceTable.split("\\.")[0];
+    }
+
+    public static String getTargetTable(PropertyHelper helper) {
+        String keyspaceTable = getTargetKeyspaceTable(helper);
+        if (null==keyspaceTable || keyspaceTable.isEmpty())
+            return "";
+        return keyspaceTable.split("\\.")[1];
+    }
+
     public static Map<String,String> getOriginColumnName_TargetColumnNameMap(PropertyHelper helper) {
         Map<String,String> effectiveOriginColumnNameMap = new HashMap<>(getRawOriginColumnName_TargetColumnNameMap(helper));
 
@@ -67,6 +103,20 @@ public class ColumnsKeysTypes {
             targetToOriginColumnIndexes.add(originColumnNames.indexOf(targetColumnNamesToOriginMap.get(targetColumnName)));
         }
         return targetToOriginColumnIndexes;
+    }
+
+    public static List<Integer> getOriginToTargetColumnIndexes(PropertyHelper helper) {
+        List<String> originColumnNames = ColumnsKeysTypes.getOriginColumnNames(helper);
+        List<String> targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(helper);
+        Map<String,String> originColumnNamesToTargetMap = getOriginColumnName_TargetColumnNameMap(helper);
+        List<Integer> originToTargetColumnIndexes = new ArrayList<>(targetColumnNames.size());
+
+        // Iterate over the origin column names
+        for (String originColumnName : originColumnNames) {
+            // this will be -1 if the origin column name is not in the target column names
+            originToTargetColumnIndexes.add(targetColumnNames.indexOf(originColumnNamesToTargetMap.get(originColumnName)));
+        }
+        return originToTargetColumnIndexes;
     }
 
 

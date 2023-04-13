@@ -13,6 +13,7 @@ import datastax.cdm.feature.Feature;
 import datastax.cdm.feature.FeatureFactory;
 import datastax.cdm.feature.Featureset;
 import datastax.cdm.cql.statement.*;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.apache.commons.lang.StringUtils;
@@ -55,7 +56,7 @@ public class CqlHelper {
         for (Featureset f : Featureset.values()) {
             if (f.toString().startsWith("TEST_")) continue; // Skip test features
             Feature feature = FeatureFactory.getFeature(f); // FeatureFactory throws an RTE if the feature is not implemented
-            if (!feature.initialize(this.propertyHelper))
+            if (!feature.initialize(this.propertyHelper, this))
                 validInit = false;
             else
                 featureMap.put(f, feature);
@@ -82,8 +83,8 @@ public class CqlHelper {
         logger.info("PARAM -- Write Consistency: {}", writeConsistencyLevel);
         logger.info("PARAM -- Write Batch Size: {}", getBatchSize());
         logger.info("PARAM -- Read Fetch Size: {}", getFetchSizeInRows());
-        logger.info("PARAM -- Origin Keyspace Table: {}", getOriginKeyspaceTable());
-        logger.info("PARAM -- Target Keyspace Table: {}", getTargetKeyspaceTable());
+        logger.info("PARAM -- Origin Keyspace Table: {}", ColumnsKeysTypes.getOriginKeyspaceTable(propertyHelper));
+        logger.info("PARAM -- Target Keyspace Table: {}", ColumnsKeysTypes.getTargetKeyspaceTable(propertyHelper));
         logger.info("PARAM -- TTLCols: {}", getTtlCols());
         logger.info("PARAM -- WriteTimestampCols: {}", getWriteTimeStampCols());
         logger.info("PARAM -- ORIGIN SELECT Query used: {}", originSelectByPartitionRangeStatement.getCQL());
@@ -179,16 +180,6 @@ public class CqlHelper {
     }
 
     // -------------- Schema ----------------------
-    private String getOriginKeyspaceTable() {
-        return propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE);
-    }
-
-
-    private String getTargetKeyspaceTable() {
-        return propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE);
-    }
-
-
     public boolean hasRandomPartitioner() {
         return propertyHelper.getBoolean(KnownProperties.ORIGIN_HAS_RANDOM_PARTITIONER);
     }

@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.ColumnsKeysTypes;
@@ -28,7 +29,7 @@ public class ExplodeMap extends AbstractFeature {
     private boolean valid = true;
 
     @Override
-    public boolean initialize(PropertyHelper helper) {
+    public boolean initialize(PropertyHelper helper, CqlHelper cqlHelper) {
         String mapColumnName = getOriginColumnName(helper);
 
         putString(Property.MAP_COLUMN_NAME, mapColumnName);

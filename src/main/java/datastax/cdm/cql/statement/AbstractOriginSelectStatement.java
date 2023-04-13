@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.Record;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -34,8 +35,8 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
         super(propertyHelper, cqlHelper);
         this.session = cqlHelper.getOriginSession();
 
-        resultColumns.addAll(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES));
-        resultTypes.addAll(propertyHelper.getMigrationTypeList(KnownProperties.ORIGIN_COLUMN_TYPES));
+        resultColumns.addAll(ColumnsKeysTypes.getOriginColumnNames(propertyHelper));
+        resultTypes.addAll(ColumnsKeysTypes.getOriginColumnTypes(propertyHelper));
 
         minWriteTimeStampFilter = getMinWriteTimeStampFilter();
         maxWriteTimeStampFilter = getMaxWriteTimeStampFilter();
@@ -159,7 +160,7 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
     protected String buildStatement() {
         final StringBuilder sb = new StringBuilder("SELECT ");
         sb.append(PropertyHelper.asString(this.resultColumns, KnownProperties.PropertyType.STRING_LIST)).append(ttlAndWritetimeCols());
-        sb.append(" FROM ").append(propertyHelper.getAsString(KnownProperties.ORIGIN_KEYSPACE_TABLE));
+        sb.append(" FROM ").append(ColumnsKeysTypes.getOriginKeyspaceTable(propertyHelper));
         sb.append(" WHERE ").append(whereBinds());
         return sb.toString();
     }

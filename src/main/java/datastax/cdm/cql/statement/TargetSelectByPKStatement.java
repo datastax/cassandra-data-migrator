@@ -63,7 +63,7 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
 
     private String buildStatement() {
         return "SELECT " + PropertyHelper.asString(ColumnsKeysTypes.getTargetColumnNames(propertyHelper), KnownProperties.PropertyType.STRING_LIST)
-                + " FROM " + propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
+                + " FROM " + ColumnsKeysTypes.getTargetKeyspaceTable(propertyHelper)
                 + " WHERE " + cqlHelper.getPKFactory().getWhereClause(PKFactory.Side.TARGET);
     }
 }

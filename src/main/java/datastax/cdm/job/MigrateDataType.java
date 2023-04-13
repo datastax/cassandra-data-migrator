@@ -26,6 +26,8 @@ public class MigrateDataType {
     private static int minType = 0;
     private static int maxType = 19;
     public static final int UNKNOWN_TYPE = 99;
+    public static final int UDT_TYPE = 16;
+    private boolean hasUDT = false;
 
     public MigrateDataType(String dataType) {
         dataTypeString = dataType;
@@ -33,6 +35,7 @@ public class MigrateDataType {
             int count = 1;
             for (String type : dataType.split("%")) {
                 int typeAsInt = typeAsInt(type);
+                if (typeAsInt == UDT_TYPE) this.hasUDT = true;
                 if (count == 1) {
                     this.type = typeAsInt;
                 } else {
@@ -43,7 +46,9 @@ public class MigrateDataType {
             }
         } else {
             this.type = typeAsInt(dataType);
+            this.hasUDT = this.type==UDT_TYPE;
         }
+
         this.typeClass = getTypeClass(this.type);
 
         if ((this.type >= minType && this.type <= maxType) || this.type == UNKNOWN_TYPE) {
@@ -140,7 +145,7 @@ public class MigrateDataType {
                 return BigDecimal.class;
             case 15:
                 return LocalDate.class;
-            case 16:
+            case UDT_TYPE:
                 return UdtValue.class;
             case 17:
                 return BigInteger.class;
@@ -226,6 +231,8 @@ public class MigrateDataType {
     public boolean isValid() {
         return isValid;
     }
+
+    public boolean hasUDT() { return hasUDT; }
 
     @Override
     public boolean equals(Object o) {
