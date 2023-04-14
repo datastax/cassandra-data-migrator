@@ -2,7 +2,6 @@ package datastax.cdm.cql.statement;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.data.UdtValue;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.feature.ConstantColumns;
@@ -49,6 +48,7 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
 
             if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
             else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
+            else if (dataType.hasUDT() && udtMappingEnabled) bindValue = udtMapper.convert(true, index, cqlHelper.getData(dataType, index, originRow));
             else if (index < originColumnTypes.size()) bindValue = cqlHelper.getData(dataType, index, originRow);
             else continue;
 

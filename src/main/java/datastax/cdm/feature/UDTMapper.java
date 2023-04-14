@@ -12,6 +12,8 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.PropertyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.util.*;
@@ -21,8 +23,19 @@ import java.util.*;
  * that each field in the origin UDT has a corresponding field in the target UDT,
  * and in the same position. It also assumes the field types are the same, or
  * at least have a codec pairing that is able to convert between the two.
+ *
+ * It handles the following data types:
+ *    UdtValue
+ *    List<UdtValue>
+ *    Set<UdtValue>
+ *    Map<Object,UdtValue>
+ *    Map<UdtValue,Object>
+ *    Map<UdtValue,UdtValue>
+ *
  */
 public class UDTMapper extends AbstractFeature {
+    public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+
     private List<UserDefinedType> originUDTList = new ArrayList<>();
     private List<UserDefinedType> targetUDTList = new ArrayList<>();
     private List<Tuple2<UserDefinedType,UserDefinedType>> fromOriginToTargetList = new ArrayList<>();
@@ -42,6 +55,9 @@ public class UDTMapper extends AbstractFeature {
                 break;
             }
         }
+        if (isEnabled)
+            logger.info("UDTMapper is enabled, with origin columns: "+this.fromOriginToTargetList);
+
         isInitialized = true;
         return isInitialized;
     }
@@ -50,12 +66,14 @@ public class UDTMapper extends AbstractFeature {
         if (null==object) {
             return null;
         }
-        if (isOrigin) {
+        if (isOrigin && null!=fromOriginToTargetList.get(columnIndex)) {
             return convert(object, fromOriginToTargetList.get(columnIndex));
         }
-        else {
+        else if (!isOrigin && null!=fromTargetToOriginList.get(columnIndex)){
             return convert(object, fromTargetToOriginList.get(columnIndex));
         }
+        // no conversion needed
+        return object;
     }
 
     public static UdtValue map(UserDefinedType fromUDT, UdtValue fromUDTValue, UserDefinedType toUDT) {
@@ -86,13 +104,6 @@ public class UDTMapper extends AbstractFeature {
         return toUDTValue;
     }
 
-    /* Convert will convert the UDT component of
-          a UdtValue,
-          List<UdtValue>,
-          Set<UdtValue>,
-          Map<Object,UdtValue>,
-          Map<UdtValue,Object>
-     */
     public static Object convert(Object object, Tuple2<UserDefinedType,UserDefinedType> fromToUdt) {
         if (null==object || null == fromToUdt) {
             return null;
@@ -103,12 +114,6 @@ public class UDTMapper extends AbstractFeature {
             return null;
         }
 
-        // No need to convert if these UDTs are the same; we will assume that if
-        // keyspace and names match, they are.
-        if (fromUDT.getKeyspace().equals(toUDT.getKeyspace()) &&
-                fromUDT.getName().equals(toUDT.getName())) {
-            return object;
-        }
         if (object instanceof UdtValue) {
             return map(fromUDT, (UdtValue)object, toUDT);
         }
@@ -129,30 +134,24 @@ public class UDTMapper extends AbstractFeature {
             return toUDTValues;
         }
         else if (object instanceof Map) {
-            if (((Map)object).isEmpty()) {
+            Map<Object,Object> fromMap = (Map<Object,Object>)object;
+            if (fromMap.isEmpty()) {
                 return object;
             }
-            // We need to determine if this is Map<Object,UdtValue> or Map<UdtValue,Object>
-            Object firstKey = ((Map)object).keySet().iterator().next();
-            if (firstKey instanceof UdtValue) {
-                Map<UdtValue,Object> fromUDTValues = (Map<UdtValue,Object>)object;
-                Map<UdtValue,Object> toUDTValues = new HashMap<>();
-                for (Map.Entry<UdtValue,Object> entry : fromUDTValues.entrySet()) {
-                    toUDTValues.put(map(fromUDT, entry.getKey(), toUDT), entry.getValue());
-                }
-                return toUDTValues;
+            Map.Entry<Object, Object> oneEntry = fromMap.entrySet().iterator().next();
+            boolean shouldMapKey = oneEntry.getKey() instanceof UdtValue;
+            boolean shouldMapValue = oneEntry.getValue() instanceof UdtValue;
+
+            Map<Object, Object> toMap = new HashMap<>();
+            for (Map.Entry<Object,Object> entry : fromMap.entrySet()) {
+                Object key = shouldMapKey ? map(fromUDT, (UdtValue)entry.getKey(), toUDT) : entry.getKey();
+                Object value = shouldMapValue ? map(fromUDT, (UdtValue)entry.getValue(), toUDT) : entry.getValue();
+                toMap.put(key, value);
             }
-            else {
-                Map<Object, UdtValue> fromUDTValues = (Map<Object, UdtValue>) object;
-                Map<Object, UdtValue> toUDTValues = new HashMap<>();
-                for (Map.Entry<Object, UdtValue> entry : fromUDTValues.entrySet()) {
-                    toUDTValues.put(entry.getKey(), map(fromUDT, entry.getValue(), toUDT));
-                }
-                return toUDTValues;
-            }
+            return toMap;
         }
         else {
-            throw new IllegalArgumentException("Object must be of type UdtValue, List<UdtValue>, Set<UdtValue>, Map<Object,UdtValue>, or Map<UdtValue,Object>");
+            throw new IllegalArgumentException("Object must be of type UdtValue, List<UdtValue>, Set<UdtValue>, Map<Object,UdtValue>, Map<UdtValue,Object>, or Map<UdtValue,UdtValue>");
         }
     }
 
@@ -218,7 +217,7 @@ public class UDTMapper extends AbstractFeature {
                     }
                 }
                 else {
-                    throw new IllegalArgumentException("Unhandled DataType for column " + columnName + ": " + columnType.getClass().getName());
+                    throw new IllegalArgumentException("Unhandled DataType for column " + columnName + ": " + columnType.getClass().getName()+"; MigrateDataType indicates this contains a UDT: "+ dataType);
                 }
             }
             else {

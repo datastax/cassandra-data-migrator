@@ -9,10 +9,7 @@ import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.data.Record;
-import datastax.cdm.feature.ExplodeMap;
-import datastax.cdm.feature.Feature;
-import datastax.cdm.feature.FeatureFactory;
-import datastax.cdm.feature.Featureset;
+import datastax.cdm.feature.*;
 import datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import datastax.cdm.properties.ColumnsKeysTypes;
@@ -50,6 +47,8 @@ public class DiffJobSession extends CopyJobSession {
     private final List<MigrateDataType> originColumnTypes;
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
+    protected UDTMapper udtMapper;
+    protected boolean udtMappingEnabled;
 
     private final CodecRegistry codecRegistry;
 
@@ -81,6 +80,8 @@ public class DiffJobSession extends CopyJobSession {
         }
 
         this.codecRegistry = cqlHelper.getCodecRegistry();
+        this.udtMapper = (UDTMapper) cqlHelper.getFeature(Featureset.UDT_MAPPER);
+        this.udtMappingEnabled = FeatureFactory.isEnabled(this.udtMapper);
     }
 
     public static DiffJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sparkConf) {
@@ -219,7 +220,13 @@ public class DiffJobSession extends CopyJobSession {
             MigrateDataType targetDataTypeObj = targetColumnTypes.get(targetIndex);
             Object target = cqlHelper.getData(targetDataTypeObj, targetIndex, targetRow);
 
+            // If the target contains a UDT, convert it the equivalent UDT in the origin
+            if (targetDataTypeObj.hasUDT() && udtMappingEnabled) {
+                target = udtMapper.convert(false, targetIndex, target);
+            }
+
             Object origin;
+            MigrateDataType originDataTypeObj = null;
             if (targetIndex == explodeMapKeyIndex) origin = pk.getExplodeMapKey();
             else if (targetIndex == explodeMapValueIndex) origin = pk.getExplodeMapValue();
             else {
@@ -227,7 +234,7 @@ public class DiffJobSession extends CopyJobSession {
                 if (originIndex < 0)
                     origin = null;
                 else {
-                    MigrateDataType originDataTypeObj = originColumnTypes.get(originIndex);
+                    originDataTypeObj = originColumnTypes.get(originIndex);
                     origin = cqlHelper.getData(originDataTypeObj, originIndex, originRow);
                     if (!originDataTypeObj.equals(targetDataTypeObj)) {
                         origin = MigrateDataType.convert(origin, originDataTypeObj, targetDataTypeObj, codecRegistry);
@@ -236,19 +243,72 @@ public class DiffJobSession extends CopyJobSession {
             }
 
             if (null != origin &&
-                    targetDataTypeObj.diff(origin, target)) {
-                if (targetDataTypeObj.getTypeClass().equals(UdtValue.class)) {
-                    String originUdtContent = ((UdtValue) origin).getFormattedContents();
-                    String targetUdtContent = ((UdtValue) target).getFormattedContents();
-                    if (!originUdtContent.equals(targetUdtContent)) {
-                        diffData.append("Target column:" + targetColumnNames.get(targetIndex) + "; origin[" + originUdtContent + "]; target[" + targetUdtContent + "] ");
-                    }
-                } else {
-                    diffData.append("Target column:" + targetColumnNames.get(targetIndex) + "; origin[" + origin + "]; target[" + target + "] ");
-                }
+                targetDataTypeObj.diff(origin, target))  {
+                String originContent = getFormattedContent(originDataTypeObj, origin);
+                String targetContent = getFormattedContent(targetDataTypeObj, target);
+                diffData.append("Target column:").append(targetColumnNames.get(targetIndex)).append(";")
+                        .append(" origin[").append(originContent).append("];")
+                        .append(" target[").append(targetContent).append("] ");
             }
         });
         return diffData.toString();
     }
 
+    public String getFormattedContent(MigrateDataType migrateDataType, Object value) {
+        if (null == value) {
+            return "";
+        }
+        else if (null != migrateDataType && !migrateDataType.hasUDT()) {
+            return value.toString();
+        }
+        else if (value instanceof UdtValue) {
+            return ((UdtValue) value).getFormattedContents();
+        } else if (value instanceof List || value instanceof Set) {
+            Iterator<UdtValue> iterator = ((Iterable<UdtValue>) value).iterator();
+            String openBracket;
+            String closeBracket;
+            if (value instanceof List) {
+                openBracket = "[";
+                closeBracket = "]";
+            }
+            else {
+                openBracket = "{";
+                closeBracket = "}";
+            }
+            StringBuilder sb = new StringBuilder(openBracket);
+            while (iterator.hasNext()) {
+                UdtValue udtValue = iterator.next();
+                sb.append(udtValue.getFormattedContents());
+                if (iterator.hasNext()) {
+                    sb.append(", ");
+                }
+            }
+            sb.append(closeBracket);
+            return sb.toString();
+        } else if (value instanceof Map) {
+            StringBuilder sb = new StringBuilder("{");
+            Map<Object,Object> map = (Map<Object,Object>) value;
+            if (map.isEmpty()) {
+                sb.append("}");
+                return sb.toString();
+            }
+            Map.Entry<Object, Object> oneEntry = map.entrySet().iterator().next();
+            boolean keyIsUDT = oneEntry.getKey() instanceof UdtValue;
+            boolean valudIsUDT = oneEntry.getValue() instanceof UdtValue;
+
+            int currentElement = 0;
+            for (Map.Entry<Object,Object> entry : map.entrySet()) {
+                String mapKey = keyIsUDT ? ((UdtValue)entry.getKey()).getFormattedContents() : entry.getKey().toString();
+                String mapValue = valudIsUDT ? ((UdtValue)entry.getValue()).getFormattedContents() : entry.getValue().toString();
+                if (currentElement++ > 0)
+                    sb.append(", ");
+                sb.append(mapKey).append("=").append(mapValue);
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+
+        // The type contains a UDT, but we don't support the particular structure in which it is contained
+        return value.toString();
+    }
 }

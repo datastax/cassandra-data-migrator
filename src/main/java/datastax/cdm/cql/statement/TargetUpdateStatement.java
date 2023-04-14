@@ -54,6 +54,7 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
             if(usingCounter && counterIndexes.contains(index)) bindValue = (originRow.getLong(index) - (null==targetRow ? 0 : targetRow.getLong(index)));
             else if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
             else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
+            else if (dataType.hasUDT() && udtMappingEnabled) bindValue = udtMapper.convert(true, index, cqlHelper.getData(dataType, index, originRow));
             else bindValue = cqlHelper.getData(dataType, index, originRow);
 
             boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());

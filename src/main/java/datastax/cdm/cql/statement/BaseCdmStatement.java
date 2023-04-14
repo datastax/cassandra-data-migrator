@@ -21,15 +21,17 @@ public class BaseCdmStatement {
     protected CqlHelper cqlHelper;
     protected String statement = "";
     protected CqlSession session;
-    protected boolean udtMappingEnabled;
 
     protected List<String> resultColumns = new ArrayList<>();
     protected List<MigrateDataType> resultTypes = new ArrayList<>();
+    protected UDTMapper udtMapper;
+    protected boolean udtMappingEnabled;
 
     public BaseCdmStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         this.propertyHelper = propertyHelper;
         this.cqlHelper = cqlHelper;
-        this.udtMappingEnabled = FeatureFactory.isEnabled(cqlHelper.getFeature(Featureset.UDT_MAPPER));
+        this.udtMapper = (UDTMapper) cqlHelper.getFeature(Featureset.UDT_MAPPER);
+        this.udtMappingEnabled = FeatureFactory.isEnabled(this.udtMapper);
     }
 
     public PreparedStatement prepareStatement() {
