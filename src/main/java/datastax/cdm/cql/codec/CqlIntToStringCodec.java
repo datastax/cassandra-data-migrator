@@ -2,10 +2,11 @@ package datastax.cdm.cql.codec;
 
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import datastax.cdm.cql.CqlHelper;
+import datastax.cdm.properties.PropertyHelper;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
@@ -13,7 +14,11 @@ import java.nio.ByteBuffer;
 /**
  * This codec converts a CQL INT to a Java String.
  */
-public class CqlIntToStringCodec implements TypeCodec<String> {
+public class CqlIntToStringCodec extends AbstractBaseCodec<String> {
+
+    public CqlIntToStringCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+        super(propertyHelper, cqlHelper);
+    }
 
     @Override
     public @NotNull GenericType<String> getJavaType() {

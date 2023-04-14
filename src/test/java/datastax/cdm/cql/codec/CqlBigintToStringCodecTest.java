@@ -4,6 +4,8 @@ import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import datastax.cdm.properties.PropertyHelper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +30,12 @@ class CqlBigintToStringCodecTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        codec = new CqlBigintToStringCodec();
+        codec = new CqlBigintToStringCodec(null,null);
+    }
+
+    @AfterEach
+    void tearDown() {
+        PropertyHelper.destroyInstance();
     }
 
     @Test

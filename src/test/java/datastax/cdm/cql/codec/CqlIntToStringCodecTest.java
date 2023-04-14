@@ -27,7 +27,7 @@ class CqlIntToStringCodecTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        codec = new CqlIntToStringCodec();
+        codec = new CqlIntToStringCodec(null,null);
     }
 
     @Test

@@ -2,10 +2,11 @@ package datastax.cdm.cql.codec;
 
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import datastax.cdm.cql.CqlHelper;
+import datastax.cdm.properties.PropertyHelper;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
@@ -14,7 +15,14 @@ import java.time.Instant;
 /**
  * This codec converts a CQL TIMESTAMP to a Java String.
  */
-public class CqlTimestampToStringCodec implements TypeCodec<String> {
+public class CqlTimestampToString_Millis_Codec extends AbstractBaseCodec<String> {
+
+    public CqlTimestampToString_Millis_Codec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+        super(propertyHelper, cqlHelper);
+
+        if (cqlHelper.isCodecRegistered(Codecset.CQL_TIMESTAMP_TO_STRING_FORMAT))
+            throw new RuntimeException("Codec " + Codecset.CQL_TIMESTAMP_TO_STRING_FORMAT + " is already registered");
+    }
 
     @Override
     public @NotNull GenericType<String> getJavaType() {

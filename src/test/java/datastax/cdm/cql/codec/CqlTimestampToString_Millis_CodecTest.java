@@ -5,6 +5,9 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import datastax.cdm.cql.CqlHelper;
+import datastax.cdm.properties.PropertyHelper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,9 +18,9 @@ import java.time.Instant;
 
 import static org.mockito.Mockito.*;
 
-class CqlTimestampToStringCodecTest {
+class CqlTimestampToString_Millis_CodecTest {
 
-    private CqlTimestampToStringCodec codec;
+    private CqlTimestampToString_Millis_Codec codec;
 
     @Mock
     private TypeCodec<Instant> timestampCodec;
@@ -25,10 +28,20 @@ class CqlTimestampToStringCodecTest {
     @Mock
     private ByteBuffer byteBuffer;
 
+    @Mock
+    private CqlHelper cqlHelper;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        codec = new CqlTimestampToStringCodec();
+        cqlHelper = mock(CqlHelper.class);
+        when(cqlHelper.isCodecRegistered(any())).thenReturn(false);
+        codec = new CqlTimestampToString_Millis_Codec(null, cqlHelper);
+    }
+
+    @AfterEach
+    void tearDown() {
+        PropertyHelper.destroyInstance();
     }
 
     @Test
