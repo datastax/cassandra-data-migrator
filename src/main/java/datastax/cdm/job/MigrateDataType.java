@@ -89,18 +89,18 @@ public class MigrateDataType {
     }
 
     @SuppressWarnings("unchecked")
-    public static Object convert(Object value, MigrateDataType fromDataType, CodecRegistry fromRegistry, MigrateDataType toDataType, CodecRegistry toRegistry) {
+    public static Object convert(Object value, MigrateDataType fromDataType, MigrateDataType toDataType, CodecRegistry codecRegistry) {
         Class<?> fromClass = fromDataType.getTypeClass();
         Class<?> toClass = toDataType.getTypeClass();
         DataType cqlType = toDataType.getCqlDataType();
 
-        TypeCodec<Object> fromCodec = (TypeCodec<Object>) fromRegistry.codecFor(cqlType, fromClass);
+        TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(cqlType, fromClass);
         if (fromCodec == null) {
-            throw new IllegalArgumentException("No codec found in fromRegistry for Java type " + fromClass.getName() + " to CQL type " + toDataType);
+            throw new IllegalArgumentException("No codec found in codecRegistry for Java type " + fromClass.getName() + " to CQL type " + toDataType);
         }
-        TypeCodec<Object> toCodec = (TypeCodec<Object>) toRegistry.codecFor(cqlType, toClass);
+        TypeCodec<Object> toCodec = (TypeCodec<Object>) codecRegistry.codecFor(cqlType, toClass);
         if (toCodec == null) {
-            throw new IllegalArgumentException("No codec found in toRegistry for Java type " + toClass.getName() + " to CQL type " + toDataType);
+            throw new IllegalArgumentException("No codec found in codecRegistry for Java type " + toClass.getName() + " to CQL type " + toDataType);
         }
         ByteBuffer encoded = fromCodec.encode(value, ProtocolVersion.DEFAULT);
         return toCodec.decode(encoded, ProtocolVersion.DEFAULT);

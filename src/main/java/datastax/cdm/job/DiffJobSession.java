@@ -51,8 +51,7 @@ public class DiffJobSession extends CopyJobSession {
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
 
-    private final CodecRegistry originCodecRegistry;
-    private final CodecRegistry targetCodecRegistry;
+    private final CodecRegistry codecRegistry;
 
     private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -81,8 +80,7 @@ public class DiffJobSession extends CopyJobSession {
             this.explodeMapValueIndex = -1;
         }
 
-        this.originCodecRegistry = originSession.getContext().getCodecRegistry();
-        this.targetCodecRegistry = targetSession.getContext().getCodecRegistry();
+        this.codecRegistry = cqlHelper.getCodecRegistry();
     }
 
     public static DiffJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sparkConf) {
@@ -232,7 +230,7 @@ public class DiffJobSession extends CopyJobSession {
                     MigrateDataType originDataTypeObj = originColumnTypes.get(originIndex);
                     origin = cqlHelper.getData(originDataTypeObj, originIndex, originRow);
                     if (!originDataTypeObj.equals(targetDataTypeObj)) {
-                        origin = MigrateDataType.convert(origin, originDataTypeObj, originCodecRegistry, targetDataTypeObj, targetCodecRegistry);
+                        origin = MigrateDataType.convert(origin, originDataTypeObj, targetDataTypeObj, codecRegistry);
                     }
                 }
             }

@@ -117,8 +117,7 @@ public class CqlHelper {
     private void registerTargetCodecs() {
         List<String> codecList = propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS);
         if (null!=codecList && !codecList.isEmpty()) {
-            MutableCodecRegistry registry =
-                    (MutableCodecRegistry) targetSession.getContext().getCodecRegistry();
+            MutableCodecRegistry registry = getCodecRegistry();
 
             StringBuilder sb = new StringBuilder("PARAM -- Codecs Enabled: ");
             for (String codecString : codecList) {
@@ -134,6 +133,10 @@ public class CqlHelper {
     }
     public boolean isCodecRegistered(Codecset codecEnum) {
         return codecMap.containsKey(codecEnum);
+    }
+
+    public MutableCodecRegistry getCodecRegistry() {
+        return (MutableCodecRegistry) targetSession.getContext().getCodecRegistry();
     }
 
     // --------------- Session and Performance -------------------------
