@@ -7,6 +7,8 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -17,6 +19,8 @@ import java.time.LocalTime;
 import java.util.*;
 
 public class MigrateDataType {
+    public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+
     Class typeClass = Object.class;
     String dataTypeString = "";
     int type = -1;
@@ -85,8 +89,10 @@ public class MigrateDataType {
         if (obj1 == null && obj2 == null) {
             return false;
         } else if (obj1 == null && obj2 != null) {
+            logger.info("DEBUG: obj1 is null and obj2 is not null");
             return true;
         } else if (obj1 != null && obj2 == null) {
+            logger.info("DEBUG: obj2 is null and obj1 is not null");
             return true;
         }
 
@@ -95,9 +101,16 @@ public class MigrateDataType {
 
     @SuppressWarnings("unchecked")
     public static Object convert(Object value, MigrateDataType fromDataType, MigrateDataType toDataType, CodecRegistry codecRegistry) {
+        if (null==value) return null;
+        if (null==fromDataType || null==toDataType || null==codecRegistry)
+            throw new IllegalArgumentException("fromDataType, toDataType, and codecRegistry must not be null");
         Class<?> fromClass = fromDataType.getTypeClass();
         Class<?> toClass = toDataType.getTypeClass();
         DataType cqlType = toDataType.getCqlDataType();
+
+        if (!value.getClass().equals(fromClass)) {
+            throw new IllegalArgumentException("Value is not of type " + fromClass.getName() + " but of type " + value.getClass().getName());
+        }
 
         TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(cqlType, fromClass);
         if (fromCodec == null) {

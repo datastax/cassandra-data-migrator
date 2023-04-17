@@ -47,6 +47,8 @@ public class DiffJobSession extends CopyJobSession {
     private final List<MigrateDataType> originColumnTypes;
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
+    protected final MigrateDataType explodeMapKeyDataType;
+    protected final MigrateDataType explodeMapValueDataType;
     protected UDTMapper udtMapper;
     protected boolean udtMappingEnabled;
 
@@ -73,10 +75,14 @@ public class DiffJobSession extends CopyJobSession {
             List<String> targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
             this.explodeMapKeyIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.KEY_COLUMN_NAME));
             this.explodeMapValueIndex = targetColumnNames.indexOf(explodeMapFeature.getString(ExplodeMap.Property.VALUE_COLUMN_NAME));
+            this.explodeMapKeyDataType = explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE);
+            this.explodeMapValueDataType = explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE);
         }
         else {
             this.explodeMapKeyIndex = -1;
             this.explodeMapValueIndex = -1;
+            this.explodeMapKeyDataType = null;
+            this.explodeMapValueDataType = null;
         }
 
         this.codecRegistry = cqlHelper.getCodecRegistry();
@@ -227,8 +233,14 @@ public class DiffJobSession extends CopyJobSession {
 
             Object origin;
             MigrateDataType originDataTypeObj = null;
-            if (targetIndex == explodeMapKeyIndex) origin = pk.getExplodeMapKey();
-            else if (targetIndex == explodeMapValueIndex) origin = pk.getExplodeMapValue();
+            if (targetIndex == explodeMapKeyIndex) {
+                origin = pk.getExplodeMapKey();
+                originDataTypeObj = explodeMapKeyDataType;
+            }
+            else if (targetIndex == explodeMapValueIndex) {
+                origin = pk.getExplodeMapValue();
+                originDataTypeObj = explodeMapValueDataType;
+            }
             else {
                 int originIndex = targetToOriginColumnIndexes.get(targetIndex);
                 if (originIndex < 0)
@@ -236,9 +248,18 @@ public class DiffJobSession extends CopyJobSession {
                 else {
                     originDataTypeObj = originColumnTypes.get(originIndex);
                     origin = cqlHelper.getData(originDataTypeObj, originIndex, originRow);
-                    if (!originDataTypeObj.equals(targetDataTypeObj)) {
-                        origin = MigrateDataType.convert(origin, originDataTypeObj, targetDataTypeObj, codecRegistry);
-                    }
+                }
+            }
+
+            if (null != originDataTypeObj && !originDataTypeObj.equals(targetDataTypeObj)) {
+                Object originalOrigin = origin;
+                try {
+                    origin = MigrateDataType.convert(origin, originDataTypeObj, targetDataTypeObj, codecRegistry);
+                }
+                catch (Exception e) {
+                    logger.error("Error converting data from {} ({}) to {} ({}) for key {} and targetColumn {}; exception: {}",
+                            getFormattedContent(originDataTypeObj, originalOrigin), originDataTypeObj.getTypeClass().getName(), getFormattedContent(targetDataTypeObj, target), targetDataTypeObj.getTypeClass().getName(), pk, targetColumnNames.get(targetIndex), e);
+                    throw e;
                 }
             }
 

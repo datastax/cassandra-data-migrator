@@ -38,21 +38,43 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
         BoundStatement boundStatement = prepareStatement().bind();
 
         int currentBindIndex = 0;
-        Object bindValue;
-        for (int index = 0; index < targetColumnTypes.size(); index++) {
-            if (!bindColumnIndexes.contains(index)) {
+        Object bindValue = null;
+
+        for (int targetIndex = 0; targetIndex < targetColumnTypes.size(); targetIndex++) {
+            if (!bindColumnIndexes.contains(targetIndex)) {
                 continue;
             }
 
-            MigrateDataType dataType = targetColumnTypes.get(index);
+            MigrateDataType targetDataType = targetColumnTypes.get(targetIndex);
+            Integer originIndex = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper).get(targetIndex);
+            MigrateDataType originDataType = null;
+            try {
+                if (targetIndex==explodeMapKeyIndex) {
+                    bindValue = explodeMapKey;
+                    originDataType = explodeMapKeyDataType;
+                }
+                else if (targetIndex==explodeMapValueIndex) {
+                    bindValue = explodeMapValue;
+                    originDataType = explodeMapValueDataType;
+                }
+                else if (originIndex < 0) {
+                    continue;
+                }
+                else {
+                    originDataType = originColumnTypes.get(originIndex);
+                    Object originValue = cqlHelper.getData(originDataType, originIndex, originRow);
+                    if (targetDataType.hasUDT() && udtMappingEnabled) bindValue = udtMapper.convert(true, originIndex, originValue);
+                    else bindValue = originValue;
+                }
 
-            if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
-            else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
-            else if (dataType.hasUDT() && udtMappingEnabled) bindValue = udtMapper.convert(true, index, cqlHelper.getData(dataType, index, originRow));
-            else if (index < originColumnTypes.size()) bindValue = cqlHelper.getData(dataType, index, originRow);
-            else continue;
-
-            boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
+                bindValue = (targetDataType.equals(originDataType)) ? bindValue : MigrateDataType.convert(bindValue, originDataType, targetDataType, cqlHelper.getCodecRegistry());
+                boundStatement = boundStatement.set(currentBindIndex++, bindValue, targetDataType.getTypeClass());
+            }
+            catch (Exception e) {
+                logger.error("Error trying to bind value:" + bindValue + " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetDataType+ "/" + targetDataType.getTypeClass().getName() +
+                        " at column index:" + targetIndex + " with current bind index " + (currentBindIndex-1) + " from originIndex:" + originIndex + " " + originDataType + "/" + originDataType.getTypeClass().getName());
+                throw e;
+            }
         }
 
         if (usingTTL) {

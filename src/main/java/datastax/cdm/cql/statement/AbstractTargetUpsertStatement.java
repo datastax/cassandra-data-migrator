@@ -34,6 +34,8 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     protected int bindIndex = 0;
     protected int explodeMapKeyIndex = -1;
     protected int explodeMapValueIndex = -1;
+    protected MigrateDataType explodeMapKeyDataType;
+    protected MigrateDataType explodeMapValueDataType;
 
     protected abstract String buildStatement();
     protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
@@ -50,6 +52,7 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         setNamesAndTypes();
         setConstantColumns();
         setExplodeMapIndexes();
+        setExplodeMapTypes();
         setCounterIndexes();
 
         this.statement = buildStatement();
@@ -173,6 +176,13 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
                     explodeMapValueIndex = currentColumn;
             }
             currentColumn++;
+        }
+    }
+
+    private void setExplodeMapTypes() {
+        if (FeatureFactory.isEnabled(explodeMapFeature)) {
+            this.explodeMapKeyDataType = explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE);
+            this.explodeMapValueDataType = explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE);
         }
     }
 

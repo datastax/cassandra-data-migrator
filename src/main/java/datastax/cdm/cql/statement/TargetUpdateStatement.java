@@ -47,17 +47,42 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
             boundStatement = boundStatement.set(currentBindIndex++, writeTime, Long.class);
         }
 
-        for (int index : columnIndexesToBind) {
-            MigrateDataType dataType = targetColumnTypes.get(index);
+        for (int targetIndex : columnIndexesToBind) {
+            MigrateDataType targetDataType = targetColumnTypes.get(targetIndex);
+            MigrateDataType originDataType = null;
+            Integer originIndex = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper).get(targetIndex);
             Object bindValue;
 
-            if(usingCounter && counterIndexes.contains(index)) bindValue = (originRow.getLong(index) - (null==targetRow ? 0 : targetRow.getLong(index)));
-            else if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
-            else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
-            else if (dataType.hasUDT() && udtMappingEnabled) bindValue = udtMapper.convert(true, index, cqlHelper.getData(dataType, index, originRow));
-            else bindValue = cqlHelper.getData(dataType, index, originRow);
+            if(usingCounter && counterIndexes.contains(targetIndex)) {
+                bindValue = (originRow.getLong(originIndex) - (null==targetRow ? 0 : targetRow.getLong(targetIndex)));
+                originDataType = targetDataType;
+            }
+            else if (targetIndex==explodeMapKeyIndex) {
+                bindValue = explodeMapKey;
+                originDataType = explodeMapKeyDataType;
+            }
+            else if (targetIndex==explodeMapValueIndex) {
+                bindValue = explodeMapValue;
+                originDataType = explodeMapValueDataType;
+            }
+            else if (originIndex < 0) {
+                bindValue = null;
+            }
+            else {
+                originDataType = originColumnTypes.get(originIndex);
+                Object originValue = cqlHelper.getData(originDataType, originIndex, originRow);
+                if (targetDataType.hasUDT() && udtMappingEnabled) {
+                    bindValue = udtMapper.convert(true, targetIndex, originValue);
+                }
+                else {
+                    bindValue = originValue;
+                }
 
-            boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
+            }
+            if (null != bindValue) {
+                bindValue = (targetDataType.equals(originDataType)) ? bindValue : MigrateDataType.convert(bindValue, originDataType, targetDataType, cqlHelper.getCodecRegistry());
+            }
+            boundStatement = boundStatement.set(currentBindIndex++, bindValue, targetDataType.getTypeClass());
         }
 
         PKFactory pkFactory = cqlHelper.getPKFactory();
