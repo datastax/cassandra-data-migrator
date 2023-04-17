@@ -1,9 +1,9 @@
 package datastax.cdm.cql.codec;
 
 import com.datastax.oss.driver.api.core.ProtocolVersion;
-import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.properties.PropertyHelper;
@@ -11,12 +11,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
 
-/**
- * This codec converts a CQL BigInt to a Java String.
- */
-public class CqlBigintToStringCodec extends AbstractBaseCodec<String> {
+public class INT_StringCodec extends AbstractBaseCodec<String> {
 
-    public CqlBigintToStringCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+    public INT_StringCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
     }
 
@@ -27,7 +24,7 @@ public class CqlBigintToStringCodec extends AbstractBaseCodec<String> {
 
     @Override
     public @NotNull DataType getCqlType() {
-        return DataTypes.BIGINT;
+        return DataTypes.INT;
     }
 
     @Override
@@ -35,27 +32,27 @@ public class CqlBigintToStringCodec extends AbstractBaseCodec<String> {
         if (value == null) {
             return null;
         } else {
-            long longValue = Long.parseLong(value);
-            return TypeCodecs.BIGINT.encode(longValue, protocolVersion);
+            int intValue = Integer.parseInt(value);
+            return TypeCodecs.INT.encode(intValue, protocolVersion);
         }
     }
 
     @Override
     public String decode(ByteBuffer bytes, @NotNull ProtocolVersion protocolVersion) {
-        Long longValue = TypeCodecs.BIGINT.decode(bytes, protocolVersion);
-        return longValue.toString();
+        Integer intValue = TypeCodecs.INT.decode(bytes, protocolVersion);
+        return intValue.toString();
     }
 
     @Override
     public @NotNull String format(String value) {
-        long longValue = Long.parseLong(value);
-        return TypeCodecs.BIGINT.format(longValue);
+        int intValue = Integer.parseInt(value);
+        return TypeCodecs.INT.format(intValue);
     }
 
     @Override
     public String parse(String value) {
-        Long longValue = TypeCodecs.BIGINT.parse(value);
-        return longValue == null ? null : longValue.toString();
+        Integer intValue = TypeCodecs.INT.parse(value);
+        return intValue == null ? null : intValue.toString();
     }
 }
 

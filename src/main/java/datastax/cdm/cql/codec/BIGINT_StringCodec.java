@@ -9,15 +9,11 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.properties.PropertyHelper;
 import org.jetbrains.annotations.NotNull;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-/**
- * This codec converts a CQL BigInt to a Java String.
- */
-public class CqlDecimalToStringCodec extends AbstractBaseCodec<String> {
+public class BIGINT_StringCodec extends AbstractBaseCodec<String> {
 
-    public CqlDecimalToStringCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+    public BIGINT_StringCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
     }
 
@@ -28,7 +24,7 @@ public class CqlDecimalToStringCodec extends AbstractBaseCodec<String> {
 
     @Override
     public @NotNull DataType getCqlType() {
-        return DataTypes.DECIMAL;
+        return DataTypes.BIGINT;
     }
 
     @Override
@@ -36,27 +32,28 @@ public class CqlDecimalToStringCodec extends AbstractBaseCodec<String> {
         if (value == null) {
             return null;
         } else {
-            BigDecimal decimalValue = new BigDecimal(value);
-            return TypeCodecs.DECIMAL.encode(decimalValue, protocolVersion);
+            long longValue = Long.parseLong(value);
+            return TypeCodecs.BIGINT.encode(longValue, protocolVersion);
         }
     }
 
     @Override
     public String decode(ByteBuffer bytes, @NotNull ProtocolVersion protocolVersion) {
-        BigDecimal decimalValue = TypeCodecs.DECIMAL.decode(bytes, protocolVersion);
-        return decimalValue.toString();
+        Long longValue = TypeCodecs.BIGINT.decode(bytes, protocolVersion);
+        return longValue.toString();
     }
 
     @Override
     public @NotNull String format(String value) {
-        BigDecimal decimalValue = new BigDecimal(value);
-        return TypeCodecs.DECIMAL.format(decimalValue);
+        long longValue = Long.parseLong(value);
+        return TypeCodecs.BIGINT.format(longValue);
     }
 
     @Override
     public String parse(String value) {
-        BigDecimal decimalValue = TypeCodecs.DECIMAL.parse(value);
-        return decimalValue == null ? null : decimalValue.toString();
+        Long longValue = TypeCodecs.BIGINT.parse(value);
+        return longValue == null ? null : longValue.toString();
     }
+
 }
 

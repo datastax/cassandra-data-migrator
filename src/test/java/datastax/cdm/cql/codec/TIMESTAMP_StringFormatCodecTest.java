@@ -2,6 +2,7 @@ package datastax.cdm.cql.codec;
 
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.properties.KnownProperties;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -25,9 +25,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class CqlTimestampToString_yyMMddHHmmss_CodecTest {
+class TIMESTAMP_StringFormatCodecTest {
 
-    private CqlTimestampToString_Format_Codec codec;
+    private TIMESTAMP_StringFormatCodec codec;
 
     private static final String FORMAT = "yyMMddHHmmss";
     private static final String TIMEZONE = "Europe/Dublin";
@@ -39,7 +39,6 @@ class CqlTimestampToString_yyMMddHHmmss_CodecTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         cqlHelper = mock(CqlHelper.class);
         when(cqlHelper.isCodecRegistered(any())).thenReturn(false);
 
@@ -49,7 +48,7 @@ class CqlTimestampToString_yyMMddHHmmss_CodecTest {
         PropertyHelper propertyHelper = PropertyHelper.getInstance();
         propertyHelper.initializeSparkConf(sc);
 
-        codec = new CqlTimestampToString_Format_Codec(propertyHelper,cqlHelper);
+        codec = new TIMESTAMP_StringFormatCodec(propertyHelper,cqlHelper);
     }
 
     @AfterEach
@@ -75,49 +74,45 @@ class CqlTimestampToString_yyMMddHHmmss_CodecTest {
 
     @Test
     void encode_ShouldEncodeStringValueToByteBuffer_WhenValueIsNotNull() {
-        String stringValue = "220412215715";
-        LocalDateTime localDateTime = LocalDateTime.parse(stringValue, formatter);
-        Instant instantValue = localDateTime.toInstant(zoneOffset);
+        String valueAsString = "220412215715";
+        Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
+        ByteBuffer expected = TypeCodecs.TIMESTAMP.encode(value, ProtocolVersion.DEFAULT);
 
-        ByteBuffer expectedByteBuffer = ByteBuffer.allocate(8);
-        expectedByteBuffer.putLong(instantValue.toEpochMilli());
-        expectedByteBuffer.rewind();
-
-        ByteBuffer result = codec.encode(stringValue, ProtocolVersion.DEFAULT);
-        Assertions.assertEquals(expectedByteBuffer, result);
+        ByteBuffer result = codec.encode(valueAsString, ProtocolVersion.DEFAULT);
+        CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
     @Test
-    void decode_ShouldDecodeByteBufferToInstantValueAndReturnAsString() {
-        String stringValue = "220412215715";
-        LocalDateTime localDateTime = LocalDateTime.parse(stringValue, formatter);
-        Instant instantValue = localDateTime.toInstant(zoneOffset);
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(8);
-        byteBuffer.putLong(instantValue.toEpochMilli());
-        byteBuffer.rewind();
+    void decode_ShouldDecodeByteBufferToValueAndReturnAsString() {
+        String valueAsString = "220412215715";
+        Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
+        ByteBuffer byteBuffer = TypeCodecs.TIMESTAMP.encode(value, ProtocolVersion.DEFAULT);
 
         String result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
-        Assertions.assertEquals(stringValue, result);
+        Assertions.assertEquals(valueAsString, result);
     }
 
     @Test
     void format_ShouldFormatInstantValueAsString() {
-        String stringValue = "220412215715";
-        LocalDateTime localDateTime = LocalDateTime.parse(stringValue, formatter);
-        Instant instantValue = localDateTime.toInstant(zoneOffset);
+        String valueAsString = "220412215715";
+        Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
+        String expected = TypeCodecs.TIMESTAMP.format(value);
 
-        String result = codec.format(stringValue);
-        Assertions.assertEquals(stringValue, result);
+        String result = codec.format(valueAsString);
+        Assertions.assertEquals(expected, result);
     }
 
     @Test
-    void parse_ShouldParseStringToInstantValueAndReturnAsString() {
-        String stringValue = "220412215715";
-        LocalDateTime localDateTime = LocalDateTime.parse(stringValue, formatter);
-        Instant instantValue = localDateTime.toInstant(zoneOffset);
+    void parse_ShouldParseStringToValueAndReturnAsString() {
+        String valueAsString = "220412215715";
+        Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
+        String result = codec.parse(TypeCodecs.TIMESTAMP.format(value));
+        Assertions.assertEquals(valueAsString, result);
+    }
 
-        String result = codec.parse(stringValue);
-        Assertions.assertEquals(String.valueOf(instantValue.toEpochMilli()), result);
+    @Test
+    void parse_ShouldThrowIllegalArgumentException_WhenVFormatIsInvalid() {
+        String valueAsString = "not a valid format";
+        Assertions.assertThrows(IllegalArgumentException.class, () -> codec.parse(valueAsString));
     }
 }

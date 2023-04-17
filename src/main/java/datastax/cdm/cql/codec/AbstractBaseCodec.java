@@ -12,4 +12,5 @@ public abstract class AbstractBaseCodec<T> implements TypeCodec<T> {
         this.propertyHelper = propertyHelper;
         this.cqlHelper = cqlHelper;
     }
+
 }

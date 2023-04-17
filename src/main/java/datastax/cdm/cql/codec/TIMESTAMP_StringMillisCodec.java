@@ -12,16 +12,13 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 
-/**
- * This codec converts a CQL TIMESTAMP to a Java String.
- */
-public class CqlTimestampToString_Millis_Codec extends AbstractBaseCodec<String> {
+public class TIMESTAMP_StringMillisCodec extends AbstractBaseCodec<String> {
 
-    public CqlTimestampToString_Millis_Codec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+    public TIMESTAMP_StringMillisCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
 
-        if (cqlHelper.isCodecRegistered(Codecset.CQL_TIMESTAMP_TO_STRING_FORMAT))
-            throw new RuntimeException("Codec " + Codecset.CQL_TIMESTAMP_TO_STRING_FORMAT + " is already registered");
+        if (cqlHelper.isCodecRegistered(Codecset.TIMESTAMP_STRING_FORMAT))
+            throw new RuntimeException("Codec " + Codecset.TIMESTAMP_STRING_FORMAT + " is already registered");
     }
 
     @Override
@@ -51,12 +48,14 @@ public class CqlTimestampToString_Millis_Codec extends AbstractBaseCodec<String>
     }
 
     @Override
+    // We get in a string of our format, we need to convert to a proper CQL-formatted string
     public @NotNull String format(String value) {
         Instant instantValue = Instant.ofEpochMilli(Long.parseLong(value));
         return TypeCodecs.TIMESTAMP.format(instantValue);
     }
 
     @Override
+    // We get in a proper CQL-formatted string, we need to convert to our format
     public String parse(String value) {
         Instant instantValue = TypeCodecs.TIMESTAMP.parse(value);
         return instantValue == null ? null : String.valueOf(instantValue.toEpochMilli());

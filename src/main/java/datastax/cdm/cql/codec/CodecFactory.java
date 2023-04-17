@@ -4,14 +4,18 @@ import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.properties.PropertyHelper;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class CodecFactory {
-    public static TypeCodec<?> getCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper, Codecset codec) {
+    public static List<TypeCodec<?>> getCodecs(PropertyHelper propertyHelper, CqlHelper cqlHelper, Codecset codec) {
         switch (codec) {
-            case CQL_INT_TO_STRING: return new CqlIntToStringCodec(propertyHelper, cqlHelper);
-            case CQL_BIGINT_TO_STRING: return new CqlBigintToStringCodec(propertyHelper, cqlHelper);
-            case CQL_DECIMAL_TO_STRING: return new CqlDecimalToStringCodec(propertyHelper, cqlHelper);
-            case CQL_TIMESTAMP_TO_STRING_MILLIS: return new CqlTimestampToString_Millis_Codec(propertyHelper, cqlHelper);
-            case CQL_TIMESTAMP_TO_STRING_FORMAT: return new CqlTimestampToString_Format_Codec(propertyHelper, cqlHelper);
+            case INT_STRING: return Arrays.asList(new INT_StringCodec(propertyHelper, cqlHelper), new TEXT_IntegerCodec(propertyHelper, cqlHelper));
+            case DOUBLE_STRING: return Arrays.asList(new DOUBLE_StringCodec(propertyHelper, cqlHelper), new TEXT_DoubleCodec(propertyHelper, cqlHelper));
+            case BIGINT_STRING: return Arrays.asList(new BIGINT_StringCodec(propertyHelper, cqlHelper), new TEXT_LongCodec(propertyHelper, cqlHelper));
+            case DECIMAL_STRING: return Arrays.asList(new DECIMAL_StringCodec(propertyHelper, cqlHelper), new TEXT_BigDecimalCodec(propertyHelper, cqlHelper));
+            case TIMESTAMP_STRING_MILLIS: return Arrays.asList(new TIMESTAMP_StringMillisCodec(propertyHelper, cqlHelper), new TEXTMillis_InstantCodec(propertyHelper, cqlHelper));
+            case TIMESTAMP_STRING_FORMAT: return Arrays.asList(new TIMESTAMP_StringFormatCodec(propertyHelper, cqlHelper), new TEXTFormat_InstantCodec(propertyHelper, cqlHelper));
             default:
                 throw new IllegalArgumentException("Unknown codec: " + codec);
         }

@@ -5,7 +5,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
-import datastax.cdm.cql.codec.AbstractBaseCodec;
 import datastax.cdm.cql.codec.CodecFactory;
 import datastax.cdm.cql.codec.Codecset;
 import datastax.cdm.job.MigrateDataType;
@@ -122,11 +121,13 @@ public class CqlHelper {
                     (MutableCodecRegistry) targetSession.getContext().getCodecRegistry();
 
             StringBuilder sb = new StringBuilder("PARAM -- Codecs Enabled: ");
-            for (String codec : codecList) {
-                TypeCodec<?> typeCodec = CodecFactory.getCodec(propertyHelper, this, Codecset.valueOf(codec));
-                registry.register(typeCodec);
-                codecMap.put(Codecset.valueOf(codec), typeCodec);
-                sb.append(codec).append(" ");
+            for (String codecString : codecList) {
+                Codecset codecEnum = Codecset.valueOf(codecString);
+                for (TypeCodec<?> codec : CodecFactory.getCodecs(propertyHelper, this, codecEnum)) {
+                    registry.register(codec);
+                    codecMap.put(codecEnum, codec);
+                }
+                sb.append(codecString).append(" ");
             }
             logger.info(sb.toString());
         }

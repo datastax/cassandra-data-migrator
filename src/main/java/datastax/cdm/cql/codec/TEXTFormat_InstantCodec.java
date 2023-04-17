@@ -4,7 +4,6 @@ import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.properties.KnownProperties;
@@ -21,22 +20,14 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.zone.ZoneRulesProvider;
 
-/**
- * This codec converts a CQL TIMESTAMP to a Java String with format specified at
- * KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT using the zone specified at
- * KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE.
- */
-public class CqlTimestampToString_Format_Codec extends AbstractBaseCodec<String> {
+public class TEXTFormat_InstantCodec extends AbstractBaseCodec<Instant> {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     private final DateTimeFormatter formatter;
     private final ZoneOffset zoneOffset;
 
-    public CqlTimestampToString_Format_Codec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+    public TEXTFormat_InstantCodec(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         super(propertyHelper, cqlHelper);
-
-        if (cqlHelper.isCodecRegistered(Codecset.CQL_TIMESTAMP_TO_STRING_MILLIS))
-            throw new RuntimeException("Codec " + Codecset.CQL_TIMESTAMP_TO_STRING_MILLIS + " is already registered");
 
         String formatString = propertyHelper.getString(KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT);
         if (formatString == null || formatString.isEmpty()) {
@@ -52,45 +43,41 @@ public class CqlTimestampToString_Format_Codec extends AbstractBaseCodec<String>
     }
 
     @Override
-    public @NotNull GenericType<String> getJavaType() {
-        return GenericType.STRING;
+    public @NotNull GenericType<Instant> getJavaType() {
+        return GenericType.INSTANT;
     }
 
     @Override
     public @NotNull DataType getCqlType() {
-        return DataTypes.TIMESTAMP;
+        return DataTypes.TEXT;
     }
 
     @Override
-    public ByteBuffer encode(String value, @NotNull ProtocolVersion protocolVersion) {
+    public ByteBuffer encode(Instant value, @NotNull ProtocolVersion protocolVersion) {
         if (value == null) {
             return null;
+        } else {
+            String stringValue = formatter.format(LocalDateTime.ofInstant(value, zoneOffset));
+            return TypeCodecs.TEXT.encode(stringValue, protocolVersion);
         }
-        LocalDateTime localDateTime = LocalDateTime.parse(value, formatter);
-        Instant instantValue = localDateTime.toInstant(zoneOffset);
-        return TypeCodecs.TIMESTAMP.encode(instantValue, protocolVersion);
     }
 
     @Override
-    public String decode(ByteBuffer bytes, @NotNull ProtocolVersion protocolVersion) {
-        Instant instantValue = TypeCodecs.TIMESTAMP.decode(bytes, protocolVersion);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instantValue, zoneOffset);
+    public Instant decode(ByteBuffer bytes, @NotNull ProtocolVersion protocolVersion) {
+        String stringValue = TypeCodecs.TEXT.decode(bytes, protocolVersion);
+        return LocalDateTime.parse(stringValue, formatter).toInstant(zoneOffset);
+    }
+
+    @Override
+    public @NotNull String format(Instant value) {
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(value, zoneOffset);
         return formatter.format(localDateTime);
     }
 
     @Override
-    public @NotNull String format(String value) {
+    public Instant parse(String value) {
         LocalDateTime localDateTime = LocalDateTime.parse(value, formatter);
-        String formattedValue = formatter.format(localDateTime);
-        return formattedValue;
+        return localDateTime.toInstant(zoneOffset);
     }
 
-    @Override
-    public String parse(String value) {
-        LocalDateTime localDateTime = LocalDateTime.parse(value, formatter);
-        Instant instantValue = localDateTime.toInstant(zoneOffset);
-        String rtn = String.valueOf(instantValue.toEpochMilli());
-        return rtn;
-    }
 }
-
