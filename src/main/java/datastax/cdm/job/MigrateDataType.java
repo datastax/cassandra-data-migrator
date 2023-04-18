@@ -1,7 +1,12 @@
 package datastax.cdm.job;
 
+import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -83,6 +88,24 @@ public class MigrateDataType {
         return !obj1.equals(obj2);
     }
 
+    @SuppressWarnings("unchecked")
+    public static Object convert(Object value, MigrateDataType fromDataType, MigrateDataType toDataType, CodecRegistry codecRegistry) {
+        Class<?> fromClass = fromDataType.getTypeClass();
+        Class<?> toClass = toDataType.getTypeClass();
+        DataType cqlType = toDataType.getCqlDataType();
+
+        TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(cqlType, fromClass);
+        if (fromCodec == null) {
+            throw new IllegalArgumentException("No codec found in codecRegistry for Java type " + fromClass.getName() + " to CQL type " + toDataType);
+        }
+        TypeCodec<Object> toCodec = (TypeCodec<Object>) codecRegistry.codecFor(cqlType, toClass);
+        if (toCodec == null) {
+            throw new IllegalArgumentException("No codec found in codecRegistry for Java type " + toClass.getName() + " to CQL type " + toDataType);
+        }
+        ByteBuffer encoded = fromCodec.encode(value, ProtocolVersion.DEFAULT);
+        return toCodec.decode(encoded, ProtocolVersion.DEFAULT);
+    }
+
     private Class getTypeClass(int type) {
         switch (type) {
             case 0:
@@ -128,6 +151,66 @@ public class MigrateDataType {
         }
 
         return Object.class;
+    }
+
+    private DataType getCqlDataType(int type) {
+        switch (type) {
+            case 0: return DataTypes.TEXT;
+            case 1: return DataTypes.INT;
+            case 2: return DataTypes.BIGINT;
+            case 3: return DataTypes.DOUBLE;
+            case 4: return DataTypes.TIMESTAMP;
+            case 5: return null;
+            case 6: return null;
+            case 7: return DataTypes.BLOB;
+            case 8: return null;
+            case 9: return DataTypes.UUID;
+            case 10: return DataTypes.BOOLEAN;
+            case 11: return null;
+            case 12: return DataTypes.FLOAT;
+            case 13: return DataTypes.TINYINT;
+            case 14: return DataTypes.DECIMAL;
+            case 15: return DataTypes.DATE;
+            case 16: return null;
+            case 17: return DataTypes.VARINT;
+            case 18: return DataTypes.TIME;
+            case 19: return DataTypes.SMALLINT;
+            default: return null;
+        }
+    }
+
+    public DataType getCqlDataType() {
+        DataType dt = getCqlDataType(this.type);
+        if (null != dt) return dt;
+        switch (this.type) {
+            case 5:
+                DataType keyType = getCqlDataType(this.subTypeTypes.get(0).type);
+                DataType valueType = getCqlDataType(this.subTypeTypes.get(1).type);
+                if (null != keyType && null != valueType)
+                    return DataTypes.mapOf(keyType, valueType);
+                break;
+            case 6:
+                DataType listType = getCqlDataType(this.subTypeTypes.get(0).type);
+                if (null != listType)
+                    return DataTypes.listOf(listType);
+                break;
+            case 8:
+                DataType setType = getCqlDataType(this.subTypeTypes.get(0).type);
+                if (null != setType)
+                    return DataTypes.setOf(setType);
+                break;
+            case 11:
+                DataType val1Type = getCqlDataType(this.subTypeTypes.get(0).type);
+                DataType val2Type = getCqlDataType(this.subTypeTypes.get(1).type);
+                if (null != val1Type && null != val2Type)
+                    return DataTypes.tupleOf(val1Type, val2Type);
+                break;
+            case 16:
+                return null;  // TODO need to implement UDT properly...
+            default:
+                return null;
+        }
+        return null;
     }
 
     public Class getTypeClass() {

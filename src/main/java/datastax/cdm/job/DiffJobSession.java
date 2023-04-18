@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import datastax.cdm.data.EnhancedPK;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.data.Record;
@@ -46,8 +47,11 @@ public class DiffJobSession extends CopyJobSession {
     private final List<Integer> targetToOriginColumnIndexes;
     private final List<String> targetColumnNames;
     private final List<MigrateDataType> targetColumnTypes;
+    private final List<MigrateDataType> originColumnTypes;
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
+
+    private final CodecRegistry codecRegistry;
 
     private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -63,6 +67,7 @@ public class DiffJobSession extends CopyJobSession {
         this.targetToOriginColumnIndexes = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper);
         this.targetColumnTypes = ColumnsKeysTypes.getTargetColumnTypes(propertyHelper);
         this.targetColumnNames = ColumnsKeysTypes.getTargetColumnNames(propertyHelper);
+        this.originColumnTypes = ColumnsKeysTypes.getOriginColumnTypes(propertyHelper);
 
         Feature explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
@@ -74,6 +79,8 @@ public class DiffJobSession extends CopyJobSession {
             this.explodeMapKeyIndex = -1;
             this.explodeMapValueIndex = -1;
         }
+
+        this.codecRegistry = cqlHelper.getCodecRegistry();
     }
 
     public static DiffJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sparkConf) {
@@ -209,21 +216,28 @@ public class DiffJobSession extends CopyJobSession {
     private String isDifferent(EnhancedPK pk, Row originRow, Row targetRow) {
         StringBuffer diffData = new StringBuffer();
         IntStream.range(0, targetColumnTypes.size()).parallel().forEach(targetIndex -> {
-            MigrateDataType dataTypeObj = targetColumnTypes.get(targetIndex);
-            Object target = cqlHelper.getData(dataTypeObj, targetIndex, targetRow);
+            MigrateDataType targetDataTypeObj = targetColumnTypes.get(targetIndex);
+            Object target = cqlHelper.getData(targetDataTypeObj, targetIndex, targetRow);
 
             Object origin;
             if (targetIndex == explodeMapKeyIndex) origin = pk.getExplodeMapKey();
             else if (targetIndex == explodeMapValueIndex) origin = pk.getExplodeMapValue();
             else {
                 int originIndex = targetToOriginColumnIndexes.get(targetIndex);
-                // if originIndex is -1, then this column is not in the origin table
-                origin = (originIndex < 0) ? null : cqlHelper.getData(dataTypeObj, originIndex, originRow);
+                if (originIndex < 0)
+                    origin = null;
+                else {
+                    MigrateDataType originDataTypeObj = originColumnTypes.get(originIndex);
+                    origin = cqlHelper.getData(originDataTypeObj, originIndex, originRow);
+                    if (!originDataTypeObj.equals(targetDataTypeObj)) {
+                        origin = MigrateDataType.convert(origin, originDataTypeObj, targetDataTypeObj, codecRegistry);
+                    }
+                }
             }
 
             if (null != origin &&
-                    dataTypeObj.diff(origin, target))  {
-                if (dataTypeObj.getTypeClass().equals(UdtValue.class)) {
+                    targetDataTypeObj.diff(origin, target)) {
+                if (targetDataTypeObj.getTypeClass().equals(UdtValue.class)) {
                     String originUdtContent = ((UdtValue) origin).getFormattedContents();
                     String targetUdtContent = ((UdtValue) target).getFormattedContents();
                     if (!originUdtContent.equals(targetUdtContent)) {
@@ -234,7 +248,6 @@ public class DiffJobSession extends CopyJobSession {
                 }
             }
         });
-
         return diffData.toString();
     }
 

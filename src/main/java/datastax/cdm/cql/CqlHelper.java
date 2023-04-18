@@ -3,6 +3,10 @@ package datastax.cdm.cql;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
+import datastax.cdm.cql.codec.CodecFactory;
+import datastax.cdm.cql.codec.Codecset;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.feature.Feature;
@@ -35,6 +39,8 @@ public class CqlHelper {
     private TargetUpdateStatement targetUpdateStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
 
+    private final Map<Codecset, TypeCodec<?>> codecMap = new HashMap<>(Codecset.values().length);
+
     // Constructor
     public CqlHelper() {
         this.propertyHelper = PropertyHelper.getInstance();
@@ -63,6 +69,8 @@ public class CqlHelper {
             if (isFeatureEnabled(f))
                 feature.alterProperties(this.propertyHelper, this.pkFactory);
         }
+
+        registerTargetCodecs();
 
         originSelectByPartitionRangeStatement = new OriginSelectByPartitionRangeStatement(propertyHelper,this);
         originSelectByPKStatement = new OriginSelectByPKStatement(propertyHelper,this);
@@ -105,6 +113,31 @@ public class CqlHelper {
     public TargetUpdateStatement getTargetUpdateStatement() {return targetUpdateStatement;}
     public TargetSelectByPKStatement getTargetSelectByPKStatement() {return targetSelectByPKStatement;}
 
+    // ----------------- Codec Functions --------------
+    private void registerTargetCodecs() {
+        List<String> codecList = propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS);
+        if (null!=codecList && !codecList.isEmpty()) {
+            MutableCodecRegistry registry = getCodecRegistry();
+
+            StringBuilder sb = new StringBuilder("PARAM -- Codecs Enabled: ");
+            for (String codecString : codecList) {
+                Codecset codecEnum = Codecset.valueOf(codecString);
+                for (TypeCodec<?> codec : CodecFactory.getCodecs(propertyHelper, this, codecEnum)) {
+                    registry.register(codec);
+                    codecMap.put(codecEnum, codec);
+                }
+                sb.append(codecString).append(" ");
+            }
+            logger.info(sb.toString());
+        }
+    }
+    public boolean isCodecRegistered(Codecset codecEnum) {
+        return codecMap.containsKey(codecEnum);
+    }
+
+    public MutableCodecRegistry getCodecRegistry() {
+        return (MutableCodecRegistry) targetSession.getContext().getCodecRegistry();
+    }
 
     // --------------- Session and Performance -------------------------
     public void setOriginSession(CqlSession originSession) {

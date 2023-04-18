@@ -1,17 +1,17 @@
 
- const1 | const2 | key  | fruit   | fruit_qty | value
---------+--------+------+---------+-----------+--------
-   abcd |   1234 | key1 |  apples |         3 | valueA
-   abcd |   1234 | key1 | bananas |         2 | valueA
-   abcd |   1234 | key1 |  grapes |        11 | valueA
-   abcd |   1234 | key1 | oranges |         5 | valueA
-   abcd |   1234 | key3 |  apples |         5 | valueC
-   abcd |   1234 | key3 | bananas |         4 | valueC
-   abcd |   1234 | key3 |    kiwi |        42 | valueC
-   abcd |   1234 | key3 | oranges |         7 | valueC
-   abcd |   1234 | key2 |  apples |         4 | valueB
-   abcd |   1234 | key2 | bananas |         3 | valueB
-   abcd |   1234 | key2 | oranges |         6 | valueB
-   abcd |   1234 | key2 |   pears |         7 | valueB
+ const1 | const2 | key  | fruit   | fruit_qty | time
+--------+--------+------+---------+-----------+---------------------------------
+   abcd |   1234 | key1 |  apples |         3 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key1 | bananas |         2 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key1 |  grapes |        11 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key1 | oranges |         5 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key3 |  apples |         5 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key3 | bananas |         4 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key3 |    kiwi |        42 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key3 | oranges |         7 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key2 |  apples |         4 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key2 | bananas |         3 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key2 | oranges |         6 | 2004-06-16 11:00:00.000000+0000
+   abcd |   1234 | key2 |   pears |         7 | 2004-06-16 11:00:00.000000+0000
 
 (12 rows)
