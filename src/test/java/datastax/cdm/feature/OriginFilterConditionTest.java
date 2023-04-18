@@ -32,7 +32,7 @@ public class OriginFilterConditionTest {
         String conditionIn = "AND a > 1";
         validSparkConf.set(KnownProperties.FILTER_CQL_WHERE_CONDITION, conditionIn);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
 
         String conditionOut = feature.getString(OriginFilterCondition.Property.CONDITION);
 
@@ -47,7 +47,7 @@ public class OriginFilterConditionTest {
         String conditionIn = "a > 1";
         validSparkConf.set(KnownProperties.FILTER_CQL_WHERE_CONDITION, conditionIn);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
 
         String conditionOut = feature.getString(OriginFilterCondition.Property.CONDITION);
         assertEquals("AND "+conditionIn, conditionOut.trim());

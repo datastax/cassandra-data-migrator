@@ -1,18 +1,22 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.PropertyHelper;
 import java.util.List;
+import java.util.Map;
 
 public interface Feature {
 
     /**
      * Initializes the feature based on properties
+     *
      * @param propertyHelper propertyHelper containing initialized properties
+     * @param cqlHelper initialized CqlHelper
      * @return true if the feature is initialized and valid, false otherwise
      */
-    public boolean initialize(PropertyHelper propertyHelper);
+    public boolean initialize(PropertyHelper propertyHelper, CqlHelper cqlHelper);
 
     /**
      * Modifies properties based on feature-specific logic

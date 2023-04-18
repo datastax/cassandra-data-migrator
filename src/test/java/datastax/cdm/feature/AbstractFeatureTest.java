@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.PropertyHelper;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ public class AbstractFeatureTest {
     }
     class TestFeature extends AbstractFeature {
         @Override
-        public boolean initialize(PropertyHelper propertyHelper) {
+        public boolean initialize(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
             isEnabled = true;
             isInitialized = true;
             return true;
@@ -82,7 +83,7 @@ public class AbstractFeatureTest {
     @Test
     public void unsetValue() {
         TestFeature testFeature = new TestFeature();
-        testFeature.initialize(null);
+        testFeature.initialize(null, null);
         assertAll(
                 () -> assertNull(testFeature.getString(TestProperty.STRING)),
                 () -> assertNull(testFeature.getNumber(TestProperty.NUMBER)),
@@ -104,7 +105,7 @@ public class AbstractFeatureTest {
     @Test
     public void valuesSetToNull() {
         TestFeature testFeature = new TestFeature();
-        testFeature.initialize(null);
+        testFeature.initialize(null, null);
         testFeature.putString(TestProperty.STRING, null);
         testFeature.putNumber(TestProperty.NUMBER, null);
         testFeature.putBoolean(TestProperty.BOOLEAN, null);

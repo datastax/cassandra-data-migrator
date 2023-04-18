@@ -7,6 +7,7 @@ import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.feature.ConstantColumns;
 import datastax.cdm.feature.ExplodeMap;
 import datastax.cdm.feature.FeatureFactory;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
@@ -37,20 +38,43 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
         BoundStatement boundStatement = prepareStatement().bind();
 
         int currentBindIndex = 0;
-        Object bindValue;
-        for (int index = 0; index < targetColumnTypes.size(); index++) {
-            if (!bindColumnIndexes.contains(index)) {
+        Object bindValue = null;
+
+        for (int targetIndex = 0; targetIndex < targetColumnTypes.size(); targetIndex++) {
+            if (!bindColumnIndexes.contains(targetIndex)) {
                 continue;
             }
 
-            MigrateDataType dataType = targetColumnTypes.get(index);
+            MigrateDataType targetDataType = targetColumnTypes.get(targetIndex);
+            Integer originIndex = ColumnsKeysTypes.getTargetToOriginColumnIndexes(propertyHelper).get(targetIndex);
+            MigrateDataType originDataType = null;
+            try {
+                if (targetIndex==explodeMapKeyIndex) {
+                    bindValue = explodeMapKey;
+                    originDataType = explodeMapKeyDataType;
+                }
+                else if (targetIndex==explodeMapValueIndex) {
+                    bindValue = explodeMapValue;
+                    originDataType = explodeMapValueDataType;
+                }
+                else if (originIndex < 0) {
+                    continue;
+                }
+                else {
+                    originDataType = originColumnTypes.get(originIndex);
+                    Object originValue = cqlHelper.getData(originDataType, originIndex, originRow);
+                    if (targetDataType.hasUDT() && udtMappingEnabled) bindValue = udtMapper.convert(true, originIndex, originValue);
+                    else bindValue = originValue;
+                }
 
-            if (index==explodeMapKeyIndex) bindValue = explodeMapKey;
-            else if (index==explodeMapValueIndex) bindValue = explodeMapValue;
-            else if (index < originColumnTypes.size()) bindValue = cqlHelper.getData(dataType, index, originRow);
-            else continue;
-
-            boundStatement = boundStatement.set(currentBindIndex++, bindValue, dataType.getTypeClass());
+                bindValue = (targetDataType.equals(originDataType)) ? bindValue : MigrateDataType.convert(bindValue, originDataType, targetDataType, cqlHelper.getCodecRegistry());
+                boundStatement = boundStatement.set(currentBindIndex++, bindValue, targetDataType.getTypeClass());
+            }
+            catch (Exception e) {
+                logger.error("Error trying to bind value:" + bindValue + " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetDataType+ "/" + targetDataType.getTypeClass().getName() +
+                        " at column index:" + targetIndex + " with current bind index " + (currentBindIndex-1) + " from originIndex:" + originIndex + " " + originDataType + "/" + originDataType.getTypeClass().getName());
+                throw e;
+            }
         }
 
         if (usingTTL) {
@@ -91,7 +115,7 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
             valuesList += "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_VALUES);
         }
 
-        targetUpdateCQL = "INSERT INTO " + propertyHelper.getAsString(KnownProperties.TARGET_KEYSPACE_TABLE) +
+        targetUpdateCQL = "INSERT INTO " + ColumnsKeysTypes.getTargetKeyspaceTable(propertyHelper) +
                 " (" + PropertyHelper.asString(bindColumnNames, KnownProperties.PropertyType.STRING_LIST) +
                 (FeatureFactory.isEnabled(constantColumnFeature) ? "," + constantColumnFeature.getAsString(ConstantColumns.Property.COLUMN_NAMES) : "") +
                 ") VALUES (" + valuesList + ")";

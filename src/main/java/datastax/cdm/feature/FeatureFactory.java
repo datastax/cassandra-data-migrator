@@ -6,6 +6,7 @@ public class FeatureFactory {
             case ORIGIN_FILTER: return new OriginFilterCondition();
             case CONSTANT_COLUMNS: return new ConstantColumns();
             case EXPLODE_MAP: return new ExplodeMap();
+            case UDT_MAPPER: return new UDTMapper();
             default:
                 throw new IllegalArgumentException("Unknown feature: " + feature);
         }

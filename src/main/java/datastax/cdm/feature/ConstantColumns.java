@@ -1,5 +1,6 @@
 package datastax.cdm.feature;
 
+import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.properties.KnownProperties;
@@ -24,7 +25,7 @@ public class ConstantColumns extends AbstractFeature {
     private boolean valid = true;
 
     @Override
-    public boolean initialize(PropertyHelper propertyHelper) {
+    public boolean initialize(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         List<String> columnNames = getConstantColumnNames(propertyHelper);
 
         putStringList(Property.COLUMN_NAMES, columnNames);

@@ -141,7 +141,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.remove(KnownProperties.CONSTANT_COLUMN_VALUES);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertFalse(feature.isEnabled());
     }
 
@@ -150,7 +150,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.remove(KnownProperties.CONSTANT_COLUMN_TYPES);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertFalse(feature.isEnabled());
     }
 
@@ -159,7 +159,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_VALUES, "'abcd'");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertFalse(feature.isEnabled());
     }
 
@@ -168,7 +168,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_TYPES, "1");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertFalse(feature.isEnabled());
     }
 
@@ -177,7 +177,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, "\\|");
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertFalse(feature.isEnabled());
     }
 
@@ -186,7 +186,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.set(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX, "");
         helper.initializeSparkConf(validSparkConf);
-        assertThrows(RuntimeException.class, () -> feature.initialize(helper));
+        assertThrows(RuntimeException.class, () -> feature.initialize(helper, null));
     }
 
     @Test
@@ -194,7 +194,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.remove(KnownProperties.TARGET_PRIMARY_KEY);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertTrue(feature.isEnabled());
     }
 
@@ -203,7 +203,7 @@ public class ConstantColumnsTest {
         setValidSparkConf();
         validSparkConf.remove(KnownProperties.TARGET_PRIMARY_KEY_TYPES);
         helper.initializeSparkConf(validSparkConf);
-        feature.initialize(helper);
+        feature.initialize(helper, null);
         assertTrue(feature.isEnabled());
     }
 
