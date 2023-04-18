@@ -153,13 +153,13 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         if (FeatureFactory.isEnabled(explodeMapFeature)) {
             if (null==explodeMapKey)
                 throw new RuntimeException("ExplodeMap is enabled, but no map key was provided");
-            else if (!(explodeMapKey.getClass().equals(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getTypeClass())))
-                throw new RuntimeException("ExplodeMap is enabled, but the map key type provided "+explodeMapKey.getClass().getName()+" is not of the expected type "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getTypeClass().getName());
+            else if (!explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getTypeClass().isAssignableFrom(explodeMapKey.getClass()))
+                throw new RuntimeException("ExplodeMap is enabled, but the map key type provided "+explodeMapKey.getClass().getName()+" is not compatible with "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.KEY_COLUMN_TYPE).getTypeClass().getName());
 
             if (null==explodeMapValue)
                 throw new RuntimeException("ExplodeMap is enabled, but no map value was provided");
-            else if (!(explodeMapValue.getClass().equals(explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass())))
-                throw new RuntimeException("ExplodeMap is enabled, but the map value type provided "+explodeMapValue.getClass().getName()+" is not of the expected type "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass().getName());
+            else if (!explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass().isAssignableFrom(explodeMapValue.getClass()))
+                throw new RuntimeException("ExplodeMap is enabled, but the map value type provided "+explodeMapValue.getClass().getName()+" is not compatible with "+explodeMapFeature.getMigrateDataType(ExplodeMap.Property.VALUE_COLUMN_TYPE).getTypeClass().getName());
         }
     }
 
