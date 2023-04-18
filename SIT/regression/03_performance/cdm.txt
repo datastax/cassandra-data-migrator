@@ -1,0 +1,3 @@
+migrateData datastax.cdm.job.Migrate migrate.properties
+validateData datastax.cdm.job.DiffData migrate.properties
+fixData datastax.cdm.job.DiffData fix.properties
