@@ -1,5 +1,6 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import datastax.cdm.job.MigrateDataType;
@@ -23,8 +24,8 @@ public class TargetInsertStatement extends AbstractTargetUpsertStatement {
     private List<String> bindColumnNames;
     private List<Integer> bindColumnIndexes;
 
-    public TargetInsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
+    public TargetInsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
     }
 
     @Override

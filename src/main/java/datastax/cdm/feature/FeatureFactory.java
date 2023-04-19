@@ -7,6 +7,7 @@ public class FeatureFactory {
             case CONSTANT_COLUMNS: return new ConstantColumns();
             case EXPLODE_MAP: return new ExplodeMap();
             case UDT_MAPPER: return new UDTMapper();
+            case WRITETIME_TTL_COLUMN: return new WritetimeTTLColumn();
             default:
                 throw new IllegalArgumentException("Unknown feature: " + feature);
         }

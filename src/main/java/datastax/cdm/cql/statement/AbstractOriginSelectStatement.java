@@ -1,8 +1,11 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.cdm.feature.Featureset;
+import datastax.cdm.feature.WritetimeTTLColumn;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.Record;
@@ -18,25 +21,24 @@ import java.util.*;
 public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    protected final List<Integer> writeTimestampIndexes = new ArrayList<>();
-    protected final List<Integer> ttlIndexes = new ArrayList<>();
+    private final WritetimeTTLColumn writetimeTTLColumnFeature;
 
     private final Boolean writeTimestampFilterEnabled;
     private final Long minWriteTimeStampFilter;
     private final Long maxWriteTimeStampFilter;
-    private final Long customWritetime;
 
     private final Boolean filterColumnEnabled;
     private final Integer filterColumnIndex;
     private final MigrateDataType filterColumnType;
     private final String filterColumnString;
 
-    public AbstractOriginSelectStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
-        this.session = cqlHelper.getOriginSession();
+    public AbstractOriginSelectStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
 
         resultColumns.addAll(ColumnsKeysTypes.getOriginColumnNames(propertyHelper));
         resultTypes.addAll(ColumnsKeysTypes.getOriginColumnTypes(propertyHelper));
+
+        writetimeTTLColumnFeature = (WritetimeTTLColumn) cqlHelper.getFeature(Featureset.WRITETIME_TTL_COLUMN);
 
         minWriteTimeStampFilter = getMinWriteTimeStampFilter();
         maxWriteTimeStampFilter = getMaxWriteTimeStampFilter();
@@ -47,11 +49,6 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
             logger.info("PARAM -- {}: {} datetime is {}", KnownProperties.FILTER_WRITETS_MAX, getMaxWriteTimeStampFilter(),
                     Instant.ofEpochMilli(getMaxWriteTimeStampFilter() / 1000));
         }
-
-        customWritetime = getCustomWritetime();
-        if (customWritetime > 0)
-            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime,
-                    Instant.ofEpochMilli(customWritetime / 1000));
 
         filterColumnString = getFilterColumnString();
         filterColumnIndex = getFilterColumnIndex();
@@ -113,45 +110,34 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
         return false;
     }
 
-    public Long getLargestWriteTimeStamp(Row row) {
-        if (customWritetime > 0) return customWritetime;
-        if (null==writeTimestampIndexes || writeTimestampIndexes.isEmpty()) return null;
-        OptionalLong max = writeTimestampIndexes.stream()
-                .mapToLong(row::getLong)
-                .filter(Objects::nonNull)
-                .max();
-        return max.isPresent() ? max.getAsLong() : null;
-    }
-
-    public Integer getLargestTTL(Row row) {
-        if (null==ttlIndexes || ttlIndexes.isEmpty()) return null;
-        OptionalInt max = ttlIndexes.stream()
-                .mapToInt(row::getInt)
-                .filter(Objects::nonNull)
-                .max();
-        return max.isPresent() ? max.getAsInt() : null;
-    }
-
     private String ttlAndWritetimeCols() {
+        if (!writetimeTTLColumnFeature.isEnabled()) {
+            return "";
+        }
+
+        List<Integer> ttlCols = writetimeTTLColumnFeature.getIntegerList(WritetimeTTLColumn.Property.TTL_INDEXES);
+        List<Integer> wtCols = writetimeTTLColumnFeature.getIntegerList(WritetimeTTLColumn.Property.WRITETIME_INDEXES);
+
         StringBuilder sb = new StringBuilder();
-        if (null != cqlHelper.getTtlCols()) {
-            cqlHelper.getTtlCols().forEach(col -> {
+        if (null != ttlCols) {
+            ttlCols.forEach(col -> {
                 String ttlCol = resultColumns.get(col);
                 String cleanCol = ttlCol.replaceAll("-", "_").replace("\"", "");
                 sb.append(",TTL(").append(ttlCol).append(") as ttl_").append(cleanCol);
                 resultColumns.add("ttl_" + cleanCol);
                 resultTypes.add(new MigrateDataType("1")); // int
-                ttlIndexes.add(resultColumns.size()-1);
+                writetimeTTLColumnFeature.addTTLSelectColumnIndex(resultColumns.size()-1);
             });
         }
-        if (null != cqlHelper.getWriteTimeStampCols()) {
-            cqlHelper.getWriteTimeStampCols().forEach(col -> {
+
+        if (null != wtCols) {
+            wtCols.forEach(col -> {
                 String wtCol = resultColumns.get(col);
                 String cleanCol = wtCol.replaceAll("-", "_").replace("\"", "");
                 sb.append(",WRITETIME(").append(wtCol).append(") as writetime_").append(cleanCol);
                 resultColumns.add("writetime_" + cleanCol);
                 resultTypes.add(new MigrateDataType("2")); // application using as <long>, though Cassandra uses <timestamp>
-                writeTimestampIndexes.add(resultColumns.size()-1);
+                writetimeTTLColumnFeature.addWritetimeSelectColumnIndex(resultColumns.size()-1);
             });
         }
         return sb.toString();
@@ -172,17 +158,14 @@ public abstract class AbstractOriginSelectStatement extends BaseCdmStatement {
         return propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX);
     }
     public boolean hasWriteTimestampFilter() {
+        if (!writetimeTTLColumnFeature.isEnabled()) return false;
+        if (writetimeTTLColumnFeature.getCustomWritetime() <= 0L &&
+                null == writetimeTTLColumnFeature.getIntegerList(WritetimeTTLColumn.Property.WRITETIME_INDEXES)) return false;
+
         Long min = getMinWriteTimeStampFilter();
         Long max = getMaxWriteTimeStampFilter();
-        List<Integer> writetimeCols = cqlHelper.getWriteTimeStampCols();
         return (null != min && null != max &&
-                min > 0 && max > 0 && min < max &&
-                null != writetimeCols && !writetimeCols.isEmpty());
-    }
-
-    private Long getCustomWritetime() {
-        Long rtn = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME);
-        return (null==rtn || rtn < 0) ? 0L : rtn;
+                min > 0 && max > 0 && min < max);
     }
 
     private String getFilterColumnString() {

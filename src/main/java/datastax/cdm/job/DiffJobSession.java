@@ -108,9 +108,9 @@ public class DiffJobSession extends CopyJobSession {
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             try {
                 PKFactory pkFactory = cqlHelper.getPKFactory();
-                OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement();
+                OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement(this.originSession);
                 ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
-                TargetSelectByPKStatement targetSelectByPKStatement = cqlHelper.getTargetSelectByPKStatement();
+                TargetSelectByPKStatement targetSelectByPKStatement = cqlHelper.getTargetSelectByPKStatement(this.targetSession);
 
                 List<Record> recordsToDiff = new ArrayList<>(cqlHelper.getFetchSizeInRows());
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(originRow -> {
@@ -194,8 +194,8 @@ public class DiffJobSession extends CopyJobSession {
             //correct data
             if (autoCorrectMissing) {
                 writeLimiter.acquire(1);
-                if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
-                else cqlHelper.getTargetInsertStatement().putRecord(record);
+                if (isCounterTable) cqlHelper.getTargetUpdateStatement(this.targetSession).putRecord(record);
+                else cqlHelper.getTargetInsertStatement(this.targetSession).putRecord(record);
                 correctedMissingCounter.incrementAndGet();
                 logger.error("Inserted missing row in target: {}", record.getPk());
             }
@@ -209,8 +209,8 @@ public class DiffJobSession extends CopyJobSession {
 
             if (autoCorrectMismatch) {
                 writeLimiter.acquire(1);
-                if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
-                else cqlHelper.getTargetInsertStatement().putRecord(record);
+                if (isCounterTable) cqlHelper.getTargetUpdateStatement(this.targetSession).putRecord(record);
+                else cqlHelper.getTargetInsertStatement(this.targetSession).putRecord(record);
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Corrected mismatch row in target: {}", record.getPk());
             }

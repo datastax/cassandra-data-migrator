@@ -26,33 +26,24 @@ public class CopyJobSession extends AbstractJobSession {
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
 
-    private final OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement;
-    private final TargetInsertStatement targetInsertStatement;
-    private final TargetUpdateStatement targetUpdateStatement;
-    private final TargetSelectByPKStatement targetSelectByPKStatement;
+    private TargetInsertStatement targetInsertStatement;
+    private TargetUpdateStatement targetUpdateStatement;
+    private TargetSelectByPKStatement targetSelectByPKStatement;
     private final PKFactory pkFactory;
     private final boolean isCounterTable;
-    private final Integer batchSize;
+    private Integer batchSize;
     private final Integer fetchSize;
-    private final Collection<CompletionStage<AsyncResultSet>> writeResults;
 
     private BatchStatement batch;
-    private int unflushedWrites = 0;
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
 
         pkFactory = cqlHelper.getPKFactory();
-        originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement();
-        targetInsertStatement = cqlHelper.getTargetInsertStatement();
-        targetUpdateStatement = cqlHelper.getTargetUpdateStatement();
-        targetSelectByPKStatement = cqlHelper.getTargetSelectByPKStatement();
-        batchSize = cqlHelper.getBatchSize();
         isCounterTable = cqlHelper.isCounterTable();
         fetchSize = cqlHelper.getFetchSizeInRows();
 
         batch = BatchStatement.newInstance(BatchType.UNLOGGED);
-        writeResults = new ArrayList<>();
     }
 
     public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
@@ -76,8 +67,15 @@ public class CopyJobSession extends AbstractJobSession {
             long flushedWriteCnt = 0;
             long skipCnt = 0;
             long errCnt = 0;
+            long unflushedWrites = 0;
             try {
+                OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement(this.originSession);
+                targetInsertStatement = cqlHelper.getTargetInsertStatement(this.targetSession);
+                targetUpdateStatement = cqlHelper.getTargetUpdateStatement(this.targetSession);
+                targetSelectByPKStatement = cqlHelper.getTargetSelectByPKStatement(this.targetSession);
                 ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
+                batchSize = cqlHelper.getBatchSize(originSelectByPartitionRangeStatement);
+                Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<>();
 
                 for (Row originRow : resultSet) {
                     readLimiter.acquire(1);
@@ -101,16 +99,25 @@ public class CopyJobSession extends AbstractJobSession {
                             continue;
                         }
 
-                        flushedWriteCnt += writeAsync(boundUpsert);
+                        writeAsync(writeResults, boundUpsert);
+                        unflushedWrites++;
+
+                        if (unflushedWrites > fetchSize) {
+                            flushAndClearWrites(writeResults);
+                            flushedWriteCnt += unflushedWrites;
+                            unflushedWrites = 0;
+                        }
                     }
                 }
 
-                flushedWriteCnt += flushAndClearWrites();
+                flushAndClearWrites(writeResults);
+                flushedWriteCnt += unflushedWrites;
 
                 readCounter.addAndGet(readCnt);
                 writeCounter.addAndGet(flushedWriteCnt);
                 skippedCounter.addAndGet(skipCnt);
                 done = true;
+
             } catch (Exception e) {
                 if (attempts == maxAttempts) {
                     readCounter.addAndGet(readCnt);
@@ -141,20 +148,15 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
-    private int flushAndClearWrites() throws Exception {
-        int cnt = unflushedWrites;
+    private void flushAndClearWrites(Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception {
         if (batch.size() > 0) {
             writeResults.add(executeAsync(batch));
         }
-        if (unflushedWrites > 0) {
-            for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
-                //wait for the writes to complete for the batch. The Retry policy, if defined, should retry the write on timeouts.
-                writeResult.toCompletableFuture().get().one();
-            }
-            writeResults.clear();
-            unflushedWrites = 0;
+        for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
+            //wait for the writes to complete for the batch. The Retry policy, if defined, should retry the write on timeouts.
+            writeResult.toCompletableFuture().get().one();
         }
-        return cnt;
+        writeResults.clear();
     }
 
     private BoundStatement bind(Record r) {
@@ -170,7 +172,7 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
-    private int writeAsync(BoundStatement boundUpsert) throws Exception {
+    private void writeAsync(Collection<CompletionStage<AsyncResultSet>> writeResults, BoundStatement boundUpsert) {
         if (batchSize > 1) {
             batch = batch.add(boundUpsert);
             if (batch.size() >= batchSize) {
@@ -181,13 +183,6 @@ public class CopyJobSession extends AbstractJobSession {
         else {
             writeResults.add(executeAsync(boundUpsert));
         }
-        unflushedWrites++;
-
-        if (unflushedWrites > fetchSize) {
-            return flushAndClearWrites();
-        }
-        else
-            return 0;
     }
 
     private CompletionStage<AsyncResultSet> executeAsync(Statement<?> statement) {
