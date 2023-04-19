@@ -169,7 +169,7 @@ public class UDTMapper extends AbstractFeature {
             MigrateDataType dataType = dataTypeList.get(i);
 
             if (dataType.hasUDT()) {
-                Session session = fromOrigin ? cqlHelper.getOriginSession() : cqlHelper.getTargetSession();
+                Session session = fromOrigin ? cqlHelper.getOriginSessionInit() : cqlHelper.getTargetSessionInit();
                 Metadata metadata = session.getMetadata();
 
                 Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(keyspace);

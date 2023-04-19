@@ -2,16 +2,13 @@ package datastax.cdm.data;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.cdm.feature.*;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
-import datastax.cdm.feature.ConstantColumns;
-import datastax.cdm.feature.ExplodeMap;
 import datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import datastax.cdm.properties.PropertyHelper;
-import datastax.cdm.feature.Feature;
-import datastax.cdm.feature.Featureset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +57,7 @@ public class PKFactory {
     private final Long defaultForMissingTimestamp;
     private final String defaultForMissingString;
 
-    private OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement;
+    private WritetimeTTLColumn writetimeTTLColumnFeature;
 
     public PKFactory(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
         this.cqlHelper = cqlHelper;
@@ -103,12 +100,18 @@ public class PKFactory {
         if (targetPKTypes.size() != targetPKLookupMethods.size()) {
             throw new RuntimeException("Unable to locate a method to determine value of each primary key column");
         }
+
+        writetimeTTLColumnFeature = (WritetimeTTLColumn) cqlHelper.getFeature(Featureset.WRITETIME_TTL_COLUMN);
     }
 
     public EnhancedPK getTargetPK(Row originRow) {
         List<Object> newValues = getTargetPKValuesFromOriginColumnLookupMethod(originRow, targetDefaultValues);
-        Long originWriteTimeStamp = getOriginSelectByPartitionRangeStatement().getLargestWriteTimeStamp(originRow);
-        Integer originTTL = getOriginSelectByPartitionRangeStatement().getLargestTTL(originRow);
+        Long originWriteTimeStamp = null;
+        Integer originTTL = null;
+        if (FeatureFactory.isEnabled(writetimeTTLColumnFeature)) {
+            originWriteTimeStamp = writetimeTTLColumnFeature.getLargestWriteTimeStamp(originRow);
+            originTTL = writetimeTTLColumnFeature.getLargestTTL(originRow);
+        }
         if (explodeMapTargetKeyColumnIndex < 0) {
             return new EnhancedPK(this, newValues, getPKTypes(Side.TARGET), originTTL, originWriteTimeStamp);
         }
@@ -405,13 +408,6 @@ public class PKFactory {
                 indexesToBind.add(i);
         }
         return indexesToBind;
-    }
-
-    private OriginSelectByPartitionRangeStatement getOriginSelectByPartitionRangeStatement() {
-        if (null==originSelectByPartitionRangeStatement) {
-            this.originSelectByPartitionRangeStatement = cqlHelper.getOriginSelectByPartitionRangeStatement();
-        }
-        return originSelectByPartitionRangeStatement;
     }
 
     private void scrubLookupMethods() {

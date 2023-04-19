@@ -1,8 +1,13 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import datastax.cdm.data.EnhancedPK;
+import datastax.cdm.feature.Feature;
+import datastax.cdm.feature.FeatureFactory;
+import datastax.cdm.feature.Featureset;
+import datastax.cdm.feature.WritetimeTTLColumn;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
 import datastax.cdm.data.PKFactory;
@@ -22,13 +27,15 @@ public class TargetUpdateStatement extends AbstractTargetUpsertStatement {
     private final List<Integer> columnIndexesToBind;
     private boolean usingTTL;
 
-    public TargetUpdateStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
+    public TargetUpdateStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
         this.columnIndexesToBind = new ArrayList<>();
         setColumnIndexesToBind();
 
-        List<String> ttlColumnNames = propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_INDEXES);
-        if (null != ttlColumnNames && !ttlColumnNames.isEmpty()) usingTTL = true;
+        Feature feature = cqlHelper.getFeature(Featureset.WRITETIME_TTL_COLUMN);
+        if (FeatureFactory.isEnabled(feature) &&
+                null != feature.getNumberList(WritetimeTTLColumn.Property.TTL_INDEXES))
+            usingTTL = true;
     }
 
     @Override

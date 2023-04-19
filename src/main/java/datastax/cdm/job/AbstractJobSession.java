@@ -11,6 +11,9 @@ public class AbstractJobSession extends BaseJobSession {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
+    protected CqlSession originSession;
+    protected CqlSession targetSession;
+
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
     }
@@ -22,8 +25,12 @@ public class AbstractJobSession extends BaseJobSession {
             return;
         }
 
-        cqlHelper.setOriginSession(originSession);
-        cqlHelper.setTargetSession(targetSession);
+        this.originSession = originSession;
+        this.targetSession = targetSession;
+        cqlHelper.setOriginSessionInit(originSession);
+        cqlHelper.setTargetSessionInit(targetSession);
+        cqlHelper.registerCodecs(originSession);
+        cqlHelper.registerCodecs(targetSession);
 
         printStatsAfter = propertyHelper.getInteger(KnownProperties.PRINT_STATS_AFTER);
         if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1)) {

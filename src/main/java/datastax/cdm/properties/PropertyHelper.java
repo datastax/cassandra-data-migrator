@@ -317,6 +317,7 @@ public final class PropertyHelper extends KnownProperties{
 
     public static List<Integer> toIntegerList(List<Number> numberList) {
         List<Integer> intList = new ArrayList<>();
+        if (null==numberList) return intList;
         Integer i;
         for (Number n : numberList) {
             i = toInteger(n);

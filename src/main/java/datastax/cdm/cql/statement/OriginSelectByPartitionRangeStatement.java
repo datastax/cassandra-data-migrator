@@ -1,5 +1,6 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import datastax.cdm.cql.CqlHelper;
@@ -19,8 +20,8 @@ public class OriginSelectByPartitionRangeStatement extends AbstractOriginSelectS
     private final Long defaultMinPartition;
     private final Long defaultMaxPartition;
 
-    public OriginSelectByPartitionRangeStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
+    public OriginSelectByPartitionRangeStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
 
         defaultMinPartition = propertyHelper.getLong(KnownProperties.PARTITION_MIN);
         defaultMaxPartition = propertyHelper.getLong(KnownProperties.PARTITION_MAX);
