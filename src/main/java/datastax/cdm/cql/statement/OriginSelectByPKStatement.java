@@ -1,5 +1,6 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
@@ -19,8 +20,8 @@ public class OriginSelectByPKStatement extends AbstractOriginSelectStatement {
 
     private final List<MigrateDataType> originPKTypes;
 
-    public OriginSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
+    public OriginSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
         originPKTypes = ColumnsKeysTypes.getOriginPKTypes(propertyHelper);
     }
 

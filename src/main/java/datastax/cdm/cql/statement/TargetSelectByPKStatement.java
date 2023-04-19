@@ -1,5 +1,6 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -21,13 +22,9 @@ import java.util.concurrent.CompletionStage;
 public class TargetSelectByPKStatement extends BaseCdmStatement {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    public TargetSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
-
-        this.session = cqlHelper.getTargetSession();
-
+    public TargetSelectByPKStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
         this.statement = buildStatement();
-
     }
 
     public Record getRecord(EnhancedPK pk) {

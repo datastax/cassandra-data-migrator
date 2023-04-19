@@ -1,5 +1,6 @@
 package datastax.cdm.cql.statement;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import datastax.cdm.job.MigrateDataType;
 import datastax.cdm.cql.CqlHelper;
@@ -40,15 +41,13 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
     protected abstract String buildStatement();
     protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
 
-    public AbstractTargetUpsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
-        super(propertyHelper, cqlHelper);
-
-        this.session = cqlHelper.getTargetSession();
+    public AbstractTargetUpsertStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
+        super(propertyHelper, cqlHelper, session);
 
         constantColumnFeature = cqlHelper.getFeature(Featureset.CONSTANT_COLUMNS);
         explodeMapFeature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
 
-        setTTLAndWriteTimeNames();
+        setTTLAndWriteTimeBooleans();
         setNamesAndTypes();
         setConstantColumns();
         setExplodeMapIndexes();
@@ -115,13 +114,19 @@ public abstract class AbstractTargetUpsertStatement extends BaseCdmStatement {
         }
     }
 
-    private void setTTLAndWriteTimeNames() {
-        List<Integer> ttlColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_INDEXES);
-        usingTTL = null!= ttlColumnNames && !ttlColumnNames.isEmpty();
-        List<Integer> writeTimeColumnNames = propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES);
-        Long customWritetime = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME);
-        usingWriteTime = (null!= writeTimeColumnNames && !writeTimeColumnNames.isEmpty()
-                || null != customWritetime && customWritetime > 0);
+    private void setTTLAndWriteTimeBooleans() {
+        usingTTL = false;
+        usingWriteTime = false;
+        WritetimeTTLColumn feature = (WritetimeTTLColumn) cqlHelper.getFeature(Featureset.WRITETIME_TTL_COLUMN);
+
+        if (FeatureFactory.isEnabled(feature)) {
+            if (null != feature.getNumberList(WritetimeTTLColumn.Property.TTL_INDEXES))
+                usingTTL = true;
+
+            if (feature.getCustomWritetime() > 0 ||
+                    null != feature.getNumberList(WritetimeTTLColumn.Property.WRITETIME_INDEXES))
+                usingWriteTime = true;
+        }
     }
 
     private void setCounterIndexes() {

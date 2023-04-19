@@ -27,16 +27,17 @@ public class BaseCdmStatement {
     protected UDTMapper udtMapper;
     protected boolean udtMappingEnabled;
 
-    public BaseCdmStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper) {
+    public BaseCdmStatement(PropertyHelper propertyHelper, CqlHelper cqlHelper, CqlSession session) {
         this.propertyHelper = propertyHelper;
         this.cqlHelper = cqlHelper;
         this.udtMapper = (UDTMapper) cqlHelper.getFeature(Featureset.UDT_MAPPER);
         this.udtMappingEnabled = FeatureFactory.isEnabled(this.udtMapper);
+        this.session = session;
     }
 
     public PreparedStatement prepareStatement() {
-        if (null == session || session.isClosed())
-            throw new RuntimeException("Session is not ready for use, session=" + session);
+        if (null==session)
+            throw new RuntimeException("Session is not set");
         if (null == statement || statement.isEmpty())
             throw new RuntimeException("Statement is not set");
         return session.prepare(statement);

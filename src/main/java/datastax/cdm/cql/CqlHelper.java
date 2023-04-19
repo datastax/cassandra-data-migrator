@@ -25,8 +25,8 @@ import java.util.*;
 public class CqlHelper {
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    private CqlSession originSession;
-    private CqlSession targetSession;
+    private CqlSession originSessionInit;
+    private CqlSession targetSessionInit;
 
     private ConsistencyLevel readConsistencyLevel;
     private ConsistencyLevel writeConsistencyLevel;
@@ -34,11 +34,6 @@ public class CqlHelper {
     public final PropertyHelper propertyHelper;
     private final Map<Featureset, Feature> featureMap = new HashMap<>(Featureset.values().length);
     private PKFactory pkFactory;
-    private OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement;
-    private OriginSelectByPKStatement originSelectByPKStatement;
-    private TargetInsertStatement targetInsertStatement;
-    private TargetUpdateStatement targetUpdateStatement;
-    private TargetSelectByPKStatement targetSelectByPKStatement;
 
     private final Map<Codecset, TypeCodec<?>> codecMap = new HashMap<>(Codecset.values().length);
 
@@ -71,22 +66,19 @@ public class CqlHelper {
                 feature.alterProperties(this.propertyHelper, this.pkFactory);
         }
 
-        registerTargetCodecs();
+        registerCodecs(targetSessionInit);
 
-        originSelectByPartitionRangeStatement = new OriginSelectByPartitionRangeStatement(propertyHelper,this);
-        originSelectByPKStatement = new OriginSelectByPKStatement(propertyHelper,this);
-        targetInsertStatement = new TargetInsertStatement(propertyHelper,this);
-        targetUpdateStatement = new TargetUpdateStatement(propertyHelper,this);
-        targetSelectByPKStatement = new TargetSelectByPKStatement(propertyHelper,this);
+        OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = new OriginSelectByPartitionRangeStatement(propertyHelper,this, null);
+        TargetInsertStatement targetInsertStatement = new TargetInsertStatement(propertyHelper,this, null);
+        TargetUpdateStatement targetUpdateStatement = new TargetUpdateStatement(propertyHelper,this, null);
+        TargetSelectByPKStatement targetSelectByPKStatement = new TargetSelectByPKStatement(propertyHelper,this, null);
 
         logger.info("PARAM -- Read Consistency: {}", readConsistencyLevel);
         logger.info("PARAM -- Write Consistency: {}", writeConsistencyLevel);
-        logger.info("PARAM -- Write Batch Size: {}", getBatchSize());
+        logger.info("PARAM -- Write Batch Size: {}", getBatchSize(originSelectByPartitionRangeStatement));
         logger.info("PARAM -- Read Fetch Size: {}", getFetchSizeInRows());
         logger.info("PARAM -- Origin Keyspace Table: {}", ColumnsKeysTypes.getOriginKeyspaceTable(propertyHelper));
         logger.info("PARAM -- Target Keyspace Table: {}", ColumnsKeysTypes.getTargetKeyspaceTable(propertyHelper));
-        logger.info("PARAM -- TTLCols: {}", getTtlCols());
-        logger.info("PARAM -- WriteTimestampCols: {}", getWriteTimeStampCols());
         logger.info("PARAM -- ORIGIN SELECT Query used: {}", originSelectByPartitionRangeStatement.getCQL());
         logger.info("PARAM -- TARGET INSERT Query used: {}", targetInsertStatement.getCQL());
         logger.info("PARAM -- TARGET UPDATE Query used: {}", targetUpdateStatement.getCQL());
@@ -108,17 +100,17 @@ public class CqlHelper {
     }
 
     public PKFactory getPKFactory() {return pkFactory;}
-    public OriginSelectByPartitionRangeStatement getOriginSelectByPartitionRangeStatement() {return originSelectByPartitionRangeStatement;}
-    public OriginSelectByPKStatement getOriginSelectByPKStatement() {return originSelectByPKStatement;}
-    public TargetInsertStatement getTargetInsertStatement() {return targetInsertStatement;}
-    public TargetUpdateStatement getTargetUpdateStatement() {return targetUpdateStatement;}
-    public TargetSelectByPKStatement getTargetSelectByPKStatement() {return targetSelectByPKStatement;}
+    public OriginSelectByPartitionRangeStatement getOriginSelectByPartitionRangeStatement(CqlSession session) {return new OriginSelectByPartitionRangeStatement(propertyHelper,this, session);}
+    public OriginSelectByPKStatement getOriginSelectByPKStatement(CqlSession session) {return new OriginSelectByPKStatement(propertyHelper,this, session);}
+    public TargetInsertStatement getTargetInsertStatement(CqlSession session) {return new TargetInsertStatement(propertyHelper,this, session);}
+    public TargetUpdateStatement getTargetUpdateStatement(CqlSession session) {return new TargetUpdateStatement(propertyHelper,this, session);}
+    public TargetSelectByPKStatement getTargetSelectByPKStatement(CqlSession session) {return new TargetSelectByPKStatement(propertyHelper,this, session);}
 
     // ----------------- Codec Functions --------------
-    private void registerTargetCodecs() {
+    public void registerCodecs(CqlSession session) {
         List<String> codecList = propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS);
         if (null!=codecList && !codecList.isEmpty()) {
-            MutableCodecRegistry registry = getCodecRegistry();
+            MutableCodecRegistry registry = (MutableCodecRegistry) session.getContext().getCodecRegistry();
 
             StringBuilder sb = new StringBuilder("PARAM -- Codecs Enabled: ");
             for (String codecString : codecList) {
@@ -137,24 +129,22 @@ public class CqlHelper {
     }
 
     public MutableCodecRegistry getCodecRegistry() {
-        return (MutableCodecRegistry) targetSession.getContext().getCodecRegistry();
+        return (MutableCodecRegistry) targetSessionInit.getContext().getCodecRegistry();
     }
 
     // --------------- Session and Performance -------------------------
-    public void setOriginSession(CqlSession originSession) {
-        this.originSession = originSession;
+    // TODO: these should only by used when initializing the system, and should be refactored as part of moving schema definition to its own class
+    public void setOriginSessionInit(CqlSession originSessionInit) {
+        this.originSessionInit = originSessionInit;
     }
-
-    public void setTargetSession(CqlSession targetSession) {
-        this.targetSession = targetSession;
+    public void setTargetSessionInit(CqlSession targetSessionInit) {
+        this.targetSessionInit = targetSessionInit;
     }
-
-    public CqlSession getOriginSession() {
-        return originSession;
+    public CqlSession getOriginSessionInit() {
+        return originSessionInit;
     }
-
-    public CqlSession getTargetSession() {
-        return targetSession;
+    public CqlSession getTargetSessionInit() {
+        return targetSessionInit;
     }
 
     public ConsistencyLevel getReadConsistencyLevel() {
@@ -168,7 +158,7 @@ public class CqlHelper {
         return propertyHelper.getInteger(KnownProperties.PERF_FETCH_SIZE);
     }
 
-    public Integer getBatchSize() {
+    public Integer getBatchSize(OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement) {
         // cannot do batching if the writeFilter is greater than 0 or maxWriteTimeStampFilter is less than max long
         // do not batch for counters as it adds latency & increases chance of discrepancy
         if (originSelectByPartitionRangeStatement.hasWriteTimestampFilter() || isCounterTable())
@@ -187,15 +177,6 @@ public class CqlHelper {
     public boolean isCounterTable() {
         List<Integer> rtn = propertyHelper.getIntegerList(KnownProperties.ORIGIN_COUNTER_INDEXES);
         return (null != rtn && rtn.size() > 0);
-    }
-
-    //--------------- TTL & Writetime Feature ---------------
-    public List<Integer> getTtlCols() {
-        return propertyHelper.getIntegerList(KnownProperties.ORIGIN_TTL_INDEXES);
-    }
-
-    public List<Integer> getWriteTimeStampCols() {
-        return propertyHelper.getIntegerList(KnownProperties.ORIGIN_WRITETIME_INDEXES);
     }
 
     //----------- General Utilities --------------

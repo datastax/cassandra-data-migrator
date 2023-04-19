@@ -83,11 +83,11 @@ public class ColumnRenameWithConstantsAndExplode {
         String targetSelect = "SELECT parameter_name,id,value,customer FROM astra.indextable WHERE customer='CUSTOMER' AND parameter_name=? AND id=?";
 
         assertAll(
-                () -> assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement().getCQL().replaceAll("\\s+"," "), "originSelect"),
-                () -> assertEquals(originSelectByPK, cqlHelper.getOriginSelectByPKStatement().getCQL().replaceAll("\\s+"," "), "originSelectByPK"),
-                () -> assertEquals(targetInsert, cqlHelper.getTargetInsertStatement().getCQL().replaceAll("\\s+"," "), "targetInsert"),
-                () -> assertEquals(targetUpdate, cqlHelper.getTargetUpdateStatement().getCQL().replaceAll("\\s+"," "), "targetUpdate"),
-                () -> assertEquals(targetSelect, cqlHelper.getTargetSelectByPKStatement().getCQL().replaceAll("\\s+"," "), "targetSelect")
+                () -> assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement(null).getCQL().replaceAll("\\s+"," "), "originSelect"),
+                () -> assertEquals(originSelectByPK, cqlHelper.getOriginSelectByPKStatement(null).getCQL().replaceAll("\\s+"," "), "originSelectByPK"),
+                () -> assertEquals(targetInsert, cqlHelper.getTargetInsertStatement(null).getCQL().replaceAll("\\s+"," "), "targetInsert"),
+                () -> assertEquals(targetUpdate, cqlHelper.getTargetUpdateStatement(null).getCQL().replaceAll("\\s+"," "), "targetUpdate"),
+                () -> assertEquals(targetSelect, cqlHelper.getTargetSelectByPKStatement(null).getCQL().replaceAll("\\s+"," "), "targetSelect")
         );
     }
 

@@ -28,14 +28,13 @@ public class CopyPKJobSession extends AbstractJobSession {
     private final PKFactory pkFactory;
     private final List<MigrateDataType> originPKTypes;
     private final boolean isCounterTable;
-    private final OriginSelectByPKStatement originSelectByPKStatement;
+    private OriginSelectByPKStatement originSelectByPKStatement;
 
     protected CopyPKJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc, true);
         pkFactory = cqlHelper.getPKFactory();
         originPKTypes = pkFactory.getPKTypes(PKFactory.Side.ORIGIN);
         isCounterTable = cqlHelper.isCounterTable();
-        originSelectByPKStatement = cqlHelper.getOriginSelectByPKStatement();
     }
 
     public static CopyPKJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
@@ -51,6 +50,7 @@ public class CopyPKJobSession extends AbstractJobSession {
     }
 
     public void getRowAndInsert(List<SplitPartitions.PKRows> rowsList) {
+        originSelectByPKStatement = cqlHelper.getOriginSelectByPKStatement(originSession);
         for (SplitPartitions.PKRows rows : rowsList) {
             rows.pkRows.parallelStream().forEach(row -> {
                 readCounter.incrementAndGet();
@@ -76,8 +76,8 @@ public class CopyPKJobSession extends AbstractJobSession {
                 }
 
                 writeLimiter.acquire(1);
-                if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
-                else cqlHelper.getTargetInsertStatement().putRecord(record);
+                if (isCounterTable) cqlHelper.getTargetUpdateStatement(this.targetSession).putRecord(record);
+                else cqlHelper.getTargetInsertStatement(this.targetSession).putRecord(record);
                 writeCounter.incrementAndGet();
 
                 if (readCounter.get() % printStatsAfter == 0) {
