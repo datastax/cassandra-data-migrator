@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import datastax.astra.migrate.schema.TypeInfo;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +108,7 @@ public class DiffJobSession extends CopyJobSession {
                 Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
                 diff(srcRow, targetRow);
             } catch (Exception e) {
-                logger.error("Could not perform diff for Key: {}", getKey(srcRow), e);
+                logger.error("Could not perform diff for Key: {}", getKey(srcRow, tableInfo), e);
             }
         }
         srcToTargetRowMap.clear();
@@ -134,13 +135,13 @@ public class DiffJobSession extends CopyJobSession {
     private void diff(Row sourceRow, Row astraRow) {
         if (astraRow == null) {
             missingCounter.incrementAndGet();
-            logger.error("Missing target row found for key: {}", getKey(sourceRow));
+            logger.error("Missing target row found for key: {}", getKey(sourceRow, tableInfo));
             //correct data
 
             if (autoCorrectMissing) {
                 astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 correctedMissingCounter.incrementAndGet();
-                logger.error("Inserted missing row in target: {}", getKey(sourceRow));
+                logger.error("Inserted missing row in target: {}", getKey(sourceRow, tableInfo));
             }
 
             return;
@@ -149,7 +150,7 @@ public class DiffJobSession extends CopyJobSession {
         String diffData = isDifferent(sourceRow, astraRow);
         if (!diffData.isEmpty()) {
             mismatchCounter.incrementAndGet();
-            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(sourceRow), diffData);
+            logger.error("Mismatch row found for key: {} Mismatch: {}", getKey(sourceRow, tableInfo), diffData);
 
             if (autoCorrectMismatch) {
                 if (isCounterTable) {
@@ -158,7 +159,7 @@ public class DiffJobSession extends CopyJobSession {
                     astraSession.execute(bindInsert(astraInsertStatement, sourceRow, null));
                 }
                 correctedMismatchCounter.incrementAndGet();
-                logger.error("Updated mismatch row in target: {}", getKey(sourceRow));
+                logger.error("Updated mismatch row in target: {}", getKey(sourceRow, tableInfo));
             }
 
             return;
@@ -169,21 +170,21 @@ public class DiffJobSession extends CopyJobSession {
 
     private String isDifferent(Row sourceRow, Row astraRow) {
         StringBuffer diffData = new StringBuffer();
-        IntStream.range(0, selectColTypes.size()).parallel().forEach(index -> {
-            MigrateDataType dataTypeObj = selectColTypes.get(index);
-            Object source = getData(dataTypeObj, index, sourceRow);
-            if (index < idColTypes.size()) {
-                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, dataTypeObj.typeClass, sourceRow, false);
+        IntStream.range(0, tableInfo.getAllColumns().size()).parallel().forEach(index -> {
+            TypeInfo typeInfo = tableInfo.getColumns().get(index).getTypeInfo();
+            Object source = getData(typeInfo, index, sourceRow);
+            if (index < tableInfo.getKeyColumns().size()) {
+                Optional<Object> optionalVal = handleBlankInPrimaryKey(index, source, typeInfo.getTypeClass(), sourceRow, false);
                 if (optionalVal.isPresent()) {
                     source = optionalVal.get();
                 }
             }
 
-            Object astra = getData(dataTypeObj, index, astraRow);
+            Object astra = getData(typeInfo, index, astraRow);
 
-            boolean isDiff = dataTypeObj.diff(source, astra);
+            boolean isDiff = typeInfo.diff(source, astra);
             if (isDiff) {
-                if (dataTypeObj.typeClass.equals(UdtValue.class)) {
+                if (typeInfo.getTypeClass().equals(UdtValue.class)) {
                     String sourceUdtContent = ((UdtValue) source).getFormattedContents();
                     String astraUdtContent = ((UdtValue) astra).getFormattedContents();
                     if (!sourceUdtContent.equals(astraUdtContent)) {

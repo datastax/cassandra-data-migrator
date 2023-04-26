@@ -5,6 +5,9 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.astra.migrate.schema.ColumnInfo;
+import datastax.astra.migrate.schema.TableInfo;
+import datastax.astra.migrate.schema.TypeInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -19,8 +22,12 @@ import java.util.stream.IntStream;
 public class AbstractJobSession extends BaseJobSession {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    protected TableInfo tableInfo;
     protected CqlSession sourceSession;
     protected CqlSession astraSession;
+    protected List<String> ttlWTCols;
+    protected String tsReplaceValStr;
+    protected long tsReplaceVal;
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         this(sourceSession, astraSession, sc, false);
@@ -41,21 +48,31 @@ public class AbstractJobSession extends BaseJobSession {
 
         writeLimiter = RateLimiter.create(Integer.parseInt(Util.getSparkPropOr(sc, "spark.writeRateLimit", "40000")));
         maxRetries = Integer.parseInt(sc.get("spark.maxRetries", "0"));
-        astraKeyspaceTable = Util.getSparkProp(sc, "spark.target.keyspaceTable");
-
-        String ttlColsStr = Util.getSparkPropOrEmpty(sc, "spark.query.ttl.cols");
-        if (null != ttlColsStr && ttlColsStr.trim().length() > 0) {
-            for (String ttlCol : ttlColsStr.split(",")) {
-                ttlCols.add(Integer.parseInt(ttlCol));
-            }
+        astraKeyspaceTable = Util.getSparkPropOrEmpty(sc, "spark.target.keyspaceTable");
+        if (astraKeyspaceTable.isEmpty()) {
+            astraKeyspaceTable = sourceKeyspaceTable;
         }
 
-        String writeTimestampColsStr = Util.getSparkPropOrEmpty(sc, "spark.query.writetime.cols");
-        if (null != writeTimestampColsStr && writeTimestampColsStr.trim().length() > 0) {
-            for (String writeTimeStampCol : writeTimestampColsStr.split(",")) {
-                writeTimeStampCols.add(Integer.parseInt(writeTimeStampCol));
-            }
-        }
+        logger.info("PARAM -- Read Consistency: {}", readConsistencyLevel);
+        logger.info("PARAM -- Write Consistency: {}", writeConsistencyLevel);
+        logger.info("PARAM -- Write Batch Size: {}", batchSize);
+        logger.info("PARAM -- Max Retries: {}", maxRetries);
+        logger.info("PARAM -- Read Fetch Size: {}", fetchSizeInRows);
+        logger.info("PARAM -- Source Keyspace Table: {}", sourceKeyspaceTable);
+        logger.info("PARAM -- Source Keyspace: {}", sourceKeyspaceTable.split("\\.")[0]);
+        logger.info("PARAM -- Source Table: {}", sourceKeyspaceTable.split("\\.")[1]);
+        logger.info("PARAM -- Destination Keyspace: {}", astraKeyspaceTable.split("\\.")[0]);
+        logger.info("PARAM -- Destination Table: {}", astraKeyspaceTable.split("\\.")[1]);
+        logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
+        logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
+        logger.info("PARAM -- WriteTimestampFilter: {}", writeTimeStampFilter);
+
+        tableInfo = TableInfo.getInstance(sourceSession, sourceKeyspaceTable.split("\\.")[0],
+                sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"));
+        String selectCols = String.join(",", tableInfo.getAllColumns());
+        String partitionKey = String.join(",", tableInfo.getPartitionKeyColumns());
+        ttlWTCols = tableInfo.getTtlAndWriteTimeColumns();
+        logger.info("PARAM -- Detected Table Schema: {}", tableInfo);
 
         writeTimeStampFilter = Boolean
                 .parseBoolean(Util.getSparkPropOr(sc, "spark.origin.writeTimeStampFilter", "false"));
@@ -81,17 +98,7 @@ public class AbstractJobSession extends BaseJobSession {
             customWritetime = Long.parseLong(customWriteTimeStr);
         }
 
-        logger.info("PARAM -- Read Consistency: {}", readConsistencyLevel);
-        logger.info("PARAM -- Write Consistency: {}", writeConsistencyLevel);
-        logger.info("PARAM -- Write Batch Size: {}", batchSize);
-        logger.info("PARAM -- Max Retries: {}", maxRetries);
-        logger.info("PARAM -- Read Fetch Size: {}", fetchSizeInRows);
-        logger.info("PARAM -- Source Keyspace Table: {}", sourceKeyspaceTable);
-        logger.info("PARAM -- Destination Keyspace Table: {}", astraKeyspaceTable);
-        logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
-        logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
-        logger.info("PARAM -- TTLCols: {}", ttlCols);
-        logger.info("PARAM -- WriteTimestampFilterCols: {}", writeTimeStampCols);
+        logger.info("PARAM -- TTL-WriteTime Columns: {}", ttlWTCols);
         logger.info("PARAM -- WriteTimestampFilter: {}", writeTimeStampFilter);
         if (writeTimeStampFilter) {
             logger.info("PARAM -- minWriteTimeStampFilter: {} datetime is {}", minWriteTimeStampFilter,
@@ -101,11 +108,11 @@ public class AbstractJobSession extends BaseJobSession {
         }
 
         final StringBuilder selectTTLWriteTimeCols = new StringBuilder();
-        ttlCols.forEach(col -> {
-            selectTTLWriteTimeCols.append(",ttl(" + allCols[col] + ")");
+        ttlWTCols.forEach(col -> {
+            selectTTLWriteTimeCols.append(",ttl(" + col + ")");
         });
-        writeTimeStampCols.forEach(col -> {
-            selectTTLWriteTimeCols.append(",writetime(" + allCols[col] + ")");
+        ttlWTCols.forEach(col -> {
+            selectTTLWriteTimeCols.append(",writetime(" + col + ")");
         });
 
         String insertCols = Util.getSparkPropOrEmpty(sc, "spark.query.target");
@@ -113,30 +120,30 @@ public class AbstractJobSession extends BaseJobSession {
             insertCols = selectCols;
         }
         String insertBinds = "";
-        for (String str : idCols.split(",")) {
+        for (String idCol : tableInfo.getKeyColumns()) {
             if (insertBinds.isEmpty()) {
-                insertBinds = str + "= ?";
+                insertBinds = idCol + "= ?";
             } else {
-                insertBinds += " and " + str + "= ?";
+                insertBinds += " and " + idCol + "= ?";
             }
         }
 
-        String fullSelectQuery;
+        String originSelectQry;
         if (!isJobMigrateRowsFromFile) {
-            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable +
-                    " where token(" + partitionKey.trim() + ") >= ? and token(" + partitionKey.trim() + ") <= ?  " +
+            originSelectQry = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable +
+                    " where token(" + partitionKey + ") >= ? and token(" + partitionKey + ") <= ?  " +
                     sourceSelectCondition + " ALLOW FILTERING";
         } else {
-            fullSelectQuery = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where " + insertBinds;
+            originSelectQry = "select " + selectCols + selectTTLWriteTimeCols + " from " + sourceKeyspaceTable + " where " + insertBinds;
         }
-        sourceSelectStatement = sourceSession.prepare(fullSelectQuery);
-        logger.info("PARAM -- Query used: {}", fullSelectQuery);
+        logger.info("PARAM -- Origin select query: {}", originSelectQry);
+        sourceSelectStatement = sourceSession.prepare(originSelectQry);
 
-        astraSelectStatement = astraSession.prepare(
-                "select " + insertCols + " from " + astraKeyspaceTable
-                        + " where " + insertBinds);
+        String targetSelectQry = "select " + insertCols + " from " + astraKeyspaceTable + " where " + insertBinds;
+        logger.info("PARAM -- Target select query: {}", targetSelectQry);
+        astraSelectStatement = astraSession.prepare(targetSelectQry);
 
-        isCounterTable = Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.counterTable", "false"));
+        isCounterTable = tableInfo.isCounterTable();
         if (isCounterTable) {
             String updateSelectMappingStr = Util.getSparkPropOr(sc, "spark.counterTable.cql.index", "0");
             for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
@@ -145,6 +152,7 @@ public class AbstractJobSession extends BaseJobSession {
 
             String counterTableUpdate = Util.getSparkProp(sc, "spark.counterTable.cql");
             astraInsertStatement = astraSession.prepare(counterTableUpdate);
+            String fullInsertQuery = "update " + astraKeyspaceTable + " set (" + insertCols + ") VALUES (" + insertBinds + ")";
         } else {
             insertBinds = "";
             for (String str : insertCols.split(",")) {
@@ -156,14 +164,10 @@ public class AbstractJobSession extends BaseJobSession {
             }
 
             String fullInsertQuery = "insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")";
-            if (!ttlCols.isEmpty()) {
-                fullInsertQuery += " USING TTL ?";
-                if (!writeTimeStampCols.isEmpty()) {
-                    fullInsertQuery += " AND TIMESTAMP ?";
-                }
-            } else if (!writeTimeStampCols.isEmpty()) {
-                fullInsertQuery += " USING TIMESTAMP ?";
+            if (!ttlWTCols.isEmpty()) {
+                fullInsertQuery += " USING TTL ? AND TIMESTAMP ?";
             }
+            logger.info("PARAM -- Target insert query: {}", fullInsertQuery);
             astraInsertStatement = astraSession.prepare(fullInsertQuery);
         }
 
@@ -178,27 +182,25 @@ public class AbstractJobSession extends BaseJobSession {
         BoundStatement boundInsertStatement = insertStatement.bind().setConsistencyLevel(writeConsistencyLevel);
 
         if (isCounterTable) {
-            for (int index = 0; index < selectColTypes.size(); index++) {
-                MigrateDataType dataType = selectColTypes.get(updateSelectMapping.get(index));
+            for (int index = 0; index < tableInfo.getAllColumns().size(); index++) {
+                TypeInfo typeInfo = tableInfo.getColumns().get(index).getTypeInfo();
                 // compute the counter delta if reading from astra for the difference
-                if (astraRow != null && index < (selectColTypes.size() - idColTypes.size())) {
+                if (astraRow != null && index < (tableInfo.getColumns().size() - tableInfo.getIdColumns().size())) {
                     boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
                 } else {
-                    boundInsertStatement = boundInsertStatement.set(index, getData(dataType, updateSelectMapping.get(index), sourceRow), dataType.typeClass);
+                    boundInsertStatement = boundInsertStatement.set(index, getData(typeInfo, updateSelectMapping.get(index), sourceRow), typeInfo.getTypeClass());
                 }
             }
         } else {
             int index = 0;
-            for (index = 0; index < selectColTypes.size(); index++) {
-                boundInsertStatement = getBoundStatement(sourceRow, boundInsertStatement, index, selectColTypes);
+            for (index = 0; index < tableInfo.getAllColumns().size(); index++) {
+                boundInsertStatement = getBoundStatement(sourceRow, boundInsertStatement, index, tableInfo.getColumns());
                 if (boundInsertStatement == null) return null;
             }
 
-            if (!ttlCols.isEmpty()) {
+            if (!ttlWTCols.isEmpty()) {
                 boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
                 index++;
-            }
-            if (!writeTimeStampCols.isEmpty()) {
                 if (customWritetime > 0) {
                     boundInsertStatement = boundInsertStatement.set(index, customWritetime, Long.class);
                 } else {
@@ -212,19 +214,19 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     public int getLargestTTL(Row sourceRow) {
-        return IntStream.range(0, ttlCols.size())
-                .map(i -> sourceRow.getInt(selectColTypes.size() + i)).max().getAsInt();
+        return IntStream.range(0, ttlWTCols.size())
+                .map(i -> sourceRow.getInt(tableInfo.getAllColumns().size() + i)).max().getAsInt();
     }
 
     public long getLargestWriteTimeStamp(Row sourceRow) {
-        return IntStream.range(0, writeTimeStampCols.size())
-                .mapToLong(i -> sourceRow.getLong(selectColTypes.size() + ttlCols.size() + i)).max().getAsLong();
+        return IntStream.range(0, ttlWTCols.size())
+                .mapToLong(i -> sourceRow.getLong(tableInfo.getAllColumns().size() + ttlWTCols.size() + i)).max().getAsLong();
     }
 
     public BoundStatement selectFromAstra(PreparedStatement selectStatement, Row sourceRow) {
         BoundStatement boundSelectStatement = selectStatement.bind().setConsistencyLevel(readConsistencyLevel);
-        for (int index = 0; index < idColTypes.size(); index++) {
-            boundSelectStatement = getBoundStatement(sourceRow, boundSelectStatement, index, idColTypes);
+        for (int index = 0; index < tableInfo.getKeyColumns().size(); index++) {
+            boundSelectStatement = getBoundStatement(sourceRow, boundSelectStatement, index, tableInfo.getIdColumns());
             if (boundSelectStatement == null) return null;
         }
 
@@ -232,19 +234,19 @@ public class AbstractJobSession extends BaseJobSession {
     }
 
     private BoundStatement getBoundStatement(Row sourceRow, BoundStatement boundSelectStatement, int index,
-                                             List<MigrateDataType> cols) {
-        MigrateDataType dataTypeObj = cols.get(index);
-        Object colData = getData(dataTypeObj, index, sourceRow);
+                                             List<ColumnInfo> cols) {
+        TypeInfo typeInfo = cols.get(index).getTypeInfo();
+        Object colData = getData(typeInfo, index, sourceRow);
 
         // Handle rows with blank values in primary-key fields
-        if (index < idColTypes.size()) {
-            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, dataTypeObj.typeClass, sourceRow);
+        if (index < tableInfo.getKeyColumns().size()) {
+            Optional<Object> optionalVal = handleBlankInPrimaryKey(index, colData, typeInfo.getTypeClass(), sourceRow);
             if (!optionalVal.isPresent()) {
                 return null;
             }
             colData = optionalVal.get();
         }
-        boundSelectStatement = boundSelectStatement.set(index, colData, dataTypeObj.typeClass);
+        boundSelectStatement = boundSelectStatement.set(index, colData, typeInfo.getTypeClass());
         return boundSelectStatement;
     }
 
@@ -254,25 +256,25 @@ public class AbstractJobSession extends BaseJobSession {
 
     protected Optional<Object> handleBlankInPrimaryKey(int index, Object colData, Class dataType, Row sourceRow, boolean logWarn) {
         // Handle rows with blank values for 'String' data-type in primary-key fields
-        if (index < idColTypes.size() && colData == null && dataType == String.class) {
+        if (index < tableInfo.getKeyColumns().size() && colData == null && dataType == String.class) {
             if (logWarn) {
                 logger.warn("For row with Key: {}, found String primary-key column {} with blank value",
-                        getKey(sourceRow), allCols[index]);
+                        getKey(sourceRow, tableInfo), tableInfo.getKeyColumns().get(index));
             }
             return Optional.of("");
         }
 
         // Handle rows with blank values for 'timestamp' data-type in primary-key fields
-        if (index < idColTypes.size() && colData == null && dataType == Instant.class) {
+        if (index < tableInfo.getKeyColumns().size() && colData == null && dataType == Instant.class) {
             if (tsReplaceValStr.isEmpty()) {
                 logger.error("Skipping row with Key: {} as Timestamp primary-key column {} has invalid blank value. " +
                         "Alternatively rerun the job with --conf spark.target.replace.blankTimestampKeyUsingEpoch=\"<fixed-epoch-value>\" " +
-                        "option to replace the blanks with a fixed timestamp value", getKey(sourceRow), allCols[index]);
+                        "option to replace the blanks with a fixed timestamp value", getKey(sourceRow, tableInfo), tableInfo.getKeyColumns().get(index));
                 return Optional.empty();
             }
             if (logWarn) {
                 logger.warn("For row with Key: {}, found Timestamp primary-key column {} with invalid blank value. " +
-                        "Using value {} instead", getKey(sourceRow), allCols[index], Instant.ofEpochSecond(tsReplaceVal));
+                        "Using value {} instead", getKey(sourceRow, tableInfo), tableInfo.getKeyColumns().get(index), Instant.ofEpochSecond(tsReplaceVal));
             }
             return Optional.of(Instant.ofEpochSecond(tsReplaceVal));
         }
