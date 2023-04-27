@@ -32,8 +32,8 @@ public class GuardrailJobSession extends BaseJobSession {
                 sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"));
         String selectCols = String.join(",", tableInfo.getAllColumns());
         String partitionKey = String.join(",", tableInfo.getPartitionKeyColumns());
-        String originSelectQry = "select " + selectCols + " from " + sourceKeyspaceTable +
-                " where token(" + partitionKey + ") >= ? and token(" + partitionKey + ") <= ?  " +
+        String originSelectQry = "SELECT " + selectCols + " FROM " + sourceKeyspaceTable +
+                " WHERE TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ?  " +
                 sourceSelectCondition + " ALLOW FILTERING";
 
         logger.info("PARAM -- Detected Table Schema: {}", tableInfo);

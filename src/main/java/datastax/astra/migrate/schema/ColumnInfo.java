@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ public class ColumnInfo {
         if (typeInfo.getTypeClass().equals(UdtValue.class)) {
             isUDT = true;
         }
-        if (cm.getType().toString().contains(", frozen")) {
+        if (cm.getType().toString().toLowerCase(Locale.ROOT).contains(", frozen")) {
             isFrozen = true;
         }
     }

@@ -123,7 +123,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Supports adding custom fixed `writetime`
 
 # Known Limitations
-- This tool does not migrate `ttl` & `writetime` for every field-level (for optimization reasons), but it instead it finds the field with the highest `ttl` & `writetime` and uses those values for `ttl` & `writetime` on the entire Target row
+- This tool does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
 
 # Building Jar for local development
 1. Clone this repo
