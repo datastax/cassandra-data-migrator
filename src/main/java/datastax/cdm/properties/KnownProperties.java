@@ -170,6 +170,24 @@ public class KnownProperties {
     }
 
     //==========================================================================
+    // Error handling
+    //==========================================================================
+    public static final String TOKEN_RANGE_EXCEPTION_DIR = "spark.tokenRange.exceptionDir"; // file:///aaa/bbb/
+    public static final String ROW_EXCEPTION_DIR = "spark.row.exceptionDir"; // file:///aaa/bbb/
+    public static final String TOKEN_RANGE_EXCEPTION_FILE = "spark.input.partitionFile"; // file:///aaa/bbb/partitions.csv
+    public static final String ROW_EXCEPTION_FILE = "spark.input.failedRowsFile"; // file:///aaa/bbb/failedRows.csv
+    public static final String ROW_FAILURE_FILE_SIZE_LIMIT = "spark.rowfailure.filesize.limit"; // 200000000
+    public static final String MAX_RETRIES_ROW_FAILURE = "spark.cdm.perfops.rowerror.limit";
+    static {
+            types.put(TOKEN_RANGE_EXCEPTION_DIR, PropertyType.STRING);
+            types.put(ROW_EXCEPTION_DIR, PropertyType.STRING);
+            types.put(TOKEN_RANGE_EXCEPTION_FILE, PropertyType.STRING);
+            types.put(ROW_EXCEPTION_FILE, PropertyType.STRING);
+            types.put(ROW_FAILURE_FILE_SIZE_LIMIT, PropertyType.NUMBER);
+            types.put(MAX_RETRIES_ROW_FAILURE, PropertyType.NUMBER);
+        defaults.put(ROW_FAILURE_FILE_SIZE_LIMIT, "200000000");
+    }
+    //==========================================================================
     // Guardrails and Transformations
     //==========================================================================
     public static final String TRANSFORM_REPLACE_MISSING_TS                    = "spark.cdm.transform.missing.key.ts.replace.value";

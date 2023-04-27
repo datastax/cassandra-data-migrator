@@ -2,6 +2,7 @@ package datastax.cdm.job;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -35,6 +36,11 @@ public class AbstractJobSession extends BaseJobSession {
         readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_READ));
         writeLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_WRITE));
         maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
+        maxRetriesRowFailure = propertyHelper.getInteger(KnownProperties.MAX_RETRIES_ROW_FAILURE);
+
+        tokenRangeExceptionDir = propertyHelper.getString(KnownProperties.TOKEN_RANGE_EXCEPTION_DIR);
+        rowExceptionDir = propertyHelper.getString(KnownProperties.ROW_EXCEPTION_DIR);
+        exceptionFileName = ColumnsKeysTypes.getOriginKeyspaceTable(propertyHelper);
 
         logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());

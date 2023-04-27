@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -165,4 +167,79 @@ public class SplitPartitions {
         }
     }
 
+    public static List<Partition> getFailedSubPartitionsFromFile(int splitSize, String tokenRangeFile) throws IOException {
+        logger.info("ThreadID: {} Splitting partitions in file: {} using a split-size of {}"
+                , Thread.currentThread().getId(), tokenRangeFile, splitSize);
+
+        File file = new File(tokenRangeFile);
+        String renamedFile = tokenRangeFile+"_bkp";
+        File rename = new File(renamedFile);
+        if(rename.exists()) {
+            rename.delete();
+        }
+        boolean flag = file.renameTo(rename);
+        if (flag == true) {
+            logger.info("File Successfully Renamed to : "+renamedFile);
+        }
+        else {
+            logger.info("Operation Failed to rename file : "+tokenRangeFile);
+        }
+
+        List<Partition> partitions = new ArrayList<Partition>();
+        BufferedReader reader = getfileReader(renamedFile);
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("#")) {
+                continue;
+            }
+            String[] minMax = line.split(",");
+            try {
+                partitions.addAll(getSubPartitions(splitSize, new BigInteger(minMax[0]), new BigInteger(minMax[1]), 100));
+            } catch (Exception e) {
+                logger.error("Skipping partition: {}", line, e);
+            }
+        }
+
+        return partitions;
+    }
+
+    public static List<PKRows> getFailedRowPartsFromFile(int splitSize, long rowFailureFileSizeLimit, String failedRowsFile) throws IOException {
+        logger.info("ThreadID: {} Splitting rows in file: {} using a split-size of {}"
+                , Thread.currentThread().getId(), failedRowsFile, splitSize);
+
+        long bytesSize = Files.size(Paths.get(failedRowsFile));
+
+        if(bytesSize > rowFailureFileSizeLimit) {
+            throw new RuntimeException("Row failure file size exceeds permissible limit of " + rowFailureFileSizeLimit + " bytes. Actual file size is " + bytesSize);
+        }
+
+        String renameFile = failedRowsFile+"_bkp";
+        File file = new File(failedRowsFile);
+        File rename = new File(renameFile);
+        if(rename.exists()) {
+            rename.delete();
+        }
+        boolean flag = file.renameTo(rename);
+        if (flag == true) {
+            logger.info("File Successfully Renamed to : "+renameFile);
+        }
+        else {
+            logger.info("Operation Failed to rename file : "+failedRowsFile);
+        }
+
+        List<String> pkRows = new ArrayList<String>();
+        BufferedReader reader = getfileReader(renameFile);
+        String pkRow = null;
+        while ((pkRow = reader.readLine()) != null) {
+            if (pkRow.startsWith("#")) {
+                continue;
+            }
+            pkRows.add(pkRow);
+        }
+        int partSize = pkRows.size() / splitSize;
+        if (partSize == 0) {
+            partSize = pkRows.size();
+        }
+        return batches(pkRows, partSize).map(l -> (new PKRows(l))).collect(Collectors.toList());
+    }
 }
