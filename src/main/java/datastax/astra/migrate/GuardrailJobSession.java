@@ -3,6 +3,7 @@ package datastax.astra.migrate;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.astra.migrate.schema.TableInfo;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ public class GuardrailJobSession extends BaseJobSession {
     private static GuardrailJobSession guardrailJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected CqlSession session;
+    protected TableInfo tableInfo;
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong largeRowCounter = new AtomicLong(0);
     protected AtomicLong largeFieldCounter = new AtomicLong(0);
@@ -25,11 +27,18 @@ public class GuardrailJobSession extends BaseJobSession {
 
         guardrailColSizeInKB = Integer.parseInt(sc.get("spark.guardrail.colSizeInKB", "0"));
         logger.info("PARAM -- guardrailColSizeInKB: {}", guardrailColSizeInKB);
-        String fullSelectQuery = "select " + selectCols + " from " + sourceKeyspaceTable + " where token(" + partitionKey.trim()
-                + ") >= ? and token(" + partitionKey.trim() + ") <= ?  " + sourceSelectCondition + " ALLOW FILTERING";
 
-        sourceSelectStatement = session.prepare(fullSelectQuery);
-        logger.info("PARAM -- Query used: {}", fullSelectQuery);
+        tableInfo = TableInfo.getInstance(session, sourceKeyspaceTable.split("\\.")[0],
+                sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"));
+        String selectCols = String.join(",", tableInfo.getAllColumns());
+        String partitionKey = String.join(",", tableInfo.getPartitionKeyColumns());
+        String originSelectQry = "SELECT " + selectCols + " FROM " + sourceKeyspaceTable +
+                " WHERE TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ?  " +
+                sourceSelectCondition + " ALLOW FILTERING";
+
+        logger.info("PARAM -- Detected Table Schema: {}", tableInfo);
+        logger.info("PARAM -- Origin select query: {}", originSelectQry);
+        sourceSelectStatement = this.session.prepare(originSelectQry);
     }
 
     public static GuardrailJobSession getInstance(CqlSession session, SparkConf sparkConf) {
@@ -55,11 +64,11 @@ public class GuardrailJobSession extends BaseJobSession {
                 readLimiter.acquire(1);
                 readCounter.addAndGet(1);
                 int largeFieldCnt = 0;
-                for (int colIdx = idColTypes.size(); colIdx < allCols.length; colIdx++) {
-                    int colSize = getFieldSize(selectColTypes.get(colIdx), colIdx, row);
+                for (int colIdx = tableInfo.getKeyColumns().size(); colIdx < tableInfo.getAllColumns().size(); colIdx++) {
+                    int colSize = getFieldSize(tableInfo.getColumns().get(colIdx).getTypeInfo(), colIdx, row);
                     if (colSize >= (guardrailColSizeInKB * 1024)) {
-                        logger.error("ThreadID: {}, PrimaryKey: {}, ColumnName: {} ColumnSize: {}", Thread.currentThread().getId(), getKey(row),
-                                allCols[colIdx], colSize);
+                        logger.error("ThreadID: {}, PrimaryKey: {}, ColumnName: {} ColumnSize: {}", Thread.currentThread().getId(), getKey(row, tableInfo),
+                                tableInfo.getAllColumns().get(colIdx), colSize);
                         largeFieldCnt++;
                     }
                 }

@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import datastax.astra.migrate.schema.ColumnInfo;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +45,8 @@ public class CopyPKJobSession extends AbstractJobSession {
                 String[] pkFields = row.split(" %% ");
                 int idx = 0;
                 BoundStatement bspk = sourceSelectStatement.bind().setConsistencyLevel(readConsistencyLevel);
-                for (MigrateDataType tp : idColTypes) {
-                    bspk = bspk.set(idx, convert(tp.typeClass, pkFields[idx]), tp.typeClass);
+                for (ColumnInfo ci : tableInfo.getIdColumns()) {
+                    bspk = bspk.set(idx, convert(ci.getTypeInfo().getTypeClass(), pkFields[idx]), ci.getTypeInfo().getTypeClass());
                     idx++;
                 }
                 Row pkRow = sourceSession.execute(bspk).one();

@@ -31,6 +31,7 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 
 ```
 ./spark-submit --properties-file cdm.properties /
+--conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
 --class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
@@ -40,6 +41,7 @@ Note:
 - Add option `--driver-memory 25G --executor-memory 25G` as shown below if the table migrated is large (over 100GB)
 ```
 ./spark-submit --properties-file cdm.properties /
+--conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" --driver-memory 25G --executor-memory 25G /
 --class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
@@ -50,6 +52,7 @@ Note:
 
 ```
 ./spark-submit --properties-file cdm.properties /
+--conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
 --class datastax.astra.migrate.DiffData cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
@@ -80,6 +83,7 @@ Note:
 - You can also use the tool to migrate specific partition ranges using class option `--class datastax.astra.migrate.MigratePartitionsFromFile` as shown below
 ```
 ./spark-submit --properties-file cdm.properties /
+--conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
 --class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
@@ -97,12 +101,14 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class datastax.astra.migrate.Guardrail` as shown below
 ```
 ./spark-submit --properties-file cdmGuardrail.properties /
+--conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
 --class datastax.astra.migrate.Guardrail cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
 ```
 > A sample Guardrail properties file can be [found here](./src/resources/cdmGuardrail.properties)
 
 # Features
+- Auto-detects table schema (column names, types, id fields, collections, UDTs, etc.)
 - Supports migration/validation of [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
 - Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTLs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)
 - Supports migration/validation of advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
@@ -115,6 +121,9 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Supports migration/validation from and to [Azure Cosmos Cassandra](https://learn.microsoft.com/en-us/azure/cosmos-db/cassandra)
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Supports adding custom fixed `writetime`
+
+# Known Limitations
+- This tool does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
 
 # Building Jar for local development
 1. Clone this repo

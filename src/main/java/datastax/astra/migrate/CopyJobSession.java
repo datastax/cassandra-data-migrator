@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import datastax.astra.migrate.schema.TypeInfo;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,9 +69,9 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            String col = (String) getData(new TypeInfo(filterColType), filterColIndex, sourceRow);
                             if (col.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow, tableInfo));
                                 skipCnt++;
                                 continue;
                             }
@@ -117,9 +118,9 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            String colValue = (String) getData(new TypeInfo(filterColType), filterColIndex, sourceRow);
                             if (colValue.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow, tableInfo));
                                 skipCnt++;
                                 continue;
                             }
