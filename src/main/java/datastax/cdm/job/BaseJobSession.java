@@ -19,8 +19,13 @@ public abstract class BaseJobSession {
     protected RateLimiter readLimiter;
     protected RateLimiter writeLimiter;
     protected Integer maxRetries = 10;
+    protected Integer maxRetriesRowFailure = 2;
 
     protected Integer printStatsAfter = 100000;
+
+    protected String tokenRangeExceptionDir;
+    protected String rowExceptionDir;
+    protected String exceptionFileName;
 
     protected BaseJobSession(SparkConf sc) {
         propertyHelper.initializeSparkConf(sc);
