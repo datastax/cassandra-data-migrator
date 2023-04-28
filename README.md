@@ -97,6 +97,14 @@ When running in above mode the tool assumes a `partitions.csv` file to be presen
 ```
 This mode is specifically useful to processes a subset of partition-ranges that may have failed during a previous run.
 
+> **Note:**
+> Here is a quick tip to prepare `partitions.csv` from the log file,
+
+```
+grep "ERROR CopyJobSession: Error with PartitionRange" /path/to/logfile_name.txt | awk '{print $13","$15}' > partitions.csv
+```
+
+
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class datastax.astra.migrate.Guardrail` as shown below
 ```
