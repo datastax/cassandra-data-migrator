@@ -2,6 +2,7 @@ package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import datastax.astra.migrate.schema.TypeInfo;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ public class CopyJobSession extends AbstractJobSession {
 
     private static CopyJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong skippedCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
@@ -50,7 +50,6 @@ public class CopyJobSession extends AbstractJobSession {
             long readCnt = 0;
             long writeCnt = 0;
             long skipCnt = 0;
-            long errCnt = 0;
             try {
                 ResultSet resultSet = sourceSession.execute(sourceSelectStatement.bind(hasRandomPartitioner ?
                                 min : min.longValueExact(), hasRandomPartitioner ? max : max.longValueExact())
@@ -70,9 +69,9 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String col = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            String col = (String) getData(new TypeInfo(filterColType), filterColIndex, sourceRow);
                             if (col.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow, tableInfo));
                                 skipCnt++;
                                 continue;
                             }
@@ -119,9 +118,9 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String colValue = (String) getData(new MigrateDataType(filterColType), filterColIndex, sourceRow);
+                            String colValue = (String) getData(new TypeInfo(filterColType), filterColIndex, sourceRow);
                             if (colValue.trim().equalsIgnoreCase(filterColValue)) {
-                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow));
+                                logger.warn("Skipping row and filtering out: {}", getKey(sourceRow, tableInfo));
                                 skipCnt++;
                                 continue;
                             }
@@ -155,7 +154,6 @@ public class CopyJobSession extends AbstractJobSession {
                         CompletionStage<AsyncResultSet> writeResultSet = astraSession.executeAsync(batchStatement);
                         writeResults.add(writeResultSet);
                         writeCnt += iterateAndClearWriteResults(writeResults, batchStatement.size());
-                        batchStatement = BatchStatement.newInstance(BatchType.UNLOGGED);
                     }
                 }
 

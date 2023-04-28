@@ -17,14 +17,11 @@ import java.util.stream.Stream;
 
 public class SplitPartitions {
 
-    public final static Long MIN_PARTITION = Long.MIN_VALUE;
-    public final static Long MAX_PARTITION = Long.MAX_VALUE;
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
 
     public static void main(String[] args) throws IOException {
         Collection<Partition> partitions = getSubPartitions(2, BigInteger.valueOf(1),
                 BigInteger.valueOf(1000), 100);
-//        Collection<Partition> partitions = getSubPartitionsFromFile(3);
         for (Partition partition : partitions) {
             System.out.println(partition);
         }
@@ -138,8 +135,8 @@ public class SplitPartitions {
     public static class Partition implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        private BigInteger min;
-        private BigInteger max;
+        private final BigInteger min;
+        private final BigInteger max;
 
         public Partition(BigInteger min, BigInteger max) {
             this.min = min;
