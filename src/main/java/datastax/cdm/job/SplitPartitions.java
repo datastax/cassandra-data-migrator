@@ -203,43 +203,4 @@ public class SplitPartitions {
         return partitions;
     }
 
-    public static List<PKRows> getFailedRowPartsFromFile(int splitSize, long rowFailureFileSizeLimit, String failedRowsFile) throws IOException {
-        logger.info("ThreadID: {} Splitting rows in file: {} using a split-size of {}"
-                , Thread.currentThread().getId(), failedRowsFile, splitSize);
-
-        long bytesSize = Files.size(Paths.get(failedRowsFile));
-
-        if(bytesSize > rowFailureFileSizeLimit) {
-            throw new RuntimeException("Row failure file size exceeds permissible limit of " + rowFailureFileSizeLimit + " bytes. Actual file size is " + bytesSize);
-        }
-
-        String renameFile = failedRowsFile+"_bkp";
-        File file = new File(failedRowsFile);
-        File rename = new File(renameFile);
-        if(rename.exists()) {
-            rename.delete();
-        }
-        boolean flag = file.renameTo(rename);
-        if (flag == true) {
-            logger.info("File Successfully Renamed to : "+renameFile);
-        }
-        else {
-            logger.info("Operation Failed to rename file : "+failedRowsFile);
-        }
-
-        List<String> pkRows = new ArrayList<String>();
-        BufferedReader reader = getfileReader(renameFile);
-        String pkRow = null;
-        while ((pkRow = reader.readLine()) != null) {
-            if (pkRow.startsWith("#")) {
-                continue;
-            }
-            pkRows.add(pkRow);
-        }
-        int partSize = pkRows.size() / splitSize;
-        if (partSize == 0) {
-            partSize = pkRows.size();
-        }
-        return batches(pkRows, partSize).map(l -> (new PKRows(l))).collect(Collectors.toList());
-    }
 }

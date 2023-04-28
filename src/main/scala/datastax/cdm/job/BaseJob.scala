@@ -54,8 +54,6 @@ class BaseJob extends App {
   val numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
 
   val tokenRangeFile = propertyHelper.getString(KnownProperties.TOKEN_RANGE_EXCEPTION_FILE)
-  val failedRowsFile = propertyHelper.getString(KnownProperties.ROW_EXCEPTION_FILE)
-  val rowFailureFileSizeLimit = propertyHelper.getLong(KnownProperties.ROW_FAILURE_FILE_SIZE_LIMIT)
 
   protected def exitSpark() = {
     spark.stop()
