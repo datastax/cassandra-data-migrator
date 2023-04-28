@@ -38,7 +38,6 @@ public class DiffJobSession extends CopyJobSession {
     private final AtomicLong correctedMismatchCounter = new AtomicLong(0);
     private final AtomicLong validCounter = new AtomicLong(0);
     private final AtomicLong skippedCounter = new AtomicLong(0);
-    private AtomicLong failedRowCounter = new AtomicLong(0);
 
     private final boolean isCounterTable;
     private final boolean forceCounterWhenMissing;
@@ -161,29 +160,12 @@ public class DiffJobSession extends CopyJobSession {
         }
     }
 
-    private void logFailedRecordInFile(Record record) {
-        try {
-            failedRowCounter.getAndIncrement();
-            ExceptionHandler.FileAppend(rowExceptionDir, exceptionFileName, record.getPk().toString());
-            logger.error("Failed to validate row: {} after {} retry.", record.getPk());
-        } catch (Exception exp) {
-            logger.error("Error occurred while writing to key {} to file ", record.getPk(), exp);
-        }
-    }
-
     private void diffAndClear(List<Record> recordsToDiff) {
         for (Record record : recordsToDiff) {
-            int maxAttempts = maxRetriesRowFailure; // Is this correct?
-            for (int attempts = 1; attempts <= maxAttempts; attempts++) {
-                try {
-                    diff(record, attempts);
-                    attempts = maxAttempts;
-                } catch (Exception e) {
-                    logger.error("Could not perform diff for Key: {} -- Retry# {}", record.getPk(), attempts, e);
-                    if (null != rowExceptionDir && rowExceptionDir.trim().length() > 0 && attempts == maxAttempts) {
-                        logFailedRecordInFile(record);
-                    }
-                }
+            try {
+                diff(record);
+            } catch (Exception e) {
+                logger.error("Could not perform diff for key {}: {}", record.getPk(), e);
             }
         }
         recordsToDiff.clear();
@@ -202,20 +184,18 @@ public class DiffJobSession extends CopyJobSession {
         logger.info("{} Corrected Missing Record Count: {}", msg, correctedMissingCounter.get());
         logger.info("{} Valid Record Count: {}", msg, validCounter.get());
         logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
-        logger.info("{} Failed row Count: {}", msg, failedRowCounter.get());
         if (isFinal) {
             logger.info("################################################################################################");
         }
     }
 
-    private void diff(Record record, int attempts) {
+    private void diff(Record record) {
         EnhancedPK originPK = record.getPk();
         Row originRow = record.getOriginRow();
         Row targetRow = record.getTargetRow();
 
         if (targetRow == null) {
             missingCounter.incrementAndGet();
-            // FR WHY THE RETRY == 1 IS MISSING HERE
             logger.error("Missing target row found for key: {}", record.getPk());
             if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
                 logger.error("{} is true, but not Inserting as {} is not enabled; key : {}", KnownProperties.AUTOCORRECT_MISSING, KnownProperties.AUTOCORRECT_MISSING_COUNTER, record.getPk());
@@ -235,10 +215,9 @@ public class DiffJobSession extends CopyJobSession {
 
         String diffData = isDifferent(originPK, originRow, targetRow);
         if (!diffData.isEmpty()) {
-            if (attempts == 1) {
-                mismatchCounter.incrementAndGet();
-                logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
-            }
+            mismatchCounter.incrementAndGet();
+            logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
+
             if (autoCorrectMismatch) {
                 writeLimiter.acquire(1);
                 if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
