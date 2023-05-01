@@ -15,8 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class AbstractJobSession extends BaseJobSession {
@@ -119,14 +121,8 @@ public class AbstractJobSession extends BaseJobSession {
         if (null == insertCols || insertCols.trim().isEmpty()) {
             insertCols = selectCols;
         }
-        String insertBinds = "";
-        for (String idCol : tableInfo.getKeyColumns()) {
-            if (insertBinds.isEmpty()) {
-                insertBinds = idCol + "= ?";
-            } else {
-                insertBinds += " and " + idCol + "= ?";
-            }
-        }
+        String insertBinds = String.join(" and ",
+                tableInfo.getKeyColumns().stream().map(col -> col + " = ?").collect(Collectors.toList()));
 
         String originSelectQry;
         if (!isJobMigrateRowsFromFile) {
@@ -144,32 +140,22 @@ public class AbstractJobSession extends BaseJobSession {
         astraSelectStatement = astraSession.prepare(targetSelectQry);
 
         isCounterTable = tableInfo.isCounterTable();
+        String fullInsertQuery;
         if (isCounterTable) {
-            String updateSelectMappingStr = Util.getSparkPropOr(sc, "spark.counterTable.cql.index", "0");
-            for (String updateSelectIndex : updateSelectMappingStr.split(",")) {
-                updateSelectMapping.add(Integer.parseInt(updateSelectIndex));
-            }
-
-            String counterTableUpdate = Util.getSparkProp(sc, "spark.counterTable.cql");
-            astraInsertStatement = astraSession.prepare(counterTableUpdate);
-            String fullInsertQuery = "update " + astraKeyspaceTable + " set (" + insertCols + ") VALUES (" + insertBinds + ")";
+            String updateCols = String.join(" , ",
+                    tableInfo.getOtherColumns().stream().map(s -> s + " += ?").collect(Collectors.toList()));
+            String updateKeys = String.join(" and ",
+                    tableInfo.getKeyColumns().stream().map(s -> s + " = ?").collect(Collectors.toList()));
+            fullInsertQuery = "update " + astraKeyspaceTable + " set " + updateCols + " where " + updateKeys;
         } else {
-            insertBinds = "";
-            for (String str : insertCols.split(",")) {
-                if (insertBinds.isEmpty()) {
-                    insertBinds += "?";
-                } else {
-                    insertBinds += ", ?";
-                }
-            }
-
-            String fullInsertQuery = "insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")";
+            insertBinds = String.join(" , ", Arrays.stream(insertCols.split(",")).map(col -> " ?").collect(Collectors.toList()));
+            fullInsertQuery = "insert into " + astraKeyspaceTable + " (" + insertCols + ") VALUES (" + insertBinds + ")";
             if (!ttlWTCols.isEmpty()) {
                 fullInsertQuery += " USING TTL ? AND TIMESTAMP ?";
             }
-            logger.info("PARAM -- Target insert query: {}", fullInsertQuery);
-            astraInsertStatement = astraSession.prepare(fullInsertQuery);
         }
+        logger.info("PARAM -- Target insert query: {}", fullInsertQuery);
+        astraInsertStatement = astraSession.prepare(fullInsertQuery);
 
         // Handle rows with blank values for 'timestamp' data-type in primary-key fields
         tsReplaceValStr = Util.getSparkPropOr(sc, "spark.target.replace.blankTimestampKeyUsingEpoch", "");
@@ -182,14 +168,20 @@ public class AbstractJobSession extends BaseJobSession {
         BoundStatement boundInsertStatement = insertStatement.bind().setConsistencyLevel(writeConsistencyLevel);
 
         if (isCounterTable) {
-            for (int index = 0; index < tableInfo.getAllColumns().size(); index++) {
-                TypeInfo typeInfo = tableInfo.getColumns().get(index).getTypeInfo();
+            for (int index = 0; index < tableInfo.getNonKeyColumns().size(); index++) {
+                TypeInfo typeInfo = tableInfo.getNonKeyColumns().get(index).getTypeInfo();
+                int colIdx = tableInfo.getIdColumns().size() + index;
                 // compute the counter delta if reading from astra for the difference
-                if (astraRow != null && index < (tableInfo.getColumns().size() - tableInfo.getIdColumns().size())) {
-                    boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(updateSelectMapping.get(index)) - astraRow.getLong(updateSelectMapping.get(index))), Long.class);
+                if (astraRow != null) {
+                    boundInsertStatement = boundInsertStatement.set(index, (sourceRow.getLong(colIdx) - astraRow.getLong(colIdx)), Long.class);
                 } else {
-                    boundInsertStatement = boundInsertStatement.set(index, getData(typeInfo, updateSelectMapping.get(index), sourceRow), typeInfo.getTypeClass());
+                    boundInsertStatement = boundInsertStatement.set(index, sourceRow.getLong(colIdx), Long.class);
                 }
+            }
+            for (int index = 0; index < tableInfo.getIdColumns().size(); index++) {
+                TypeInfo typeInfo = tableInfo.getIdColumns().get(index).getTypeInfo();
+                int colIdx = tableInfo.getNonKeyColumns().size() + index;
+                boundInsertStatement = boundInsertStatement.set(colIdx, getData(typeInfo, index, sourceRow), typeInfo.getTypeClass());
             }
         } else {
             int index = 0;
