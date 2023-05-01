@@ -205,6 +205,7 @@ public class DiffJobSession extends CopyJobSession {
             //correct data
             if (autoCorrectMissing) {
                 writeLimiter.acquire(1);
+                logger.info("Inserting missing row in target: {}", record.getPk());
                 if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
                 else cqlHelper.getTargetInsertStatement().putRecord(record);
                 correctedMissingCounter.incrementAndGet();
@@ -220,6 +221,7 @@ public class DiffJobSession extends CopyJobSession {
 
             if (autoCorrectMismatch) {
                 writeLimiter.acquire(1);
+                logger.info("Correcting mismatch row in target: {}", record.getPk());
                 if (isCounterTable) cqlHelper.getTargetUpdateStatement().putRecord(record);
                 else cqlHelper.getTargetInsertStatement().putRecord(record);
                 correctedMismatchCounter.incrementAndGet();
