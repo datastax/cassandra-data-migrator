@@ -43,6 +43,8 @@ public class AbstractJobSession extends BaseJobSession {
         logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
         logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
+        logger.info("PARAM -- Token range exception dir: {}", tokenRangeExceptionDir);
+        logger.info("PARAM -- Token range exception file name: {}", exceptionFileName);
 
         cqlHelper.initialize();
     }
