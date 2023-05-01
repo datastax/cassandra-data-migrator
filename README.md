@@ -108,7 +108,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 - Supports migration/validation from and to [Azure Cosmos Cassandra](https://learn.microsoft.com/en-us/azure/cosmos-db/cassandra)
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Supports adding custom fixed `writetime`
-- Log partitions range level and row level exceptions 
+- Validation - Log partitions range level exceptions, use the exceptions file as input for rerun  
 
 # Building Jar for local development
 1. Clone this repo
