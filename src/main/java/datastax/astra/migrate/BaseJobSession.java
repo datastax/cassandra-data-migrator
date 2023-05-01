@@ -10,7 +10,6 @@ import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.SparkConf;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,9 +33,6 @@ public abstract class BaseJobSession {
     protected RateLimiter writeLimiter;
     protected Integer maxRetries = 10;
     protected AtomicLong readCounter = new AtomicLong(0);
-
-    protected List<Integer> updateSelectMapping = new ArrayList<Integer>();
-
     protected Integer batchSize = 1;
     protected Integer fetchSizeInRows = 1000;
     protected Integer printStatsAfter = 100000;

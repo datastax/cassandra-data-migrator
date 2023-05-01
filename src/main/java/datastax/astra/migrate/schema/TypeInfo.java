@@ -18,6 +18,7 @@ public class TypeInfo {
     private static Map<String, Class> typeMap = loadTypeMap();
     private Class typeClass = Object.class;
     private List<Class> subTypes = new ArrayList<Class>();
+    private boolean isCounter = false;
 
     public TypeInfo(DataType dataType) {
         this(dataType.toString());
@@ -48,6 +49,9 @@ public class TypeInfo {
             typeClass = UdtValue.class;
         } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("tuple")) {
             typeClass = TupleValue.class;
+        } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("counter")) {
+            typeClass = Long.class;
+            isCounter = true;
         } else {
             typeClass = typeMap.get(dataTypeStr.toLowerCase(Locale.ROOT));
         }

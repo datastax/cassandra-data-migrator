@@ -21,9 +21,12 @@ public class TableInfo {
     private List<ColumnInfo> idColumns;
     private List<String> partitionKeyColumns;
     private List<String> keyColumns;
+    private List<String> otherColumns;
     private List<String> allColumns;
     private List<String> ttlAndWriteTimeColumns;
     private String desc;
+
+    @ToString.Include
     private boolean isCounterTable = false;
 
     protected TableInfo(CqlSession session, String keySpace, String table, String selectColsString) {
@@ -31,9 +34,6 @@ public class TableInfo {
                 Arrays.asList(selectColsString.toLowerCase(Locale.ROOT).split(","));
         TableMetadata tm = session.getMetadata().getKeyspace(keySpace).get().getTable(table).get();
         desc = tm.describe(false);
-        if (desc.toLowerCase(Locale.ROOT).contains("counter")) {
-            isCounterTable = true;
-        }
 
         partitionColumns = getPartitionKeyColumns(tm);
         partitionKeyColumns = colInfoToList(partitionColumns);
@@ -43,9 +43,11 @@ public class TableInfo {
         keyColumns = colInfoToList(idColumns);
 
         nonKeyColumns = getNonKeyColumns(tm, keyColumns, selectCols);
+        otherColumns = colInfoToList(nonKeyColumns);
         columns.addAll(idColumns);
         columns.addAll(nonKeyColumns);
         allColumns = colInfoToList(columns);
+        isCounterTable = isCounterTable(nonKeyColumns);
 
         ttlAndWriteTimeColumns = loadTtlAndWriteTimeCols();
     }
@@ -98,5 +100,9 @@ public class TableInfo {
 
     private List<String> colInfoToList(List<ColumnInfo> listColInfo) {
         return listColInfo.stream().map(ColumnInfo::getColName).collect(Collectors.toList());
+    }
+
+    private boolean isCounterTable(List<ColumnInfo> nonKeyColumns) {
+        return nonKeyColumns.stream().filter(ci -> ci.getTypeInfo().isCounter()).findAny().isPresent();
     }
 }
