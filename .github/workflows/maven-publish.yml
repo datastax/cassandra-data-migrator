@@ -6,7 +6,7 @@ name: Maven Package
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, 3.3.0_stable ]
 
 jobs:
   build:
@@ -33,3 +33,25 @@ jobs:
       run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
       env:
         GITHUB_TOKEN: ${{ github.token }}
+
+  # This following step deletes older maven packages to help automatic clean-up
+  # For more information, see https://github.com/marketplace/actions/delete-package-versions#delete-all-except-y-latest-versions-of-a-package
+
+  cleanup-old-maven-packages:
+    name: Clean-up old maven packages
+    needs: [ build ]
+    runs-on: ubuntu-latest
+
+    # max run time 20 minutes
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        package: [ datastax.astra.migrate.cassandra-data-migrator, datastax.cdm.cassandra-data-migrator ]
+
+    steps:
+    - uses: actions/delete-package-versions@v4
+      with:
+        package-name: ${{ matrix.package }}
+        package-type: 'maven'
+        min-versions-to-keep: 10
