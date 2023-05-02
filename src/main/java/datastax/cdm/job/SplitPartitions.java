@@ -178,7 +178,7 @@ public class SplitPartitions {
             rename.delete();
         }
         boolean flag = file.renameTo(rename);
-        if (flag == true) {
+        if (flag) {
             logger.info("File Successfully Renamed to : "+renamedFile);
         }
         else {

@@ -14,6 +14,7 @@ import datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import datastax.cdm.properties.ColumnsKeysTypes;
 import datastax.cdm.properties.KnownProperties;
+import org.apache.commons.lang.StringUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,7 +146,7 @@ public class DiffJobSession extends CopyJobSession {
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts);
-                if (null != tokenRangeExceptionDir && tokenRangeExceptionDir.trim().length() > 0 && attempts == maxAttempts) {
+                if (StringUtils.isNotBlank(tokenRangeExceptionDir) && attempts == maxAttempts) {
                     logFailedPartitionsInFile(min, max);
                 }
             }
