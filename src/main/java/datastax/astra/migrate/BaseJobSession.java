@@ -31,26 +31,26 @@ public abstract class BaseJobSession {
     // Rate = Total Throughput (write/read per sec) / Total Executors
     protected RateLimiter readLimiter;
     protected RateLimiter writeLimiter;
-    protected Integer maxRetries = 10;
+    protected int maxRetries = 10;
     protected AtomicLong readCounter = new AtomicLong(0);
-    protected Integer batchSize = 1;
-    protected Integer fetchSizeInRows = 1000;
-    protected Integer printStatsAfter = 100000;
+    protected int batchSize = 1;
+    protected int fetchSizeInRows = 1000;
+    protected int printStatsAfter;
 
-    protected Boolean writeTimeStampFilter = Boolean.FALSE;
-    protected Long minWriteTimeStampFilter = 0l;
-    protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
+    protected boolean writeTimeStampFilter;
+    protected long minWriteTimeStampFilter = 0l;
+    protected long maxWriteTimeStampFilter = Long.MAX_VALUE;
 
-    protected Boolean isCounterTable = false;
+    protected boolean isCounterTable;
 
     protected String sourceKeyspaceTable;
     protected String astraKeyspaceTable;
 
-    protected Boolean hasRandomPartitioner;
-    protected Boolean filterData;
+    protected boolean hasRandomPartitioner;
+    protected boolean filterData;
     protected String filterColName;
     protected String filterColType;
-    protected Integer filterColIndex;
+    protected int filterColIndex;
     protected String filterColValue;
     protected String sourceSelectCondition;
 

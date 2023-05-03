@@ -30,8 +30,8 @@ public class AbstractJobSession extends BaseJobSession {
     protected List<String> ttlWTCols;
     protected String tsReplaceValStr;
     protected long tsReplaceVal;
-    protected Long customWritetime = 0l;
-    protected Long incrWritetime = 0l;
+    protected long customWriteTime = 0l;
+    protected long incrementWriteTime = 0l;
 
     protected AbstractJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         this(sourceSession, astraSession, sc, false);
@@ -98,19 +98,19 @@ public class AbstractJobSession extends BaseJobSession {
         String customWriteTimeStr =
                 Util.getSparkPropOr(sc, "spark.target.writeTime.fixedValue", "0");
         if (null != customWriteTimeStr && customWriteTimeStr.trim().length() > 0 && StringUtils.isNumeric(customWriteTimeStr.trim())) {
-            customWritetime = Long.parseLong(customWriteTimeStr);
+            customWriteTime = Long.parseLong(customWriteTimeStr);
         }
 
         String incrWriteTimeStr =
                 Util.getSparkPropOr(sc, "spark.target.writeTime.incrementBy", "0");
         if (null != incrWriteTimeStr && incrWriteTimeStr.trim().length() > 0 && StringUtils.isNumeric(incrWriteTimeStr.trim())) {
-            incrWritetime = Long.parseLong(incrWriteTimeStr);
+            incrementWriteTime = Long.parseLong(incrWriteTimeStr);
         }
 
         logger.info("PARAM -- TTL-WriteTime Columns: {}", ttlWTCols);
         logger.info("PARAM -- WriteTimes Filter: {}", writeTimeStampFilter);
-        logger.info("PARAM -- WriteTime Custom Value: {}", customWritetime);
-        logger.info("PARAM -- WriteTime increment Value: {}", incrWritetime);
+        logger.info("PARAM -- WriteTime Custom Value: {}", customWriteTime);
+        logger.info("PARAM -- WriteTime Increment Value: {}", incrementWriteTime);
         if (writeTimeStampFilter) {
             logger.info("PARAM -- minWriteTimeStampFilter: {} datetime is {}", minWriteTimeStampFilter,
                     Instant.ofEpochMilli(minWriteTimeStampFilter / 1000));
@@ -202,10 +202,10 @@ public class AbstractJobSession extends BaseJobSession {
             if (!ttlWTCols.isEmpty()) {
                 boundInsertStatement = boundInsertStatement.set(index, getLargestTTL(sourceRow), Integer.class);
                 index++;
-                if (customWritetime > 0) {
-                    boundInsertStatement = boundInsertStatement.set(index, customWritetime, Long.class);
+                if (customWriteTime > 0) {
+                    boundInsertStatement = boundInsertStatement.set(index, customWriteTime, Long.class);
                 } else {
-                    boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow) + incrWritetime, Long.class);
+                    boundInsertStatement = boundInsertStatement.set(index, getLargestWriteTimeStamp(sourceRow) + incrementWriteTime, Long.class);
                 }
             }
         }
