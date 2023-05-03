@@ -8,7 +8,7 @@ import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import datastax.astra.migrate.schema.ColumnInfo;
 import datastax.astra.migrate.schema.TableInfo;
 import datastax.astra.migrate.schema.TypeInfo;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,19 +91,19 @@ public class AbstractJobSession extends BaseJobSession {
         }
         String maxWriteTimeStampFilterStr =
                 Util.getSparkPropOr(sc, "spark.origin.maxWriteTimeStampFilter", "0");
-        if (null != maxWriteTimeStampFilterStr && maxWriteTimeStampFilterStr.trim().length() > 1) {
+        if (StringUtils.isNotBlank(maxWriteTimeStampFilterStr)) {
             maxWriteTimeStampFilter = Long.parseLong(maxWriteTimeStampFilterStr);
         }
 
         String customWriteTimeStr =
                 Util.getSparkPropOr(sc, "spark.target.writeTime.fixedValue", "0");
-        if (null != customWriteTimeStr && customWriteTimeStr.trim().length() > 0 && StringUtils.isNumeric(customWriteTimeStr.trim())) {
+        if (StringUtils.isNotBlank(customWriteTimeStr) && StringUtils.isNumeric(customWriteTimeStr.trim())) {
             customWriteTime = Long.parseLong(customWriteTimeStr);
         }
 
         String incrWriteTimeStr =
                 Util.getSparkPropOr(sc, "spark.target.writeTime.incrementBy", "0");
-        if (null != incrWriteTimeStr && incrWriteTimeStr.trim().length() > 0 && StringUtils.isNumeric(incrWriteTimeStr.trim())) {
+        if (StringUtils.isNotBlank(incrWriteTimeStr) && StringUtils.isNumeric(incrWriteTimeStr.trim())) {
             incrementWriteTime = Long.parseLong(incrWriteTimeStr);
         }
 
