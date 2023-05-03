@@ -40,7 +40,6 @@ public abstract class BaseJobSession {
     protected Boolean writeTimeStampFilter = Boolean.FALSE;
     protected Long minWriteTimeStampFilter = 0l;
     protected Long maxWriteTimeStampFilter = Long.MAX_VALUE;
-    protected Long customWritetime = 0l;
 
     protected Boolean isCounterTable = false;
 
