@@ -1,4 +1,4 @@
-migrateData datastax.cdm.job.Migrate migrate.properties
-validateData datastax.cdm.job.DiffData migrate.properties
-fixData datastax.cdm.job.DiffData fix.properties
-fixForce datastax.cdm.job.DiffData fix-force.properties
+migrateData com.datastax.cdm.job.Migrate migrate.properties
+validateData com.datastax.cdm.job.DiffData migrate.properties
+fixData com.datastax.cdm.job.DiffData fix.properties
+fixForce com.datastax.cdm.job.DiffData fix-force.properties
