@@ -97,7 +97,7 @@ public class AbstractJobSession extends BaseJobSession {
 
         String customWriteTimeStr =
                 Util.getSparkPropOr(sc, "spark.target.writeTime.fixedValue", "0");
-        if (StringUtils.isNotBlank(customWriteTimeStr) && StringUtils.isNumeric(customWriteTimeStr.trim())) {
+        if (StringUtils.isNotBlank(customWriteTimeStr) && StringUtils.isNumeric(customWriteTimeStr)) {
             customWriteTime = Long.parseLong(customWriteTimeStr);
         }
 
