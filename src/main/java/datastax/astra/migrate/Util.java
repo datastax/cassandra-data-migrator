@@ -1,7 +1,7 @@
 package datastax.astra.migrate;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.SparkConf;
 
 import java.io.BufferedReader;

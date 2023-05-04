@@ -8,7 +8,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>3.4.1</revision>
+    <revision>3.4.2</revision>
     <scala.version>2.12.17</scala.version>
     <scala.main.version>2.12</scala.main.version>
     <spark.version>3.3.1</spark.version>
@@ -48,21 +48,7 @@
       <artifactId>spark-sql_${scala.main.version}</artifactId>
       <version>${spark.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-hive_${scala.main.version}</artifactId>
-      <version>${spark.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>apache-log4j-extras</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+
     <dependency>
       <groupId>com.datastax.spark</groupId>
       <artifactId>spark-cassandra-connector_${scala.main.version}</artifactId>
@@ -74,11 +60,6 @@
       <version>3.1.15</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.19.0</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>

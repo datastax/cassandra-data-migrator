@@ -19,7 +19,7 @@ public class GuardrailJobSession extends BaseJobSession {
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong largeRowCounter = new AtomicLong(0);
     protected AtomicLong largeFieldCounter = new AtomicLong(0);
-    protected Integer guardrailColSizeInKB;
+    protected int guardrailColSizeInKB;
 
     protected GuardrailJobSession(CqlSession session, SparkConf sc) {
         super(sc);

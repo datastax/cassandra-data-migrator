@@ -30,8 +30,8 @@ public class DiffJobSession extends CopyJobSession {
     private final AtomicLong validCounter = new AtomicLong(0);
     private final AtomicLong skippedCounter = new AtomicLong(0);
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected Boolean autoCorrectMissing = false;
-    protected Boolean autoCorrectMismatch = false;
+    protected boolean autoCorrectMissing;
+    protected boolean autoCorrectMismatch;
 
     private DiffJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         super(sourceSession, astraSession, sc);
