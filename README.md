@@ -24,7 +24,7 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 
 # Steps for Data-Migration:
 
-> :warning: Note that Version 4 of the tool is not backward-compatible with .properties files created in previous versions, and that package names have changed.
+> :warning: Note that Version 4 of the tool is not backward-compatible with .properties files created in previous versions, and that package names have changed (below examples would require **datastax.cdm..** instead of **datastax.astra..**)
 
 1. `sparkConf.properties` file needs to be configured as applicable for the environment. Parameter descriptions and defaults are described in the file.
    > A sample Spark conf file configuration can be [found here](./src/resources/sparkConf.properties)
@@ -34,16 +34,17 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-x.x.x.jar &> logfile_name.txt
 ```
 
 Note: 
 - Above command generates a log file `logfile_name.txt` to avoid log output on the console.
 - Add option `--driver-memory 25G --executor-memory 25G` as shown below if the table migrated is large (over 100GB)
+
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" --driver-memory 25G --executor-memory 25G /
---class datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-x.x.x.jar &> logfile_name.txt
 ```
 
 # Steps for Data-Validation:
@@ -53,7 +54,7 @@ Note:
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
+--class datastax.astra.cdm.job.DiffData cassandra-data-migrator-x.x.x.jar &> logfile_name.txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
@@ -83,7 +84,7 @@ Note:
 ```
 ./spark-submit --properties-file sparkConf.properties /
 --master "local[*]" /
---class datastax.cdm.job.MigratePartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name.txt
+--class datastax.astra.job.MigratePartitionsFromFile cassandra-data-migrator-x.x.x.jar &> logfile_name.txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
@@ -113,7 +114,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 1. Clone this repo
 2. Move to the repo folder `cd cassandra-data-migrator`
 3. Run the build `mvn clean package` (Needs Maven 3.8.x)
-4. The fat jar (`cassandra-data-migrator-4.x.x.jar`) file should now be present in the `target` folder
+4. The fat jar (`cassandra-data-migrator-x.x.x.jar`) file should now be present in the `target` folder
 
 # Contributors
 Checkout all our wonderful contributors [here](./CONTRIBUTING.md#contributors).
