@@ -103,7 +103,7 @@ public class AbstractJobSession extends BaseJobSession {
 
         String incrWriteTimeStr =
                 Util.getSparkPropOr(sc, "spark.target.writeTime.incrementBy", "0");
-        if (StringUtils.isNotBlank(incrWriteTimeStr) && StringUtils.isNumeric(incrWriteTimeStr.trim())) {
+        if (StringUtils.isNotBlank(incrWriteTimeStr) && StringUtils.isNumeric(incrWriteTimeStr)) {
             incrementWriteTime = Long.parseLong(incrWriteTimeStr);
         }
 
