@@ -53,6 +53,9 @@ public class CqlTable extends BaseTable {
 
     public CqlTable(PropertyHelper propertyHelper, boolean isOrigin, CqlSession session) {
         super(propertyHelper, isOrigin);
+        this.keyspaceName = unFormatName(keyspaceName);
+        this.tableName = unFormatName(tableName);
+
         this.cqlSession = session;
 
         // setCqlMetadata(session) will set:
@@ -90,6 +93,11 @@ public class CqlTable extends BaseTable {
         this.writeConsistencyLevel = mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));
 
         this.featureMap = new HashMap<>();
+    }
+
+    @Override
+    public String getKeyspaceTable() {
+        return formatName(this.keyspaceName) + "." + formatName(this.tableName);
     }
 
     public void setFeatureMap(Map<Featureset, Feature> featureMap) { this.featureMap = featureMap; }
@@ -274,13 +282,13 @@ public class CqlTable extends BaseTable {
         else
             this.hasRandomPartitioner = false;
 
-        Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(this.keyspaceName);
+        Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(formatName(this.keyspaceName));
         if (!keyspaceMetadataOpt.isPresent()) {
             throw new IllegalArgumentException("Keyspace not found: " + this.keyspaceName);
         }
         KeyspaceMetadata keyspaceMetadata = keyspaceMetadataOpt.get();
 
-        Optional<TableMetadata> tableMetadataOpt = keyspaceMetadata.getTable(this.tableName);
+        Optional<TableMetadata> tableMetadataOpt = keyspaceMetadata.getTable(formatName(this.tableName));
         if (!tableMetadataOpt.isPresent()) {
             throw new IllegalArgumentException("Table not found: " + tableName);
         }

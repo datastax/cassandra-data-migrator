@@ -1,22 +1,24 @@
 package com.datastax.cdm.feature;
 
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
+import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
+import static org.apache.hadoop.shaded.com.google.common.base.CharMatcher.any;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
 
 public class ExplodeMapTest {
 
@@ -31,6 +33,15 @@ public class ExplodeMapTest {
     @Mock
     CqlTable targetTable;
 
+    @Mock
+    List<CqlConversion> conversionList;
+
+    @Mock
+    CqlConversion conversion;
+
+    @Mock
+    MutableCodecRegistry codecRegistry;
+
     String standardMapColumnName = "map_col";
     List<String> standardOriginNames = Arrays.asList("key","val",standardMapColumnName);
     List<DataType> standardOriginTypes = Arrays.asList(DataTypes.TIMESTAMP, DataTypes.INT, DataTypes.mapOf(DataTypes.TEXT, DataTypes.DOUBLE));
@@ -43,18 +54,16 @@ public class ExplodeMapTest {
     @BeforeEach
     public void setup() {
         feature = new ExplodeMap();
+        MockitoAnnotations.openMocks(this);
 
-        propertyHelper = mock(IPropertyHelper.class);
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME)).thenReturn(standardMapColumnName);
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_KEY_COLUMN_NAME)).thenReturn(standardKeyColumnName);
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME)).thenReturn(standardValueColumnName);
 
-        originTable = mock(CqlTable.class);
         when(originTable.isOrigin()).thenReturn(true);
         when(originTable.extendColumns(Collections.singletonList(standardMapColumnName))).
                 thenReturn(Collections.singletonList(CqlData.getBindClass(standardOriginTypes.get(2))));
 
-        targetTable = mock(CqlTable.class);
         when(targetTable.isOrigin()).thenReturn(false);
         when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName,standardValueColumnName)))
                 .thenReturn(Arrays.asList(CqlData.getBindClass(standardTargetTypes.get(2)), CqlData.getBindClass(standardTargetTypes.get(3))));
@@ -72,6 +81,11 @@ public class ExplodeMapTest {
             when(targetTable.getDataType(standardTargetNames.get(i))).thenReturn(standardTargetTypes.get(i));
             when(targetTable.getBindClass(i)).thenReturn(CqlData.getBindClass(standardTargetTypes.get(i)));
         }
+
+        when(targetTable.getConversions()).thenReturn(conversionList);
+        when(conversionList.get(anyInt())).thenReturn(conversion);
+        when(conversion.convert(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(targetTable.getCodecRegistry()).thenReturn(codecRegistry);
     }
 
     @Test
@@ -91,6 +105,7 @@ public class ExplodeMapTest {
     @Test
     public void smokeTest_initializeAndValidate() {
         feature.loadProperties(propertyHelper);
+
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
 
         assertAll(
@@ -238,129 +253,69 @@ public class ExplodeMapTest {
         assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
     }
 
+    @Test
+    public void testExplode_noConversion() {
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
 
-//    @Test
-//    public void smokeTest_alterProperties() {
-//        setValidSparkConf();
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
-//
-//        assertAll(
-//                () -> assertTrue(feature.isEnabled(), "isEnabled"),
-//                () -> assertEquals(Arrays.asList("key","map_key"), ColumnsKeysTypes.getTargetPKNames(helper), "TARGET_PRIMARY_KEY"),
-//                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0")), ColumnsKeysTypes.getTargetPKTypes(helper), "TARGET_PRIMARY_KEY_TYPES"),
-//                () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), ColumnsKeysTypes.getTargetColumnNames(helper), "TARGET_COLUMN_NAMES"),
-//                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("1"),new MigrateDataType("0"),new MigrateDataType("3")), ColumnsKeysTypes.getTargetColumnTypes(helper), "TARGET_COLUMN_TYPES")
-//                );
-//    }
-//
-//    @Test
-//    public void smokeCQL() {
-//        SparkConf sparkConf = new SparkConf();
-//        sparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");
-//        sparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "origin.tab1");
-//        sparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,val,map_col");
-//        sparkConf.set(KnownProperties.ORIGIN_PARTITION_KEY, "key");
-//        sparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,5%0%3");
-//        sparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "localhost");
-//        sparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "target.tab1");
-//
-//        sparkConf.set(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME, "map_col");
-//        sparkConf.set(KnownProperties.EXPLODE_MAP_TARGET_KEY_COLUMN_NAME, "map_key");
-//        sparkConf.set(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME, "map_val");
-//
-//        sparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key,map_key");
-//
-//        helper.initializeSparkConf(sparkConf);
-//        CqlHelper cqlHelper = new CqlHelper();
-//        cqlHelper.initialize();
-//
-//        String originSelect = "SELECT key,val,map_col FROM origin.tab1 WHERE TOKEN(key) >= ? AND TOKEN(key) <= ? ALLOW FILTERING";
-//        String originSelectByPK = "SELECT key,val,map_col FROM origin.tab1 WHERE key=?";
-//        String targetInsert = "INSERT INTO target.tab1 (key,val,map_key,map_val) VALUES (?,?,?,?)";
-//        String targetUpdate = "UPDATE target.tab1 SET val=?,map_val=? WHERE key=? AND map_key=?";
-//        String targetSelect = "SELECT key,val,map_key,map_val FROM target.tab1 WHERE key=? AND map_key=?";
-//
-//        assertAll(
-//                () -> assertEquals(originSelect, cqlHelper.getOriginSelectByPartitionRangeStatement(null).getCQL().replaceAll("\\s+"," ")),
-//                () -> assertEquals(originSelectByPK, cqlHelper.getOriginSelectByPKStatement(null).getCQL().replaceAll("\\s+"," ")),
-//                () -> assertEquals(targetInsert, cqlHelper.getTargetInsertStatement(null).getCQL().replaceAll("\\s+"," ")),
-//                () -> assertEquals(targetUpdate, cqlHelper.getTargetUpdateStatement(null).getCQL().replaceAll("\\s+"," ")),
-//                () -> assertEquals(targetSelect, cqlHelper.getTargetSelectByPKStatement(null).getCQL().replaceAll("\\s+"," "))
-//        );
-//    }
-//
-//    @Test
-//    public void smokeTest_disabled() {
-//        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_NAMES, "key,val,map_col");
-//        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,5%0%3");
-//        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key");
-//
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
-//    }
-//
-//    @Test
-//    public void value_isOnPK() {
-//        // This would be an admittedly strange situation, but it could be valid...
-//        setValidSparkConf();
-//        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,5%0%3");
-//        validSparkConf.set(KnownProperties.TARGET_PRIMARY_KEY, "key,map_key,map_val");
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
-//
-//        assertAll(
-//                () -> assertTrue(feature.isEnabled()),
-//                () -> assertEquals(Arrays.asList("key","map_key","map_val"), ColumnsKeysTypes.getTargetPKNames(helper), "TARGET_PRIMARY_KEY"),
-//                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("0"),new MigrateDataType("3")), ColumnsKeysTypes.getTargetPKTypes(helper), "TARGET_PRIMARY_KEY_TYPES")
-//        );
-//    }
-//
-//    @Test
-//    public void alterProperties_TargetColumnsSet() {
-//        // The configuration should not allow these to be set, but testing to handle a future where they are set
-//        setValidSparkConf();
-//        validSparkConf.set(KnownProperties.TARGET_COLUMN_NAMES, "key,val,map_key,map_val");
-//        validSparkConf.set(KnownProperties.TARGET_COLUMN_TYPES, "4,1,0,3");
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        feature = cqlHelper.getFeature(Featureset.EXPLODE_MAP);
-//        assertAll(
-//                () -> assertTrue(feature.isEnabled()),
-//                () -> assertEquals(Arrays.asList("key","val","map_key","map_val"), helper.getStringList(KnownProperties.TARGET_COLUMN_NAMES), "TARGET_COLUMN_NAMES"),
-//                () -> assertEquals(Arrays.asList(new MigrateDataType("4"),new MigrateDataType("1"),new MigrateDataType("0"),new MigrateDataType("3")), helper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES), "TARGET_COLUMN_TYPES"),
-//                () -> assertEquals(helper.getStringList(KnownProperties.TARGET_COLUMN_NAMES).size(), helper.getMigrationTypeList(KnownProperties.TARGET_COLUMN_TYPES).size(), "sizes match")
-//        );
-//    }
-//
-//
-//    @Test
-//    public void invalidConfig_mapType() {
-//        setValidSparkConf();
-//        validSparkConf.set(KnownProperties.ORIGIN_COLUMN_TYPES, "4,1,6%0");
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
-//    }
-//
-//    @Test
-//    public void invalidConfig_mismatchColumn() {
-//        setValidSparkConf();
-//        validSparkConf.set(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME, "map_col_not_on_list");
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
-//    }
-//
-//    @Test
-//    public void invalidConfig_emptyName() {
-//        setValidSparkConf();
-//        validSparkConf.set(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME, "");
-//        helper.initializeSparkConf(validSparkConf);
-//        cqlHelper.initialize();
-//        assertNull(cqlHelper.getFeature(Featureset.EXPLODE_MAP));
-//    }
+        Map<Object,Object> testMap = new HashMap<>();
+        testMap.put("key1", 10);
+        testMap.put("key2", 20);
+        Set<Map.Entry<Object, Object>> testEntries = testMap.entrySet();
+
+        assertEquals(testEntries, feature.explode(testMap));
+    }
+
+    @Test
+    public void testExplode_convertKey() {
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        Map<Object, Object> testMap = new HashMap<>();
+        testMap.put("key1", 10);
+        testMap.put("key2", 20);
+
+        Map<Object, Object> convertedMap = new HashMap<>();
+        convertedMap.put("AAAkey1", 10);
+        convertedMap.put("AAAkey2", 20);
+
+        // Create a custom implementation of CqlConversion - we want to confirm that the conversion
+        // is actually called, rather than just passing through the EntrySet.
+        CqlConversion conversion = new CqlConversion(DataTypes.TEXT, DataTypes.TEXT, codecRegistry) {
+            @Override
+            public Object convert(Object value) {
+                return "AAA" + value;
+            }
+        };
+        feature.keyConversion = conversion;
+
+        assertEquals(convertedMap.entrySet(), feature.explode(testMap));
+    }
+
+    @Test
+    public void testExplode_convertValue() {
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        Map<Object, Object> testMap = new HashMap<>();
+        testMap.put("key1", 10);
+        testMap.put("key2", 20);
+
+        Map<Object, Object> convertedMap = new HashMap<>();
+        convertedMap.put("key1", 100);
+        convertedMap.put("key2", 200);
+
+        // Create a custom implementation of CqlConversion - we want to confirm that the conversion
+        // is actually called, rather than just passing through the EntrySet.
+        CqlConversion conversion = new CqlConversion(DataTypes.INT, DataTypes.INT, codecRegistry) {
+            @Override
+            public Object convert(Object value) {
+                return (Integer) value * 10;
+            }
+        };
+        feature.valueConversion = conversion;
+
+        assertEquals(convertedMap.entrySet(), feature.explode(testMap));
+    }
 }
+
