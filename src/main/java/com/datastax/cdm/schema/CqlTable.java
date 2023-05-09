@@ -342,6 +342,14 @@ public class CqlTable extends BaseTable {
         return this.writetimeTTLColumns.contains(columnName);
     }
 
+    public boolean hasUnfrozenList() {
+        return this.cqlAllColumns.stream()
+                .filter(columnMetadata ->
+                        columnNames.contains(columnMetadata.getName().asInternal()) &&
+                        columnMetadata.getType() instanceof ListType)
+                .anyMatch(columnMetadata -> !CqlData.isFrozen(columnMetadata.getType()));
+    }
+
     private static ConsistencyLevel mapToConsistencyLevel(String level) {
         ConsistencyLevel retVal = ConsistencyLevel.LOCAL_QUORUM;
         if (StringUtils.isNotEmpty(level)) {

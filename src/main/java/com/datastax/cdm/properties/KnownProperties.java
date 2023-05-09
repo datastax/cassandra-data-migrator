@@ -142,6 +142,7 @@ public class KnownProperties {
     //==========================================================================
     public static final String TRANSFORM_REPLACE_MISSING_TS                    = "spark.cdm.transform.missing.key.ts.replace.value";
     public static final String TRANSFORM_CUSTOM_WRITETIME                      = "spark.cdm.transform.custom.writetime";
+    public static final String TRANSFORM_CUSTOM_WRITETIME_INCREMENT            = "spark.cdm.transform.custom.writetime.incrementBy";
     public static final String TRANSFORM_CODECS                                = "spark.cdm.transform.codecs";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT        = "spark.cdm.transform.codecs.timestamp.string.format";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE   = "spark.cdm.transform.codecs.timestamp.string.zone";
@@ -155,6 +156,8 @@ public class KnownProperties {
         types.put(TRANSFORM_REPLACE_MISSING_TS, PropertyType.NUMBER);
         types.put(TRANSFORM_CUSTOM_WRITETIME, PropertyType.NUMBER);
      defaults.put(TRANSFORM_CUSTOM_WRITETIME, "0");
+        types.put(TRANSFORM_CUSTOM_WRITETIME_INCREMENT, PropertyType.NUMBER);
+     defaults.put(TRANSFORM_CUSTOM_WRITETIME_INCREMENT, "0");
         types.put(TRANSFORM_CODECS, PropertyType.STRING_LIST);
         types.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, PropertyType.STRING);
      defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, "yyyyMMddHHmmss");
