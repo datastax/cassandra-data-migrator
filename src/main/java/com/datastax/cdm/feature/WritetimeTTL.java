@@ -18,7 +18,9 @@ public class WritetimeTTL extends AbstractFeature  {
     private final boolean logDebug = logger.isDebugEnabled();;
 
     private List<String> ttlNames;
+    private boolean autoTTLNames;
     private List<String> writetimeNames;
+    private boolean autoWritetimeNames;
     private Long customWritetime = 0L;
     private List<Integer> ttlSelectColumnIndexes = null;
     private List<Integer> writetimeSelectColumnIndexes = null;
@@ -33,14 +35,18 @@ public class WritetimeTTL extends AbstractFeature  {
             logger.info("PARAM -- TTLCols: {}", ttlNames);
         }
 
+        this.autoTTLNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO);
         this.writetimeNames = getWritetimeNames(propertyHelper);
         if (null!=this.writetimeNames && !this.writetimeNames.isEmpty()) {
             logger.info("PARAM -- WriteTimestampCols: {}", writetimeNames);
+            this.autoTTLNames = false;
         }
 
+        this.autoWritetimeNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO);
         this.customWritetime = getCustomWritetime(propertyHelper);
         if (this.customWritetime > 0) {
             logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime, Instant.ofEpochMilli(customWritetime / 1000));
+            this.autoWritetimeNames = false;
         }
 
         this.filterMin = getMinFilter(propertyHelper);
@@ -80,14 +86,39 @@ public class WritetimeTTL extends AbstractFeature  {
             throw new IllegalArgumentException("Origin table is not an origin table");
         }
 
+        if (originTable.isCounterTable()) {
+            if (isEnabled) {
+                logger.error("Counter table cannot specify TTL or WriteTimestamp columns as they cannot set on write");
+                isValid = false;
+                isEnabled = false;
+                return false;
+            }
+
+            logger.info("Counter table does not support TTL or WriteTimestamp columns as they cannot set on write, so feature is disabled");
+            return true;
+        }
+
         isValid = true;
         if (!validateProperties()) {
             isEnabled = false;
             return false;
         }
 
+        if (autoTTLNames) {
+            this.ttlNames = originTable.getWritetimeTTLColumns();
+        }
+
+        if (autoWritetimeNames) {
+            this.writetimeNames = originTable.getWritetimeTTLColumns();
+        }
+
         validateTTLColumns(originTable);
         validateWritetimeColumns(originTable);
+
+        if (hasWriteTimestampFilter && (null==writetimeNames || writetimeNames.isEmpty())) {
+            logger.error("WriteTimestamp filter is configured but no WriteTimestamp columns are defined");
+            isValid = false;
+        }
 
         if (!isValid) isEnabled = false;
         logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled?"enabled":"disabled");
@@ -117,8 +148,8 @@ public class WritetimeTTL extends AbstractFeature  {
 
     public Long getCustomWritetime() { return customWritetime; }
     public boolean hasWriteTimestampFilter() { return isEnabled && hasWriteTimestampFilter; }
-    public Long getMinWriteTimeStampFilter() { return this.hasWriteTimestampFilter ? this.filterMin : Long.MIN_VALUE; }
-    public Long getMaxWriteTimeStampFilter() { return this.hasWriteTimestampFilter ? this.filterMax : Long.MAX_VALUE; }
+    public Long getMinWriteTimeStampFilter() { return (this.hasWriteTimestampFilter && null!=this.filterMin) ? this.filterMin : Long.MIN_VALUE; }
+    public Long getMaxWriteTimeStampFilter() { return (this.hasWriteTimestampFilter && null!=this.filterMax) ? this.filterMax : Long.MAX_VALUE; }
 
     public boolean hasTTLColumns() { return null!=this.ttlSelectColumnIndexes && !this.ttlSelectColumnIndexes.isEmpty(); }
     public boolean hasWritetimeColumns() { return customWritetime>0 || null!=this.writetimeSelectColumnIndexes && !this.writetimeSelectColumnIndexes.isEmpty(); }
@@ -157,6 +188,12 @@ public class WritetimeTTL extends AbstractFeature  {
                 logger.error("TTL column {} is not present on origin table {}", ttlName, originTable.getKeyspaceName());
                 isValid = false;
                 return;
+            } else {
+                if (!originTable.isWritetimeTTLColumn(ttlName)) {
+                    logger.error("TTL column {} is not a column which can provide a TTL on origin table {}", ttlName, originTable.getKeyspaceName());
+                    isValid = false;
+                    return;
+                }
             }
 
             newColumnNames.add("TTL(" + ttlName + ")");
@@ -183,6 +220,12 @@ public class WritetimeTTL extends AbstractFeature  {
                 logger.error("Writetime column {} is not configured for origin table {}", writetimeName, originTable.getKeyspaceName());
                 isValid = false;
                 return;
+            } else {
+                if (!originTable.isWritetimeTTLColumn(writetimeName)) {
+                    logger.error("Writetime column {} is not a column which can provide a WRITETIME on origin table {}", writetimeName, originTable.getKeyspaceName());
+                    isValid = false;
+                    return;
+                }
             }
 
             newColumnNames.add("WRITETIME(" + writetimeName + ")");

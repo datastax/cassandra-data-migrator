@@ -45,6 +45,7 @@ public class CqlTable extends BaseTable {
     private List<ColumnMetadata> cqlAllColumns;
     private Map<String,DataType> columnNameToCqlTypeMap;
     private final List<Class> bindClasses;
+    private List<String> writetimeTTLColumns;
 
     private CqlTable otherCqlTable;
     private List<Integer> correspondingIndexes;
@@ -306,11 +307,39 @@ public class CqlTable extends BaseTable {
                 .filter(md -> !this.cqlAllColumns.contains(md))
                 .collect(Collectors.toCollection(() -> this.cqlAllColumns));
 
+        this.writetimeTTLColumns = tableMetadata.getColumns().values().stream()
+                .filter(columnMetadata -> canColumnHaveTTLorWritetime(tableMetadata, columnMetadata))
+                .map(ColumnMetadata::getName)
+                .map(CqlIdentifier::asInternal)
+                .collect(Collectors.toList());
+
         this.columnNameToCqlTypeMap = this.cqlAllColumns.stream()
                 .collect(Collectors.toMap(
                         columnMetadata -> columnMetadata.getName().asInternal(),
                         ColumnMetadata::getType
                 ));
+    }
+
+    private boolean canColumnHaveTTLorWritetime(TableMetadata tableMetadata, ColumnMetadata columnMetadata) {
+        DataType dataType = columnMetadata.getType();
+        boolean isKeyColumn = tableMetadata.getPartitionKey().contains(columnMetadata) ||
+                              tableMetadata.getClusteringColumns().containsKey(columnMetadata);
+
+        if (isKeyColumn) return false;
+        if (CqlData.isPrimitive(dataType)) return true;
+        if (dataType instanceof TupleType) return true; // TODO: WRITETIME and TTL functions are very slow on Tuples in cqlsh...should they be supported here?
+        if (CqlData.isFrozen(dataType)) return true;
+        return false;
+    }
+
+    public List<String> getWritetimeTTLColumns() {
+        return this.writetimeTTLColumns.stream()
+                .filter(columnName -> this.columnNames.contains(columnName))
+                .collect(Collectors.toList());
+    }
+
+    public boolean isWritetimeTTLColumn(String columnName) {
+        return this.writetimeTTLColumns.contains(columnName);
     }
 
     private static ConsistencyLevel mapToConsistencyLevel(String level) {
