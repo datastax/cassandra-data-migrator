@@ -60,17 +60,22 @@ public class KnownProperties {
     // Properties that describe the origin schema
     //==========================================================================
     public static final String ORIGIN_KEYSPACE_TABLE         = "spark.cdm.schema.origin.keyspaceTable";
+    public static final String ORIGIN_TTL_AUTO               = "spark.cdm.schema.origin.column.ttl.automatic";
     public static final String ORIGIN_TTL_NAMES              = "spark.cdm.schema.origin.column.ttl.names";
+    public static final String ORIGIN_WRITETIME_AUTO         = "spark.cdm.schema.origin.column.writetime.automatic";
     public static final String ORIGIN_WRITETIME_NAMES        = "spark.cdm.schema.origin.column.writetime.names";
 
     public static final String ORIGIN_COLUMN_NAMES_TO_TARGET = "spark.cdm.schema.origin.column.names.to.target";
-
 
     static {
            types.put(ORIGIN_KEYSPACE_TABLE, PropertyType.STRING);
         required.add(ORIGIN_KEYSPACE_TABLE);
            types.put(ORIGIN_TTL_NAMES, PropertyType.STRING_LIST);
+           types.put(ORIGIN_TTL_AUTO, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_TTL_AUTO, "true");
            types.put(ORIGIN_WRITETIME_NAMES, PropertyType.STRING_LIST);
+           types.put(ORIGIN_WRITETIME_AUTO, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_WRITETIME_AUTO, "true");
 
            types.put(ORIGIN_COLUMN_NAMES_TO_TARGET, PropertyType.STRING_LIST);
     }
