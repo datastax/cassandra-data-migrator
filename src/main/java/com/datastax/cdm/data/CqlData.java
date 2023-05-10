@@ -69,7 +69,7 @@ public class CqlData {
         if (dataType instanceof ListType) return ((ListType) dataType).isFrozen();
         if (dataType instanceof SetType) return ((SetType) dataType).isFrozen();
         if (dataType instanceof MapType) return ((MapType) dataType).isFrozen();
-        if (dataType instanceof TupleType) return dataType.asCql(true, false).contains("frozen<");
+        if (dataType instanceof TupleType) return dataType.asCql(true, false).toLowerCase().contains("frozen<");
         return false;
     }
 
