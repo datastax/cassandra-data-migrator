@@ -30,23 +30,23 @@ public class WritetimeTTL extends AbstractFeature  {
 
     @Override
     public boolean loadProperties(IPropertyHelper propertyHelper) {
+        this.autoTTLNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO);
         this.ttlNames = getTTLNames(propertyHelper);
         if (null!=this.ttlNames && !this.ttlNames.isEmpty()) {
             logger.info("PARAM -- TTLCols: {}", ttlNames);
-        }
-
-        this.autoTTLNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO);
-        this.writetimeNames = getWritetimeNames(propertyHelper);
-        if (null!=this.writetimeNames && !this.writetimeNames.isEmpty()) {
-            logger.info("PARAM -- WriteTimestampCols: {}", writetimeNames);
             this.autoTTLNames = false;
         }
 
         this.autoWritetimeNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO);
+        this.writetimeNames = getWritetimeNames(propertyHelper);
+        if (null!=this.writetimeNames && !this.writetimeNames.isEmpty()) {
+            logger.info("PARAM -- WriteTimestampCols: {}", writetimeNames);
+            this.autoWritetimeNames = false;
+        }
+
         this.customWritetime = getCustomWritetime(propertyHelper);
         if (this.customWritetime > 0) {
             logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime, Instant.ofEpochMilli(customWritetime / 1000));
-            this.autoWritetimeNames = false;
         }
 
         this.filterMin = getMinFilter(propertyHelper);
@@ -106,10 +106,12 @@ public class WritetimeTTL extends AbstractFeature  {
 
         if (autoTTLNames) {
             this.ttlNames = originTable.getWritetimeTTLColumns();
+            logger.info("PARAM -- Automatic TTLCols: {}", ttlNames);
         }
 
         if (autoWritetimeNames) {
             this.writetimeNames = originTable.getWritetimeTTLColumns();
+            logger.info("PARAM -- Automatic WriteTimestampCols: {}", writetimeNames);
         }
 
         validateTTLColumns(originTable);
