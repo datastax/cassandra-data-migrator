@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -107,8 +108,9 @@ public class DiffJobSession extends CopyJobSession {
             try {
                 Row targetRow = srcToTargetRowMap.get(srcRow).toCompletableFuture().get().one();
                 diff(srcRow, targetRow);
-            } catch (Exception e) {
+            } catch (ExecutionException | InterruptedException e) {
                 logger.error("Could not perform diff for Key: {}", getKey(srcRow, tableInfo), e);
+                throw new RuntimeException(e);
             }
         }
         srcToTargetRowMap.clear();
