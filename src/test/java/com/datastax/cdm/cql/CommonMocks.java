@@ -108,8 +108,8 @@ public class CommonMocks {
     public List<String> targetColumnNames;
     public List<DataType> targetColumnTypes;
 
-    public Long minPartition;
-    public Long maxPartition;
+    public String minPartition;
+    public String maxPartition;
     public ConsistencyLevel readCL;
     public Integer fetchSizeInRows;
 
@@ -179,8 +179,8 @@ public class CommonMocks {
         targetKeyspaceName = "target_ks";
         targetTableName = "table_name";
 
-        minPartition = -9876543L;
-        maxPartition =  1234567L;
+        minPartition = "-9876543";
+        maxPartition = "1234567";
         readCL = ConsistencyLevel.LOCAL_QUORUM;
         fetchSizeInRows = 999;
 
@@ -238,8 +238,8 @@ public class CommonMocks {
         when(propertyHelper.getAsString(KnownProperties.FILTER_COLUMN_NAME)).thenReturn("");
         when(propertyHelper.getString(KnownProperties.FILTER_COLUMN_VALUE)).thenReturn(null);
 
-        when(propertyHelper.getLong(KnownProperties.PARTITION_MIN)).thenReturn(minPartition);
-        when(propertyHelper.getLong(KnownProperties.PARTITION_MAX)).thenReturn(maxPartition);
+        when(propertyHelper.getString(KnownProperties.PARTITION_MIN)).thenReturn(minPartition);
+        when(propertyHelper.getString(KnownProperties.PARTITION_MAX)).thenReturn(maxPartition);
 
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES_TO_TARGET)).thenReturn(originToTargetNameList);
     }

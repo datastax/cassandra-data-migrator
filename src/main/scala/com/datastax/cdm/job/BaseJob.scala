@@ -48,8 +48,6 @@ class BaseJob extends App {
   val targetKeyStorePassword = propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PASSWORD)
   val targetEnabledAlgorithms = propertyHelper.getAsString(KnownProperties.TARGET_TLS_ALGORITHMS)
 
-  val minPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MIN))
-  val maxPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MAX))
   val coveragePercent = propertyHelper.getAsString(KnownProperties.TOKEN_COVERAGE_PERCENT)
   val numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
 

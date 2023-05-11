@@ -168,10 +168,8 @@ public class KnownProperties {
     public static final String PARTITION_MAX               = "spark.cdm.filter.cassandra.partition.max";
     public static final String FILTER_CQL_WHERE_CONDITION  = "spark.cdm.filter.cassandra.where.condition";
     static {
-           types.put(PARTITION_MIN, PropertyType.NUMBER);
-        defaults.put(PARTITION_MIN, "-9223372036854775808");
-           types.put(PARTITION_MAX, PropertyType.NUMBER);
-        defaults.put(PARTITION_MAX, "9223372036854775807");
+           types.put(PARTITION_MIN, PropertyType.STRING);
+           types.put(PARTITION_MAX, PropertyType.STRING);
            types.put(FILTER_CQL_WHERE_CONDITION, PropertyType.STRING);
     }
 

@@ -1,16 +1,12 @@
 package com.datastax.cdm.job
 
+import com.datastax.cdm.properties.KnownProperties
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 
-class AbstractJob extends BaseJob {
+import java.math.BigInteger
 
-  abstractLogger.info("PARAM -- Min Partition: " + minPartition)
-  abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
-  abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
-  abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
-  abstractLogger.info("PARAM -- Origin SSL Enabled: {}", originSSLEnabled);
-  abstractLogger.info("PARAM -- Target SSL Enabled: {}", targetSSLEnabled);
+class AbstractJob extends BaseJob {
 
   // TODO: CDM-31 - add localDC configuration support
   var originConnection = getConnection(true, originScbPath, originHost, originPort, originUsername, originPassword, originSSLEnabled,
@@ -18,6 +14,21 @@ class AbstractJob extends BaseJob {
 
   var targetConnection = getConnection(false, targetScbPath, targetHost, targetPort, targetUsername, targetPassword, targetSSLEnabled,
     targetTrustStorePath, targetTrustStorePassword, targetTrustStoreType, targetKeyStorePath, targetKeyStorePassword, targetEnabledAlgorithms);
+
+  val hasRandomPartitioner: Boolean = {
+    val partitionerName = originConnection.withSessionDo(_.getMetadata.getTokenMap.get().getPartitionerName)
+    partitionerName.endsWith("RandomPartitioner")
+  }
+
+  val minPartition = getMinPartition(propertyHelper.getString(KnownProperties.PARTITION_MIN), hasRandomPartitioner)
+  val maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
+
+  abstractLogger.info("PARAM -- Min Partition: " + minPartition)
+  abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
+  abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
+  abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
+  abstractLogger.info("PARAM -- Origin SSL Enabled: {}", originSSLEnabled);
+  abstractLogger.info("PARAM -- Target SSL Enabled: {}", targetSSLEnabled);
 
   private def getConnection(isSource: Boolean, scbPath: String, host: String, port: String, username: String, password: String,
                             sslEnabled: String, trustStorePath: String, trustStorePassword: String, trustStoreType: String,
@@ -73,4 +84,15 @@ class AbstractJob extends BaseJob {
 
   }
 
+  def getMinPartition(minPartition: String, hasRandomPartitioner: Boolean): BigInteger = {
+    if (minPartition != null && minPartition.nonEmpty) new BigInteger(minPartition)
+    else if (hasRandomPartitioner) BigInteger.ZERO
+    else BigInteger.valueOf(Long.MinValue)
+  }
+
+  def getMaxPartition(maxPartition: String, hasRandomPartitioner: Boolean): BigInteger = {
+    if (maxPartition != null && maxPartition.nonEmpty) new BigInteger(maxPartition)
+    else if (hasRandomPartitioner) new BigInteger("2").pow(127).subtract(BigInteger.ONE)
+    else BigInteger.valueOf(Long.MaxValue)
+  }
 }
