@@ -1,7 +1,7 @@
 package com.datastax.cdm.cql.codec;
 
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -39,7 +39,7 @@ class TIMESTAMP_StringMillisCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -47,9 +47,9 @@ class TIMESTAMP_StringMillisCodecTest {
     void encode_ShouldEncodeStringValueToByteBuffer_WhenValueIsNotNull() {
         String valueAsString = "1681333035000";
         Instant value = Instant.ofEpochMilli(Long.parseLong(valueAsString));
-        ByteBuffer expected = TypeCodecs.TIMESTAMP.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.TIMESTAMP.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -57,9 +57,9 @@ class TIMESTAMP_StringMillisCodecTest {
     void decode_ShouldDecodeByteBufferToValueAndReturnAsString() {
         String valueAsString = "1681333035000";
         Instant value = Instant.ofEpochMilli(Long.parseLong(valueAsString));
-        ByteBuffer byteBuffer = TypeCodecs.TIMESTAMP.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.TIMESTAMP.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        String result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        String result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(valueAsString, result);
     }
 
