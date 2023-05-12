@@ -33,7 +33,7 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 ./spark-submit --properties-file cdm.properties /
 --conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.Migrate cassandra-data-migrator-3.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 Note: 
@@ -54,7 +54,7 @@ Note:
 ./spark-submit --properties-file cdm.properties /
 --conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.astra.migrate.DiffData cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.DiffData cassandra-data-migrator-3.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
@@ -85,7 +85,7 @@ Note:
 ./spark-submit --properties-file cdm.properties /
 --conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-3.x.x.jar &> logfile_name.txt
+--class datastax.astra.migrate.MigratePartitionsFromFile cassandra-data-migrator-3.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range 
@@ -103,7 +103,23 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 ```
 grep "ERROR CopyJobSession: Error with PartitionRange" /path/to/logfile_name.txt | awk '{print $13","$15}' > partitions.csv
 ```
+# Data validation for specific partition ranges
+- You can also use the tool to validate data for a specific partition ranges using class option `--class datastax.astra.migrate.DiffPartitionsFromFile` as shown below,
+```
+./spark-submit --properties-file cdm.properties /
+--conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
+--master "local[*]" /
+--class datastax.astra.migrate.DiffPartitionsFromFile cassandra-data-migrator-3.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+```
 
+When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range,
+```
+-507900353496146534,-107285462027022883
+-506781526266485690,1506166634797362039
+2637884402540451982,4638499294009575633
+798869613692279889,8699484505161403540
+```
+This mode is specifically useful to processes a subset of partition-ranges that may have failed during a previous run.
 
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class datastax.astra.migrate.Guardrail` as shown below
