@@ -1,6 +1,8 @@
 package com.datastax.cdm.job;
 
 import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.feature.Featureset;
+import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import com.datastax.cdm.data.PKFactory;
@@ -16,6 +18,8 @@ public class AbstractJobSession extends BaseJobSession {
 
     protected EnhancedSession originSession;
     protected EnhancedSession targetSession;
+    protected Guardrail guardrailFeature;
+    protected boolean guardrailEnabled;
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
@@ -47,6 +51,8 @@ public class AbstractJobSession extends BaseJobSession {
         this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);
         this.originSession.getCqlTable().setOtherCqlTable(this.targetSession.getCqlTable());
         this.targetSession.getCqlTable().setOtherCqlTable(this.originSession.getCqlTable());
+        this.originSession.getCqlTable().setFeatureMap(featureMap);
+        this.targetSession.getCqlTable().setFeatureMap(featureMap);
 
         boolean allFeaturesValid = true;
         for (Feature f : featureMap.values()) {
@@ -58,12 +64,14 @@ public class AbstractJobSession extends BaseJobSession {
         if (!allFeaturesValid) {
             throw new RuntimeException("One or more features are not valid.  Please check the configuration.");
         }
-        this.originSession.getCqlTable().setFeatureMap(featureMap);
-        this.targetSession.getCqlTable().setFeatureMap(featureMap);
 
         PKFactory pkFactory = new PKFactory(propertyHelper, this.originSession.getCqlTable(), this.targetSession.getCqlTable());
         this.originSession.setPKFactory(pkFactory);
         this.targetSession.setPKFactory(pkFactory);
+
+        // Guardrail is referenced by many jobs, and is evaluated against the target table
+        this.guardrailFeature = (Guardrail) this.targetSession.getCqlTable().getFeature(Featureset.GUARDRAIL_CHECK);
+        this.guardrailEnabled = this.guardrailFeature.isEnabled();
 
     }
 

@@ -4,6 +4,7 @@ import com.datastax.cdm.data.*;
 import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.feature.Featureset;
+import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -127,6 +128,16 @@ public class DiffJobSession extends CopyJobSession {
                     else {
                         if (readCounter.incrementAndGet() % printStatsAfter == 0) {printCounts(false);}
                         for (Record r : pkFactory.toValidRecordList(record)) {
+
+                            if (guardrailEnabled) {
+                                String guardrailCheck = guardrailFeature.guardrailChecks(r);
+                                if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                                    logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
+                                    skippedCounter.incrementAndGet();
+                                    continue;
+                                }
+                            }
+
                             CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement.getAsyncResult(r.getPk());
 
                             if (null==targetResult) {

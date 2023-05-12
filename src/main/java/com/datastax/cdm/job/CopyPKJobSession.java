@@ -1,5 +1,6 @@
 package com.datastax.cdm.job;
 
+import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.cdm.data.EnhancedPK;
@@ -75,6 +76,15 @@ public class CopyPKJobSession extends AbstractJobSession {
                 if (originSelectByPKStatement.shouldFilterRecord(record)) {
                     skipCounter.incrementAndGet();
                     return;
+                }
+
+                if (guardrailEnabled) {
+                    String guardrailCheck = guardrailFeature.guardrailChecks(record);
+                    if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                        logger.error("Guardrails failed for PrimaryKey {}; {}", record.getPk(), guardrailCheck);
+                        skipCounter.incrementAndGet();
+                        return;
+                    }
                 }
 
                 writeLimiter.acquire(1);

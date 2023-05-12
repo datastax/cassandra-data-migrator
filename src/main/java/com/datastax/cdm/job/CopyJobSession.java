@@ -3,6 +3,7 @@ package com.datastax.cdm.job;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
+import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.cdm.data.PKFactory;
@@ -67,6 +68,7 @@ public class CopyJobSession extends AbstractJobSession {
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         boolean done = false;
         int maxAttempts = maxRetries + 1;
+        String guardrailCheck;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             long readCnt = 0;
             long flushedWriteCnt = 0;
@@ -94,6 +96,15 @@ public class CopyJobSession extends AbstractJobSession {
                     }
 
                     for (Record r : pkFactory.toValidRecordList(record)) {
+                        if (guardrailEnabled) {
+                            guardrailCheck = guardrailFeature.guardrailChecks(r);
+                            if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                                logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
+                                skipCnt++;
+                                continue;
+                            }
+                        }
+
                         writeLimiter.acquire(1);
 
                         BoundStatement boundUpsert = bind(r);

@@ -130,11 +130,15 @@ public class ExplodeMap extends AbstractFeature {
 
             DataType keyDataType = targetTable.getDataType(keyColumnName);
             keyConversion = new CqlConversion(originMapTypes.get(0), keyDataType, targetTable.getCodecRegistry());
-            if (logger.isTraceEnabled()) logger.trace("Key conversion is {}",keyConversion);
 
             DataType valueDataType = targetTable.getDataType(valueColumnName);
             valueConversion = new CqlConversion(originMapTypes.get(1), valueDataType, targetTable.getCodecRegistry());
-            if (logger.isTraceEnabled()) logger.trace("Value conversion is {}",valueConversion);
+        }
+
+        if (isEnabled && logger.isDebugEnabled()) {
+            logger.debug("Origin column {} is at index {}", originColumnName, originColumnIndex);
+            logger.debug("Target key column {} is at index {} with conversion {}", keyColumnName, keyColumnIndex, keyConversion);
+            logger.debug("Target value column {} is at index {} with conversion {}", valueColumnName, valueColumnIndex, valueConversion);
         }
 
         if (!isValid) isEnabled = false;
