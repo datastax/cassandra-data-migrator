@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-object GuardrailCheck extends AbstractJob {
+object GuardrailCheck extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")

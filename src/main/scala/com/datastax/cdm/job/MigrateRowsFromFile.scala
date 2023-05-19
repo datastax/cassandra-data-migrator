@@ -3,7 +3,7 @@ package com.datastax.cdm.job
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.slf4j.LoggerFactory
 
-object MigrateRowsFromFile extends AbstractJob {
+object MigrateRowsFromFile extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started MigrateRowsFromFile App")

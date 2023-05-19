@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-object MigratePartitionsFromFile extends AbstractJob {
+object MigratePartitionsFromFile extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started MigratePartitionsFromFile App")

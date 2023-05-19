@@ -22,36 +22,20 @@ class BaseJob extends App {
 
   val consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
 
-  val originScbPath = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_SCB)
-  val originHost = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_HOST)
-  val originPort = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_PORT)
-  val originUsername = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_USERNAME)
-  val originPassword = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_PASSWORD)
-  val originSSLEnabled = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ENABLED)
-  val originTrustStorePath = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH)
-  val originTrustStorePassword = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD)
-  val originTrustStoreType = propertyHelper.getString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_TYPE)
-  val originKeyStorePath = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PATH)
-  val originKeyStorePassword = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PASSWORD)
-  val originEnabledAlgorithms = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ALGORITHMS)
-
-  val targetScbPath = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_SCB)
-  val targetHost = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_HOST)
-  val targetPort = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_PORT)
-  val targetUsername = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_USERNAME)
-  val targetPassword = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_PASSWORD)
-  val targetSSLEnabled = propertyHelper.getAsString(KnownProperties.TARGET_TLS_ENABLED)
-  val targetTrustStorePath = propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PATH)
-  val targetTrustStorePassword = propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD)
-  val targetTrustStoreType = propertyHelper.getString(KnownProperties.TARGET_TLS_TRUSTSTORE_TYPE)
-  val targetKeyStorePath = propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PATH)
-  val targetKeyStorePassword = propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PASSWORD)
-  val targetEnabledAlgorithms = propertyHelper.getAsString(KnownProperties.TARGET_TLS_ALGORITHMS)
-
   val minPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MIN))
   val maxPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MAX))
   val coveragePercent = propertyHelper.getAsString(KnownProperties.TOKEN_COVERAGE_PERCENT)
   val numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
+
+  abstractLogger.info("PARAM -- Min Partition: " + minPartition)
+  abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
+  abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
+  abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
+
+  // TODO: CDM-31 - add localDC configuration support
+  private val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
+  var originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)
+  var targetConnection = connectionFetcher.getConnection("TARGET", consistencyLevel)
 
   protected def exitSpark() = {
     spark.stop()

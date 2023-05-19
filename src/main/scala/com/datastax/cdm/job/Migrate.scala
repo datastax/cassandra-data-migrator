@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
 
 // http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
-object Migrate extends AbstractJob {
+object Migrate extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Migration App")

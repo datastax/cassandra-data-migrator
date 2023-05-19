@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-object DiffData extends AbstractJob {
+object DiffData extends BaseJob {
 
   val logger = LoggerFactory.getLogger(this.getClass.getName)
   logger.info("Started Data Validation App")
