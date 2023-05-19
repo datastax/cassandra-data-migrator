@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class GuardrailCheckJobSession extends AbstractJobSession {
+public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
     private static GuardrailCheckJobSession guardrailJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -39,15 +39,9 @@ public class GuardrailCheckJobSession extends AbstractJobSession {
         logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
     }
 
-    public static GuardrailCheckJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        if (guardrailJobSession == null) {
-            synchronized (GuardrailCheckJobSession.class) {
-                if (guardrailJobSession == null) {
-                    guardrailJobSession = new GuardrailCheckJobSession(originSession, targetSession, sc);
-                }
-            }
-        }
-        return guardrailJobSession;
+    @Override
+    public void processSlice(SplitPartitions.Partition slice) {
+        this.guardrailCheck(slice.getMin(), slice.getMax());
     }
 
     public void guardrailCheck(BigInteger min, BigInteger max) {
@@ -91,6 +85,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession {
         ThreadContext.remove(THREAD_CONTEXT_LABEL);
     }
 
+    @Override
     public synchronized void printCounts(boolean isFinal) {
         String msg = "ThreadID: " + Thread.currentThread().getId();
         if (isFinal) {

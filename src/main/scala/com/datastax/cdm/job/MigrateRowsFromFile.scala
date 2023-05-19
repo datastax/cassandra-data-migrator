@@ -1,25 +1,16 @@
 package com.datastax.cdm.job
 
-import com.datastax.spark.connector.cql.CassandraConnector
-import org.slf4j.LoggerFactory
+object MigrateRowsFromFile extends BasePKJob {
+  setup("Migrate Rows from File Job", new CopyPKJobSessionFactory(), "./primary_key_rows.csv")
+  execute()
+  finish()
 
-object MigrateRowsFromFile extends BaseJob {
-
-  val logger = LoggerFactory.getLogger(this.getClass.getName)
-  logger.info("Started MigrateRowsFromFile App")
-
-  migrateTable(originConnection, targetConnection)
-
-  exitSpark
-
-  private def migrateTable(sourceConnection: CassandraConnector, destinationConnection: CassandraConnector) = {
-    val listOfPKRows = SplitPartitions.getRowPartsFromFile(numSplits)
-    logger.info("PARAM Calculated -- Number of PKRows: " + listOfPKRows.size())
-
-    sourceConnection.withSessionDo(sourceSession =>
-      destinationConnection.withSessionDo(destinationSession =>
-        CopyPKJobSession.getInstance(sourceSession, destinationSession, sc)
-          .getRowAndInsert(listOfPKRows)))
+  override def execute(): Unit = {
+    slices.foreach(slice => {
+      originConnection.withSessionDo(sourceSession =>
+        targetConnection.withSessionDo(destinationSession =>
+          jobFactory.getInstance(sourceSession, destinationSession, sc)
+            .processSlice(slice)))
+    })
   }
-
 }

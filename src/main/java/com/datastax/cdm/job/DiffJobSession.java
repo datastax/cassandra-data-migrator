@@ -51,7 +51,7 @@ public class DiffJobSession extends CopyJobSession {
     private final int explodeMapValueIndex;
     private final List<Integer> constantColumnIndexes;
 
-    private DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+    public DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
 
         autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING);
@@ -92,15 +92,9 @@ public class DiffJobSession extends CopyJobSession {
         logger.info("CQL -- target upsert: {}",this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    public static DiffJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sparkConf) {
-        if (diffJobSession == null) {
-            synchronized (DiffJobSession.class) {
-                if (diffJobSession == null) {
-                    diffJobSession = new DiffJobSession(originSession, targetSession, sparkConf);
-                }
-            }
-        }
-        return diffJobSession;
+    @Override
+    public void processSlice(SplitPartitions.Partition slice) {
+        this.getDataAndDiff(slice.getMin(), slice.getMax());
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
@@ -174,6 +168,7 @@ public class DiffJobSession extends CopyJobSession {
         recordsToDiff.clear();
     }
 
+    @Override
     public synchronized void printCounts(boolean isFinal) {
         String msg = "ThreadID: " + Thread.currentThread().getId();
         if (isFinal) {

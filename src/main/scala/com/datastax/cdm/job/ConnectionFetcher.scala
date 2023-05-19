@@ -5,6 +5,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
+// TODO: CDM-31 - add localDC configuration support
 class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelper) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
 

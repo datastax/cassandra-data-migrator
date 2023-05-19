@@ -12,7 +12,10 @@ import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AbstractJobSession extends BaseJobSession {
+public abstract class AbstractJobSession<T> extends BaseJobSession {
+
+    public abstract void processSlice(T slice);
+    public abstract void printCounts(boolean isFinal);
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
@@ -74,7 +77,4 @@ public class AbstractJobSession extends BaseJobSession {
         this.guardrailEnabled = this.guardrailFeature.isEnabled();
 
     }
-
-
-
 }
