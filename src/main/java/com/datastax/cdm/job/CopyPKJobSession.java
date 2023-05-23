@@ -108,6 +108,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
     private EnhancedPK toEnhancedPK(String rowString) {
         String[] pkFields = rowString.split(" %% ");
         List<Object> values = new ArrayList<>(originPKClasses.size());
+        if (logger.isDebugEnabled()) logger.debug("rowString={}, pkFields={}", rowString, pkFields);
         for (int i=0; i<pkFields.length; i++) {
             PropertyEditor editor = PropertyEditorManager.findEditor(originPKClasses.get(i));
             editor.setAsText(pkFields[i]);

@@ -20,7 +20,7 @@ abstract class BaseJob[T: ClassTag] extends App {
 
   var jobName: String = _
   var jobFactory: IJobSessionFactory[T] = _
-  var inputFilename: String = ""
+  var fileName: String = ""
 
   var spark: SparkSession = _
   var sContext: SparkContext = _
@@ -39,8 +39,8 @@ abstract class BaseJob[T: ClassTag] extends App {
   var originConnection: CassandraConnector = _
   var targetConnection: CassandraConnector = _
 
-  def setup(jobName: String, jobFactory: IJobSessionFactory[T], inputFilename: String): Unit = {
-    this.inputFilename = inputFilename
+  def setup(jobName: String, jobFactory: IJobSessionFactory[T], fileName: String): Unit = {
+    this.fileName = fileName
     setup(jobName, jobFactory)
   }
 
@@ -69,7 +69,7 @@ abstract class BaseJob[T: ClassTag] extends App {
     this.parts = getParts(numSplits)
     this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
     abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())
-    abstractLogger.info("Spark parallelize created : " + slices.count() + " parts!");
+    abstractLogger.info("Spark parallelize created : " + slices.count() + " slices!");
 
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
     originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)

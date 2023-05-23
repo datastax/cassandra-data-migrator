@@ -115,10 +115,12 @@ public class SplitPartitions {
     }
 
     public static class PKRows implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         List<String> pkRows;
 
         public PKRows(List<String> rows) {
-            pkRows = rows;
+            pkRows = new ArrayList<>(rows);
         }
     }
 

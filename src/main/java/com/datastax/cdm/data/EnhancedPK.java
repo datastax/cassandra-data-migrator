@@ -79,6 +79,7 @@ public class EnhancedPK {
 
     private void validate() {
         if (null==values || null== classes || values.isEmpty() || values.size() != classes.size()) {
+            if (null==this.messages) this.messages = new ArrayList<>();
             this.messages.add("ERROR: types and/or values are null and/or empty, or are not the same size");
             this.errorState = true;
             return;
