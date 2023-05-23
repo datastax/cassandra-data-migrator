@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
-public class DiffJobSession extends CopyJobSession {
+public class DiffJobSession extends AbstractJobSession {
 
     private static DiffJobSession diffJobSession;
     private final AtomicLong mismatchCounter = new AtomicLong(0);
@@ -111,9 +111,6 @@ public class DiffJobSession extends CopyJobSession {
             } catch (ExecutionException | InterruptedException e) {
                 logger.error("Could not perform diff for Key: {}", getKey(srcRow, tableInfo), e);
                 throw new RuntimeException(e);
-            } catch (Exception ee) {
-                logger.error("Could not perform diff for Key: {}", getKey(srcRow, tableInfo), ee);
-                throw new RuntimeException(ee);
             }
         }
         srcToTargetRowMap.clear();

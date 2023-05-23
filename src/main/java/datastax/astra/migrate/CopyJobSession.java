@@ -23,6 +23,8 @@ public class CopyJobSession extends AbstractJobSession {
 
     protected CopyJobSession(CqlSession sourceSession, CqlSession astraSession, SparkConf sc) {
         super(sourceSession, astraSession, sc);
+        handleNoTtlWriteTime(Boolean.parseBoolean(Util.getSparkPropOr(sc, "spark.migrate.disableTtlAndWriteTime", "false")));
+
         filterData = Boolean.parseBoolean(sc.get("spark.origin.FilterData", "false"));
         filterColName = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumn");
         filterColType = Util.getSparkPropOrEmpty(sc, "spark.origin.FilterColumnType");
@@ -40,6 +42,18 @@ public class CopyJobSession extends AbstractJobSession {
         }
 
         return copyJobSession;
+    }
+
+    private void handleNoTtlWriteTime(boolean disableTtlAndWriteTime) {
+        if (ttlWTCols.isEmpty()) {
+            if (disableTtlAndWriteTime) {
+                logger.warn("***** NO NON-FROZEN NON-PRIMARY-KEY COLUMNS FOUND TO DERIVE TTL AND WRITETIME! PROCEEDING WITHOUT MIGRATING TTL AND WRITETIME!! *****");
+            } else {
+                logger.error("***** NO NON-FROZEN NON-PRIMARY-KEY COLUMNS FOUND TO DERIVE TTL AND WRITETIME! EXITING JOB!! *****");
+                logger.error("***** IF YOU WANT TO PROCEED WITH MIGRATION WITHOUT USING TTL AND WRITETIMES FROM ORIGIN, RERUN THE JOB USING OPTION --conf spark.migrate.disableTtlAndWriteTime=true !! *****");
+                System.exit(-1);
+            }
+        }
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
@@ -69,7 +83,8 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String col = (String) getData(new TypeInfo(filterColType), filterColIndex, sourceRow);
+                            TypeInfo typeInfo = tableInfo.getColumns().get(filterColIndex).getTypeInfo();
+                            String col = (String) getData(typeInfo, filterColIndex, sourceRow);
                             if (col.trim().equalsIgnoreCase(filterColValue)) {
                                 logger.warn("Skipping row and filtering out: {}", getKey(sourceRow, tableInfo));
                                 skipCnt++;
@@ -118,7 +133,8 @@ public class CopyJobSession extends AbstractJobSession {
                         }
 
                         if (filterData) {
-                            String colValue = (String) getData(new TypeInfo(filterColType), filterColIndex, sourceRow);
+                            TypeInfo typeInfo = tableInfo.getColumns().get(filterColIndex).getTypeInfo();
+                            String colValue = (String) getData(typeInfo, filterColIndex, sourceRow);
                             if (colValue.trim().equalsIgnoreCase(filterColValue)) {
                                 logger.warn("Skipping row and filtering out: {}", getKey(sourceRow, tableInfo));
                                 skipCnt++;
