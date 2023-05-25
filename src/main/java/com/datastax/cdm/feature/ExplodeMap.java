@@ -1,15 +1,16 @@
 package com.datastax.cdm.feature;
 
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
+import com.datastax.oss.driver.api.core.type.DataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ExplodeMap extends AbstractFeature {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -22,6 +23,9 @@ public class ExplodeMap extends AbstractFeature {
 
     private String valueColumnName = "";
     private Integer valueColumnIndex = -1;
+
+    protected CqlConversion keyConversion = null;
+    protected CqlConversion valueConversion = null;
 
     @Override
     public boolean loadProperties(IPropertyHelper helper) {
@@ -114,9 +118,50 @@ public class ExplodeMap extends AbstractFeature {
             this.valueColumnIndex = targetTable.indexOf(valueColumnName);
         }
 
+        DataType originDataType = originTable.getDataType(originColumnName);
+        if (CqlData.toType(originDataType) != CqlData.Type.MAP) {
+            logger.error("Origin column {} is not a map, it is {}", originColumnName, originDataType);
+            isValid = false;
+        }
+
+        if (isValid) {
+            // Compute the target conversions, as these columns will not have a corresponding index
+            List<DataType> originMapTypes = CqlData.extractDataTypesFromCollection(originDataType);
+
+            DataType keyDataType = targetTable.getDataType(keyColumnName);
+            keyConversion = new CqlConversion(originMapTypes.get(0), keyDataType, targetTable.getCodecRegistry());
+            if (logger.isTraceEnabled()) logger.trace("Key conversion is {}",keyConversion);
+
+            DataType valueDataType = targetTable.getDataType(valueColumnName);
+            valueConversion = new CqlConversion(originMapTypes.get(1), valueDataType, targetTable.getCodecRegistry());
+            if (logger.isTraceEnabled()) logger.trace("Value conversion is {}",valueConversion);
+        }
+
         if (!isValid) isEnabled = false;
         logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled?"enabled":"disabled");
         return isValid;
+    }
+
+    public Set<Map.Entry<Object, Object>> explode(Map<Object, Object> map) {
+        if (map == null) { return null; }
+        return map.entrySet().stream()
+                .map(this::applyConversions)
+                .collect(Collectors.toSet());
+    }
+
+    private Map.Entry<Object, Object> applyConversions(Map.Entry<Object, Object> entry) {
+        Object key = entry.getKey();
+        Object value = entry.getValue();
+
+        if (keyConversion != null) {
+            key = keyConversion.convert(key);
+        }
+
+        if (valueConversion != null) {
+            value = valueConversion.convert(value);
+        }
+
+        return new AbstractMap.SimpleEntry<>(key, value);
     }
 
     public String getOriginColumnName() { return isEnabled ? originColumnName : ""; }
@@ -145,5 +190,4 @@ public class ExplodeMap extends AbstractFeature {
         String columnName = CqlTable.unFormatName(helper.getString(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME));
         return (null == columnName) ? "" : columnName;
     }
-
 }

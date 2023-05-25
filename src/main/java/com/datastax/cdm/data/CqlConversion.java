@@ -69,6 +69,8 @@ public class CqlConversion {
         if (null==conversionTypeList || conversionTypeList.isEmpty())
             return inputData;
 
+        if (logger.isTraceEnabled()) logger.trace("convert() - inputData: {}, converter: {}",inputData,this);
+
         // The first element on the conversionTypeList tells us what conversion the top-level object requires
         Type conversionType = conversionTypeList.get(0);
         switch (conversionType) {
@@ -118,7 +120,7 @@ public class CqlConversion {
             }
             else {
                 cqlConversions.add(new CqlConversion(fromDataType, toDataType, fromTable.getCodecRegistry()));
-                if (logger.isTraceEnabled()) logger.trace("At fromIndex {}, have added {}",i, cqlConversions.get(cqlConversions.size()-1));
+                if (logger.isTraceEnabled()) logger.trace("At fromIndex {} (correspondingIndex {}), have added {}",i, correspondingIndex, cqlConversions.get(cqlConversions.size()-1));
             }
         }
 
