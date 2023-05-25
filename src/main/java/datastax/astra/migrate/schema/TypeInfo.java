@@ -2,7 +2,7 @@ package datastax.astra.migrate.schema;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
-import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -15,73 +15,70 @@ import java.util.*;
 
 @Data
 public class TypeInfo {
-    private static Map<String, Class> typeMap = loadTypeMap();
+    private static Map<DataType, Class> cqlToJavaTypeMap = loadCqlToJavaTypeMap();
     private Class typeClass = Object.class;
     private List<Class> subTypes = new ArrayList<Class>();
     private boolean isCounter = false;
+    private boolean isFrozen = false;
 
     public TypeInfo(DataType dataType) {
-        this(dataType.toString());
-    }
+        typeClass = getDataTypeToType(dataType);
 
-    public TypeInfo(String dataTypeStr) {
-        int sIdx = dataTypeStr.indexOf('(');
-        int eIdx = -1;
-        if (sIdx != -1) {
-            eIdx = dataTypeStr.substring(sIdx + 1).indexOf('(');
-            if (eIdx == -1) {
-                eIdx = dataTypeStr.substring(sIdx + 1).indexOf(',');
-            }
-            eIdx += sIdx + 1;
-        }
-
-        if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("list")) {
-            typeClass = List.class;
-            subTypes.add(typeMap.get(dataTypeStr.substring(sIdx + 1, eIdx).toLowerCase(Locale.ROOT)));
-        } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("set")) {
-            typeClass = Set.class;
-            subTypes.add(typeMap.get(dataTypeStr.substring(sIdx + 1, eIdx).toLowerCase(Locale.ROOT)));
-        } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("map")) {
-            typeClass = Map.class;
-            subTypes.add(typeMap.get(dataTypeStr.substring(sIdx + 1, dataTypeStr.indexOf("=>")).trim().toLowerCase(Locale.ROOT)));
-            subTypes.add(typeMap.get(dataTypeStr.substring(dataTypeStr.indexOf("=>") + 2, dataTypeStr.indexOf(',')).trim().toLowerCase(Locale.ROOT)));
-        } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("udt")) {
-            typeClass = UdtValue.class;
-        } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("tuple")) {
-            typeClass = TupleValue.class;
-        } else if (dataTypeStr.toLowerCase(Locale.ROOT).startsWith("counter")) {
-            typeClass = Long.class;
+        if (dataType instanceof UserDefinedType) {
+            isFrozen = ((UserDefinedType) dataType).isFrozen();
+        } else if (dataType instanceof ListType) {
+            subTypes.add(getDataTypeToType(((ListType) dataType).getElementType()));
+            isFrozen = ((ListType) dataType).isFrozen();
+        } else if (dataType instanceof SetType) {
+            subTypes.add(getDataTypeToType(((SetType) dataType).getElementType()));
+            isFrozen = ((SetType) dataType).isFrozen();
+        } else if (dataType instanceof MapType) {
+            subTypes.add(getDataTypeToType(((MapType) dataType).getKeyType()));
+            subTypes.add(getDataTypeToType(((MapType) dataType).getValueType()));
+            isFrozen = ((MapType) dataType).isFrozen();
+        } else if (DataTypes.COUNTER.equals(dataType)) {
             isCounter = true;
-        } else {
-            typeClass = typeMap.get(dataTypeStr.toLowerCase(Locale.ROOT));
         }
     }
 
-    private static Map loadTypeMap() {
-        Map typeMap = new HashMap<>();
-        typeMap.put("ascii", String.class);
-        typeMap.put("bigint", Long.class);
-        typeMap.put("blob", ByteBuffer.class);
-        typeMap.put("boolean", Boolean.class);
-        typeMap.put("counter", Long.class);
-        typeMap.put("date", LocalDate.class);
-        typeMap.put("decimal", BigDecimal.class);
-        typeMap.put("double", Double.class);
-        typeMap.put("float", Float.class);
-        typeMap.put("int", Integer.class);
-        typeMap.put("inet", String.class);
-        typeMap.put("smallint", Short.class);
-        typeMap.put("text", String.class);
-        typeMap.put("time", LocalTime.class);
-        typeMap.put("timestamp", Instant.class);
-        typeMap.put("timeuuid", UUID.class);
-        typeMap.put("tinyint", Byte.class);
-        typeMap.put("udt", UdtValue.class);
-        typeMap.put("uuid", UUID.class);
-        typeMap.put("varchar", String.class);
-        typeMap.put("varint", BigInteger.class);
+    private static Map loadCqlToJavaTypeMap() {
+        Map<DataType, Class> typeMap = new HashMap<>();
+        typeMap.put(DataTypes.ASCII, String.class);
+        typeMap.put(DataTypes.BIGINT, Long.class);
+        typeMap.put(DataTypes.BLOB, ByteBuffer.class);
+        typeMap.put(DataTypes.BOOLEAN, Boolean.class);
+        typeMap.put(DataTypes.COUNTER, Long.class);
+        typeMap.put(DataTypes.DATE, LocalDate.class);
+        typeMap.put(DataTypes.DECIMAL, BigDecimal.class);
+        typeMap.put(DataTypes.DOUBLE, Double.class);
+        typeMap.put(DataTypes.FLOAT, Float.class);
+        typeMap.put(DataTypes.INT, Integer.class);
+        typeMap.put(DataTypes.INET, String.class);
+        typeMap.put(DataTypes.SMALLINT, Short.class);
+        typeMap.put(DataTypes.TEXT, String.class);
+        typeMap.put(DataTypes.TIME, LocalTime.class);
+        typeMap.put(DataTypes.TIMESTAMP, Instant.class);
+        typeMap.put(DataTypes.TIMEUUID, UUID.class);
+        typeMap.put(DataTypes.TINYINT, Byte.class);
+        typeMap.put(DataTypes.UUID, UUID.class);
+        typeMap.put(DataTypes.VARINT, BigInteger.class);
 
         return typeMap;
+    }
+
+    private Class getDataTypeToType(DataType dataType) {
+        if (dataType instanceof UserDefinedType) return UdtValue.class;
+        else if (dataType instanceof ListType) {
+            return List.class;
+        } else if (dataType instanceof SetType) {
+            return Set.class;
+        } else if (dataType instanceof MapType) {
+            return Map.class;
+        } else if (dataType instanceof TupleType) {
+            return TupleValue.class;
+        }
+
+        return cqlToJavaTypeMap.get(dataType);
     }
 
     public String toString() {
