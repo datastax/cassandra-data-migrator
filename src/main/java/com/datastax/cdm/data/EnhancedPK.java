@@ -1,4 +1,5 @@
 package com.datastax.cdm.data;
+import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.properties.KnownProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +50,11 @@ public class EnhancedPK {
         this.explodeMap = explodeMap;
     }
 
-    public List<EnhancedPK> explode() {
+    public List<EnhancedPK> explode(ExplodeMap explodeMapFeature) {
         if (null == explodeMap || explodeMap.isEmpty()) {
             return Collections.singletonList(this);
         }
-        return explodeMap.entrySet().stream()
+        return explodeMapFeature.explode(explodeMap).stream()
                 .map(entry -> new EnhancedPK(factory, values, classes, ttl, writeTimestamp, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
