@@ -135,10 +135,10 @@ public class ExplodeMap extends AbstractFeature {
             valueConversion = new CqlConversion(originMapTypes.get(1), valueDataType, targetTable.getCodecRegistry());
         }
 
-        if (isEnabled && logger.isDebugEnabled()) {
-            logger.debug("Origin column {} is at index {}", originColumnName, originColumnIndex);
-            logger.debug("Target key column {} is at index {} with conversion {}", keyColumnName, keyColumnIndex, keyConversion);
-            logger.debug("Target value column {} is at index {} with conversion {}", valueColumnName, valueColumnIndex, valueConversion);
+        if (isEnabled && logger.isTraceEnabled()) {
+            logger.trace("Origin column {} is at index {}", originColumnName, originColumnIndex);
+            logger.trace("Target key column {} is at index {} with conversion {}", keyColumnName, keyColumnIndex, keyConversion);
+            logger.trace("Target value column {} is at index {} with conversion {}", valueColumnName, valueColumnIndex, valueConversion);
         }
 
         if (!isValid) isEnabled = false;
