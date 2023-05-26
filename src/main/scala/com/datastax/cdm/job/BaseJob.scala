@@ -1,64 +1,128 @@
 package com.datastax.cdm.job
 
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
 import java.math.BigInteger
+import java.util
+import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
 
-class BaseJob extends App {
+// http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
+
+abstract class BaseJob[T: ClassTag] extends App {
 
   val abstractLogger = LoggerFactory.getLogger(this.getClass.getName)
-  val spark = SparkSession.builder
-    .appName("Cassandra Data Migrator")
-    .getOrCreate()
-  abstractLogger.info("################################################################################################")
-  abstractLogger.info("############################## Cassandra Data Migrator - Starting ##############################")
-  abstractLogger.info("################################################################################################")
 
-  val sContext = spark.sparkContext
-  val sc = sContext.getConf
-  val propertyHelper = PropertyHelper.getInstance(sc);
+  var jobName: String = _
+  var jobFactory: IJobSessionFactory[T] = _
+  var fileName: String = ""
 
-  val consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
+  var spark: SparkSession = _
+  var sContext: SparkContext = _
+  var sc: SparkConf = _
+  var propertyHelper: PropertyHelper = _
 
-  val originScbPath = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_SCB)
-  val originHost = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_HOST)
-  val originPort = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_PORT)
-  val originUsername = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_USERNAME)
-  val originPassword = propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_PASSWORD)
-  val originSSLEnabled = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ENABLED)
-  val originTrustStorePath = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH)
-  val originTrustStorePassword = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD)
-  val originTrustStoreType = propertyHelper.getString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_TYPE)
-  val originKeyStorePath = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PATH)
-  val originKeyStorePassword = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PASSWORD)
-  val originEnabledAlgorithms = propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ALGORITHMS)
+  var consistencyLevel: String = _
+  var minPartition: BigInteger = _
+  var maxPartition: BigInteger = _
+  var coveragePercent: Int = _
+  var numSplits: Int = _
 
-  val targetScbPath = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_SCB)
-  val targetHost = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_HOST)
-  val targetPort = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_PORT)
-  val targetUsername = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_USERNAME)
-  val targetPassword = propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_PASSWORD)
-  val targetSSLEnabled = propertyHelper.getAsString(KnownProperties.TARGET_TLS_ENABLED)
-  val targetTrustStorePath = propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PATH)
-  val targetTrustStorePassword = propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD)
-  val targetTrustStoreType = propertyHelper.getString(KnownProperties.TARGET_TLS_TRUSTSTORE_TYPE)
-  val targetKeyStorePath = propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PATH)
-  val targetKeyStorePassword = propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PASSWORD)
-  val targetEnabledAlgorithms = propertyHelper.getAsString(KnownProperties.TARGET_TLS_ALGORITHMS)
+  var parts: util.Collection[T] = _
+  var slices: RDD[T] = _
 
-  val minPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MIN))
-  val maxPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MAX))
-  val coveragePercent = propertyHelper.getAsString(KnownProperties.TOKEN_COVERAGE_PERCENT)
-  val numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
+  var originConnection: CassandraConnector = _
+  var targetConnection: CassandraConnector = _
 
-  protected def exitSpark() = {
+  def setup(jobName: String, jobFactory: IJobSessionFactory[T], fileName: String): Unit = {
+    this.fileName = fileName
+    setup(jobName, jobFactory)
+  }
+
+  def setup(jobName: String, jobFactory: IJobSessionFactory[T]): Unit = {
+    logBanner(jobName + " - Starting")
+    this.jobName = jobName
+    this.jobFactory = jobFactory
+
+    spark = SparkSession.builder
+      .appName(jobName)
+      .getOrCreate()
+    sContext = spark.sparkContext
+    sc = sContext.getConf
+    propertyHelper = PropertyHelper.getInstance(sc);
+
+    consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
+    minPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MIN))
+    maxPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MAX))
+    coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
+    numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
+    abstractLogger.info("PARAM -- Min Partition: " + minPartition)
+    abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
+    abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
+    abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
+
+    this.parts = getParts(numSplits)
+    this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
+    abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())
+    abstractLogger.info("Spark parallelize created : " + slices.count() + " slices!");
+
+    val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
+    originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)
+    targetConnection = connectionFetcher.getConnection("TARGET", consistencyLevel)
+  }
+
+  def getParts(pieces: Int): util.Collection[T]
+  def printSummary(): Unit = {
+    jobFactory.getInstance(null, null, sc).printCounts(true);
+  }
+
+  def execute(): Unit = {
+    slices.foreach(slice => {
+      originConnection.withSessionDo(sourceSession =>
+        targetConnection.withSessionDo(destinationSession =>
+          jobFactory.getInstance(sourceSession, destinationSession, sc)
+            .processSlice(slice)))
+    })
+  }
+
+  def execute(jobName: String, jobFactory: IJobSessionFactory[T]): Unit = {
+      setup(jobName, jobFactory)
+      slices.foreach(slice => {
+        originConnection.withSessionDo(sourceSession =>
+          targetConnection.withSessionDo(destinationSession =>
+            jobFactory.getInstance(sourceSession, destinationSession, sc)
+              .processSlice(slice)))
+      })
+      printSummary()
+      finish()
+  }
+
+  protected def finish() = {
+    printSummary()
     spark.stop()
-    abstractLogger.info("################################################################################################")
-    abstractLogger.info("############################## Cassandra Data Migrator - Stopped ###############################")
-    abstractLogger.info("################################################################################################")
-    sys.exit(0)
+    logBanner(jobName + " - Stopped")
+  }
+
+  protected def logBanner(message: String): Unit = {
+    val bannerFill = "################################################################################################"
+    val maxLength = bannerFill.length
+    val prefix = "###"
+    val suffix = "###"
+
+    val trimmedMessage = message.substring(0, Math.min(message.length, maxLength - prefix.length - suffix.length))
+    val remainingSpace = maxLength - prefix.length - suffix.length - trimmedMessage.length
+    val leftPadding = remainingSpace / 2
+    val rightPadding = remainingSpace - leftPadding
+    val formattedMessage = s"$prefix${" " * leftPadding}$trimmedMessage${" " * rightPadding}$suffix"
+
+    abstractLogger.info(bannerFill)
+    abstractLogger.info(formattedMessage)
+    abstractLogger.info(bannerFill)
   }
 
 }

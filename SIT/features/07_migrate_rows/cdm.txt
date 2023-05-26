@@ -1,0 +1,1 @@
+migrateData com.datastax.cdm.job.MigrateRowsFromFile migrate.properties

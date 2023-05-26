@@ -1,7 +1,7 @@
 package com.datastax.cdm.cql.codec;
 
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -38,7 +38,7 @@ class BIGINT_StringCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -46,9 +46,9 @@ class BIGINT_StringCodecTest {
     void encode_ShouldEncodeStringValueToByteBuffer_WhenValueIsNotNull() {
         String valueAsString = "9223372036854775807";
         Long value = Long.parseLong(valueAsString);
-        ByteBuffer expected = TypeCodecs.BIGINT.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.BIGINT.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -56,9 +56,9 @@ class BIGINT_StringCodecTest {
     void decode_ShouldDecodeByteBufferToValueAndReturnAsString() {
         String valueAsString = "9223372036854775807";
         Long value = Long.parseLong(valueAsString);
-        ByteBuffer byteBuffer = TypeCodecs.BIGINT.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.BIGINT.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        String result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        String result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(valueAsString, result);
     }
 

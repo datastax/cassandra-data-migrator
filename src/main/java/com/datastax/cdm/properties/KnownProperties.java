@@ -163,10 +163,6 @@ public class KnownProperties {
      defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, "yyyyMMddHHmmss");
         types.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, PropertyType.STRING);
      defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, "UTC");
-
-
-//           types.put(GUARDRAIL_FIELD_LIMIT_MB, PropertyType.NUMBER);
-//        defaults.put(GUARDRAIL_FIELD_LIMIT_MB, "0");
     }
 
     //==========================================================================
@@ -228,17 +224,13 @@ public class KnownProperties {
     }
 
     //==========================================================================
-    // ** Deprecated ** ColSize Check Feature (OriginCountJobSession.java)
+    // Guardrail Feature
     //==========================================================================
-//    public static final String ORIGIN_CHECK_COLSIZE_ENABLED      = "spark.cdm.feature.colsizeCheck.checkTableforColSize";            // false
-//    public static final String ORIGIN_CHECK_COLSIZE_COLUMN_NAMES = "spark.cdm.feature.colsizeCheck.checkTableforColSize.cols";       // partition-key,clustering-key
-//    public static final String ORIGIN_CHECK_COLSIZE_COLUMN_TYPES = "spark.cdm.feature.colsizeCheck.checkTableforColSize.cols.types"; // 9,1
-//    static {
-//           types.put(ORIGIN_CHECK_COLSIZE_ENABLED, PropertyType.BOOLEAN);
-//        defaults.put(ORIGIN_CHECK_COLSIZE_ENABLED, "false");
-//           types.put(ORIGIN_CHECK_COLSIZE_COLUMN_NAMES, PropertyType.STRING_LIST);
-//           types.put(ORIGIN_CHECK_COLSIZE_COLUMN_TYPES, PropertyType.MIGRATION_TYPE_LIST);
-//    }
+    public static final String GUARDRAIL_COLSIZE_KB           = "spark.cdm.feature.guardrail.colSizeInKB";
+    static {
+           types.put(GUARDRAIL_COLSIZE_KB, PropertyType.NUMBER);
+        defaults.put(GUARDRAIL_COLSIZE_KB, "0");
+    }
 
     //==========================================================================
     // Properties that configure origin TLS

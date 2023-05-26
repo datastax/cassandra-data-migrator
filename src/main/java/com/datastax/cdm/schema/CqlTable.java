@@ -12,6 +12,8 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.type.*;
+import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.data.CqlConversion;
@@ -117,6 +119,7 @@ public class CqlTable extends BaseTable {
     public Class getBindClass(int index) { return bindClasses.get(index); }
     public int indexOf(String columnName) { return columnNames.indexOf(columnName); }
     public DataType getDataType(String columnName) { return columnNameToCqlTypeMap.get(columnName); }
+    public DataType getDataType(int index) { return ((index < 0 || index>=columnCqlTypes.size()) ? null : columnCqlTypes.get(index)); }
 
     public MutableCodecRegistry getCodecRegistry() { return (MutableCodecRegistry) cqlSession.getContext().getCodecRegistry(); }
 
@@ -229,6 +232,18 @@ public class CqlTable extends BaseTable {
 
     public Object getData(int index, Row row) {
         return row.get(index, this.getBindClass(index));
+    }
+
+    public int byteCount(int index, Object object) {
+        if (null==object) return 0;
+        try {
+            return getCodecRegistry()
+                    .codecFor(getDataType(index))
+                    .encode(object, CqlConversion.PROTOCOL_VERSION)
+                    .remaining();
+        } catch (IllegalArgumentException | CodecNotFoundException | NullPointerException e) {
+            throw new IllegalArgumentException("Unable to encode object " + object + " of Class/DataType " + object.getClass().getName() + "/" + getDataType(index) + " for column " + this.columnNames.get(index), e);
+        }
     }
 
     public Object getAndConvertData(int index, Row row) {
