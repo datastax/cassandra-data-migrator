@@ -1,0 +1,9 @@
+# .snyk
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+# See https://docs.snyk.io/scan-cloud-deployment/snyk-infrastructure-as-code/snyk-cli-for-infrastructure-as-code/iac-ignores-using-the-.snyk-policy-file for details.
+version: v1.22.2
+python: '3.7'
+patch: {}
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+
