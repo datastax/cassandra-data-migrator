@@ -55,15 +55,14 @@ public class OriginSelectByPartitionRangeStatementTest extends CommonMocks {
         String cql = originSelectByPartitionRangeStatement.getCQL();
         assertEquals(sb.toString(),cql);
     }
+
     @Test
-    public void bind_withNullBinds_usesDefaultPartitions() {
-        originSelectByPartitionRangeStatement.bind(null, null);
+    public void bind_withNullBinds() {
         assertAll(
-                () -> verify(preparedStatement).bind(
-                        BigInteger.valueOf(minPartition).longValueExact(),
-                        BigInteger.valueOf(maxPartition).longValueExact()),
-                () -> verify(boundStatement).setConsistencyLevel(readCL),
-                () -> verify(boundStatement).setPageSize(fetchSizeInRows)
+                () -> assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind(null,null), "two null"),
+                () -> assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind(BigInteger.valueOf(20)), "missing second"),
+                () -> assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind(BigInteger.valueOf(20),null), "null second"),
+                () -> assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind(null,BigInteger.valueOf(20)), "null first")
         );
     }
 
@@ -74,41 +73,12 @@ public class OriginSelectByPartitionRangeStatementTest extends CommonMocks {
 
         originSelectByPartitionRangeStatement.bind(providedMin, providedMax);
         assertAll(
-                () -> verify(preparedStatement).bind(
-                        providedMin.longValueExact(),
-                        providedMax.longValueExact()),
+                () -> verify(preparedStatement).bind(providedMin.longValueExact(), providedMax.longValueExact()),
                 () -> verify(boundStatement).setConsistencyLevel(readCL),
                 () -> verify(boundStatement).setPageSize(fetchSizeInRows)
         );
     }
 
-    @Test
-    public void bind_withMixedBinds_usesDefaultAndProvidedPartitions() {
-        BigInteger providedMin = BigInteger.valueOf(12345L);
-
-        originSelectByPartitionRangeStatement.bind(providedMin, null);
-        assertAll(
-                () -> verify(preparedStatement).bind(
-                        providedMin.longValueExact(),
-                        BigInteger.valueOf(maxPartition).longValueExact()),
-                () -> verify(boundStatement).setConsistencyLevel(readCL),
-                () -> verify(boundStatement).setPageSize(fetchSizeInRows)
-        );
-    }
-
-    @Test
-    public void bind_withNullBinds_usesDefaultPartitions_whenRandomPartitioner() {
-        when(originTable.hasRandomPartitioner()).thenReturn(true);
-
-        originSelectByPartitionRangeStatement.bind(null, null);
-        assertAll(
-                () -> verify(preparedStatement).bind(
-                        BigInteger.valueOf(minPartition),
-                        BigInteger.valueOf(maxPartition)),
-                () -> verify(boundStatement).setConsistencyLevel(readCL),
-                () -> verify(boundStatement).setPageSize(fetchSizeInRows)
-        );
-    }
 
     @Test
     public void bind_withNonNullBinds_usesProvidedPartitions_whenRandomPartitioner() {
@@ -128,29 +98,11 @@ public class OriginSelectByPartitionRangeStatementTest extends CommonMocks {
     }
 
     @Test
-    public void bind_withMixedBinds_usesDefaultAndProvidedPartitions_whenRandomPartitioner() {
-        when(originTable.hasRandomPartitioner()).thenReturn(true);
-
-        BigInteger providedMax = BigInteger.valueOf(999999999L);
-
-        originSelectByPartitionRangeStatement.bind(null, providedMax);
-        assertAll(
-                () -> verify(preparedStatement).bind(
-                        BigInteger.valueOf(minPartition),
-                        providedMax),
-                () -> verify(boundStatement).setConsistencyLevel(readCL),
-                () -> verify(boundStatement).setPageSize(fetchSizeInRows)
-        );
-    }
-
-    @Test
-    public void bind_withInvalidBindLength_throwsException() {
-        assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind(null));
-    }
-
-    @Test
     public void bind_withInvalidBindType_throwsException() {
-        assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind("invalidType", BigInteger.valueOf(20)));
+        assertAll(
+                () -> assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind("invalidType", BigInteger.valueOf(20)), "invalid first"),
+                () -> assertThrows(RuntimeException.class, () -> originSelectByPartitionRangeStatement.bind(BigInteger.valueOf(20),"invalidType"), "invalid second")
+        );
     }
 
 }
