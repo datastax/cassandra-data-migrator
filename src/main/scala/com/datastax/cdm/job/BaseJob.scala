@@ -57,8 +57,16 @@ abstract class BaseJob[T: ClassTag] extends App {
     propertyHelper = PropertyHelper.getInstance(sc);
 
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
-    minPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MIN))
-    maxPartition = new BigInteger(propertyHelper.getAsString(KnownProperties.PARTITION_MAX))
+    val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
+    originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)
+    targetConnection = connectionFetcher.getConnection("TARGET", consistencyLevel)
+
+    val hasRandomPartitioner: Boolean = {
+      val partitionerName = originConnection.withSessionDo(_.getMetadata.getTokenMap.get().getPartitionerName)
+      partitionerName.endsWith("RandomPartitioner")
+    }
+    minPartition = getMinPartition(propertyHelper.getString(KnownProperties.PARTITION_MIN), hasRandomPartitioner)
+    maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
@@ -71,9 +79,6 @@ abstract class BaseJob[T: ClassTag] extends App {
     abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())
     abstractLogger.info("Spark parallelize created : " + slices.count() + " slices!");
 
-    val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
-    originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)
-    targetConnection = connectionFetcher.getConnection("TARGET", consistencyLevel)
   }
 
   def getParts(pieces: Int): util.Collection[T]
@@ -125,4 +130,15 @@ abstract class BaseJob[T: ClassTag] extends App {
     abstractLogger.info(bannerFill)
   }
 
+  def getMinPartition(minPartition: String, hasRandomPartitioner: Boolean): BigInteger = {
+    if (minPartition != null && minPartition.nonEmpty) new BigInteger(minPartition)
+    else if (hasRandomPartitioner) BigInteger.ZERO
+    else BigInteger.valueOf(Long.MinValue)
+  }
+
+  def getMaxPartition(maxPartition: String, hasRandomPartitioner: Boolean): BigInteger = {
+    if (maxPartition != null && maxPartition.nonEmpty) new BigInteger(maxPartition)
+    else if (hasRandomPartitioner) new BigInteger("2").pow(127).subtract(BigInteger.ONE)
+    else BigInteger.valueOf(Long.MaxValue)
+  }
 }
