@@ -27,6 +27,7 @@ public class WritetimeTTL extends AbstractFeature  {
     private Long filterMin;
     private Long filterMax;
     private boolean hasWriteTimestampFilter;
+    private Long writetimeIncrement;
 
     @Override
     public boolean loadProperties(IPropertyHelper propertyHelper) {
@@ -48,6 +49,8 @@ public class WritetimeTTL extends AbstractFeature  {
         if (this.customWritetime > 0) {
             logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime, Instant.ofEpochMilli(customWritetime / 1000));
         }
+
+        this.writetimeIncrement = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT);
 
         this.filterMin = getMinFilter(propertyHelper);
         this.filterMax = getMaxFilter(propertyHelper);
@@ -74,6 +77,12 @@ public class WritetimeTTL extends AbstractFeature  {
         validateFilterRangeProperties();
         validateTTLNames();
         validateWritetimeNames();
+
+        if (null==this.writetimeIncrement || this.writetimeIncrement < 0L) {
+            logger.error(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT + " must be set to a value greater than or equal to zero");
+            isValid = false;
+        }
+
         return isValid;
     }
 
@@ -122,6 +131,12 @@ public class WritetimeTTL extends AbstractFeature  {
             isValid = false;
         }
 
+        if (this.writetimeIncrement == 0L && (null!=writetimeNames && !writetimeNames.isEmpty()) && originTable.hasUnfrozenList()) {
+            logger.warn("Writetime is configured, but the origin table at least one unfrozen List, and there is a zero-value increment configured at "+
+                    KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT+"; this may result in duplicate list entries when "+
+                    KnownProperties.AUTOCORRECT_MISMATCH+" is enabled.");
+        }
+
         if (!isValid) isEnabled = false;
         logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled?"enabled":"disabled");
         return isValid;
@@ -164,7 +179,7 @@ public class WritetimeTTL extends AbstractFeature  {
                 .mapToLong(row::getLong)
                 .filter(Objects::nonNull)
                 .max();
-        return max.isPresent() ? max.getAsLong() : null;
+        return max.isPresent() ? max.getAsLong() + this.writetimeIncrement : null;
     }
 
     public Integer getLargestTTL(Row row) {

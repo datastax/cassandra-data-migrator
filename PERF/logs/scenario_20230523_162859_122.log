@@ -1,0 +1,6 @@
+2023-05-23 15:28:59,448 [main] INFO : Configured scenario log at logs/scenario_20230523_162859_122.log
+2023-05-23 15:28:59,452 [main] INFO : Running NoSQLBench Version 5.17.3-release
+2023-05-23 15:28:59,459 [main] INFO : command-line: --copy cql-iot
+2023-05-23 15:28:59,761 [main] INFO : client-hardware: {"logical-cores":"6","sockets":"1","memory-GiB":"31.35","processor-name":"11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz","heap-max-GiB":"7.84","if-speeds":["10Gib"],"physical-cores":"3","max-frequency-ghz":"0.00"}
+2023-05-23 15:28:59,896 [main] ERROR: A file named cql-iot.yaml exists. Remove it first.
+2023-05-23 15:28:59,899 [main] ERROR: for the full stack trace, run with --show-stacktraces

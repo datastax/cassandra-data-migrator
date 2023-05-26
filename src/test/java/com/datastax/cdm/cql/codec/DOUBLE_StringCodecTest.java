@@ -1,6 +1,6 @@
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -32,7 +32,7 @@ class DOUBLE_StringCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -40,9 +40,9 @@ class DOUBLE_StringCodecTest {
     void encode_ShouldEncodeStringValueToByteBuffer_WhenValueIsNotNull() {
         String stringValue = "21474836470.7";
         Double value = Double.parseDouble(stringValue);
-        ByteBuffer expected = TypeCodecs.DOUBLE.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.DOUBLE.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(stringValue, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(stringValue, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -50,9 +50,9 @@ class DOUBLE_StringCodecTest {
     void decode_ShouldDecodeByteBufferToValueAndReturnAsString() {
         String valueAsString = "21474836470.7";
         Double value = Double.parseDouble(valueAsString);
-        ByteBuffer byteBuffer = TypeCodecs.DOUBLE.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.DOUBLE.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        String result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        String result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(valueAsString, result);
     }
 

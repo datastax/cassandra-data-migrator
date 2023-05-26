@@ -3,6 +3,7 @@ package com.datastax.cdm.job;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
+import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.cdm.data.PKFactory;
@@ -17,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class CopyJobSession extends AbstractJobSession {
+public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
     private static CopyJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -50,16 +51,9 @@ public class CopyJobSession extends AbstractJobSession {
         logger.info("CQL -- target upsert: {}",this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        if (copyJobSession == null) {
-            synchronized (CopyJobSession.class) {
-                if (copyJobSession == null) {
-                    copyJobSession = new CopyJobSession(originSession, targetSession, sc);
-                }
-            }
-        }
-
-        return copyJobSession;
+    @Override
+    public void processSlice(SplitPartitions.Partition slice) {
+        this.getDataAndInsert(slice.getMin(), slice.getMax());
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
@@ -67,6 +61,7 @@ public class CopyJobSession extends AbstractJobSession {
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         boolean done = false;
         int maxAttempts = maxRetries + 1;
+        String guardrailCheck;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             long readCnt = 0;
             long flushedWriteCnt = 0;
@@ -94,6 +89,15 @@ public class CopyJobSession extends AbstractJobSession {
                     }
 
                     for (Record r : pkFactory.toValidRecordList(record)) {
+                        if (guardrailEnabled) {
+                            guardrailCheck = guardrailFeature.guardrailChecks(r);
+                            if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                                logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
+                                skipCnt++;
+                                continue;
+                            }
+                        }
+
                         writeLimiter.acquire(1);
 
                         BoundStatement boundUpsert = bind(r);
@@ -136,6 +140,7 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
+    @Override
     public synchronized void printCounts(boolean isFinal) {
         String msg = "ThreadID: " + Thread.currentThread().getId();
         if (isFinal) {

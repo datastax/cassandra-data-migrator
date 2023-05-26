@@ -428,4 +428,38 @@ public class TTLAndWritetimeTest extends CommonMocks {
         feature.loadProperties(propertyHelper);
         assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
     }
+
+    @Test
+    public void writetimeIncrementTest() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT)).thenReturn(314L);
+        when(originTable.indexOf("WRITETIME("+writetimeColumnName+")")).thenReturn(100);
+        when(originRow.getLong(eq(100))).thenReturn(1000L);
+        when(originTable.indexOf("WRITETIME("+writetimeTTLColumnName+")")).thenReturn(101);
+        when(originRow.getLong(eq(101))).thenReturn(3000L);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        Long largestWritetime = feature.getLargestWriteTimeStamp(originRow);
+        assertEquals(3314L, largestWritetime);
+    }
+
+    @Test
+    public void invalidWritetimeIncrement() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT)).thenReturn(-1L);
+        feature.loadProperties(propertyHelper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void testZeroIncrementWithUnfrozenList() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT)).thenReturn(0L);
+        when(originTable.hasUnfrozenList()).thenReturn(true);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+        assertTrue(feature.isEnabled());
+    }
+
 }
