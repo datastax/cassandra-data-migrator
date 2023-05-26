@@ -12,7 +12,7 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.properties.KnownProperties;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
