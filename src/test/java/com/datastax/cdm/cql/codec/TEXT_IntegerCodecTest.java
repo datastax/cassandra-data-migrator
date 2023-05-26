@@ -1,6 +1,6 @@
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -32,7 +32,7 @@ class TEXT_IntegerCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -40,9 +40,9 @@ class TEXT_IntegerCodecTest {
     void encode_ShouldEncodeNumberToTextByteBuffer_WhenValueIsNotNull() {
         String valueAsString = "10";
         Integer value = Integer.valueOf(valueAsString);
-        ByteBuffer expected = TypeCodecs.TEXT.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.TEXT.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(value, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -50,9 +50,9 @@ class TEXT_IntegerCodecTest {
     void decode_ShouldDecodeTextByteBufferAndReturnAsNumber() {
         String valueAsString = "10";
         Integer value = Integer.valueOf(valueAsString);
-        ByteBuffer byteBuffer = TypeCodecs.TEXT.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.TEXT.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
 
-        Integer result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        Integer result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(value, result);
     }
 

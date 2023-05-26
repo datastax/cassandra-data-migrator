@@ -1,6 +1,6 @@
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -32,7 +32,7 @@ class TEXT_DoubleCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -42,9 +42,9 @@ class TEXT_DoubleCodecTest {
         Double value = Double.valueOf(valueAsString);
         // Because the valueAsString could be a Double with a decimal point or with an E notation
         // but we expect the encoded value to be from a proper CQL type, we need to encode the String.valueOf(value)
-        ByteBuffer expected = TypeCodecs.TEXT.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.TEXT.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(value, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -53,9 +53,9 @@ class TEXT_DoubleCodecTest {
         String valueAsString = "21474836470.7";
         Double value = Double.valueOf(valueAsString);
         // encoding could be from user input, so may not be in Java Double.toString() format
-        ByteBuffer byteBuffer = TypeCodecs.TEXT.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.TEXT.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
 
-        Double result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        Double result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(value, result);
     }
 

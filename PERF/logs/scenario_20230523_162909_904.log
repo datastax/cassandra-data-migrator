@@ -1,0 +1,5 @@
+2023-05-23 15:29:10,238 [main] INFO : Configured scenario log at logs/scenario_20230523_162909_904.log
+2023-05-23 15:29:10,243 [main] INFO : Running NoSQLBench Version 5.17.3-release
+2023-05-23 15:29:10,250 [main] INFO : command-line: --copy cql-iot
+2023-05-23 15:29:10,541 [main] INFO : client-hardware: {"processor-name":"11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz","memory-GiB":"31.35","sockets":"1","logical-cores":"6","max-frequency-ghz":"0.00","physical-cores":"3","if-speeds":["10Gib"],"heap-max-GiB":"7.84"}
+2023-05-23 15:29:10,675 [main] INFO : Copied internal resource '/activities/baselines/cql-iot.yaml' to 'cql-iot.yaml'

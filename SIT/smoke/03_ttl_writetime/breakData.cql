@@ -21,7 +21,33 @@ INSERT INTO origin.smoke_ttl_writetime(key, w_col3)  VALUES ('record6','C---') U
 -- tw_col2 is TTL and Writetime, so both changes should be propatated by the diff
 INSERT INTO origin.smoke_ttl_writetime(key, tw_col2) VALUES ('record7','B---') USING TTL 700000 AND TIMESTAMP 1087384200000000; -- 11:10:00
 
+SELECT key
+      ,t_col1
+      ,WRITETIME(t_col1) AS t_col1_wt
+      ,TTL(t_col1) AS t_col1_ttl
+      ,tw_col2
+      ,WRITETIME(tw_col2) AS tw_col2_wt
+      ,TTL(tw_col2) AS tw_col2_ttl
+      ,w_col3
+      ,WRITETIME(w_col3) AS w_col3_wt
+      ,TTL(w_col3) AS w_col3_ttl
+      ,col4
+      ,WRITETIME(col4) AS col4_wt
+      ,TTL(col4) AS col4_ttl
+  FROM origin.smoke_ttl_writetime;
 
-
-SELECT * FROM target.smoke_ttl_writetime;
+SELECT key
+      ,t_col1
+      ,WRITETIME(t_col1) AS t_col1_wt
+      ,TTL(t_col1) AS t_col1_ttl
+      ,tw_col2
+      ,WRITETIME(tw_col2) AS tw_col2_wt
+      ,TTL(tw_col2) AS tw_col2_ttl
+      ,w_col3
+      ,WRITETIME(w_col3) AS w_col3_wt
+      ,TTL(w_col3) AS w_col3_ttl
+      ,col4
+      ,WRITETIME(col4) AS col4_wt
+      ,TTL(col4) AS col4_ttl
+  FROM target.smoke_ttl_writetime;
 

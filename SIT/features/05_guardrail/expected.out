@@ -1,0 +1,15 @@
+
+ key         | fruit   | fruit_taste | value
+-------------+---------+-------------+--------
+ badMapValue | bananas |     squishy | valueA
+ badMapValue |  grapes |        sour | valueA
+ badMapValue | oranges |       sweet | valueA
+       clean |  apples |   delicious | valueA
+       clean | bananas |     squishy | valueA
+       clean |  grapes |        sour | valueA
+       clean | oranges |       sweet | valueA
+   badMapKey | bananas |     squishy | valueA
+   badMapKey |  grapes |        sour | valueA
+   badMapKey | oranges |       sweet | valueA
+
+(10 rows)

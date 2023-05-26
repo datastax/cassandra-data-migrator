@@ -259,6 +259,7 @@ public class CommonMocks {
                 });
         when(originTable.getColumnCqlTypes()).thenReturn(originColumnTypes);
         when(originTable.getDataType(anyString())).thenAnswer(invocation -> {String name = invocation.getArgument(0,String.class); return originColumnTypes.get(originColumnNames.indexOf(name));});
+        when(originTable.getWritetimeTTLColumns()).thenReturn(originValueColumns);
 
         when(originTable.getOtherCqlTable()).thenReturn(targetTable);
         when(originTable.getCorrespondingIndex(anyInt())).thenAnswer(invocation -> targetColumnNames.indexOf(originColumnNames.get(invocation.getArgument(0, Integer.class))));

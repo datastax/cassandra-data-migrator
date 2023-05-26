@@ -97,8 +97,8 @@ fi
 
 spark-submit --properties-file "${PROPERTIES}" \
   --master "local[*]" \
-  --conf "spark.driver.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j.xml -Dcom.datastax.cdm.log.level=TRACE" \
-  --conf "spark.executor.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j.xml -Dcom.datastax.cdm.log.level=TRACE" \
+  --conf "spark.driver.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j.xml -Dcom.datastax.cdm.log.level=DEBUG" \
+  --conf "spark.executor.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j.xml -Dcom.datastax.cdm.log.level=DEBUG" \
   --class ${CLASS} \
   /local/cassandra-data-migrator.jar
 
