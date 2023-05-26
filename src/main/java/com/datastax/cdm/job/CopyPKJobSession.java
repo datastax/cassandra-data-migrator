@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class CopyPKJobSession extends AbstractJobSession {
+public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows> {
 
     private static CopyPKJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -40,66 +40,58 @@ public class CopyPKJobSession extends AbstractJobSession {
         logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPKStatement().getCQL());
     }
 
-    public static CopyPKJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        if (copyJobSession == null) {
-            synchronized (CopyPKJobSession.class) {
-                if (copyJobSession == null) {
-                    copyJobSession = new CopyPKJobSession(originSession, targetSession, sc);
-                }
-            }
-        }
-
-        return copyJobSession;
+    @Override
+    public void processSlice(SplitPartitions.PKRows slice) {
+        this.getRowAndInsert(slice);
     }
 
-    public void getRowAndInsert(List<SplitPartitions.PKRows> rowsList) {
+    public void getRowAndInsert(SplitPartitions.PKRows rowsList) {
         originSelectByPKStatement = originSession.getOriginSelectByPKStatement();
-        for (SplitPartitions.PKRows rows : rowsList) {
-            rows.pkRows.parallelStream().forEach(row -> {
-                readCounter.incrementAndGet();
-                EnhancedPK pk = toEnhancedPK(row);
-                if (null == pk || pk.isError()) {
-                    missingCounter.incrementAndGet();
-                    logger.error("Could not build PK object with value <{}>; error is: {}", row, (null == pk ? "null" : pk.getMessages()));
-                    return;
-                }
+        for (String row : rowsList.pkRows) {
+            readCounter.incrementAndGet();
+            EnhancedPK pk = toEnhancedPK(row);
+            if (null == pk || pk.isError()) {
+                missingCounter.incrementAndGet();
+                logger.error("Could not build PK object with value <{}>; error is: {}", row, (null == pk ? "null" : pk.getMessages()));
+                return;
+            }
 
-                Record recordFromOrigin = originSelectByPKStatement.getRecord(pk);
-                if (null == recordFromOrigin) {
-                    missingCounter.incrementAndGet();
-                    logger.error("Could not find origin row with primary-key: {}", row);
-                    return;
-                }
-                Row originRow = recordFromOrigin.getOriginRow();
+            Record recordFromOrigin = originSelectByPKStatement.getRecord(pk);
+            if (null == recordFromOrigin) {
+                missingCounter.incrementAndGet();
+                logger.error("Could not find origin row with primary-key: {}", row);
+                return;
+            }
+            Row originRow = recordFromOrigin.getOriginRow();
 
-                Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
-                if (originSelectByPKStatement.shouldFilterRecord(record)) {
+            Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
+            if (originSelectByPKStatement.shouldFilterRecord(record)) {
+                skipCounter.incrementAndGet();
+                return;
+            }
+
+            if (guardrailEnabled) {
+                String guardrailCheck = guardrailFeature.guardrailChecks(record);
+                if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                    logger.error("Guardrails failed for PrimaryKey {}; {}", record.getPk(), guardrailCheck);
                     skipCounter.incrementAndGet();
                     return;
                 }
+            }
 
-                if (guardrailEnabled) {
-                    String guardrailCheck = guardrailFeature.guardrailChecks(record);
-                    if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
-                        logger.error("Guardrails failed for PrimaryKey {}; {}", record.getPk(), guardrailCheck);
-                        skipCounter.incrementAndGet();
-                        return;
-                    }
-                }
+            writeLimiter.acquire(1);
+            targetSession.getTargetUpsertStatement().putRecord(record);
+            writeCounter.incrementAndGet();
 
-                writeLimiter.acquire(1);
-                targetSession.getTargetUpsertStatement().putRecord(record);
-                writeCounter.incrementAndGet();
-
-                if (readCounter.get() % printStatsAfter == 0) {
-                    printCounts(false);
-                }
-            });
+            if (readCounter.get() % printStatsAfter == 0) {
+                printCounts(false);
+            }
         }
 
         printCounts(true);
     }
 
+    @Override
     public void printCounts(boolean isFinal) {
         if (isFinal) {
             logger.info("################################################################################################");
@@ -116,6 +108,7 @@ public class CopyPKJobSession extends AbstractJobSession {
     private EnhancedPK toEnhancedPK(String rowString) {
         String[] pkFields = rowString.split(" %% ");
         List<Object> values = new ArrayList<>(originPKClasses.size());
+        if (logger.isDebugEnabled()) logger.debug("rowString={}, pkFields={}", rowString, pkFields);
         for (int i=0; i<pkFields.length; i++) {
             PropertyEditor editor = PropertyEditorManager.findEditor(originPKClasses.get(i));
             editor.setAsText(pkFields[i]);

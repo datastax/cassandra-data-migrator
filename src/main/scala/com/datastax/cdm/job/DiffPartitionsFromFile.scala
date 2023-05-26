@@ -1,7 +1,7 @@
 package com.datastax.cdm.job
 
-object MigrateRowsFromFile extends BasePKJob {
-  setup("Migrate Rows from File Job", new CopyPKJobSessionFactory(), "./primary_key_rows.csv")
+object DiffPartitionsFromFile extends BasePartitionJob {
+  setup("Diff Partitions from File Job", new DiffJobSessionFactory(), "./partitions.csv")
   execute()
   finish()
 
@@ -14,3 +14,6 @@ object MigrateRowsFromFile extends BasePKJob {
     })
   }
 }
+
+
+
