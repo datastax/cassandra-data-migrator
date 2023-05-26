@@ -1,7 +1,7 @@
 package com.datastax.cdm.cql.codec;
 
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -39,7 +39,7 @@ class TEXTMillis_InstantCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -47,9 +47,9 @@ class TEXTMillis_InstantCodecTest {
     void encode_ShouldEncodeInstantToTextByteBuffer_WhenValueIsNotNull() {
         String valueAsString = "1681333035000";
         Instant value = Instant.ofEpochMilli(Long.parseLong(valueAsString));
-        ByteBuffer expected = TypeCodecs.TEXT.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.TEXT.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(value, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -57,9 +57,9 @@ class TEXTMillis_InstantCodecTest {
     void decode_ShouldDecodeTextByteBufferAndReturnAsInstant() {
         String valueAsString = "1681333035000";
         Instant value = Instant.ofEpochMilli(Long.parseLong(valueAsString));
-        ByteBuffer byteBuffer = TypeCodecs.TEXT.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.TEXT.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
 
-        Instant result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        Instant result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(value, result);
     }
 

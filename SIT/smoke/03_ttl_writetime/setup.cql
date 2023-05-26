@@ -51,19 +51,19 @@ INSERT INTO origin.smoke_ttl_writetime(key, w_col3) VALUES ('record8','CCCC') US
 INSERT INTO origin.smoke_ttl_writetime(key,   col4) VALUES ('record8','DDDD') USING TTL 700000 AND TIMESTAMP 1087383780000000; -- 11:00:03
 
 
-SELECT key,
-       t_col1,
-       writetime(t_col1)  as  wt_t_col1, 
-             ttl(t_col1)  as ttl_t_col1,
-       tw_col2,
-       writetime(tw_col2) as  wt_tw_col2,
-             ttl(tw_col2) as ttl_tw_col2,
-       w_col3,
-       writetime(w_col3)  as  wt_w_col3,
-             ttl(w_col3)  as ttl_w_col3,
-       col4, 
-       writetime(col4)    as  wt_col4,
-             ttl(col4)    as ttl_col4
+SELECT key
+      ,t_col1
+      ,WRITETIME(t_col1) AS t_col1_wt
+      ,TTL(t_col1) AS t_col1_ttl
+      ,tw_col2
+      ,WRITETIME(tw_col2) AS tw_col2_wt
+      ,TTL(tw_col2) AS tw_col2_ttl
+      ,w_col3
+      ,WRITETIME(w_col3) AS w_col3_wt
+      ,TTL(w_col3) AS w_col3_ttl
+      ,col4
+      ,WRITETIME(col4) AS col4_wt
+      ,TTL(col4) AS col4_ttl
   FROM origin.smoke_ttl_writetime;
 
 DROP TABLE IF EXISTS target.smoke_ttl_writetime;

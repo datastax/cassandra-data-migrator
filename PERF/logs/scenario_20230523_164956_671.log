@@ -1,0 +1,4 @@
+2023-05-23 15:49:57,045 [main] INFO : Configured scenario log at logs/scenario_20230523_164956_671.log
+2023-05-23 15:49:57,049 [main] INFO : Running NoSQLBench Version 5.17.3-release
+2023-05-23 15:49:57,056 [main] INFO : command-line: --help
+2023-05-23 15:49:57,386 [main] INFO : client-hardware: {"logical-cores":"6","sockets":"1","memory-GiB":"31.35","processor-name":"11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz","heap-max-GiB":"7.84","if-speeds":["10Gib"],"physical-cores":"3","max-frequency-ghz":"0.00"}

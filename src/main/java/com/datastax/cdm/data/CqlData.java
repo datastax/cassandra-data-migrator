@@ -63,6 +63,16 @@ public class CqlData {
         return false;
     }
 
+    public static boolean isFrozen(DataType dataType) {
+        if (isPrimitive(dataType)) return false;
+        if (dataType instanceof UserDefinedType) return ((UserDefinedType) dataType).isFrozen();
+        if (dataType instanceof ListType) return ((ListType) dataType).isFrozen();
+        if (dataType instanceof SetType) return ((SetType) dataType).isFrozen();
+        if (dataType instanceof MapType) return ((MapType) dataType).isFrozen();
+        if (dataType instanceof TupleType) return dataType.asCql(true, false).toLowerCase().contains("frozen<");
+        return false;
+    }
+
     public static Class getBindClass(DataType dataType) {
         Class primitiveClass = primitiveDataTypeToJavaClassMap.get(dataType);
         if (primitiveClass != null) return primitiveClass;
