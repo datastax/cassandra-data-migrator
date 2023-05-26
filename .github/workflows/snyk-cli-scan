@@ -1,0 +1,14 @@
+# GitHub action CI
+# trigger by:
+#  any push on any protected branch: main, v6.8, releases/**
+#  any PR crteated against any protected branch: main, v6.8, releases/**
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  SNYK_SEVERITY_THRESHOLD_LEVEL: high
