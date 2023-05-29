@@ -213,7 +213,7 @@ public class WritetimeTTL extends AbstractFeature  {
                 }
             }
 
-            newColumnNames.add("TTL(" + ttlName + ")");
+            newColumnNames.add("TTL(" + CqlTable.formatName(ttlName) + ")");
             newColumnDataTypes.add(DataTypes.INT);
         }
 
@@ -245,7 +245,7 @@ public class WritetimeTTL extends AbstractFeature  {
                 }
             }
 
-            newColumnNames.add("WRITETIME(" + writetimeName + ")");
+            newColumnNames.add("WRITETIME(" + CqlTable.formatName(writetimeName) + ")");
             newColumnDataTypes.add(DataTypes.BIGINT);
         }
 
