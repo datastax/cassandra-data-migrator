@@ -225,7 +225,7 @@ public class WritetimeTTL extends AbstractFeature  {
     }
 
     private void validateWritetimeColumns(CqlTable originTable) {
-        if (writetimeNames == null || writetimeNames.isEmpty()) {
+        if (writetimeNames == null || writetimeNames.isEmpty() || customWritetime > 0) {
             return;
         }
 
