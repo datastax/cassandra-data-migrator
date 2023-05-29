@@ -169,6 +169,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
     private BoundStatement bind(Record r) {
         if (isCounterTable) {
+            readLimiterTarget.acquire(1);
             Record targetRecord = targetSelectByPKStatement.getRecord(r.getPk());
             if (null != targetRecord) {
                 r.setTargetRow(targetRecord.getTargetRow());

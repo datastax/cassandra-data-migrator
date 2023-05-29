@@ -44,11 +44,15 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
         readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_READ));
         writeLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_WRITE));
+        Integer readLimitTarget = propertyHelper.getInteger(KnownProperties.PERF_LIMIT_READ_TARGET);
+        if (readLimitTarget == null || readLimitTarget < 0) { readLimitTarget = propertyHelper.getInteger(KnownProperties.PERF_LIMIT_READ);}
+        readLimiterTarget = RateLimiter.create(readLimitTarget);
         maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
 
         logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
         logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
+        logger.info("PARAM -- TargetReadRateLimit: {}", readLimiterTarget.getRate());
 
         this.originSession = new EnhancedSession(propertyHelper, originSession, true);
         this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);

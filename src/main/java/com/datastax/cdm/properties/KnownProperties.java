@@ -100,6 +100,7 @@ public class KnownProperties {
     public static final String PERF_NUM_PARTS                   = "spark.cdm.perfops.numParts";             // 10000, was spark.splitSize
     public static final String PERF_BATCH_SIZE                  = "spark.cdm.perfops.batchSize";             // 5
     public static final String PERF_LIMIT_READ                  = "spark.cdm.perfops.readRateLimit";         // 20000
+    public static final String PERF_LIMIT_READ_TARGET           = "spark.cdm.perfops.readRateLimit.target";  // readRateLimit
     public static final String PERF_LIMIT_WRITE                 = "spark.cdm.perfops.writeRateLimit";        // 40000
 
     public static final String READ_CL                          = "spark.cdm.perfops.consistency.read";
@@ -122,6 +123,7 @@ public class KnownProperties {
         defaults.put(PERF_BATCH_SIZE, "5");
            types.put(PERF_LIMIT_READ, PropertyType.NUMBER);
         defaults.put(PERF_LIMIT_READ, "20000");
+           types.put(PERF_LIMIT_READ_TARGET, PropertyType.NUMBER);
            types.put(PERF_LIMIT_WRITE, PropertyType.NUMBER);
         defaults.put(PERF_LIMIT_WRITE, "40000");
 

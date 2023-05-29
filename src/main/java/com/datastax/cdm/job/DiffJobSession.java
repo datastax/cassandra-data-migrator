@@ -132,6 +132,7 @@ public class DiffJobSession extends CopyJobSession {
                                 }
                             }
 
+                            readLimiterTarget.acquire(1);
                             CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement.getAsyncResult(r.getPk());
 
                             if (null==targetResult) {
