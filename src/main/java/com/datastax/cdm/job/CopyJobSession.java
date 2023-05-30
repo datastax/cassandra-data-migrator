@@ -94,15 +94,14 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                                 continue;
                             }
                         }
-
-                        writeLimiter.acquire(1);
-
+                        
                         BoundStatement boundUpsert = bind(r);
                         if (null == boundUpsert) {
                             skipCnt++; // TODO: this previously skipped, why not errCnt?
                             continue;
                         }
 
+                        writeLimiter.acquire(1);
                         batch = writeAsync(batch, writeResults, boundUpsert);
                         unflushedWrites++;
 
