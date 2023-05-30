@@ -34,8 +34,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     private Integer batchSize;
     private final Integer fetchSize;
 
-    private BatchStatement batch;
-
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
 
@@ -43,8 +41,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
         batchSize = this.originSession.getCqlTable().getBatchSize();
-
-        batch = BatchStatement.newInstance(BatchType.UNLOGGED);
 
         logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
         logger.info("CQL -- target select: {}",this.targetSession.getTargetSelectByPKStatement().getCQL());
@@ -59,6 +55,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     public void getDataAndInsert(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min,max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
+        BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
         boolean done = false;
         int maxAttempts = maxRetries + 1;
         String guardrailCheck;
@@ -97,27 +94,26 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                                 continue;
                             }
                         }
-
-                        writeLimiter.acquire(1);
-
+                        
                         BoundStatement boundUpsert = bind(r);
                         if (null == boundUpsert) {
                             skipCnt++; // TODO: this previously skipped, why not errCnt?
                             continue;
                         }
 
-                        writeAsync(writeResults, boundUpsert);
+                        writeLimiter.acquire(1);
+                        batch = writeAsync(batch, writeResults, boundUpsert);
                         unflushedWrites++;
 
                         if (unflushedWrites > fetchSize) {
-                            flushAndClearWrites(writeResults);
+                            flushAndClearWrites(batch, writeResults);
                             flushedWriteCnt += unflushedWrites;
                             unflushedWrites = 0;
                         }
                     }
                 }
 
-                flushAndClearWrites(writeResults);
+                flushAndClearWrites(batch, writeResults);
                 flushedWriteCnt += unflushedWrites;
 
                 readCounter.addAndGet(readCnt);
@@ -156,7 +152,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         }
     }
 
-    private void flushAndClearWrites(Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception {
+    private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception {
         if (batch.size() > 0) {
             writeResults.add(targetUpsertStatement.executeAsync(batch));
         }
@@ -177,16 +173,18 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         return targetUpsertStatement.bindRecord(r);
     }
 
-    private void writeAsync(Collection<CompletionStage<AsyncResultSet>> writeResults, BoundStatement boundUpsert) {
+    private BatchStatement writeAsync(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults, BoundStatement boundUpsert) {
         if (batchSize > 1) {
             batch = batch.add(boundUpsert);
             if (batch.size() >= batchSize) {
                 writeResults.add(targetUpsertStatement.executeAsync(batch));
-                batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+                return BatchStatement.newInstance(BatchType.UNLOGGED);
             }
+            return batch;
         }
         else {
             writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
+            return batch;
         }
     }
 
