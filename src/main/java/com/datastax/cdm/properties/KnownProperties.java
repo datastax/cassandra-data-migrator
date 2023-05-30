@@ -99,9 +99,8 @@ public class KnownProperties {
 
     public static final String PERF_NUM_PARTS                   = "spark.cdm.perfops.numParts";             // 10000, was spark.splitSize
     public static final String PERF_BATCH_SIZE                  = "spark.cdm.perfops.batchSize";             // 5
-    public static final String PERF_LIMIT_READ                  = "spark.cdm.perfops.readRateLimit";         // 20000
-    public static final String PERF_LIMIT_READ_TARGET           = "spark.cdm.perfops.readRateLimitTarget";   // readRateLimit
-    public static final String PERF_LIMIT_WRITE                 = "spark.cdm.perfops.writeRateLimit";        // 40000
+    public static final String PERF_RATELIMIT_ORIGIN            = "spark.cdm.perfops.ratelimit.origin";      // 20000
+    public static final String PERF_RATELIMIT_TARGET            = "spark.cdm.perfops.ratelimit.target";      // 40000
 
     public static final String READ_CL                          = "spark.cdm.perfops.consistency.read";
     public static final String WRITE_CL                         = "spark.cdm.perfops.consistency.write";
@@ -121,11 +120,10 @@ public class KnownProperties {
         defaults.put(PERF_NUM_PARTS, "10000");
            types.put(PERF_BATCH_SIZE, PropertyType.NUMBER);
         defaults.put(PERF_BATCH_SIZE, "5");
-           types.put(PERF_LIMIT_READ, PropertyType.NUMBER);
-        defaults.put(PERF_LIMIT_READ, "20000");
-           types.put(PERF_LIMIT_READ_TARGET, PropertyType.NUMBER);
-           types.put(PERF_LIMIT_WRITE, PropertyType.NUMBER);
-        defaults.put(PERF_LIMIT_WRITE, "40000");
+           types.put(PERF_RATELIMIT_ORIGIN, PropertyType.NUMBER);
+        defaults.put(PERF_RATELIMIT_ORIGIN, "20000");
+           types.put(PERF_RATELIMIT_TARGET, PropertyType.NUMBER);
+        defaults.put(PERF_RATELIMIT_TARGET, "40000");
 
            types.put(READ_CL, PropertyType.STRING);
         defaults.put(READ_CL, "LOCAL_QUORUM");

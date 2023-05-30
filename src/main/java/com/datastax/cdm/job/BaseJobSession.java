@@ -24,9 +24,8 @@ public abstract class BaseJobSession {
     // then do the following to set the values as they are only applicable per JVM
     // (hence spark Executor)...
     // Rate = Total Throughput (write/read per sec) / Total Executors
-    protected RateLimiter readLimiter;
-    protected RateLimiter readLimiterTarget;
-    protected RateLimiter writeLimiter;
+    protected RateLimiter originLimiter;
+    protected RateLimiter targetLimiter;
     protected Integer maxRetries = 10;
 
     protected Integer printStatsAfter = 100000;
