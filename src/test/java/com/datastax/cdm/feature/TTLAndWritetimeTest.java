@@ -13,8 +13,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TTLAndWritetimeTest extends CommonMocks {
 
@@ -385,6 +384,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
 
     @Test
     public void validateInvalidCustomWritetimeColumn() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(Collections.singletonList("invalid"));
         when(originTable.indexOf("invalid")).thenReturn(-1);
         assertAll(
@@ -462,4 +462,24 @@ public class TTLAndWritetimeTest extends CommonMocks {
         assertTrue(feature.isEnabled());
     }
 
+    @Test
+    public void customWriteTime_withAutoWritetime() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(12345L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(false);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns")
+        );
+
+        verify(originTable, times(0)).extendColumns(any(),any());
+    }
 }
