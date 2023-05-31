@@ -45,6 +45,6 @@ public class BaseTableTest extends CommonMocks {
     @Test
     public void failWhenKsTableAbsent() {
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> new BaseTable(propertyHelper, false));
-        assertTrue(thrown.getMessage().contentEquals("Value for required property " + KnownProperties.ORIGIN_KEYSPACE_TABLE + " now provided!!"));
+        assertTrue(thrown.getMessage().contentEquals("Value for required property " + KnownProperties.ORIGIN_KEYSPACE_TABLE + " not provided!!"));
     }
 }

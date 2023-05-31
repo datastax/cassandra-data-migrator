@@ -43,7 +43,7 @@ public class BaseTable implements Table {
             keyspaceTableString = propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE);
         }
         if (StringUtils.isBlank(keyspaceTableString)) {
-            throw new RuntimeException("Value for required property " + KnownProperties.ORIGIN_KEYSPACE_TABLE + " now provided!!");
+            throw new RuntimeException("Value for required property " + KnownProperties.ORIGIN_KEYSPACE_TABLE + " not provided!!");
         }
 
         return keyspaceTableString.trim();
