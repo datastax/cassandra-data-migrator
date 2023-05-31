@@ -12,7 +12,7 @@ params:
 
 bindings:
   device_id: Mod(<<sources:10000>>); ToHashedUUID() -> java.util.UUID
-  reading_date: Uniform(<<minDate:20220101>>,<<maxDate:20221231>>);LongToLocalDateDays()
+  reading_date: StartingEpochMillis('2022-01-01 00:00:00'); AddHashRange(0L,31536000000L); EpochMillisToCqlLocalDate();
   reading_time: Uniform(0,86400) -> int
   settings: MapSized(3, Combinations('A-Z;0-9'), ToString(), ToString())
   alerts: ListSizedHashed(HashRange(1,5),ToString()));
@@ -67,5 +67,3 @@ blocks:
         insert into  devices.sensor_data
         (device_id, reading_date, reading_time, settings, device_location, alerts, temperature, humidity, pressure, wind_speed)
         values ({device_id}, {reading_date}, {reading_time}, {settings}, {latitude:{latitude}, longitude:{longitude}}, {alerts}, {temperature}, {humidity}, {pressure}, {wind_speed})
-
-
