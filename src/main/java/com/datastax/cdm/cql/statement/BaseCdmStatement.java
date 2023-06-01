@@ -3,7 +3,7 @@ package com.datastax.cdm.cql.statement;
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
-import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,7 @@ public class BaseCdmStatement {
     protected List<String> resultColumns = new ArrayList<>();
 
     public BaseCdmStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
-        if (null==propertyHelper || null==session || null==session.getCqlTable())
+        if (null == propertyHelper || null == session || null == session.getCqlTable())
             throw new RuntimeException("PropertyHelper or EnhancedSession or EnhancedSession.getCqlTable() is not set");
         this.propertyHelper = propertyHelper;
         this.cqlTable = session.getCqlTable();
@@ -26,7 +26,7 @@ public class BaseCdmStatement {
     }
 
     public PreparedStatement prepareStatement() {
-        if (null==session || null==session.getCqlSession())
+        if (null == session || null == session.getCqlSession())
             throw new RuntimeException("Session is not set");
         if (null == statement || statement.isEmpty())
             throw new RuntimeException("Statement is not set");

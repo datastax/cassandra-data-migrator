@@ -43,35 +43,36 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
         }
 
         Object bindValue = null;
+        PKFactory pkFactory = session.getPKFactory();
+        EnhancedPK pk = pkFactory.getTargetPK(originRow);
         for (int targetIndex : columnIndexesToBind) {
             int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
 
             try {
-                if(usingCounter && counterIndexes.contains(targetIndex)) {
-                    bindValue = ((Long) cqlTable.getOtherCqlTable().getData(originIndex, originRow) - (null==targetRow ? 0 : (Long) cqlTable.getData(targetIndex, targetRow)));
-                }
-                else if (targetIndex== explodeMapKeyIndex) {
+                if (usingCounter && counterIndexes.contains(targetIndex)) {
+                    bindValue = ((Long) cqlTable.getOtherCqlTable().getData(originIndex, originRow) - (null == targetRow ? 0 : (Long) cqlTable.getData(targetIndex, targetRow)));
+                } else if (targetIndex == explodeMapKeyIndex) {
                     bindValue = explodeMapKey;
-                }
-                else if (targetIndex== explodeMapValueIndex) {
+                } else if (targetIndex == explodeMapValueIndex) {
                     bindValue = explodeMapValue;
                 } else {
                     if (originIndex < 0)
                         // we don't have data to bind for this column; continue to the next targetIndex
                         continue;
-                    bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                    if (originIndex < pk.getPKValues().size()) {
+                        bindValue = pk.getPKValues().get(originIndex);
+                    } else {
+                        bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                    }
                 }
 
                 boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
-            }
-            catch (Exception e) {
-                logger.error("Error trying to bind value:" + bindValue + " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex)+ "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
+            } catch (Exception e) {
+                logger.error("Error trying to bind value:" + bindValue + " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex) + "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
                 throw e;
             }
         }
 
-        PKFactory pkFactory = session.getPKFactory();
-        EnhancedPK pk = pkFactory.getTargetPK(originRow);
         boundStatement = pkFactory.bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, currentBindIndex);
 
         return boundStatement

@@ -1,6 +1,8 @@
 package com.datastax.cdm.cql.statement;
 
 import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.data.EnhancedPK;
+import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
@@ -9,9 +11,9 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.Duration;
 
 public class TargetInsertStatement extends TargetUpsertStatement {
     public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -37,31 +39,34 @@ public class TargetInsertStatement extends TargetUpsertStatement {
 
         int currentBindIndex = 0;
         Object bindValue = null;
+        PKFactory pkFactory = session.getPKFactory();
+        EnhancedPK pk = pkFactory.getTargetPK(originRow);
 
-        if (logDebug) logger.debug("bind using conversions: {}",cqlTable.getOtherCqlTable().getConversions());
+        if (logDebug) logger.debug("bind using conversions: {}", cqlTable.getOtherCqlTable().getConversions());
         for (int targetIndex = 0; targetIndex < targetColumnTypes.size(); targetIndex++) {
             if (!bindColumnIndexes.contains(targetIndex)) {
                 // this happens with constant columns, for example
                 continue;
             }
             try {
-                if (targetIndex== explodeMapKeyIndex) {
+                if (targetIndex == explodeMapKeyIndex) {
                     bindValue = explodeMapKey;
-                }
-                else if (targetIndex== explodeMapValueIndex) {
+                } else if (targetIndex == explodeMapValueIndex) {
                     bindValue = explodeMapValue;
-                }
-                else {
+                } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
                         continue;
-                    bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                    if (originIndex < pk.getPKValues().size()) {
+                        bindValue = pk.getPKValues().get(originIndex);
+                    } else {
+                        bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                    }
                 }
 
                 boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
-            }
-            catch (Exception e) {
-                logger.error("Error trying to bind value:" + bindValue + " of class:" +(null==bindValue?"unknown":bindValue.getClass().getName())+ " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex)+ "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex + " and bind index: "+ (currentBindIndex-1) + " of statement:" + this.getCQL());
+            } catch (Exception e) {
+                logger.error("Error trying to bind value:" + bindValue + " of class:" + (null == bindValue ? "unknown" : bindValue.getClass().getName()) + " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex) + "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex + " and bind index: " + (currentBindIndex - 1) + " of statement:" + this.getCQL());
                 throw e;
             }
         }
@@ -94,14 +99,14 @@ public class TargetInsertStatement extends TargetUpsertStatement {
             bindIndex++;
         }
 
-        if (null!=constantColumnValues && !constantColumnValues.isEmpty()) {
+        if (null != constantColumnValues && !constantColumnValues.isEmpty()) {
             // constants are not bound, so no need to increment the bind index
             valuesList += "," + PropertyHelper.asString(constantColumnValues, KnownProperties.PropertyType.STRING_LIST);
         }
 
         targetUpdateCQL = "INSERT INTO " + cqlTable.getKeyspaceTable() +
                 " (" + PropertyHelper.asString(bindColumnNames, KnownProperties.PropertyType.STRING_LIST) +
-                (null!=constantColumnNames && !constantColumnNames.isEmpty() ? "," + PropertyHelper.asString(constantColumnNames, KnownProperties.PropertyType.STRING_LIST) : "") +
+                (null != constantColumnNames && !constantColumnNames.isEmpty() ? "," + PropertyHelper.asString(constantColumnNames, KnownProperties.PropertyType.STRING_LIST) : "") +
                 ") VALUES (" + valuesList + ")";
 
         targetUpdateCQL += usingTTLTimestamp();
@@ -114,7 +119,7 @@ public class TargetInsertStatement extends TargetUpsertStatement {
         this.bindColumnIndexes = new ArrayList<>();
 
         for (String targetColumnName : this.targetColumnNames) {
-            if (null==constantColumnNames || !constantColumnNames.contains(targetColumnName)) {
+            if (null == constantColumnNames || !constantColumnNames.contains(targetColumnName)) {
                 this.bindColumnNames.add(targetColumnName);
                 this.bindColumnIndexes.add(this.targetColumnNames.indexOf(targetColumnName));
             }

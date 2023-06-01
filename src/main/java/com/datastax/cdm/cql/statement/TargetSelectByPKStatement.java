@@ -26,15 +26,15 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
 
     public Record getRecord(EnhancedPK pk) {
         BoundStatement boundStatement = bind(pk);
-        if (null==boundStatement)
+        if (null == boundStatement)
             return null;
 
         ResultSet resultSet = session.getCqlSession().execute(boundStatement);
-        if (null==resultSet)
+        if (null == resultSet)
             return null;
 
         Row row = resultSet.one();
-        if (null==row)
+        if (null == row)
             return null;
 
         return new Record(pk, null, row);
@@ -42,7 +42,7 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
 
     public CompletionStage<AsyncResultSet> getAsyncResult(EnhancedPK pk) {
         BoundStatement boundStatement = bind(pk);
-        if (null==boundStatement)
+        if (null == boundStatement)
             return null;
         return session.getCqlSession().executeAsync(boundStatement);
     }

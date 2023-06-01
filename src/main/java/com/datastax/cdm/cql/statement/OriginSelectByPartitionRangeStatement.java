@@ -22,7 +22,7 @@ public class OriginSelectByPartitionRangeStatement extends OriginSelectStatement
 
     @Override
     public BoundStatement bind(Object... binds) {
-        if (null==binds
+        if (null == binds
                 || binds.length != 2
                 || !(binds[0] instanceof BigInteger)
                 || !(binds[1] instanceof BigInteger))
@@ -34,8 +34,8 @@ public class OriginSelectByPartitionRangeStatement extends OriginSelectStatement
         PreparedStatement preparedStatement = prepareStatement();
         // random partitioner uses BigInteger, the normal partitioner uses long
         return preparedStatement.bind(
-                    cqlTable.hasRandomPartitioner() ? min : min.longValueExact(),
-                    cqlTable.hasRandomPartitioner() ? max : max.longValueExact())
+                        cqlTable.hasRandomPartitioner() ? min : min.longValueExact(),
+                        cqlTable.hasRandomPartitioner() ? max : max.longValueExact())
                 .setConsistencyLevel(cqlTable.getReadConsistencyLevel())
                 .setPageSize(cqlTable.getFetchSizeInRows());
     }

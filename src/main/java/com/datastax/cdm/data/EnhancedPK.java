@@ -103,7 +103,7 @@ public class EnhancedPK {
             else if (Objects.equals(c, Instant.class)) {
                 Long tsReplaceVal = factory.getDefaultForMissingTimestamp();
                 if (null != tsReplaceVal) {
-                    values.set(i, Instant.ofEpochSecond(tsReplaceVal).toString());
+                    values.set(i, Instant.ofEpochSecond(tsReplaceVal));
                     messages.add(String.format("WARN: Defaulting null timestamp to %d for position %d", tsReplaceVal, i));
                     warningState = true;
                 }
