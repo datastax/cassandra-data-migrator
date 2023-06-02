@@ -13,7 +13,6 @@ import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.type.*;
 import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.data.CqlConversion;
@@ -24,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -38,6 +38,7 @@ public class CqlTable extends BaseTable {
     private final List<String> partitionKeyNames;
     private final List<String> pkNames;
     private final  List<Class> pkClasses;
+    private final List<Integer> pkIndexes;
     private boolean isCounterTable;
     private final ConsistencyLevel readConsistencyLevel;
     private final ConsistencyLevel writeConsistencyLevel;
@@ -53,6 +54,10 @@ public class CqlTable extends BaseTable {
     private List<Integer> correspondingIndexes;
     private final List<Integer> counterIndexes;
     protected Map<Featureset, Feature> featureMap;
+
+    // These defaults address the problem where we cannot insert null values into a PK column
+    private final Long defaultForMissingTimestamp;
+    private final String defaultForMissingString;
 
     public CqlTable(PropertyHelper propertyHelper, boolean isOrigin, CqlSession session) {
         super(propertyHelper, isOrigin);
@@ -85,6 +90,9 @@ public class CqlTable extends BaseTable {
         this.pkClasses = pkTypes.stream()
                 .map(CqlData::getBindClass)
                 .collect(Collectors.toList());
+        this.pkIndexes = pkNames.stream()
+                .map(columnNames::indexOf)
+                .collect(Collectors.toList());
 
         this.counterIndexes =  IntStream.range(0, columnCqlTypes.size())
                     .filter(i -> columnCqlTypes.get(i).equals(DataTypes.COUNTER))
@@ -96,6 +104,9 @@ public class CqlTable extends BaseTable {
         this.writeConsistencyLevel = mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));
 
         this.featureMap = new HashMap<>();
+
+        this.defaultForMissingTimestamp = propertyHelper.getLong(KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
+        this.defaultForMissingString = "";
     }
 
     @Override
@@ -248,6 +259,9 @@ public class CqlTable extends BaseTable {
 
     public Object getAndConvertData(int index, Row row) {
         Object thisObject = getData(index, row);
+        if (null==thisObject) {
+            return convertNull(index);
+        }
         CqlConversion cqlConversion = this.cqlConversions.get(index);
         if (null==cqlConversion) {
             if (logTrace) logger.trace("{} Index:{} not converting:{}",isOrigin?"origin":"target",index,thisObject);
@@ -257,6 +271,29 @@ public class CqlTable extends BaseTable {
             if (logTrace) logger.trace("{} Index:{} converting:{} via CqlConversion:{}",isOrigin?"origin":"target",index,thisObject,cqlConversion);
             return cqlConversion.convert(thisObject);
         }
+    }
+
+    public Object convertNull(int thisIndex) {
+        // We do not need to convert nulls for non-PK columns
+        int otherIndex = this.getCorrespondingIndex(thisIndex);
+        if (!getOtherCqlTable().pkIndexes.contains(otherIndex))
+            return null;
+
+        Class c = getOtherCqlTable().bindClasses.get(otherIndex);
+        if (Objects.equals(c, String.class)) {
+            return defaultForMissingString;
+        }
+        else if (Objects.equals(c, Instant.class)) {
+            if (null != defaultForMissingTimestamp) {
+                return Instant.ofEpochMilli(defaultForMissingTimestamp);
+            } else {
+                logger.error("This index {} corresponds to That index {}, which is a primary key column and cannot be null. Consider setting {}.", thisIndex, otherIndex, KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
+                return null;
+            }
+        }
+
+        logger.error("This index {} corresponds to That index {}, which is a primary key column and cannot be null.", thisIndex, otherIndex);
+        return null;
     }
 
     public Integer getCorrespondingIndex(int index) {
