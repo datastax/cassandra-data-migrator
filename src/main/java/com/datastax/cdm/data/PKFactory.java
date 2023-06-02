@@ -45,9 +45,6 @@ public class PKFactory {
     private final Integer explodeMapTargetPKIndex;
     private final ExplodeMap explodeMapFeature;
 
-    // These defaults address the problem where we cannot insert null values into a PK column
-    private final Long defaultForMissingTimestamp;
-    private final String defaultForMissingString;
 
     public PKFactory(PropertyHelper propertyHelper, CqlTable originTable, CqlTable targetTable) {
 
@@ -66,9 +63,6 @@ public class PKFactory {
         for (int i = 0; i< originTable.getPKNames(false).size(); i++) {
             originPKLookupMethods.add(null);
         }
-
-        this.defaultForMissingTimestamp = propertyHelper.getLong(KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
-        this.defaultForMissingString = "";
 
         setOriginColumnLookupMethod(propertyHelper);
         setConstantColumns();
@@ -218,14 +212,6 @@ public class PKFactory {
             recordSet = Arrays.asList(record);
         }
         return recordSet;
-    }
-
-    protected Long getDefaultForMissingTimestamp() {
-        return defaultForMissingTimestamp;
-    }
-
-    protected String getDefaultForMissingString() {
-        return defaultForMissingString;
     }
 
     public Integer getExplodeMapTargetPKIndex() {return explodeMapTargetPKIndex;}
