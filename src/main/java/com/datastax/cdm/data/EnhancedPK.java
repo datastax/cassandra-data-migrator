@@ -90,32 +90,8 @@ public class EnhancedPK {
             if (null != value) continue;
             if (i==factory.getExplodeMapTargetPKIndex()) continue; // this is an unexploded PK
 
-            // This bit of code addresses the fact we cannot currently insert a NULL value
-            // into a primary key column. So we replace it with an alternate value, or
-            // mark the PK as invalid.
-            this.messages = new ArrayList<>();
-            Class c = classes.get(i);
-            if (Objects.equals(c, String.class)) {
-                values.set(i, factory.getDefaultForMissingString());
-                messages.add(String.format("WARN: Defaulting null string value to the empty string for position %d", i));
-                warningState = true;
-            }
-            else if (Objects.equals(c, Instant.class)) {
-                Long tsReplaceVal = factory.getDefaultForMissingTimestamp();
-                if (null != tsReplaceVal) {
-                    values.set(i, Instant.ofEpochSecond(tsReplaceVal).toString());
-                    messages.add(String.format("WARN: Defaulting null timestamp to %d for position %d", tsReplaceVal, i));
-                    warningState = true;
-                }
-                else {
-                    messages.add(String.format("ERROR: Null value for position %d, consider setting %s", i, KnownProperties.TRANSFORM_REPLACE_MISSING_TS));
-                    errorState = true;
-                }
-            }
-            else {
-                messages.add(String.format("ERROR: Null value for position %d", i));
-                errorState = true;
-            }
+            messages.add(String.format("ERROR: Null value for position %d", i));
+            errorState = true;
         }
     }
 
