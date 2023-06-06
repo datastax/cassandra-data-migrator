@@ -1,8 +1,8 @@
 package com.datastax.cdm.cql.codec;
 
+import com.datastax.cdm.data.CqlConversion;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -56,7 +56,7 @@ class TIMESTAMP_StringFormatCodecTest {
 
     @Test
     void encode_ShouldReturnNull_WhenValueIsNull() {
-        ByteBuffer result = codec.encode(null, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(null, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertNull(result);
     }
 
@@ -64,9 +64,9 @@ class TIMESTAMP_StringFormatCodecTest {
     void encode_ShouldEncodeStringValueToByteBuffer_WhenValueIsNotNull() {
         String valueAsString = "220412215715";
         Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
-        ByteBuffer expected = TypeCodecs.TIMESTAMP.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer expected = TypeCodecs.TIMESTAMP.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        ByteBuffer result = codec.encode(valueAsString, ProtocolVersion.DEFAULT);
+        ByteBuffer result = codec.encode(valueAsString, CqlConversion.PROTOCOL_VERSION);
         CodecTestHelper.assertByteBufferEquals(expected, result);
     }
 
@@ -74,9 +74,9 @@ class TIMESTAMP_StringFormatCodecTest {
     void decode_ShouldDecodeByteBufferToValueAndReturnAsString() {
         String valueAsString = "220412215715";
         Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
-        ByteBuffer byteBuffer = TypeCodecs.TIMESTAMP.encode(value, ProtocolVersion.DEFAULT);
+        ByteBuffer byteBuffer = TypeCodecs.TIMESTAMP.encode(value, CqlConversion.PROTOCOL_VERSION);
 
-        String result = codec.decode(byteBuffer, ProtocolVersion.DEFAULT);
+        String result = codec.decode(byteBuffer, CqlConversion.PROTOCOL_VERSION);
         Assertions.assertEquals(valueAsString, result);
     }
 

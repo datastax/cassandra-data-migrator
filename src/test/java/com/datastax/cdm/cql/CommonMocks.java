@@ -1,9 +1,6 @@
 package com.datastax.cdm.cql;
 
-import com.datastax.cdm.data.CqlData;
-import com.datastax.cdm.data.EnhancedPK;
-import com.datastax.cdm.data.PKFactory;
-import com.datastax.cdm.data.Record;
+import com.datastax.cdm.data.*;
 import com.datastax.cdm.feature.*;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
@@ -51,6 +48,8 @@ public class CommonMocks {
     @Mock public ResultSet originResultSet;
     @Mock public MutableCodecRegistry originCodecRegistry;
     @Mock public TypeCodec originCodec;
+    @Mock public List<CqlConversion> originConversionList;
+    @Mock public CqlConversion originCqlConversion;
 
     @Mock public EnhancedSession targetSession;
     @Mock public CqlSession targetCqlSession;
@@ -58,6 +57,8 @@ public class CommonMocks {
     @Mock public ResultSet targetResultSet;
     @Mock public MutableCodecRegistry targetCodecRegistry;
     @Mock public TypeCodec targetCodec;
+    @Mock public List<CqlConversion> targetConversionList;
+    @Mock public CqlConversion targetCqlConversion;
 
     @Mock public ConstantColumns constantColumnsFeature;
     @Mock public ExplodeMap explodeMapFeature;
@@ -108,8 +109,8 @@ public class CommonMocks {
     public List<String> targetColumnNames;
     public List<DataType> targetColumnTypes;
 
-    public Long minPartition;
-    public Long maxPartition;
+    public String minPartition;
+    public String maxPartition;
     public ConsistencyLevel readCL;
     public Integer fetchSizeInRows;
 
@@ -179,8 +180,8 @@ public class CommonMocks {
         targetKeyspaceName = "target_ks";
         targetTableName = "table_name";
 
-        minPartition = -9876543L;
-        maxPartition =  1234567L;
+        minPartition = "-9876543";
+        maxPartition = "1234567";
         readCL = ConsistencyLevel.LOCAL_QUORUM;
         fetchSizeInRows = 999;
 
@@ -238,8 +239,8 @@ public class CommonMocks {
         when(propertyHelper.getAsString(KnownProperties.FILTER_COLUMN_NAME)).thenReturn("");
         when(propertyHelper.getString(KnownProperties.FILTER_COLUMN_VALUE)).thenReturn(null);
 
-        when(propertyHelper.getLong(KnownProperties.PARTITION_MIN)).thenReturn(minPartition);
-        when(propertyHelper.getLong(KnownProperties.PARTITION_MAX)).thenReturn(maxPartition);
+        when(propertyHelper.getString(KnownProperties.PARTITION_MIN)).thenReturn(minPartition);
+        when(propertyHelper.getString(KnownProperties.PARTITION_MAX)).thenReturn(maxPartition);
 
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES_TO_TARGET)).thenReturn(originToTargetNameList);
     }
@@ -258,6 +259,7 @@ public class CommonMocks {
                 });
         when(originTable.getColumnCqlTypes()).thenReturn(originColumnTypes);
         when(originTable.getDataType(anyString())).thenAnswer(invocation -> {String name = invocation.getArgument(0,String.class); return originColumnTypes.get(originColumnNames.indexOf(name));});
+        when(originTable.getWritetimeTTLColumns()).thenReturn(originValueColumns);
 
         when(originTable.getOtherCqlTable()).thenReturn(targetTable);
         when(originTable.getCorrespondingIndex(anyInt())).thenAnswer(invocation -> targetColumnNames.indexOf(originColumnNames.get(invocation.getArgument(0, Integer.class))));
@@ -284,7 +286,10 @@ public class CommonMocks {
         when(originTable.getCodecRegistry()).thenReturn(originCodecRegistry);
         when(originCodecRegistry.codecFor(any(DataType.class), any(Class.class))).thenReturn(originCodec);
         when(originCodecRegistry.codecFor(any(DataType.class))).thenReturn(originCodec);
-//        when(originCodec.parse(anyString())).thenReturn(any());
+
+        when(originTable.getConversions()).thenReturn(originConversionList);
+        when(originConversionList.get(anyInt())).thenReturn(originCqlConversion);
+        when(originCqlConversion.convert(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     public void setTargetVariables() {
@@ -385,8 +390,12 @@ public class CommonMocks {
         when(targetTable.getFeature(Featureset.EXPLODE_MAP)).thenReturn(explodeMapFeature);
         if (hasExplodeMap) {
             when(explodeMapFeature.isEnabled()).thenReturn(true);
+            when(explodeMapFeature.getOriginColumnIndex()).thenReturn(originColumnNames.indexOf(explodeMapColumn));
             when(explodeMapFeature.getKeyColumnIndex()).thenReturn(targetColumnNames.indexOf(explodeMapKey));
             when(explodeMapFeature.getValueColumnIndex()).thenReturn(targetColumnNames.indexOf(explodeMapValue));
+            when(explodeMapFeature.getOriginColumnName()).thenReturn(explodeMapColumn);
+            when(explodeMapFeature.getKeyColumnName()).thenReturn(explodeMapKey);
+            when(explodeMapFeature.getValueColumnName()).thenReturn(explodeMapValue);
         } else {
             when(explodeMapFeature.isEnabled()).thenReturn(false);
             when(explodeMapFeature.getKeyColumnIndex()).thenReturn(-1);
@@ -399,7 +408,10 @@ public class CommonMocks {
         when(targetTable.getCodecRegistry()).thenReturn(targetCodecRegistry);
         when(targetCodecRegistry.codecFor(any(DataType.class), any(Class.class))).thenReturn(targetCodec);
         when(targetCodecRegistry.codecFor(any(DataType.class))).thenReturn(targetCodec);
-//        when(targetCodec.parse(anyString())).thenReturn(anyString());
+
+        when(targetTable.getConversions()).thenReturn(targetConversionList);
+        when(targetConversionList.get(anyInt())).thenReturn(targetCqlConversion);
+        when(targetCqlConversion.convert(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     public void setSessionWhens(boolean isOrigin) {

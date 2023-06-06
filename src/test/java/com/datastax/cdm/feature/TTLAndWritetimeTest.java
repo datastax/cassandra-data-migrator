@@ -11,9 +11,9 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TTLAndWritetimeTest extends CommonMocks {
 
@@ -35,7 +35,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
     }
 
     private void setTestVariables() {
-        originValueColumns = new ArrayList<>(originValueColumns);
+        originValueColumns = new ArrayList<>();
         originValueColumns.addAll(Arrays.asList(writetimeColumnName,ttlColumnName,writetimeTTLColumnName));
         originValueColumnTypes = new ArrayList<>(originValueColumnTypes);
         originValueColumnTypes.addAll(Arrays.asList(DataTypes.TEXT,DataTypes.TEXT,DataTypes.TEXT));
@@ -45,8 +45,15 @@ public class TTLAndWritetimeTest extends CommonMocks {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(customWritetime);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(Arrays.asList(writetimeColumnName,writetimeTTLColumnName));
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(Arrays.asList(ttlColumnName,writetimeTTLColumnName));
-        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
-        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(false);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(false);
+        when(originTable.getWritetimeTTLColumns()).thenReturn(originValueColumns);
+        when(originTable.isWritetimeTTLColumn(anyString())).thenAnswer(invocation -> {
+            String argument = invocation.getArgument(0);
+            return originValueColumns.contains(argument);
+        });
     }
 
 
@@ -54,6 +61,8 @@ public class TTLAndWritetimeTest extends CommonMocks {
     public void smoke_loadProperties() {
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
         feature.loadProperties(propertyHelper);
 
         assertAll(
@@ -70,6 +79,8 @@ public class TTLAndWritetimeTest extends CommonMocks {
     @Test
     public void smoke_initializeAndValidate() {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
 
         feature.loadProperties(propertyHelper);
         feature.initializeAndValidate(originTable, targetTable);
@@ -104,6 +115,8 @@ public class TTLAndWritetimeTest extends CommonMocks {
     public void smoke_writetimeWithoutTTL() {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
 
         feature.loadProperties(propertyHelper);
         feature.initializeAndValidate(originTable, targetTable);
@@ -120,12 +133,14 @@ public class TTLAndWritetimeTest extends CommonMocks {
     public void smoke_ttlWithoutWritetime_noCustomWritetime() {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
 
         feature.loadProperties(propertyHelper);
         feature.initializeAndValidate(originTable, targetTable);
 
         assertAll(
-                () -> assertTrue(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
                 () -> assertFalse(feature.hasWritetimeColumns(), "hasWritetimeColumns without custom writetime"),
                 () -> assertTrue(feature.hasTTLColumns(), "hasTTLColumns")
         );
@@ -140,10 +155,132 @@ public class TTLAndWritetimeTest extends CommonMocks {
         feature.initializeAndValidate(originTable, targetTable);
 
         assertAll(
-                () -> assertTrue(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertTrue(feature.isEnabled(), "isEnabled"),
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
                 () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns with custom writetime"),
                 () -> assertTrue(feature.hasTTLColumns(), "hasTTLColumns")
         );
+    }
+
+    @Test
+    public void smoke_autoWritetime_noCustomWritetime() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns"),
+                () -> assertFalse(feature.hasTTLColumns(), "hasTTLColumns")
+        );
+    }
+
+    @Test
+    public void smoke_autoWritetime_CustomWritetime() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(100L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns"),
+                () -> assertFalse(feature.hasTTLColumns(), "hasTTLColumns")
+        );
+    }
+
+    @Test
+    public void smoke_autoTTL() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(true);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertFalse(feature.hasWritetimeColumns(), "hasWritetimeColumns"),
+                () -> assertTrue(feature.hasTTLColumns(), "hasTTLColumns")
+        );
+    }
+
+    @Test
+    public void counter_unconfigured() {
+        when(originTable.isCounterTable()).thenReturn(true);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(true);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.isEnabled(), "isEnabled"),
+                () -> assertTrue(feature.isValid, "isValid")
+        );
+    }
+
+    @Test
+    public void counter_configured() {
+        when(originTable.isCounterTable()).thenReturn(true);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.isEnabled(), "isEnabled"),
+                () -> assertFalse(feature.isValid, "isValid")
+        );
+    }
+
+
+    @Test
+    public void test_ttl_noValidColumns() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(true);
+        when(originTable.isWritetimeTTLColumn(anyString())).thenReturn(false);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+        assertFalse(feature.isEnabled(), "feature should be disabled");
+    }
+
+    @Test
+    public void test_writetime_noValidColumns() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(originTable.isWritetimeTTLColumn(anyString())).thenReturn(false);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+        assertFalse(feature.isEnabled(), "feature should be disabled");
     }
 
     @Test
@@ -247,6 +384,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
 
     @Test
     public void validateInvalidCustomWritetimeColumn() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(Collections.singletonList("invalid"));
         when(originTable.indexOf("invalid")).thenReturn(-1);
         assertAll(
@@ -265,6 +403,20 @@ public class TTLAndWritetimeTest extends CommonMocks {
     }
 
     @Test
+    public void disabledWhenFilterWithNoWritetime() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(false);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
     public void testOriginIsNull() {
         feature.loadProperties(propertyHelper);
         assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(null, targetTable));
@@ -275,5 +427,59 @@ public class TTLAndWritetimeTest extends CommonMocks {
         when(originTable.isOrigin()).thenReturn(false);
         feature.loadProperties(propertyHelper);
         assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+    }
+
+    @Test
+    public void writetimeIncrementTest() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT)).thenReturn(314L);
+        when(originTable.indexOf("WRITETIME("+writetimeColumnName+")")).thenReturn(100);
+        when(originRow.getLong(eq(100))).thenReturn(1000L);
+        when(originTable.indexOf("WRITETIME("+writetimeTTLColumnName+")")).thenReturn(101);
+        when(originRow.getLong(eq(101))).thenReturn(3000L);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        Long largestWritetime = feature.getLargestWriteTimeStamp(originRow);
+        assertEquals(3314L, largestWritetime);
+    }
+
+    @Test
+    public void invalidWritetimeIncrement() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT)).thenReturn(-1L);
+        feature.loadProperties(propertyHelper);
+        assertFalse(feature.isEnabled());
+    }
+
+    @Test
+    public void testZeroIncrementWithUnfrozenList() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT)).thenReturn(0L);
+        when(originTable.hasUnfrozenList()).thenReturn(true);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+        assertTrue(feature.isEnabled());
+    }
+
+    @Test
+    public void customWriteTime_withAutoWritetime() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(12345L);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
+        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(false);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        assertAll(
+                () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
+                () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns")
+        );
+
+        verify(originTable, times(0)).extendColumns(any(),any());
     }
 }

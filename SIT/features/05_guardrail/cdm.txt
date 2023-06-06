@@ -1,0 +1,4 @@
+migrateData com.datastax.cdm.job.Migrate migrate.properties
+guardrailCheck com.datastax.cdm.job.GuardrailCheck migrate.properties
+validateData com.datastax.cdm.job.DiffData migrate.properties
+fixData com.datastax.cdm.job.DiffData fix.properties

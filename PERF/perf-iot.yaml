@@ -1,0 +1,69 @@
+description: |
+  IoT sensor data model and access patterns for data load.
+
+scenarios:
+  default:
+    schema: run driver=cql tags==block:schema threads==1 cycles==UNDEF
+    truncate: run driver=cql tags==block:truncate threads==1 cycles==UNDEF
+    load: run driver=cql tags==block:load cycles===TEMPLATE(load-cycles,10) threads=auto
+
+params:
+  instrument: TEMPLATE(instrument,false)
+
+bindings:
+  device_id: Mod(<<sources:10000>>); ToHashedUUID() -> java.util.UUID
+  reading_date: StartingEpochMillis('2022-01-01 00:00:00'); AddHashRange(0L,31536000000L); EpochMillisToCqlLocalDate();
+  reading_time: Uniform(0,86400) -> int
+  settings: MapSized(3, Combinations('A-Z;0-9'), ToString(), ToString())
+  alerts: ListSizedHashed(HashRange(1,5),ToString()));
+  temperature: Normal(0.0,5.0); Add(100.0) -> double; ToBigDecimal(2)
+  humidity: Normal(0.0,5.0); Add(100.0) -> double; ToBigDecimal(2)
+  pressure: Normal(0.0,5.0); Add(100.0) -> double; ToBigDecimal(2)
+  wind_speed: Normal(0.0,5.0); Add(100.0) -> double; ToBigDecimal(2)
+  latitude: Uniform(-90.0,90.0) -> double; ToBigDecimal(8)
+  longitude: Uniform(-180.0,180.0) -> double; ToBigDecimal(8)
+
+blocks:
+  schema:
+    params:
+      prepared: false
+    ops:
+      create-keyspace: |
+        create keyspace if not exists devices
+        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}
+        AND durable_writes = true;
+      create-type: |
+        CREATE TYPE IF NOT EXISTS devices.location (
+            latitude decimal,
+            longitude decimal
+        );
+      create-table: |
+        CREATE TABLE IF NOT EXISTS devices.sensor_data (
+            device_id uuid,
+            reading_date date,
+            reading_time int,
+            settings frozen<map<text, text>>,
+            device_location location,
+            alerts list<text>,
+            temperature decimal,
+            humidity decimal,
+            pressure decimal,
+            wind_speed decimal,
+            PRIMARY KEY ((device_id), reading_date, reading_time)
+        ) WITH CLUSTERING ORDER BY (reading_date DESC, reading_time DESC);
+  truncate:
+    params:
+      prepared: false
+    ops:
+      truncate-table: |
+        truncate table devices.sensor_data;
+  load:
+    params:
+      cl: LOCAL_QUORUM
+      instrument: TEMPLATE(instrument-writes,TEMPLATE(instrument,false))
+      idempotent: true
+    ops:
+      insert-load: |
+        insert into  devices.sensor_data
+        (device_id, reading_date, reading_time, settings, device_location, alerts, temperature, humidity, pressure, wind_speed)
+        values ({device_id}, {reading_date}, {reading_time}, {settings}, {latitude:{latitude}, longitude:{longitude}}, {alerts}, {temperature}, {humidity}, {pressure}, {wind_speed})

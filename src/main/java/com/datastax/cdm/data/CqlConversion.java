@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.*;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 public class CqlConversion {
     public static final Logger logger = LoggerFactory.getLogger(CqlConversion.class);
+    public static final ProtocolVersion PROTOCOL_VERSION = ProtocolVersion.DEFAULT;
 
     enum Type {
         NONE,
@@ -69,6 +71,8 @@ public class CqlConversion {
         if (null==conversionTypeList || conversionTypeList.isEmpty())
             return inputData;
 
+        if (logger.isTraceEnabled()) logger.trace("convert() - inputData: {}, converter: {}",inputData,this);
+
         // The first element on the conversionTypeList tells us what conversion the top-level object requires
         Type conversionType = conversionTypeList.get(0);
         switch (conversionType) {
@@ -118,7 +122,7 @@ public class CqlConversion {
             }
             else {
                 cqlConversions.add(new CqlConversion(fromDataType, toDataType, fromTable.getCodecRegistry()));
-                if (logger.isTraceEnabled()) logger.trace("At fromIndex {}, have added {}",i, cqlConversions.get(cqlConversions.size()-1));
+                if (logger.isTraceEnabled()) logger.trace("At fromIndex {} (correspondingIndex {}), have added {}",i, correspondingIndex, cqlConversions.get(cqlConversions.size()-1));
             }
         }
 
@@ -232,8 +236,8 @@ public class CqlConversion {
         if (toCodec == null) {
             throw new IllegalArgumentException("No codec found in codecRegistry for Java type " + toClass.getName() + " to CQL type " + toDataType);
         }
-        ByteBuffer encoded = fromCodec.encode(value, ProtocolVersion.DEFAULT);
-        return toCodec.decode(encoded, ProtocolVersion.DEFAULT);
+        ByteBuffer encoded = fromCodec.encode(value, PROTOCOL_VERSION);
+        return toCodec.decode(encoded, PROTOCOL_VERSION);
     }
 
     protected static UdtValue convert_UDT(UdtValue fromUDTValue, UserDefinedType fromUDT, UserDefinedType toUDT) {

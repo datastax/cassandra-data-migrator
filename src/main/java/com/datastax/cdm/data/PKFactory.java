@@ -43,10 +43,8 @@ public class PKFactory {
     private final Integer explodeMapOriginColumnIndex;
     private final Integer explodeMapTargetKeyColumnIndex;
     private final Integer explodeMapTargetPKIndex;
+    private final ExplodeMap explodeMapFeature;
 
-    // These defaults address the problem where we cannot insert null values into a PK column
-    private final Long defaultForMissingTimestamp;
-    private final String defaultForMissingString;
 
     public PKFactory(PropertyHelper propertyHelper, CqlTable originTable, CqlTable targetTable) {
 
@@ -66,15 +64,13 @@ public class PKFactory {
             originPKLookupMethods.add(null);
         }
 
-        this.defaultForMissingTimestamp = propertyHelper.getLong(KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
-        this.defaultForMissingString = "";
-
         setOriginColumnLookupMethod(propertyHelper);
         setConstantColumns();
 
         this.explodeMapTargetKeyColumnIndex = setExplodeMapMethods_getTargetKeyColumnIndex();
         this.explodeMapOriginColumnIndex = getExplodeMapOriginColumnIndex();
         this.explodeMapTargetPKIndex = targetPKLookupMethods.indexOf(LookupMethod.EXPLODE_MAP);
+        this.explodeMapFeature = (ExplodeMap) targetTable.getFeature(Featureset.EXPLODE_MAP);
 
         // These need to be set once all the features have been processed
         this.targetPKIndexesToBind = getIndexesToBind(Side.TARGET);
@@ -208,7 +204,7 @@ public class PKFactory {
 
         List<Record> recordSet;
         if (record.getPk().canExplode()) {
-            recordSet = record.getPk().explode().stream()
+            recordSet = record.getPk().explode(explodeMapFeature).stream()
                     .filter(pk -> !pk.isError())
                     .map(pk -> new Record(pk, record.getOriginRow(), record.getTargetRow()))
                     .collect(Collectors.toList());
@@ -216,14 +212,6 @@ public class PKFactory {
             recordSet = Arrays.asList(record);
         }
         return recordSet;
-    }
-
-    protected Long getDefaultForMissingTimestamp() {
-        return defaultForMissingTimestamp;
-    }
-
-    protected String getDefaultForMissingString() {
-        return defaultForMissingString;
     }
 
     public Integer getExplodeMapTargetPKIndex() {return explodeMapTargetPKIndex;}

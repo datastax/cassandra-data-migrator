@@ -17,18 +17,7 @@ import java.util.stream.Stream;
 
 public class SplitPartitions {
 
-    public final static Long MIN_PARTITION = Long.MIN_VALUE;
-    public final static Long MAX_PARTITION = Long.MAX_VALUE;
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
-
-    public static void main(String[] args) throws IOException {
-        Collection<Partition> partitions = getSubPartitions(2, BigInteger.valueOf(1),
-                BigInteger.valueOf(1000), 100);
-//        Collection<Partition> partitions = getSubPartitionsFromFile(3);
-        for (Partition partition : partitions) {
-            System.out.println(partition);
-        }
-    }
 
     public static Collection<Partition> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max, int coveragePercent) {
         logger.info("ThreadID: {} Splitting min: {} max: {}", Thread.currentThread().getId(), min, max);
@@ -40,11 +29,11 @@ public class SplitPartitions {
         return partitions;
     }
 
-    public static List<Partition> getSubPartitionsFromFile(int numSplits) throws IOException {
-        logger.info("ThreadID: {} Splitting partitions in file: ./partitions.csv using a split-size of {}"
-                , Thread.currentThread().getId(), numSplits);
+    public static List<Partition> getSubPartitionsFromFile(int numSplits, String inputFilename) throws IOException {
+        logger.info("ThreadID: {} Splitting partitions in file: {} using a split-size of {}"
+                , Thread.currentThread().getId(), inputFilename, numSplits);
         List<Partition> partitions = new ArrayList<Partition>();
-        BufferedReader reader = getfileReader("./partitions.csv");
+        BufferedReader reader = getfileReader(inputFilename);
         String line = null;
         while ((line = reader.readLine()) != null) {
             if (line.startsWith("#")) {
@@ -61,11 +50,11 @@ public class SplitPartitions {
         return partitions;
     }
 
-    public static List<PKRows> getRowPartsFromFile(int numSplits) throws IOException {
-        logger.info("ThreadID: {} Splitting rows in file: ./primary_key_rows.csv using a split-size of {}"
-                , Thread.currentThread().getId(), numSplits);
+    public static List<PKRows> getRowPartsFromFile(int numSplits, String inputFilename) throws IOException {
+        logger.info("ThreadID: {} Splitting rows in file: {} using a split-size of {}"
+                , Thread.currentThread().getId(), inputFilename, numSplits);
         List<String> pkRows = new ArrayList<String>();
-        BufferedReader reader = getfileReader("./primary_key_rows.csv");
+        BufferedReader reader = getfileReader(inputFilename);
         String pkRow = null;
         while ((pkRow = reader.readLine()) != null) {
             if (pkRow.startsWith("#")) {
@@ -128,10 +117,12 @@ public class SplitPartitions {
     }
 
     public static class PKRows implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         List<String> pkRows;
 
         public PKRows(List<String> rows) {
-            pkRows = rows;
+            pkRows = new ArrayList<>(rows);
         }
     }
 

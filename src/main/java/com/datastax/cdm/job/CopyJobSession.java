@@ -3,6 +3,7 @@ package com.datastax.cdm.job;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
+import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.cdm.data.PKFactory;
@@ -17,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class CopyJobSession extends AbstractJobSession {
+public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
     private static CopyJobSession copyJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -33,8 +34,6 @@ public class CopyJobSession extends AbstractJobSession {
     private Integer batchSize;
     private final Integer fetchSize;
 
-    private BatchStatement batch;
-
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
 
@@ -43,30 +42,23 @@ public class CopyJobSession extends AbstractJobSession {
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
         batchSize = this.originSession.getCqlTable().getBatchSize();
 
-        batch = BatchStatement.newInstance(BatchType.UNLOGGED);
-
         logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
         logger.info("CQL -- target select: {}",this.targetSession.getTargetSelectByPKStatement().getCQL());
         logger.info("CQL -- target upsert: {}",this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    public static CopyJobSession getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        if (copyJobSession == null) {
-            synchronized (CopyJobSession.class) {
-                if (copyJobSession == null) {
-                    copyJobSession = new CopyJobSession(originSession, targetSession, sc);
-                }
-            }
-        }
-
-        return copyJobSession;
+    @Override
+    public void processSlice(SplitPartitions.Partition slice) {
+        this.getDataAndInsert(slice.getMin(), slice.getMax());
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min,max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
+        BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
         boolean done = false;
         int maxAttempts = maxRetries + 1;
+        String guardrailCheck;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             long readCnt = 0;
             long flushedWriteCnt = 0;
@@ -94,26 +86,34 @@ public class CopyJobSession extends AbstractJobSession {
                     }
 
                     for (Record r : pkFactory.toValidRecordList(record)) {
-                        writeLimiter.acquire(1);
-
+                        if (guardrailEnabled) {
+                            guardrailCheck = guardrailFeature.guardrailChecks(r);
+                            if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                                logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
+                                skipCnt++;
+                                continue;
+                            }
+                        }
+                        
                         BoundStatement boundUpsert = bind(r);
                         if (null == boundUpsert) {
                             skipCnt++; // TODO: this previously skipped, why not errCnt?
                             continue;
                         }
 
-                        writeAsync(writeResults, boundUpsert);
+                        writeLimiter.acquire(1);
+                        batch = writeAsync(batch, writeResults, boundUpsert);
                         unflushedWrites++;
 
                         if (unflushedWrites > fetchSize) {
-                            flushAndClearWrites(writeResults);
+                            flushAndClearWrites(batch, writeResults);
                             flushedWriteCnt += unflushedWrites;
                             unflushedWrites = 0;
                         }
                     }
                 }
 
-                flushAndClearWrites(writeResults);
+                flushAndClearWrites(batch, writeResults);
                 flushedWriteCnt += unflushedWrites;
 
                 readCounter.addAndGet(readCnt);
@@ -136,6 +136,7 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
+    @Override
     public synchronized void printCounts(boolean isFinal) {
         String msg = "ThreadID: " + Thread.currentThread().getId();
         if (isFinal) {
@@ -151,7 +152,7 @@ public class CopyJobSession extends AbstractJobSession {
         }
     }
 
-    private void flushAndClearWrites(Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception {
+    private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception {
         if (batch.size() > 0) {
             writeResults.add(targetUpsertStatement.executeAsync(batch));
         }
@@ -172,16 +173,18 @@ public class CopyJobSession extends AbstractJobSession {
         return targetUpsertStatement.bindRecord(r);
     }
 
-    private void writeAsync(Collection<CompletionStage<AsyncResultSet>> writeResults, BoundStatement boundUpsert) {
+    private BatchStatement writeAsync(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults, BoundStatement boundUpsert) {
         if (batchSize > 1) {
             batch = batch.add(boundUpsert);
             if (batch.size() >= batchSize) {
                 writeResults.add(targetUpsertStatement.executeAsync(batch));
-                batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+                return BatchStatement.newInstance(BatchType.UNLOGGED);
             }
+            return batch;
         }
         else {
             writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
+            return batch;
         }
     }
 

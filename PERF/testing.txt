@@ -1,0 +1,107 @@
+
+1. Created AWS t2.2xlarge instance running AWS Linux (8 vCPU, 16 GB memory)
+2. scp -i ~/.ssh/aws-oregon-phil-miesle.pem ./perf-iot.yaml ec2-user@54.148.45.187:perf-iot.yaml
+   scp -i ~/.ssh/aws-oregon-phil-miesle.pem ../target/cassandra-data-migrator-4.0.0-SNAPSHOT.jar ec2-user@54.148.45.187:cassandra-data-migrator-4.0.0-SNAPSHOT.jar
+   scp -i ~/.ssh/aws-oregon-phil-miesle.pem ./cdm-v3.properties ec2-user@54.148.45.187:cdm-v3.properties
+   scp -i ~/.ssh/aws-oregon-phil-miesle.pem ./cdm-v4.properties ec2-user@54.148.45.187:cdm-v4.properties
+3. ssh -i ~/.ssh/aws-oregon-phil-miesle.pem ec2-user@54.148.45.187
+   a. sudo yum install -y docker
+      sudo usermod -a -G docker ec2-user
+      newgrp docker
+      sudo systemctl enable docker.service
+      sudo systemctl start docker.service
+   b. docker network create --driver=bridge --subnet=172.16.242.0/24 cassandra
+   c. docker run --name cass-origin --network cassandra --ip 172.16.242.2 -e "CASS_USERNAME=cassandra" -e "CASS_PASSWORD=cassandra" -e "CASS_CLUSTER=origin" -p 9042:9042 -d cassandra:3.11.14
+   d. docker run --name cass-target --network cassandra --ip 172.16.242.3 -e "CASS_USERNAME=cassandra" -e "CASS_PASSWORD=cassandra" -e "CASS_CLUSTER=target" -p 9043:9042 -d cassandra:4.1.1
+   e. curl -L -O https://github.com/nosqlbench/nosqlbench/releases/latest/download/nb5
+      chmod +x nb5
+      ./nb5 --appimage-extract
+      rm nb5
+      ln -s squashfs-root/AppRun ./nb5
+      ./nb5 --version
+   f. ./nb5 perf-iot --progress console:5s load-cycles=1000000 host=localhost port=9042 localdc=datacenter1 
+
+           cqlsh> select count(*) from devices.sensor_data;
+           
+            count
+           --------
+            999996
+           
+           (1 rows)
+
+      ./nb5 perf-iot default.schema host=localhost port=9043 localdc=datacenter1
+
+   g. docker run --name cdm --network cassandra --ip 172.16.242.4 -d datastax/cassandra-data-migrator:3.4.4
+
+4. ssh -i ~/.ssh/aws-oregon-phil-miesle.pem ec2-user@54.148.45.187
+   a. docker cp cdm-v3.properties cdm:cdm-v3.properties
+   b. docker exec -it cdm bash
+      cqlsh cass-target -e 'TRUNCATE TABLE devices.sensor_data'
+
+      time spark-submit --properties-file cdm-v3.properties \
+        --conf spark.executor.cores=2 \
+        --conf spark.origin.keyspaceTable="devices.sensor_data" \
+        --master "local[*]" --class datastax.astra.migrate.Migrate \
+        /assets/cassandra-data-migrator-3.4.4.jar &> cdm-v3-Migrate_$(date +%Y%m%d_%H_%M).txt
+
+            23/05/26 13:05:15 INFO DAGScheduler: Job 1 finished: foreach at Migrate.scala:26, took 201.858469 s
+            23/05/26 13:05:15 INFO CopyJobSession: ################################################################################################
+            23/05/26 13:05:15 INFO CopyJobSession: ThreadID: 1 Final Read Record Count: 999996
+            23/05/26 13:05:15 INFO CopyJobSession: ThreadID: 1 Final Skipped Record Count: 0
+            23/05/26 13:05:15 INFO CopyJobSession: ThreadID: 1 Final Write Record Count: 999996
+            23/05/26 13:05:15 INFO CopyJobSession: ThreadID: 1 Final Error Record Count: 0
+            23/05/26 13:05:15 INFO CopyJobSession: ################################################################################################
+
+      time spark-submit --properties-file cdm-v3.properties \
+        --conf spark.executor.cores=2 \
+        --conf spark.origin.keyspaceTable="devices.sensor_data" \
+        --master "local[*]" --class datastax.astra.migrate.DiffData \
+        /assets/cassandra-data-migrator-3.4.4.jar &> cdm-v3-DiffData_$(date +%Y%m%d_%H_%M).txt
+
+            23/05/26 13:11:51 INFO DAGScheduler: Job 1 finished: foreach at DiffData.scala:24, took 201.887353 s
+            23/05/26 13:11:51 INFO DiffJobSession: ################################################################################################
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Read Record Count: 999996
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Mismatch Record Count: 0
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Corrected Mismatch Record Count: 0
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Missing Record Count: 0
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Corrected Missing Record Count: 0
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Valid Record Count: 999996
+            23/05/26 13:11:51 INFO DiffJobSession: ThreadID: 1 Final Skipped Record Count: 0
+            23/05/26 13:11:51 INFO DiffJobSession: ################################################################################################
+
+
+   c. docker cp cdm-v4.properties cdm:cdm-v4.properties
+      docker cp cassandra-data-migrator-4.0.0-SNAPSHOT.jar cdm:cassandra-data-migrator-4.0.0-SNAPSHOT.jar
+
+   d. docker exec -it cdm bash
+      cqlsh cass-target -e 'TRUNCATE TABLE devices.sensor_data'
+
+      time spark-submit --properties-file cdm-v4.properties \
+        --conf spark.executor.cores=2 \
+        --master "local[*]" --class com.datastax.cdm.job.Migrate \
+        /cassandra-data-migrator-4.0.0-SNAPSHOT.jar &> cdm-v4-Migrate_$(date +%Y%m%d_%H_%M).txt
+
+            23/05/26 16:46:52 INFO DAGScheduler: Job 1 finished: foreach at Migrate.scala:9, took 200.206043 s
+            23/05/26 16:46:52 INFO CopyJobSession: ################################################################################################
+            23/05/26 16:46:52 INFO CopyJobSession: ThreadID: 1 Final Read Record Count: 999996
+            23/05/26 16:46:52 INFO CopyJobSession: ThreadID: 1 Final Skipped Record Count: 0
+            23/05/26 16:46:52 INFO CopyJobSession: ThreadID: 1 Final Write Record Count: 999996
+            23/05/26 16:46:52 INFO CopyJobSession: ThreadID: 1 Final Error Record Count: 0
+            23/05/26 16:46:52 INFO CopyJobSession: ################################################################################################
+
+
+      time spark-submit --properties-file cdm-v4.properties \
+        --conf spark.executor.cores=2 \
+        --master "local[*]" --class com.datastax.cdm.job.DiffData \
+        /cassandra-data-migrator-4.0.0-SNAPSHOT.jar &> cdm-v4-DiffData_$(date +%Y%m%d_%H_%M).txt
+
+            23/05/26 16:51:33 INFO DAGScheduler: Job 1 finished: foreach at DiffData.scala:9, took 200.214341 s
+            23/05/26 16:51:33 INFO DiffJobSession: ################################################################################################
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Read Record Count: 999996
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Mismatch Record Count: 0
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Corrected Mismatch Record Count: 0
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Missing Record Count: 0
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Corrected Missing Record Count: 0
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Valid Record Count: 999992
+            23/05/26 16:51:33 INFO DiffJobSession: ThreadID: 1 Final Skipped Record Count: 0
+            23/05/26 16:51:33 INFO DiffJobSession: ################################################################################################

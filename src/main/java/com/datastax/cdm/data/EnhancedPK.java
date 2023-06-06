@@ -1,4 +1,5 @@
 package com.datastax.cdm.data;
+import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.properties.KnownProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +50,11 @@ public class EnhancedPK {
         this.explodeMap = explodeMap;
     }
 
-    public List<EnhancedPK> explode() {
+    public List<EnhancedPK> explode(ExplodeMap explodeMapFeature) {
         if (null == explodeMap || explodeMap.isEmpty()) {
             return Collections.singletonList(this);
         }
-        return explodeMap.entrySet().stream()
+        return explodeMapFeature.explode(explodeMap).stream()
                 .map(entry -> new EnhancedPK(factory, values, classes, ttl, writeTimestamp, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
@@ -78,6 +79,7 @@ public class EnhancedPK {
 
     private void validate() {
         if (null==values || null== classes || values.isEmpty() || values.size() != classes.size()) {
+            if (null==this.messages) this.messages = new ArrayList<>();
             this.messages.add("ERROR: types and/or values are null and/or empty, or are not the same size");
             this.errorState = true;
             return;
@@ -88,32 +90,8 @@ public class EnhancedPK {
             if (null != value) continue;
             if (i==factory.getExplodeMapTargetPKIndex()) continue; // this is an unexploded PK
 
-            // This bit of code addresses the fact we cannot currently insert a NULL value
-            // into a primary key column. So we replace it with an alternate value, or
-            // mark the PK as invalid.
-            this.messages = new ArrayList<>();
-            Class c = classes.get(i);
-            if (Objects.equals(c, String.class)) {
-                values.set(i, factory.getDefaultForMissingString());
-                messages.add(String.format("WARN: Defaulting null string value to the empty string for position %d", i));
-                warningState = true;
-            }
-            else if (Objects.equals(c, Instant.class)) {
-                Long tsReplaceVal = factory.getDefaultForMissingTimestamp();
-                if (null != tsReplaceVal) {
-                    values.set(i, Instant.ofEpochSecond(tsReplaceVal).toString());
-                    messages.add(String.format("WARN: Defaulting null timestamp to %d for position %d", tsReplaceVal, i));
-                    warningState = true;
-                }
-                else {
-                    messages.add(String.format("ERROR: Null value for position %d, consider setting %s", i, KnownProperties.TRANSFORM_REPLACE_MISSING_TS));
-                    errorState = true;
-                }
-            }
-            else {
-                messages.add(String.format("ERROR: Null value for position %d", i));
-                errorState = true;
-            }
+            messages.add(String.format("ERROR: Null value for position %d", i));
+            errorState = true;
         }
     }
 

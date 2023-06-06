@@ -12,6 +12,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.type.*;
+import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.data.CqlConversion;
@@ -22,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -36,6 +38,7 @@ public class CqlTable extends BaseTable {
     private final List<String> partitionKeyNames;
     private final List<String> pkNames;
     private final  List<Class> pkClasses;
+    private final List<Integer> pkIndexes;
     private boolean isCounterTable;
     private final ConsistencyLevel readConsistencyLevel;
     private final ConsistencyLevel writeConsistencyLevel;
@@ -45,14 +48,22 @@ public class CqlTable extends BaseTable {
     private List<ColumnMetadata> cqlAllColumns;
     private Map<String,DataType> columnNameToCqlTypeMap;
     private final List<Class> bindClasses;
+    private List<String> writetimeTTLColumns;
 
     private CqlTable otherCqlTable;
     private List<Integer> correspondingIndexes;
     private final List<Integer> counterIndexes;
     protected Map<Featureset, Feature> featureMap;
 
+    // These defaults address the problem where we cannot insert null values into a PK column
+    private final Long defaultForMissingTimestamp;
+    private final String defaultForMissingString;
+
     public CqlTable(PropertyHelper propertyHelper, boolean isOrigin, CqlSession session) {
         super(propertyHelper, isOrigin);
+        this.keyspaceName = unFormatName(keyspaceName);
+        this.tableName = unFormatName(tableName);
+
         this.cqlSession = session;
 
         // setCqlMetadata(session) will set:
@@ -79,6 +90,9 @@ public class CqlTable extends BaseTable {
         this.pkClasses = pkTypes.stream()
                 .map(CqlData::getBindClass)
                 .collect(Collectors.toList());
+        this.pkIndexes = pkNames.stream()
+                .map(columnNames::indexOf)
+                .collect(Collectors.toList());
 
         this.counterIndexes =  IntStream.range(0, columnCqlTypes.size())
                     .filter(i -> columnCqlTypes.get(i).equals(DataTypes.COUNTER))
@@ -90,6 +104,14 @@ public class CqlTable extends BaseTable {
         this.writeConsistencyLevel = mapToConsistencyLevel(propertyHelper.getString(KnownProperties.WRITE_CL));
 
         this.featureMap = new HashMap<>();
+
+        this.defaultForMissingTimestamp = propertyHelper.getLong(KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
+        this.defaultForMissingString = "";
+    }
+
+    @Override
+    public String getKeyspaceTable() {
+        return formatName(this.keyspaceName) + "." + formatName(this.tableName);
     }
 
     public void setFeatureMap(Map<Featureset, Feature> featureMap) { this.featureMap = featureMap; }
@@ -108,6 +130,7 @@ public class CqlTable extends BaseTable {
     public Class getBindClass(int index) { return bindClasses.get(index); }
     public int indexOf(String columnName) { return columnNames.indexOf(columnName); }
     public DataType getDataType(String columnName) { return columnNameToCqlTypeMap.get(columnName); }
+    public DataType getDataType(int index) { return ((index < 0 || index>=columnCqlTypes.size()) ? null : columnCqlTypes.get(index)); }
 
     public MutableCodecRegistry getCodecRegistry() { return (MutableCodecRegistry) cqlSession.getContext().getCodecRegistry(); }
 
@@ -222,8 +245,23 @@ public class CqlTable extends BaseTable {
         return row.get(index, this.getBindClass(index));
     }
 
+    public int byteCount(int index, Object object) {
+        if (null==object) return 0;
+        try {
+            return getCodecRegistry()
+                    .codecFor(getDataType(index))
+                    .encode(object, CqlConversion.PROTOCOL_VERSION)
+                    .remaining();
+        } catch (IllegalArgumentException | CodecNotFoundException | NullPointerException e) {
+            throw new IllegalArgumentException("Unable to encode object " + object + " of Class/DataType " + object.getClass().getName() + "/" + getDataType(index) + " for column " + this.columnNames.get(index), e);
+        }
+    }
+
     public Object getAndConvertData(int index, Row row) {
         Object thisObject = getData(index, row);
+        if (null==thisObject) {
+            return convertNull(index);
+        }
         CqlConversion cqlConversion = this.cqlConversions.get(index);
         if (null==cqlConversion) {
             if (logTrace) logger.trace("{} Index:{} not converting:{}",isOrigin?"origin":"target",index,thisObject);
@@ -233,6 +271,29 @@ public class CqlTable extends BaseTable {
             if (logTrace) logger.trace("{} Index:{} converting:{} via CqlConversion:{}",isOrigin?"origin":"target",index,thisObject,cqlConversion);
             return cqlConversion.convert(thisObject);
         }
+    }
+
+    public Object convertNull(int thisIndex) {
+        // We do not need to convert nulls for non-PK columns
+        int otherIndex = this.getCorrespondingIndex(thisIndex);
+        if (!getOtherCqlTable().pkIndexes.contains(otherIndex))
+            return null;
+
+        Class c = getOtherCqlTable().bindClasses.get(otherIndex);
+        if (Objects.equals(c, String.class)) {
+            return defaultForMissingString;
+        }
+        else if (Objects.equals(c, Instant.class)) {
+            if (null != defaultForMissingTimestamp) {
+                return Instant.ofEpochMilli(defaultForMissingTimestamp);
+            } else {
+                logger.error("This index {} corresponds to That index {}, which is a primary key column and cannot be null. Consider setting {}.", thisIndex, otherIndex, KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
+                return null;
+            }
+        }
+
+        logger.error("This index {} corresponds to That index {}, which is a primary key column and cannot be null.", thisIndex, otherIndex);
+        return null;
     }
 
     public Integer getCorrespondingIndex(int index) {
@@ -274,13 +335,13 @@ public class CqlTable extends BaseTable {
         else
             this.hasRandomPartitioner = false;
 
-        Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(this.keyspaceName);
+        Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(formatName(this.keyspaceName));
         if (!keyspaceMetadataOpt.isPresent()) {
             throw new IllegalArgumentException("Keyspace not found: " + this.keyspaceName);
         }
         KeyspaceMetadata keyspaceMetadata = keyspaceMetadataOpt.get();
 
-        Optional<TableMetadata> tableMetadataOpt = keyspaceMetadata.getTable(this.tableName);
+        Optional<TableMetadata> tableMetadataOpt = keyspaceMetadata.getTable(formatName(this.tableName));
         if (!tableMetadataOpt.isPresent()) {
             throw new IllegalArgumentException("Table not found: " + tableName);
         }
@@ -298,11 +359,47 @@ public class CqlTable extends BaseTable {
                 .filter(md -> !this.cqlAllColumns.contains(md))
                 .collect(Collectors.toCollection(() -> this.cqlAllColumns));
 
+        this.writetimeTTLColumns = tableMetadata.getColumns().values().stream()
+                .filter(columnMetadata -> canColumnHaveTTLorWritetime(tableMetadata, columnMetadata))
+                .map(ColumnMetadata::getName)
+                .map(CqlIdentifier::asInternal)
+                .collect(Collectors.toList());
+
         this.columnNameToCqlTypeMap = this.cqlAllColumns.stream()
                 .collect(Collectors.toMap(
                         columnMetadata -> columnMetadata.getName().asInternal(),
                         ColumnMetadata::getType
                 ));
+    }
+
+    private boolean canColumnHaveTTLorWritetime(TableMetadata tableMetadata, ColumnMetadata columnMetadata) {
+        DataType dataType = columnMetadata.getType();
+        boolean isKeyColumn = tableMetadata.getPartitionKey().contains(columnMetadata) ||
+                              tableMetadata.getClusteringColumns().containsKey(columnMetadata);
+
+        if (isKeyColumn) return false;
+        if (CqlData.isPrimitive(dataType)) return true;
+        if (dataType instanceof TupleType) return true; // TODO: WRITETIME and TTL functions are very slow on Tuples in cqlsh...should they be supported here?
+        if (CqlData.isFrozen(dataType)) return true;
+        return false;
+    }
+
+    public List<String> getWritetimeTTLColumns() {
+        return this.writetimeTTLColumns.stream()
+                .filter(columnName -> this.columnNames.contains(columnName))
+                .collect(Collectors.toList());
+    }
+
+    public boolean isWritetimeTTLColumn(String columnName) {
+        return this.writetimeTTLColumns.contains(columnName);
+    }
+
+    public boolean hasUnfrozenList() {
+        return this.cqlAllColumns.stream()
+                .filter(columnMetadata ->
+                        columnNames.contains(columnMetadata.getName().asInternal()) &&
+                        columnMetadata.getType() instanceof ListType)
+                .anyMatch(columnMetadata -> !CqlData.isFrozen(columnMetadata.getType()));
     }
 
     private static ConsistencyLevel mapToConsistencyLevel(String level) {
