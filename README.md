@@ -26,8 +26,9 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 
 > :warning: Note that Version 4 of the tool is not backward-compatible with .properties files created in previous versions, and that package names have changed.
 
-1. `cdm.properties` file needs to be configured as applicable for the environment. Parameter descriptions and defaults are described in the file.
-   > A sample properties file configuration can be [found here](./src/resources/cdm.properties)
+1. `cdm.properties` file needs to be configured as applicable for the environment. Parameter descriptions and defaults are described in the file. The file can have any name, it does not need to be `cdm.properties`.
+   > * A simplified sample properties file configuration can be found here as [cdm.properties](./src/resources/cdm.properties)
+   > * A complete sample properties file configuration can be found here as [cdm-detailed.properties](./src/resources/cdm-detailed.properties)
 2. Place the properties file where it can be accessed while running the job via spark-submit.
 3. Run the below job using `spark-submit` command as shown below:
 
@@ -119,12 +120,12 @@ When running in above mode the tool assumes a `partitions.csv` file to be presen
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class datastax.astra.migrate.Guardrail` as shown below
 ```
-./spark-submit --properties-file cdmGuardrail.properties /
+./spark-submit --properties-file cdm.properties /
 --conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
+--conf spark.cdm.feature.guardrail.colSizeInKB=10000 /
 --master "local[*]" /
 --class datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
-> A sample Guardrail properties file can be [found here](./src/resources/cdmGuardrail.properties)
 
 # Features
 - Auto-detects table schema (column names, types, keys, collections, UDTs, etc.)
