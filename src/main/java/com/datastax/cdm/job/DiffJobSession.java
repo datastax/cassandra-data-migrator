@@ -112,7 +112,7 @@ public class DiffJobSession extends CopyJobSession {
 
                 List<Record> recordsToDiff = new ArrayList<>(fetchSizeInRows);
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(originRow -> {
-                    originLimiter.acquire(1);
+                    rateLimiterOrigin.acquire(1);
                     Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
 
                     if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
@@ -132,7 +132,7 @@ public class DiffJobSession extends CopyJobSession {
                                 }
                             }
 
-                            targetLimiter.acquire(1);
+                            rateLimiterTarget.acquire(1);
                             CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement.getAsyncResult(r.getPk());
 
                             if (null==targetResult) {
@@ -203,7 +203,7 @@ public class DiffJobSession extends CopyJobSession {
 
             //correct data
             if (autoCorrectMissing) {
-                targetLimiter.acquire(1);
+                rateLimiterTarget.acquire(1);
                 targetSession.getTargetUpsertStatement().putRecord(record);
                 correctedMissingCounter.incrementAndGet();
                 logger.error("Inserted missing row in target: {}", record.getPk());
@@ -217,7 +217,7 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
 
             if (autoCorrectMismatch) {
-                targetLimiter.acquire(1);
+                rateLimiterTarget.acquire(1);
                 targetSession.getTargetUpsertStatement().putRecord(record);
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Corrected mismatch row in target: {}", record.getPk());
