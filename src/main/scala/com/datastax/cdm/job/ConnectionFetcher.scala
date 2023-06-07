@@ -12,11 +12,11 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
   def getConnectionDetails(side: String): ConnectionDetails = {
     if ("ORIGIN".equals(side.toUpperCase)) {
       ConnectionDetails(
-        propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_SCB),
-        propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_HOST),
-        propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_PORT),
-        propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_USERNAME),
-        propertyHelper.getAsString(KnownProperties.ORIGIN_CONNECT_PASSWORD),
+        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_SCB),
+        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_HOST),
+        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PORT),
+        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_USERNAME),
+        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ENABLED),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD),
@@ -28,11 +28,11 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
     }
     else {
       ConnectionDetails(
-        propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_SCB),
-        propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_HOST),
-        propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_PORT),
-        propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_USERNAME),
-        propertyHelper.getAsString(KnownProperties.TARGET_CONNECT_PASSWORD),
+        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_SCB),
+        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_HOST),
+        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_PORT),
+        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_USERNAME),
+        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_PASSWORD),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_ENABLED),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD),

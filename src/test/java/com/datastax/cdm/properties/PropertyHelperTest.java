@@ -461,9 +461,9 @@ public class PropertyHelperTest {
     @Test
     public void test_invalid_origin_connection() {
         validSparkConf = new SparkConf();
-        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "");
+        validSparkConf.set(KnownProperties.CONNECT_ORIGIN_HOST, "");
         validSparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "ks.tab1");
-        validSparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.CONNECT_TARGET_HOST, "localhost");
         validSparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "ks.tab1");
         helper.initializeSparkConf(validSparkConf);
         assertFalse(helper.isValidConfig());
@@ -472,9 +472,9 @@ public class PropertyHelperTest {
     @Test
     public void test_invalid_target_connection() {
         validSparkConf = new SparkConf();
-        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.CONNECT_ORIGIN_HOST, "localhost");
         validSparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "ks.tab1");
-        validSparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "");
+        validSparkConf.set(KnownProperties.CONNECT_TARGET_HOST, "");
         validSparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "ks.tab1");
         helper.initializeSparkConf(validSparkConf);
         assertFalse(helper.isValidConfig());
@@ -483,14 +483,14 @@ public class PropertyHelperTest {
     @Test
     public void test_valid_connection_noUserPassword() {
         validSparkConf = new SparkConf();
-        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.CONNECT_ORIGIN_HOST, "localhost");
         validSparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "ks.tab1");
-        validSparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.CONNECT_TARGET_HOST, "localhost");
         validSparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "ks.tab1");
-        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_USERNAME, "");
-        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_PASSWORD, "");
-        validSparkConf.set(KnownProperties.TARGET_CONNECT_USERNAME, "");
-        validSparkConf.set(KnownProperties.TARGET_CONNECT_PASSWORD, "");
+        validSparkConf.set(KnownProperties.CONNECT_ORIGIN_USERNAME, "");
+        validSparkConf.set(KnownProperties.CONNECT_ORIGIN_PASSWORD, "");
+        validSparkConf.set(KnownProperties.CONNECT_TARGET_USERNAME, "");
+        validSparkConf.set(KnownProperties.CONNECT_TARGET_PASSWORD, "");
         helper.initializeSparkConf(validSparkConf);
         assertTrue(helper.isValidConfig());
     }
@@ -508,9 +508,9 @@ public class PropertyHelperTest {
 
     private void setValidSparkConf() {
         validSparkConf = new SparkConf();
-        validSparkConf.set(KnownProperties.ORIGIN_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.CONNECT_ORIGIN_HOST, "localhost");
         validSparkConf.set(KnownProperties.ORIGIN_KEYSPACE_TABLE, "ks.tab1");
-        validSparkConf.set(KnownProperties.TARGET_CONNECT_HOST, "localhost");
+        validSparkConf.set(KnownProperties.CONNECT_TARGET_HOST, "localhost");
         validSparkConf.set(KnownProperties.TARGET_KEYSPACE_TABLE, "ks.tab1");
     }
 

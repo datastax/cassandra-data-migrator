@@ -255,13 +255,13 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         }
 
         // Check we have a configured origin connection
-        if ( (null == get(ORIGIN_CONNECT_HOST) && null == get(ORIGIN_CONNECT_SCB)) ||
-                getAsString(ORIGIN_CONNECT_HOST).isEmpty() && getAsString(ORIGIN_CONNECT_SCB).isEmpty()) {
-            logger.error("Missing required property: " + ORIGIN_CONNECT_HOST + " or " + ORIGIN_CONNECT_SCB);
+        if ( (null == get(CONNECT_ORIGIN_HOST) && null == get(CONNECT_ORIGIN_SCB)) ||
+                getAsString(CONNECT_ORIGIN_HOST).isEmpty() && getAsString(CONNECT_ORIGIN_SCB).isEmpty()) {
+            logger.error("Missing required property: " + CONNECT_ORIGIN_HOST + " or " + CONNECT_ORIGIN_SCB);
             valid = false;
         } else {
             // Validate TLS configuration is set if so-enabled
-            if (null == get(ORIGIN_CONNECT_SCB) && null != get(ORIGIN_TLS_ENABLED) && getBoolean(ORIGIN_TLS_ENABLED)) {
+            if (null == get(CONNECT_ORIGIN_SCB) && null != get(ORIGIN_TLS_ENABLED) && getBoolean(ORIGIN_TLS_ENABLED)) {
                 for (String expectedProperty : new String[]{ORIGIN_TLS_TRUSTSTORE_PATH, ORIGIN_TLS_TRUSTSTORE_PASSWORD,
                         ORIGIN_TLS_TRUSTSTORE_TYPE, ORIGIN_TLS_KEYSTORE_PATH, ORIGIN_TLS_KEYSTORE_PASSWORD,
                         ORIGIN_TLS_ALGORITHMS}) {
@@ -274,13 +274,13 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         }
 
         // Check we have a configured target connection
-        if ( (null == get(TARGET_CONNECT_HOST) && null == get(TARGET_CONNECT_SCB)) ||
-                getAsString(TARGET_CONNECT_HOST).isEmpty() && getAsString(TARGET_CONNECT_SCB).isEmpty()) {
-            logger.error("Missing required property: " + TARGET_CONNECT_HOST + " or " + TARGET_CONNECT_SCB);
+        if ( (null == get(CONNECT_TARGET_HOST) && null == get(CONNECT_TARGET_SCB)) ||
+                getAsString(CONNECT_TARGET_HOST).isEmpty() && getAsString(CONNECT_TARGET_SCB).isEmpty()) {
+            logger.error("Missing required property: " + CONNECT_TARGET_HOST + " or " + CONNECT_TARGET_SCB);
             valid = false;
         } else {
             // Validate TLS configuration is set if so-enabled
-            if (null == get(TARGET_CONNECT_SCB) && null != get(TARGET_TLS_ENABLED) && getBoolean(TARGET_TLS_ENABLED)) {
+            if (null == get(CONNECT_TARGET_SCB) && null != get(TARGET_TLS_ENABLED) && getBoolean(TARGET_TLS_ENABLED)) {
                 for (String expectedProperty : new String[]{TARGET_TLS_TRUSTSTORE_PATH, TARGET_TLS_TRUSTSTORE_PASSWORD,
                         TARGET_TLS_TRUSTSTORE_TYPE, TARGET_TLS_KEYSTORE_PATH, TARGET_TLS_KEYSTORE_PASSWORD,
                         TARGET_TLS_ALGORITHMS}) {
@@ -293,7 +293,7 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         }
         
         // Expecting these to normally be set, but it could be a valid configuration
-        for (String expectedProperty : new String[]{ORIGIN_CONNECT_USERNAME, ORIGIN_CONNECT_PASSWORD, TARGET_CONNECT_USERNAME, TARGET_CONNECT_PASSWORD}) {
+        for (String expectedProperty : new String[]{CONNECT_ORIGIN_USERNAME, CONNECT_ORIGIN_PASSWORD, CONNECT_TARGET_USERNAME, CONNECT_TARGET_PASSWORD}) {
             if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
                 logger.warn("Unusual this is not set: " + expectedProperty);
             }
