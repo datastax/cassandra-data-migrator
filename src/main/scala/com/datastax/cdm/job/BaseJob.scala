@@ -32,7 +32,6 @@ abstract class BaseJob[T: ClassTag] extends App {
   var maxPartition: BigInteger = _
   var coveragePercent: Int = _
   var numSplits: Int = _
-  var tokenRangeFile: String = _
 
   var parts: util.Collection[T] = _
   var slices: RDD[T] = _
@@ -70,18 +69,16 @@ abstract class BaseJob[T: ClassTag] extends App {
     maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
-    tokenRangeFile = propertyHelper.getString(KnownProperties.TOKEN_RANGE_EXCEPTION_FILE)
+    this.fileName = propertyHelper.getString(KnownProperties.PARTITIONS_TOKEN_RANGE_FILE)
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
     abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
     abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
-    abstractLogger.info("PARAM -- Token Range File: " + tokenRangeFile)
-
+    abstractLogger.info("PARAM -- Partition File: " + fileName)
     this.parts = getParts(numSplits)
     this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
     abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())
     abstractLogger.info("Spark parallelize created : " + slices.count() + " slices!");
-
   }
 
   def getParts(pieces: Int): util.Collection[T]

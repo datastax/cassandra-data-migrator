@@ -158,40 +158,4 @@ public class SplitPartitions {
         }
     }
 
-    public static List<Partition> getFailedSubPartitionsFromFile(int splitSize, String tokenRangeFile) throws IOException {
-        logger.info("ThreadID: {} Splitting partitions in file: {} using a split-size of {}"
-                , Thread.currentThread().getId(), tokenRangeFile, splitSize);
-
-        File file = new File(tokenRangeFile);
-        String renamedFile = tokenRangeFile+"_bkp";
-        File rename = new File(renamedFile);
-        if(rename.exists()) {
-            rename.delete();
-        }
-        boolean flag = file.renameTo(rename);
-        if (flag) {
-            logger.info("File Successfully Renamed to : "+renamedFile);
-        }
-        else {
-            logger.info("Operation Failed to rename file : "+tokenRangeFile);
-        }
-
-        List<Partition> partitions = new ArrayList<Partition>();
-        BufferedReader reader = getfileReader(renamedFile);
-        String line = null;
-        while ((line = reader.readLine()) != null) {
-            if (line.startsWith("#")) {
-                continue;
-            }
-            String[] minMax = line.split(",");
-            try {
-                partitions.addAll(getSubPartitions(splitSize, new BigInteger(minMax[0]), new BigInteger(minMax[1]), 100));
-            } catch (Exception e) {
-                logger.error("Skipping partition: {}", line, e);
-            }
-        }
-
-        return partitions;
-    }
-
 }

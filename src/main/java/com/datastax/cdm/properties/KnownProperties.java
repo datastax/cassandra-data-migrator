@@ -141,10 +141,10 @@ public class KnownProperties {
     // Error handling
     //==========================================================================
     public static final String TOKEN_RANGE_EXCEPTION_DIR = "spark.tokenRange.exceptionDir"; // aaa/bbb
-    public static final String TOKEN_RANGE_EXCEPTION_FILE = "spark.input.partitionFile"; // aaa/bbb/filename
+    public static final String PARTITIONS_TOKEN_RANGE_FILE = "spark.input.partitionFile"; // aaa/bbb/filename
     static {
             types.put(TOKEN_RANGE_EXCEPTION_DIR, PropertyType.STRING);
-            types.put(TOKEN_RANGE_EXCEPTION_FILE, PropertyType.STRING);
+            types.put(PARTITIONS_TOKEN_RANGE_FILE, PropertyType.STRING);
     }
     //==========================================================================
     // Guardrails and Transformations
