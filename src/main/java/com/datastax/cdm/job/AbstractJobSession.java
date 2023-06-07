@@ -42,18 +42,18 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
             printStatsAfter = propertyHelper.getInteger(KnownProperties.PRINT_STATS_AFTER);
         }
 
-        readLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_READ));
-        writeLimiter = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_LIMIT_WRITE));
+        rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
+        rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
         maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
 
         tokenRangeExceptionDir = propertyHelper.getString(KnownProperties.TOKEN_RANGE_EXCEPTION_DIR);
         exceptionFileName = propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE);
 
         logger.info("PARAM -- Max Retries: {}", maxRetries);
-        logger.info("PARAM -- ReadRateLimit: {}", readLimiter.getRate());
-        logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
         logger.info("PARAM -- Token range exception dir: {}", tokenRangeExceptionDir);
         logger.info("PARAM -- Token range exception file name: {}", exceptionFileName);
+        logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
+        logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
 
         this.originSession = new EnhancedSession(propertyHelper, originSession, true);
         this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);

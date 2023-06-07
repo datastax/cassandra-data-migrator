@@ -3,8 +3,6 @@ package com.datastax.cdm.job;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
-import com.datastax.cdm.feature.Featureset;
-import com.datastax.cdm.feature.Guardrail;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import org.apache.logging.log4j.ThreadContext;
@@ -52,7 +50,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
             ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
             String checkString;
             for (Row originRow : resultSet) {
-                readLimiter.acquire(1);
+                rateLimiterOrigin.acquire(1);
                 readCounter.addAndGet(1);
 
                 if (readCounter.get() % printStatsAfter == 0) {

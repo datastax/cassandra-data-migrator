@@ -20,39 +20,39 @@ public class KnownProperties {
     //==========================================================================
     // Common connection parameters
     //==========================================================================
-    public static final String ORIGIN_CONNECT_HOST           = "spark.cdm.origin.connect.host";
-    public static final String ORIGIN_CONNECT_PORT           = "spark.cdm.origin.connect.port";
-    public static final String ORIGIN_CONNECT_SCB            = "spark.cdm.origin.connect.scb";
-    public static final String ORIGIN_CONNECT_USERNAME       = "spark.cdm.origin.connect.username";
-    public static final String ORIGIN_CONNECT_PASSWORD       = "spark.cdm.origin.connect.password";
+    public static final String CONNECT_ORIGIN_HOST           = "spark.cdm.connect.origin.host";
+    public static final String CONNECT_ORIGIN_PORT           = "spark.cdm.connect.origin.port";
+    public static final String CONNECT_ORIGIN_SCB            = "spark.cdm.connect.origin.scb";
+    public static final String CONNECT_ORIGIN_USERNAME       = "spark.cdm.connect.origin.username";
+    public static final String CONNECT_ORIGIN_PASSWORD       = "spark.cdm.connect.origin.password";
 
 
-    public static final String TARGET_CONNECT_HOST           = "spark.cdm.target.connect.host";
-    public static final String TARGET_CONNECT_PORT           = "spark.cdm.target.connect.port";
-    public static final String TARGET_CONNECT_SCB            = "spark.cdm.target.connect.scb";
-    public static final String TARGET_CONNECT_USERNAME       = "spark.cdm.target.connect.username";
-    public static final String TARGET_CONNECT_PASSWORD       = "spark.cdm.target.connect.password";
+    public static final String CONNECT_TARGET_HOST           = "spark.cdm.connect.target.host";
+    public static final String CONNECT_TARGET_PORT           = "spark.cdm.connect.target.port";
+    public static final String CONNECT_TARGET_SCB            = "spark.cdm.connect.target.scb";
+    public static final String CONNECT_TARGET_USERNAME       = "spark.cdm.connect.target.username";
+    public static final String CONNECT_TARGET_PASSWORD       = "spark.cdm.connect.target.password";
 
     static {
-           types.put(ORIGIN_CONNECT_HOST, PropertyType.STRING);
-        defaults.put(ORIGIN_CONNECT_HOST, "localhost");
-           types.put(ORIGIN_CONNECT_PORT, PropertyType.NUMBER);
-        defaults.put(ORIGIN_CONNECT_PORT, "9042");
-           types.put(ORIGIN_CONNECT_SCB, PropertyType.STRING);
-           types.put(ORIGIN_CONNECT_USERNAME, PropertyType.STRING);
-        defaults.put(ORIGIN_CONNECT_USERNAME, "cassandra");
-           types.put(ORIGIN_CONNECT_PASSWORD, PropertyType.STRING);
-        defaults.put(ORIGIN_CONNECT_PASSWORD, "cassandra");
+           types.put(CONNECT_ORIGIN_HOST, PropertyType.STRING);
+        defaults.put(CONNECT_ORIGIN_HOST, "localhost");
+           types.put(CONNECT_ORIGIN_PORT, PropertyType.NUMBER);
+        defaults.put(CONNECT_ORIGIN_PORT, "9042");
+           types.put(CONNECT_ORIGIN_SCB, PropertyType.STRING);
+           types.put(CONNECT_ORIGIN_USERNAME, PropertyType.STRING);
+        defaults.put(CONNECT_ORIGIN_USERNAME, "cassandra");
+           types.put(CONNECT_ORIGIN_PASSWORD, PropertyType.STRING);
+        defaults.put(CONNECT_ORIGIN_PASSWORD, "cassandra");
 
-           types.put(TARGET_CONNECT_HOST, PropertyType.STRING);
-        defaults.put(TARGET_CONNECT_HOST, "localhost");
-           types.put(TARGET_CONNECT_PORT, PropertyType.NUMBER);
-        defaults.put(TARGET_CONNECT_PORT, "9042");
-           types.put(TARGET_CONNECT_SCB, PropertyType.STRING);
-           types.put(TARGET_CONNECT_USERNAME, PropertyType.STRING);
-        defaults.put(TARGET_CONNECT_USERNAME, "cassandra");
-           types.put(TARGET_CONNECT_PASSWORD, PropertyType.STRING);
-        defaults.put(TARGET_CONNECT_PASSWORD, "cassandra");
+           types.put(CONNECT_TARGET_HOST, PropertyType.STRING);
+        defaults.put(CONNECT_TARGET_HOST, "localhost");
+           types.put(CONNECT_TARGET_PORT, PropertyType.NUMBER);
+        defaults.put(CONNECT_TARGET_PORT, "9042");
+           types.put(CONNECT_TARGET_SCB, PropertyType.STRING);
+           types.put(CONNECT_TARGET_USERNAME, PropertyType.STRING);
+        defaults.put(CONNECT_TARGET_USERNAME, "cassandra");
+           types.put(CONNECT_TARGET_PASSWORD, PropertyType.STRING);
+        defaults.put(CONNECT_TARGET_PASSWORD, "cassandra");
 
     }
 
@@ -99,13 +99,13 @@ public class KnownProperties {
 
     public static final String PERF_NUM_PARTS                   = "spark.cdm.perfops.numParts";             // 10000, was spark.splitSize
     public static final String PERF_BATCH_SIZE                  = "spark.cdm.perfops.batchSize";             // 5
-    public static final String PERF_LIMIT_READ                  = "spark.cdm.perfops.readRateLimit";         // 20000
-    public static final String PERF_LIMIT_WRITE                 = "spark.cdm.perfops.writeRateLimit";        // 40000
+    public static final String PERF_RATELIMIT_ORIGIN            = "spark.cdm.perfops.ratelimit.origin";      // 20000
+    public static final String PERF_RATELIMIT_TARGET            = "spark.cdm.perfops.ratelimit.target";      // 40000
 
     public static final String READ_CL                          = "spark.cdm.perfops.consistency.read";
     public static final String WRITE_CL                         = "spark.cdm.perfops.consistency.write";
     public static final String PERF_FETCH_SIZE                  = "spark.cdm.perfops.fetchSizeInRows";
-    public static final String MAX_RETRIES                      = "spark.cdm.perfops.error.limit";
+    public static final String MAX_RETRIES                      = "spark.cdm.perfops.errorLimit";
     public static final String PRINT_STATS_AFTER                = "spark.cdm.perfops.printStatsAfter";
 
     static {
@@ -120,10 +120,10 @@ public class KnownProperties {
         defaults.put(PERF_NUM_PARTS, "10000");
            types.put(PERF_BATCH_SIZE, PropertyType.NUMBER);
         defaults.put(PERF_BATCH_SIZE, "5");
-           types.put(PERF_LIMIT_READ, PropertyType.NUMBER);
-        defaults.put(PERF_LIMIT_READ, "20000");
-           types.put(PERF_LIMIT_WRITE, PropertyType.NUMBER);
-        defaults.put(PERF_LIMIT_WRITE, "40000");
+           types.put(PERF_RATELIMIT_ORIGIN, PropertyType.NUMBER);
+        defaults.put(PERF_RATELIMIT_ORIGIN, "20000");
+           types.put(PERF_RATELIMIT_TARGET, PropertyType.NUMBER);
+        defaults.put(PERF_RATELIMIT_TARGET, "40000");
 
            types.put(READ_CL, PropertyType.STRING);
         defaults.put(READ_CL, "LOCAL_QUORUM");
@@ -179,7 +179,7 @@ public class KnownProperties {
     //==========================================================================
     public static final String PARTITION_MIN               = "spark.cdm.filter.cassandra.partition.min";
     public static final String PARTITION_MAX               = "spark.cdm.filter.cassandra.partition.max";
-    public static final String FILTER_CQL_WHERE_CONDITION  = "spark.cdm.filter.cassandra.where.condition";
+    public static final String FILTER_CQL_WHERE_CONDITION  = "spark.cdm.filter.cassandra.whereCondition";
     static {
            types.put(PARTITION_MIN, PropertyType.STRING);
            types.put(PARTITION_MAX, PropertyType.STRING);
@@ -242,13 +242,13 @@ public class KnownProperties {
     //==========================================================================
     // Properties that configure origin TLS
     //==========================================================================
-    public static final String ORIGIN_TLS_ENABLED             = "spark.cdm.origin.connect.tls.enabled";         // false
-    public static final String ORIGIN_TLS_TRUSTSTORE_PATH     = "spark.cdm.origin.connect.tls.trustStore.path";
-    public static final String ORIGIN_TLS_TRUSTSTORE_PASSWORD = "spark.cdm.origin.connect.tls.trustStore.password";
-    public static final String ORIGIN_TLS_TRUSTSTORE_TYPE     = "spark.cdm.origin.connect.tls.trustStore.type";     // JKS
-    public static final String ORIGIN_TLS_KEYSTORE_PATH       = "spark.cdm.origin.connect.tls.keyStore.path";
-    public static final String ORIGIN_TLS_KEYSTORE_PASSWORD   = "spark.cdm.origin.connect.tls.keyStore.password";
-    public static final String ORIGIN_TLS_ALGORITHMS          = "spark.cdm.origin.connect.tls.enabledAlgorithms";   // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
+    public static final String ORIGIN_TLS_ENABLED             = "spark.cdm.connect.origin.tls.enabled";         // false
+    public static final String ORIGIN_TLS_TRUSTSTORE_PATH     = "spark.cdm.connect.origin.tls.trustStore.path";
+    public static final String ORIGIN_TLS_TRUSTSTORE_PASSWORD = "spark.cdm.connect.origin.tls.trustStore.password";
+    public static final String ORIGIN_TLS_TRUSTSTORE_TYPE     = "spark.cdm.connect.origin.tls.trustStore.type";     // JKS
+    public static final String ORIGIN_TLS_KEYSTORE_PATH       = "spark.cdm.connect.origin.tls.keyStore.path";
+    public static final String ORIGIN_TLS_KEYSTORE_PASSWORD   = "spark.cdm.connect.origin.tls.keyStore.password";
+    public static final String ORIGIN_TLS_ALGORITHMS          = "spark.cdm.connect.origin.tls.enabledAlgorithms";   // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
     static {
         types.put(ORIGIN_TLS_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_TLS_ENABLED, "false");
@@ -265,13 +265,13 @@ public class KnownProperties {
     //==========================================================================
     // Properties that configure target TLS
     //==========================================================================
-    public static final String TARGET_TLS_ENABLED             = "spark.cdm.target.connect.tls.enabled";         // false
-    public static final String TARGET_TLS_TRUSTSTORE_PATH     = "spark.cdm.target.connect.tls.trustStore.path";
-    public static final String TARGET_TLS_TRUSTSTORE_PASSWORD = "spark.cdm.target.connect.tls.trustStore.password";
-    public static final String TARGET_TLS_TRUSTSTORE_TYPE     = "spark.cdm.target.connect.tls.trustStore.type";     // JKS
-    public static final String TARGET_TLS_KEYSTORE_PATH       = "spark.cdm.target.connect.tls.keyStore.path";
-    public static final String TARGET_TLS_KEYSTORE_PASSWORD   = "spark.cdm.target.connect.tls.keyStore.password";
-    public static final String TARGET_TLS_ALGORITHMS          = "spark.cdm.target.connect.tls.enabledAlgorithms";   // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
+    public static final String TARGET_TLS_ENABLED             = "spark.cdm.connect.target.tls.enabled";         // false
+    public static final String TARGET_TLS_TRUSTSTORE_PATH     = "spark.cdm.connect.target.tls.trustStore.path";
+    public static final String TARGET_TLS_TRUSTSTORE_PASSWORD = "spark.cdm.connect.target.tls.trustStore.password";
+    public static final String TARGET_TLS_TRUSTSTORE_TYPE     = "spark.cdm.connect.target.tls.trustStore.type";     // JKS
+    public static final String TARGET_TLS_KEYSTORE_PATH       = "spark.cdm.connect.target.tls.keyStore.path";
+    public static final String TARGET_TLS_KEYSTORE_PASSWORD   = "spark.cdm.connect.target.tls.keyStore.password";
+    public static final String TARGET_TLS_ALGORITHMS          = "spark.cdm.connect.target.tls.enabledAlgorithms";   // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
     static {
         types.put(TARGET_TLS_ENABLED, PropertyType.BOOLEAN);
         defaults.put(TARGET_TLS_ENABLED, "false");
