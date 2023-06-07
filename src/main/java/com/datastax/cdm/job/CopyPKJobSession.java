@@ -56,6 +56,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
                 return;
             }
 
+            rateLimiterOrigin.acquire(1);
             Record recordFromOrigin = originSelectByPKStatement.getRecord(pk);
             if (null == recordFromOrigin) {
                 missingCounter.incrementAndGet();
@@ -79,7 +80,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
                 }
             }
 
-            writeLimiter.acquire(1);
+            rateLimiterTarget.acquire(1);
             targetSession.getTargetUpsertStatement().putRecord(record);
             writeCounter.incrementAndGet();
 
