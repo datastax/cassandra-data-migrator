@@ -50,7 +50,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
             ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
             String checkString;
             for (Row originRow : resultSet) {
-                originLimiter.acquire(1);
+                rateLimiterOrigin.acquire(1);
                 readCounter.addAndGet(1);
 
                 if (readCounter.get() % printStatsAfter == 0) {

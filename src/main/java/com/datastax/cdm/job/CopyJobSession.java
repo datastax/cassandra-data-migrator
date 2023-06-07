@@ -73,7 +73,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                 Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<>();
 
                 for (Row originRow : resultSet) {
-                    originLimiter.acquire(1);
+                    rateLimiterOrigin.acquire(1);
                     readCnt++;
                     if (readCnt % printStatsAfter == 0) {
                         printCounts(false);
@@ -101,7 +101,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                             continue;
                         }
 
-                        targetLimiter.acquire(1);
+                        rateLimiterTarget.acquire(1);
                         batch = writeAsync(batch, writeResults, boundUpsert);
                         unflushedWrites++;
 
@@ -165,7 +165,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
     private BoundStatement bind(Record r) {
         if (isCounterTable) {
-            targetLimiter.acquire(1);
+            rateLimiterTarget.acquire(1);
             Record targetRecord = targetSelectByPKStatement.getRecord(r.getPk());
             if (null != targetRecord) {
                 r.setTargetRow(targetRecord.getTargetRow());
