@@ -132,6 +132,13 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <scm>
+    <connection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</connection>
+    <developerConnection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</developerConnection>
+    <url>https://github.com/datastax/cassandra-data-migrator</url>
+    <tag>@{project.version}</tag>
+  </scm>
 
   <build>
     <resources>
