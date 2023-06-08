@@ -3,12 +3,11 @@
 
   <groupId>datastax.cdm</groupId>
   <artifactId>cassandra-data-migrator</artifactId>
-  <version>${revision}</version>
+  <version>4.0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>4.0.0-SNAPSHOT</revision>
     <scala.version>2.12.17</scala.version>
     <scala.main.version>2.12</scala.main.version>
     <spark.version>3.3.1</spark.version>
@@ -24,9 +23,6 @@
       <id>github</id>
       <name>GitHub Packages</name>
       <url>https://maven.pkg.github.com/datastax/cassandra-data-migrator</url>
-      <snapshots>
-          <enabled>false</enabled>
-      </snapshots>
     </repository>
   </distributionManagement>
 
@@ -132,6 +128,13 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <scm>
+    <connection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</connection>
+    <developerConnection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</developerConnection>
+    <url>https://github.com/datastax/cassandra-data-migrator</url>
+    <tag>@{project.version}</tag>
+  </scm>
 
   <build>
     <resources>
