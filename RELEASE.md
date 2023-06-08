@@ -1,5 +1,9 @@
 # Release Notes
 
+## [4.0.1] - 2023-06-08
+- Fixes broken maven link in docker build process
+- Upgrades to latest stable Maven 3.x
+
 ## [4.0.0] - 2023-06-02
 This release is a major code refactor of Cassandra Data Migrator, focused on internal code structure and organization. 
 Automated testing (both unit and integration) was introduced and incorporated into the build process. It includes all
