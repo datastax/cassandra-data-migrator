@@ -77,7 +77,7 @@ abstract class BaseJob[T: ClassTag] extends App {
     this.parts = getParts(numSplits)
     this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
     abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())
-    abstractLogger.info("Spark parallelize created : " + slices.count() + " slices!");
+    abstractLogger.info("Spark parallelize created : " + slices.getNumPartitions + " slices!");
 
   }
 
