@@ -142,6 +142,7 @@ When running in above mode the tool assumes a `partitions.csv` file to be presen
 - Supports migration/validation from and to [Azure Cosmos Cassandra](https://learn.microsoft.com/en-us/azure/cosmos-db/cassandra)
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Supports adding custom fixed `writetime`
+- Validation - Log partitions range level exceptions, use the exceptions file as input for rerun  
 
 # Known Limitations
 - This tool does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.

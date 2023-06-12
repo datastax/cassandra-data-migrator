@@ -13,6 +13,7 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.properties.KnownProperties;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
@@ -154,10 +155,20 @@ public class DiffJobSession extends CopyJobSession {
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts);
+                if (StringUtils.isNotBlank(tokenRangeExceptionDir) && attempts == maxAttempts) {
+                    logFailedPartitionsInFile(min, max);
+                }
             }
         }
     }
 
+    private void logFailedPartitionsInFile(BigInteger min, BigInteger max) {
+        try {
+            ExceptionHandler.FileAppend(tokenRangeExceptionDir, exceptionFileName, min + "," + max);
+        } catch (Exception ee) {
+            logger.error("Error occurred while writing to token range file min: {} max: {}", min, max, ee);
+        }
+    }
     private void diffAndClear(List<Record> recordsToDiff) {
         for (Record record : recordsToDiff) {
             try {

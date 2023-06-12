@@ -46,7 +46,12 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
         maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
 
+        tokenRangeExceptionDir = propertyHelper.getString(KnownProperties.TOKEN_RANGE_EXCEPTION_DIR);
+        exceptionFileName = propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE);
+
         logger.info("PARAM -- Max Retries: {}", maxRetries);
+        logger.info("PARAM -- Token range exception dir: {}", tokenRangeExceptionDir);
+        logger.info("PARAM -- Token range exception file name: {}", exceptionFileName);
         logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
         logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
 
