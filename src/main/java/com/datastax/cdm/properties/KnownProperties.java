@@ -87,7 +87,6 @@ public class KnownProperties {
 
     static {
            types.put(TARGET_KEYSPACE_TABLE, PropertyType.STRING);
-        required.add(TARGET_KEYSPACE_TABLE);
     }
 
     //==========================================================================
