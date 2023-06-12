@@ -36,7 +36,7 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 Note:
@@ -46,18 +46,18 @@ Note:
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" --driver-memory 25G --executor-memory 25G /
---class datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 # Steps for Data-Validation:
 
-- To run the job in Data validation mode, use class option `--class datastax.cdm.job.DiffData` as shown below
+- To run the job in Data validation mode, use class option `--class com.datastax.cdm.job.DiffData` as shown below
 
 ```
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below
@@ -83,12 +83,12 @@ Note:
 - The validation job will never delete records from target i.e. it only adds or updates data on target
 
 # Migrating specific partition ranges
-- You can also use the tool to migrate specific partition ranges using class option `--class datastax.cdm.job.MigratePartitionsFromFile` as shown below
+- You can also use the tool to migrate specific partition ranges using class option `--class com.datastax.cdm.job.MigratePartitionsFromFile` as shown below
 ```
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.cdm.job.MigratePartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.MigratePartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder in the below format, where each line (`min,max`) represents a partition-range
@@ -107,12 +107,12 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 grep "ERROR CopyJobSession: Error with PartitionRange" /path/to/logfile_name.txt | awk '{print $13","$15}' > partitions.csv
 ```
 # Data validation for specific partition ranges
-- You can also use the tool to validate data for a specific partition ranges using class option `--class datastax.cdm.job.DiffPartitionsFromFile` as shown below,
+- You can also use the tool to validate data for a specific partition ranges using class option `--class com.datastax.cdm.job.DiffPartitionsFromFile` as shown below,
 ```
 ./spark-submit --properties-file cdm.properties /
 --conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
---class datastax.cdm.job.DiffPartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.DiffPartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder.
@@ -124,7 +124,7 @@ When running in above mode the tool assumes a `partitions.csv` file to be presen
 --conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --conf spark.cdm.feature.guardrail.colSizeInKB=10000 /
 --master "local[*]" /
---class datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 # Features
