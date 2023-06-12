@@ -30,6 +30,9 @@ public abstract class BaseJobSession {
 
     protected Integer printStatsAfter = 100000;
 
+    protected String tokenRangeExceptionDir;
+    protected String exceptionFileName;
+
     protected BaseJobSession(SparkConf sc) {
         propertyHelper.initializeSparkConf(sc);
         this.featureMap = calcFeatureMap(propertyHelper);

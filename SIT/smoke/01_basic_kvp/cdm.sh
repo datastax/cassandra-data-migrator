@@ -10,7 +10,7 @@ EOF
 spark-submit \
   --properties-file /smoke/01_basic_kvp/migrate.properties \
   --master "local[*]" \
-  --class datastax.astra.migrate.Migrate /local/cassandra-data-migrator.jar 
+  --class datastax.cdm.job.Migrate /local/cassandra-data-migrator.jar
 
 cat <<EOF
 !!!!!!!!
@@ -21,4 +21,4 @@ EOF
 spark-submit \
   --properties-file /smoke/01_basic_kvp/migrate.properties \
   --master "local[*]" \
-  --class datastax.astra.migrate.DiffData /local/cassandra-data-migrator.jar
+  --class datastax.cdm.job.DiffData /local/cassandra-data-migrator.jar
