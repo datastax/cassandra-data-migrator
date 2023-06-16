@@ -1,4 +1,8 @@
 # Release Notes
+## [4.0.2] - 2023-06-16
+- Capture failed partitions in a file for easier reruns 
+- Optimized mvn to reduce jar size
+- Fixed bugs in docs 
 
 ## [4.0.1] - 2023-06-08
 - Fixes broken maven link in docker build process

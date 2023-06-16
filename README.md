@@ -12,7 +12,7 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
     - All migration tools (`cassandra-data-migrator` + `dsbulk` + `cqlsh`) would be available in the `/assets/` folder of the container
 
 ## Install as a JAR file
-- Download the latest jar file from the GitHub [packages area here](https://github.com/orgs/datastax/packages?repo_name=cassandra-data-migrator)
+- Download the latest jar file from the GitHub [packages area here](https://github.com/datastax/cassandra-data-migrator/packages/1832128)
 
 ### Prerequisite
 - Install Java8 as spark binaries are compiled with it.
@@ -101,16 +101,16 @@ When running in above mode the tool assumes a `partitions.csv` file to be presen
 This mode is specifically useful to processes a subset of partition-ranges that may have failed during a previous run.
 
 > **Note:**
-> Here is a quick tip to prepare `partitions.csv` from the log file,
+> A file ending with `*_partitions.csv` will be auto created by the Migration & Validation job in the above format containing any failed partition ranges. Just rename it as below & run the above job.
 
 ```
-grep "ERROR CopyJobSession: Error with PartitionRange" /path/to/logfile_name.txt | awk '{print $13","$15}' > partitions.csv
+mv <keyspace>.<table>_partitions.csv partitions.csv
 ```
 # Data validation for specific partition ranges
 - You can also use the tool to validate data for a specific partition ranges using class option `--class com.datastax.cdm.job.DiffPartitionsFromFile` as shown below,
 ```
 ./spark-submit --properties-file cdm.properties /
---conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
+--conf spark.cdm.schema.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --master "local[*]" /
 --class com.datastax.cdm.job.DiffPartitionsFromFile cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
@@ -118,10 +118,10 @@ grep "ERROR CopyJobSession: Error with PartitionRange" /path/to/logfile_name.txt
 When running in above mode the tool assumes a `partitions.csv` file to be present in the current folder.
 
 # Perform large-field Guardrail violation checks
-- The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class datastax.astra.migrate.Guardrail` as shown below
+- The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class com.datastax.cdm.job.GuardrailCheck` as shown below
 ```
 ./spark-submit --properties-file cdm.properties /
---conf spark.origin.keyspaceTable="<keyspace-name>.<table-name>" /
+--conf spark.cdm.schema.origin.keyspaceTable="<keyspace-name>.<table-name>" /
 --conf spark.cdm.feature.guardrail.colSizeInKB=10000 /
 --master "local[*]" /
 --class com.datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
