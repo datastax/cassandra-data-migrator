@@ -1,26 +1,27 @@
 package com.datastax.cdm.job;
 
+import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
+import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.data.*;
 import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.Guardrail;
+import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
-import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
-import com.datastax.cdm.properties.KnownProperties;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -28,10 +29,6 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 public class DiffJobSession extends CopyJobSession {
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    boolean logDebug = logger.isDebugEnabled();
-    boolean logTrace = logger.isTraceEnabled();
-
     private static DiffJobSession diffJobSession;
     protected final Boolean autoCorrectMissing;
     protected final Boolean autoCorrectMismatch;
@@ -42,7 +39,6 @@ public class DiffJobSession extends CopyJobSession {
     private final AtomicLong correctedMismatchCounter = new AtomicLong(0);
     private final AtomicLong validCounter = new AtomicLong(0);
     private final AtomicLong skippedCounter = new AtomicLong(0);
-
     private final boolean isCounterTable;
     private final boolean forceCounterWhenMissing;
     private final List<String> targetColumnNames;
@@ -51,6 +47,9 @@ public class DiffJobSession extends CopyJobSession {
     private final int explodeMapKeyIndex;
     private final int explodeMapValueIndex;
     private final List<Integer> constantColumnIndexes;
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    boolean logDebug = logger.isDebugEnabled();
+    boolean logTrace = logger.isTraceEnabled();
 
     public DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -68,7 +67,7 @@ public class DiffJobSession extends CopyJobSession {
         this.originColumnTypes = this.originSession.getCqlTable().getColumnCqlTypes();
 
         ConstantColumns constantColumnsFeature = (ConstantColumns) this.targetSession.getCqlTable().getFeature(Featureset.CONSTANT_COLUMNS);
-        if (null!=constantColumnsFeature && constantColumnsFeature.isEnabled()) {
+        if (null != constantColumnsFeature && constantColumnsFeature.isEnabled()) {
             constantColumnIndexes = constantColumnsFeature.getNames().stream()
                     .map(targetColumnNames::indexOf)
                     .collect(Collectors.toList());
@@ -78,19 +77,19 @@ public class DiffJobSession extends CopyJobSession {
         }
 
         ExplodeMap explodeMapFeature = (ExplodeMap) this.targetSession.getCqlTable().getFeature(Featureset.EXPLODE_MAP);
-        if (null!=explodeMapFeature && explodeMapFeature.isEnabled()) {
+        if (null != explodeMapFeature && explodeMapFeature.isEnabled()) {
             this.explodeMapKeyIndex = this.targetSession.getCqlTable().indexOf(explodeMapFeature.getKeyColumnName());
             this.explodeMapValueIndex = this.targetSession.getCqlTable().indexOf(explodeMapFeature.getValueColumnName());
-            if (logDebug) logger.debug("Explode Map KeyIndex={}, ValueIndex={}", this.explodeMapKeyIndex, this.explodeMapValueIndex);
-        }
-        else {
+            if (logDebug)
+                logger.debug("Explode Map KeyIndex={}, ValueIndex={}", this.explodeMapKeyIndex, this.explodeMapValueIndex);
+        } else {
             this.explodeMapKeyIndex = -1;
             this.explodeMapValueIndex = -1;
         }
 
-        logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
-        logger.info("CQL -- target select: {}",this.targetSession.getTargetSelectByPKStatement().getCQL());
-        logger.info("CQL -- target upsert: {}",this.targetSession.getTargetUpsertStatement().getCQL());
+        logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
+        logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
+        logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
     @Override
@@ -99,7 +98,7 @@ public class DiffJobSession extends CopyJobSession {
     }
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
-        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min,max));
+        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         boolean done = false;
         int maxAttempts = maxRetries + 1;
@@ -119,9 +118,10 @@ public class DiffJobSession extends CopyJobSession {
                     if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
                         readCounter.incrementAndGet();
                         skippedCounter.incrementAndGet();
-                    }
-                    else {
-                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {printCounts(false);}
+                    } else {
+                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
+                            printCounts(false);
+                        }
                         for (Record r : pkFactory.toValidRecordList(record)) {
 
                             if (guardrailEnabled) {
@@ -136,10 +136,9 @@ public class DiffJobSession extends CopyJobSession {
                             rateLimiterTarget.acquire(1);
                             CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement.getAsyncResult(r.getPk());
 
-                            if (null==targetResult) {
+                            if (null == targetResult) {
                                 skippedCounter.incrementAndGet();
-                            }
-                            else {
+                            } else {
                                 r.setAsyncTargetRow(targetResult);
                                 recordsToDiff.add(r);
                                 if (recordsToDiff.size() > fetchSizeInRows) {
@@ -155,20 +154,14 @@ public class DiffJobSession extends CopyJobSession {
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts);
-                if (StringUtils.isNotBlank(tokenRangeExceptionDir) && attempts == maxAttempts) {
-                    logFailedPartitionsInFile(min, max);
+                if (attempts == maxAttempts) {
+                    logFailedPartitionsInFile(tokenRangeExceptionDir,
+                            propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE), min, max);
                 }
             }
         }
     }
 
-    private void logFailedPartitionsInFile(BigInteger min, BigInteger max) {
-        try {
-            ExceptionHandler.FileAppend(tokenRangeExceptionDir, exceptionFileName, min + "," + max);
-        } catch (Exception ee) {
-            logger.error("Error occurred while writing to token range file min: {} max: {}", min, max, ee);
-        }
-    }
     private void diffAndClear(List<Record> recordsToDiff) {
         for (Record record : recordsToDiff) {
             try {
@@ -233,8 +226,7 @@ public class DiffJobSession extends CopyJobSession {
                 correctedMismatchCounter.incrementAndGet();
                 logger.error("Corrected mismatch row in target: {}", record.getPk());
             }
-        }
-        else {
+        } else {
             validCounter.incrementAndGet();
         }
     }
@@ -244,34 +236,38 @@ public class DiffJobSession extends CopyJobSession {
         IntStream.range(0, targetColumnNames.size()).parallel().forEach(targetIndex -> {
             String previousLabel = ThreadContext.get(THREAD_CONTEXT_LABEL);
             try {
-                ThreadContext.put(THREAD_CONTEXT_LABEL, pk+":"+targetColumnNames.get(targetIndex));
-                Object origin=null;
-                int originIndex=-2; // this to distinguish default from indexOf result
-                Object targetAsOriginType=null;
+                ThreadContext.put(THREAD_CONTEXT_LABEL, pk + ":" + targetColumnNames.get(targetIndex));
+                Object origin = null;
+                int originIndex = -2; // this to distinguish default from indexOf result
+                Object targetAsOriginType = null;
                 try {
                     if (constantColumnIndexes.contains(targetIndex)) {
-                        if (logTrace) logger.trace("PK {}, targetIndex {} skipping constant column {}", pk, targetIndex, targetColumnNames.get(targetIndex));
+                        if (logTrace)
+                            logger.trace("PK {}, targetIndex {} skipping constant column {}", pk, targetIndex, targetColumnNames.get(targetIndex));
                         return; // nothing to compare in origin
                     }
                     targetAsOriginType = targetSession.getCqlTable().getAndConvertData(targetIndex, targetRow);
                     originIndex = targetSession.getCqlTable().getCorrespondingIndex(targetIndex);
-                    if (originIndex>=0) {
+                    if (originIndex >= 0) {
                         origin = originSession.getCqlTable().getData(originIndex, originRow);
-                        if (logTrace) logger.trace("PK {}, targetIndex {} column {} using value from origin table at index {}: {}", pk, targetIndex, targetColumnNames.get(targetIndex), originIndex, origin);
-                    } else if (targetIndex==explodeMapKeyIndex) {
+                        if (logTrace)
+                            logger.trace("PK {}, targetIndex {} column {} using value from origin table at index {}: {}", pk, targetIndex, targetColumnNames.get(targetIndex), originIndex, origin);
+                    } else if (targetIndex == explodeMapKeyIndex) {
                         origin = pk.getExplodeMapKey();
-                        if (logTrace) logger.trace("PK {}, targetIndex {} column {} using explodeMapKey stored on PK: {}", pk, targetIndex, targetColumnNames.get(targetIndex), origin);
+                        if (logTrace)
+                            logger.trace("PK {}, targetIndex {} column {} using explodeMapKey stored on PK: {}", pk, targetIndex, targetColumnNames.get(targetIndex), origin);
                     } else if (targetIndex == explodeMapValueIndex) {
                         origin = pk.getExplodeMapValue();
-                        if (logTrace) logger.trace("PK {}, targetIndex {} column {} using explodeMapValue stored on PK: {}", pk, targetIndex, targetColumnNames.get(targetIndex), origin);
-                    }
-                    else {
-                        throw new RuntimeException("Target column \""+targetColumnNames.get(targetIndex)+"\" at index "+targetIndex+" cannot be found on Origin, and is neither a constant column (indexes:"+constantColumnIndexes+") nor an explode map column (keyIndex:"+explodeMapKeyIndex+", valueIndex:"+explodeMapValueIndex+")");
+                        if (logTrace)
+                            logger.trace("PK {}, targetIndex {} column {} using explodeMapValue stored on PK: {}", pk, targetIndex, targetColumnNames.get(targetIndex), origin);
+                    } else {
+                        throw new RuntimeException("Target column \"" + targetColumnNames.get(targetIndex) + "\" at index " + targetIndex + " cannot be found on Origin, and is neither a constant column (indexes:" + constantColumnIndexes + ") nor an explode map column (keyIndex:" + explodeMapKeyIndex + ", valueIndex:" + explodeMapValueIndex + ")");
                     }
 
-                    if (logDebug) logger.debug("Diff PK {}, target/origin index: {}/{} target/origin column: {}/{} target/origin value: {}/{}", pk, targetIndex, originIndex, targetColumnNames.get(targetIndex), originIndex<0?"null":originSession.getCqlTable().getColumnNames(false).get(originIndex), targetAsOriginType, origin);
+                    if (logDebug)
+                        logger.debug("Diff PK {}, target/origin index: {}/{} target/origin column: {}/{} target/origin value: {}/{}", pk, targetIndex, originIndex, targetColumnNames.get(targetIndex), originIndex < 0 ? "null" : originSession.getCqlTable().getColumnNames(false).get(originIndex), targetAsOriginType, origin);
                     if (null != origin &&
-                            DataUtility.diff(origin, targetAsOriginType))  {
+                            DataUtility.diff(origin, targetAsOriginType)) {
                         String originContent = CqlData.getFormattedContent(CqlData.toType(originColumnTypes.get(originIndex)), origin);
                         String targetContent = CqlData.getFormattedContent(CqlData.toType(targetColumnTypes.get(targetIndex)), targetAsOriginType);
                         diffData.append("Target column:").append(targetColumnNames.get(targetIndex))
@@ -282,14 +278,14 @@ public class DiffJobSession extends CopyJobSession {
                     String exceptionName;
                     String myClassMethodLine = DataUtility.getMyClassMethodLine(e);
                     if (e instanceof ArrayIndexOutOfBoundsException) {
-                        exceptionName = "ArrayIndexOutOfBoundsException@"+myClassMethodLine;
+                        exceptionName = "ArrayIndexOutOfBoundsException@" + myClassMethodLine;
                     } else {
-                        exceptionName = e+"@"+myClassMethodLine;
+                        exceptionName = e + "@" + myClassMethodLine;
                     }
                     diffData.append("Target column:").append(targetColumnNames.get(targetIndex)).append(" Exception ").append(exceptionName).append(" targetIndex:").append(targetIndex).append(" originIndex:").append(originIndex).append("; ");
                 }
             } finally {
-                ThreadContext.put(THREAD_CONTEXT_LABEL,previousLabel);
+                ThreadContext.put(THREAD_CONTEXT_LABEL, previousLabel);
             }
         });
         return diffData.toString();

@@ -3,36 +3,37 @@ package com.datastax.cdm.job;
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
-import com.datastax.cdm.feature.Guardrail;
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
+import com.datastax.cdm.feature.Guardrail;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.*;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
     private static CopyJobSession copyJobSession;
+    private final PKFactory pkFactory;
+    private final boolean isCounterTable;
+    private final Integer fetchSize;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong skippedCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
     protected AtomicLong errorCounter = new AtomicLong(0);
-
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
-    private final PKFactory pkFactory;
-    private final boolean isCounterTable;
-    private Integer batchSize;
-    private final Integer fetchSize;
+    private final Integer batchSize;
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -42,9 +43,9 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
         batchSize = this.originSession.getCqlTable().getBatchSize();
 
-        logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
-        logger.info("CQL -- target select: {}",this.targetSession.getTargetSelectByPKStatement().getCQL());
-        logger.info("CQL -- target upsert: {}",this.targetSession.getTargetUpsertStatement().getCQL());
+        logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
+        logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
+        logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
     @Override
@@ -53,7 +54,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     }
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
-        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min,max));
+        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
         boolean done = false;
@@ -127,6 +128,8 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                     writeCounter.addAndGet(flushedWriteCnt);
                     skippedCounter.addAndGet(skipCnt);
                     errorCounter.addAndGet(readCnt - flushedWriteCnt - skipCnt);
+                    logFailedPartitionsInFile(tokenRangeExceptionDir,
+                            propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE), min, max);
                 }
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
@@ -182,8 +185,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                 return BatchStatement.newInstance(BatchType.UNLOGGED);
             }
             return batch;
-        }
-        else {
+        } else {
             writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
             return batch;
         }
