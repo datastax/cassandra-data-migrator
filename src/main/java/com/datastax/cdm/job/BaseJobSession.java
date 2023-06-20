@@ -3,6 +3,7 @@ package com.datastax.cdm.job;
 import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.FeatureFactory;
 import com.datastax.cdm.feature.Featureset;
+import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang3.StringUtils;
@@ -25,14 +26,13 @@ public abstract class BaseJobSession {
 
     public static final String THREAD_CONTEXT_LABEL = "ThreadLabel";
     protected static final String NEW_LINE = System.lineSeparator();
+    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected PropertyHelper propertyHelper = PropertyHelper.getInstance();
     protected Map<Featureset, Feature> featureMap;
-
     protected RateLimiter rateLimiterOrigin;
     protected RateLimiter rateLimiterTarget;
     protected Integer maxRetries = 10;
     protected Integer printStatsAfter = 100000;
-    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     protected BaseJobSession(SparkConf sc) {
         propertyHelper.initializeSparkConf(sc);
@@ -68,26 +68,26 @@ public abstract class BaseJobSession {
         return formattedMin + ":" + formattedMax;
     }
 
-    private void appendToFile(Path path, String content)
-            throws IOException {
-        // if file not exists, create and write, else append
-        Files.write(path, content.getBytes(StandardCharsets.UTF_8),
+    private void appendToFile(String filePath, String content) throws IOException {
+        if (StringUtils.isAllBlank(filePath)) {
+            filePath = "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
+
+        }
+        Path path = Paths.get(filePath);
+        if (StringUtils.isNotBlank(path.getParent().toString())) {
+            Files.createDirectories(path.getParent());
+        } else {
+            path = Paths.get("./" + filePath);
+        }
+
+        Files.write(path, (content + NEW_LINE).getBytes(StandardCharsets.UTF_8),
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND);
     }
 
-    private void FileAppend(String dir, String fileName, String content) throws IOException {
-        if (StringUtils.isAllBlank(dir)) {
-            dir = "./"; // use current folder by default
-        }
-        Files.createDirectories(Paths.get(dir));
-        Path path = Paths.get(dir + "/" + fileName + "_partitions.csv");
-        appendToFile(path, content + NEW_LINE);
-    }
-
-    protected void logFailedPartitionsInFile(String dir, String fileName, BigInteger min, BigInteger max) {
+    protected void logFailedPartitionsInFile(String partitionFile, BigInteger min, BigInteger max) {
         try {
-            FileAppend(dir, fileName, min + "," + max);
+            appendToFile(partitionFile, min + "," + max);
         } catch (Exception ee) {
             logger.error("Error occurred while writing to token range file min: {} max: {}", min, max, ee);
         }

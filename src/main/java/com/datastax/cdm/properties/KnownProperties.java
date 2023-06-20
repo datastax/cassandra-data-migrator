@@ -26,7 +26,6 @@ public class KnownProperties {
     public static final String CONNECT_ORIGIN_USERNAME       = "spark.cdm.connect.origin.username";
     public static final String CONNECT_ORIGIN_PASSWORD       = "spark.cdm.connect.origin.password";
 
-
     public static final String CONNECT_TARGET_HOST           = "spark.cdm.connect.target.host";
     public static final String CONNECT_TARGET_PORT           = "spark.cdm.connect.target.port";
     public static final String CONNECT_TARGET_SCB            = "spark.cdm.connect.target.scb";
@@ -53,7 +52,6 @@ public class KnownProperties {
         defaults.put(CONNECT_TARGET_USERNAME, "cassandra");
            types.put(CONNECT_TARGET_PASSWORD, PropertyType.STRING);
         defaults.put(CONNECT_TARGET_PASSWORD, "cassandra");
-
     }
 
     //==========================================================================
@@ -76,7 +74,6 @@ public class KnownProperties {
            types.put(ORIGIN_WRITETIME_NAMES, PropertyType.STRING_LIST);
            types.put(ORIGIN_WRITETIME_AUTO, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_WRITETIME_AUTO, "true");
-
            types.put(ORIGIN_COLUMN_NAMES_TO_TARGET, PropertyType.STRING_LIST);
     }
 
@@ -139,9 +136,9 @@ public class KnownProperties {
     //==========================================================================
     // Error handling
     //==========================================================================
-    public static final String TOKEN_RANGE_EXCEPTION_DIR = "spark.tokenRange.exceptionDir";
+    public static final String TOKEN_RANGE_PARTITION_FILE = "spark.tokenrange.partitionFile";
     static {
-            types.put(TOKEN_RANGE_EXCEPTION_DIR, PropertyType.STRING);
+        types.put(TOKEN_RANGE_PARTITION_FILE, PropertyType.STRING);
     }
     //==========================================================================
     // Guardrails and Transformations

@@ -1,12 +1,12 @@
 package com.datastax.cdm.job;
 
-import com.datastax.cdm.feature.Guardrail;
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.cdm.cql.statement.OriginSelectByPKStatement;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
-import com.datastax.cdm.cql.statement.OriginSelectByPKStatement;
+import com.datastax.cdm.feature.Guardrail;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.Row;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,15 +20,14 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows> {
 
     private static CopyPKJobSession copyJobSession;
+    private final PKFactory pkFactory;
+    private final List<Class> originPKClasses;
+    private final boolean isCounterTable;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong missingCounter = new AtomicLong(0);
     protected AtomicLong skipCounter = new AtomicLong(0);
     protected AtomicLong writeCounter = new AtomicLong(0);
-
-    private final PKFactory pkFactory;
-    private final List<Class> originPKClasses;
-    private final boolean isCounterTable;
     private OriginSelectByPKStatement originSelectByPKStatement;
 
     protected CopyPKJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
@@ -37,7 +36,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         originPKClasses = this.originSession.getCqlTable().getPKClasses();
 
-        logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPKStatement().getCQL());
+        logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPKStatement().getCQL());
     }
 
     @Override
@@ -47,7 +46,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
 
     public void getRowAndInsert(SplitPartitions.PKRows rowsList) {
         originSelectByPKStatement = originSession.getOriginSelectByPKStatement();
-        for (String row : rowsList.pkRows) {
+        for (String row : rowsList.getPkRows()) {
             readCounter.incrementAndGet();
             EnhancedPK pk = toEnhancedPK(row);
             if (null == pk || pk.isError()) {
@@ -110,7 +109,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
         String[] pkFields = rowString.split(" %% ");
         List<Object> values = new ArrayList<>(originPKClasses.size());
         if (logger.isDebugEnabled()) logger.debug("rowString={}, pkFields={}", rowString, pkFields);
-        for (int i=0; i<pkFields.length; i++) {
+        for (int i = 0; i < pkFields.length; i++) {
             PropertyEditor editor = PropertyEditorManager.findEditor(originPKClasses.get(i));
             editor.setAsText(pkFields[i]);
             values.add(editor.getValue());

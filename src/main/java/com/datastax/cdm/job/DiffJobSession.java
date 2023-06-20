@@ -155,8 +155,7 @@ public class DiffJobSession extends CopyJobSession {
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts);
                 if (attempts == maxAttempts) {
-                    logFailedPartitionsInFile(tokenRangeExceptionDir,
-                            propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE), min, max);
+                    logFailedPartitionsInFile(partitionFile, min, max);
                 }
             }
         }
