@@ -1,1 +1,2 @@
-migrateData com.datastax.cdm.job.MigrateRowsFromFile migrate.properties
+migrateDataDefault com.datastax.cdm.job.MigrateRowsFromFile migrate.properties
+migrateData com.datastax.cdm.job.MigrateRowsFromFile migrate_with_pkrowsfile.properties

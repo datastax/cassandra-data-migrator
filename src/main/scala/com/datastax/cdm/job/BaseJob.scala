@@ -52,7 +52,6 @@ abstract class BaseJob[T: ClassTag] extends App {
     sc = sContext.getConf
     propertyHelper = PropertyHelper.getInstance(sc);
     this.partitionFileName = getPartitionFile(propertyHelper);
-    abstractLogger.info("PARAM -- Partition File: " + partitionFileName)
 
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
