@@ -1,2 +1,2 @@
-migrateData com.datastax.cdm.job.MigratePartitionsFromFile migrate.properties
-validateData com.datastax.cdm.job.DiffPartitionsFromFile migrate.properties
+migrateData com.datastax.cdm.job.Migrate migrate.properties
+validateData com.datastax.cdm.job.DiffData migrate.properties
