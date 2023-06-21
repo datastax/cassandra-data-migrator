@@ -6,7 +6,6 @@ import com.datastax.cdm.cql.statement.TargetUpsertStatement;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.Guardrail;
-import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
 import org.apache.logging.log4j.ThreadContext;
@@ -26,6 +25,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     private final PKFactory pkFactory;
     private final boolean isCounterTable;
     private final Integer fetchSize;
+    private final Integer batchSize;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     protected AtomicLong readCounter = new AtomicLong(0);
     protected AtomicLong skippedCounter = new AtomicLong(0);
@@ -33,7 +33,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     protected AtomicLong errorCounter = new AtomicLong(0);
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
-    private final Integer batchSize;
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -128,8 +127,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                     writeCounter.addAndGet(flushedWriteCnt);
                     skippedCounter.addAndGet(skipCnt);
                     errorCounter.addAndGet(readCnt - flushedWriteCnt - skipCnt);
-                    logFailedPartitionsInFile(tokenRangeExceptionDir,
-                            propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE), min, max);
+                    logFailedPartitionsInFile(partitionFile, min, max);
                 }
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",

@@ -1,7 +1,7 @@
 package com.datastax.cdm.job
 
 object MigrateRowsFromFile extends BasePKJob {
-  setup("Migrate Rows from File Job", new CopyPKJobSessionFactory(), "./primary_key_rows.csv")
+  setup("Migrate Rows from File Job", new CopyPKJobSessionFactory())
   execute()
   finish()
 

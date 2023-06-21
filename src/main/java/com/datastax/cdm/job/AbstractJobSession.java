@@ -19,10 +19,12 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected EnhancedSession targetSession;
     protected Guardrail guardrailFeature;
     protected boolean guardrailEnabled;
-    protected String tokenRangeExceptionDir;
+    protected String partitionFile = SplitPartitions.getPartitionFile(propertyHelper);
+
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
     }
+
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
         super(sc);
 
@@ -41,10 +43,8 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
         maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
 
-        tokenRangeExceptionDir = propertyHelper.getString(KnownProperties.TOKEN_RANGE_EXCEPTION_DIR);
-
         logger.info("PARAM -- Max Retries: {}", maxRetries);
-        logger.info("PARAM -- Token range exception dir: {}", tokenRangeExceptionDir);
+        logger.info("PARAM -- Partition file: {}", partitionFile);
         logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
         logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
 

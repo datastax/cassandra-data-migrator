@@ -1,12 +1,13 @@
 package com.datastax.cdm.job;
 
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.properties.PropertyHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -116,10 +117,30 @@ public class SplitPartitions {
         return partitions;
     }
 
+    private static BufferedReader getfileReader(String fileName) {
+        try {
+            return new BufferedReader(new FileReader(fileName));
+        } catch (FileNotFoundException fnfe) {
+            throw new RuntimeException("No '" + fileName + "' file found!! Add this file in the current folder & rerun!");
+        }
+    }
+
+    public static String getPartitionFile(PropertyHelper propertyHelper) {
+        String filePath = propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE);
+        if (StringUtils.isAllBlank(filePath)) {
+            filePath = "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
+        }
+
+        return filePath;
+    }
+
     public static class PKRows implements Serializable {
         private static final long serialVersionUID = 1L;
+        private List<String> pkRows;
 
-        List<String> pkRows;
+        public List<String> getPkRows() {
+            return pkRows;
+        }
 
         public PKRows(List<String> rows) {
             pkRows = new ArrayList<>(rows);
@@ -129,8 +150,8 @@ public class SplitPartitions {
     public static class Partition implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        private BigInteger min;
-        private BigInteger max;
+        private final BigInteger min;
+        private final BigInteger max;
 
         public Partition(BigInteger min, BigInteger max) {
             this.min = min;
@@ -149,13 +170,4 @@ public class SplitPartitions {
             return "Processing partition for token range " + min + " to " + max;
         }
     }
-
-    private static BufferedReader getfileReader(String fileName) {
-        try {
-            return new BufferedReader(new FileReader(fileName));
-        } catch (FileNotFoundException fnfe) {
-            throw new RuntimeException("No '" + fileName + "' file found!! Add this file in the current folder & rerun!");
-        }
-    }
-
 }
