@@ -93,9 +93,9 @@ Note:
 Each line above represents a partition-range (`min,max`). Alternatively, you can also pass the partition-file via command-line param as shown below
 
 ```
-spark-submit --properties-file cdm.properties /
+./spark-submit --properties-file cdm.properties /
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
- --conf spark.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" /
+ --conf spark.cdm.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" /
  --master "local[*]" /
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
