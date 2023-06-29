@@ -136,7 +136,7 @@ public class KnownProperties {
     //==========================================================================
     // Error handling
     //==========================================================================
-    public static final String TOKEN_RANGE_PARTITION_FILE = "spark.tokenrange.partitionFile";
+    public static final String TOKEN_RANGE_PARTITION_FILE = "spark.cdm.tokenrange.partitionFile";
     static {
         types.put(TOKEN_RANGE_PARTITION_FILE, PropertyType.STRING);
     }

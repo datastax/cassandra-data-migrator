@@ -1,4 +1,8 @@
 # Release Notes
+## [4.1.1] - 2023-06-29
+- Documentation fixes in readme & properties file
+- Config namespace fixes
+
 ## [4.1.0] - 2023-06-20
 - Refactored exception handling and loading of token-range filters to use the same Migrate & DiffData jobs instead of separate jobs to reduce code & maintenance overhead
 
