@@ -1,11 +1,16 @@
-# GitHub Action CI
-# Snyk clean-up when PR is merged/closed
+name: 🗑️ Snyk PR cleanup - merged/closed
 
 on:
   pull_request:
     types:
       - closed
-    branches:    
+    branches:
       - main
   workflow_dispatch:
 
+jobs:
+  snyk_project_cleanup_when_pr_closed:
+    uses: datastax/shared-github-actions/.github/workflows/snyk-pr-cleanup.yml@main
+    secrets:
+      snyk_token: ${{ secrets.SNYK_TOKEN }}
+      snyk_org_id: ${{ secrets.SNYK_ORG_ID }}
