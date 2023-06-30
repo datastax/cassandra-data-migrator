@@ -151,9 +151,8 @@ public class DiffJobSession extends CopyJobSession {
                 diffAndClear(recordsToDiff);
                 done = true;
             } catch (Exception e) {
-                logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
-                        Thread.currentThread().getId(), min, max, attempts);
+                        Thread.currentThread().getId(), min, max, attempts, e);
                 if (attempts == maxAttempts) {
                     logFailedPartitionsInFile(partitionFile, min, max);
                 }
