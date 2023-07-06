@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install
     service ssh start
 
 # Copy CDM jar & template files
-ARG MAVEN_VERSION=3.9.2
+ARG MAVEN_VERSION=3.9.3
 ARG USER_HOME_DIR="/root"
 ARG BASE_URL=https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ENV MAVEN_HOME /usr/share/maven
@@ -26,9 +26,9 @@ ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 COPY ./src /assets/src
 COPY ./pom.xml /assets/pom.xml
 COPY ./src/resources/cdm.properties /assets/
+COPY ./src/resources/cdm-detailed.properties /assets/
 COPY ./src/resources/partitions.csv /assets/
 COPY ./src/resources/primary_key_rows.csv /assets/
-COPY ./src/resources/runCommands.txt /assets/
 
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref && \
     curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
