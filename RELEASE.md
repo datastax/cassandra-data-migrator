@@ -1,4 +1,7 @@
 # Release Notes
+## [4.1.2] - 2023-07-06
+- Fixed docker build
+
 ## [4.1.1] - 2023-06-29
 - Documentation fixes in readme & properties file
 - Config namespace fixes
