@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import lombok.Data;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ public class TableInfo {
     @ToString.Include
     private boolean isCounterTable = false;
 
-    protected TableInfo(CqlSession session, String keySpace, String table, String selectColsString) {
+    protected TableInfo(CqlSession session, String keySpace, String table, String selectColsString, String ttlWTColsString) {
         List<String> selectCols = selectColsString.isEmpty() ? Collections.emptyList() :
                 Arrays.asList(selectColsString.toLowerCase(Locale.ROOT).split(","));
         TableMetadata tm = session.getMetadata().getKeyspace(keySpace).get().getTable(table).get();
@@ -49,14 +50,15 @@ public class TableInfo {
         allColumns = colInfoToList(columns);
         isCounterTable = isCounterTable(nonKeyColumns);
 
-        ttlAndWriteTimeColumns = loadTtlAndWriteTimeCols();
+        ttlAndWriteTimeColumns = loadTtlAndWriteTimeCols(ttlWTColsString);
     }
 
-    public static TableInfo getInstance(CqlSession session, String keySpace, String table, String selectColsString) {
+    public static TableInfo getInstance(CqlSession session, String keySpace, String table
+            , String selectColsString, String ttlWTColsString) {
         if (tableInfo == null) {
             synchronized (TableInfo.class) {
                 if (tableInfo == null) {
-                    tableInfo = new TableInfo(session, keySpace, table, selectColsString);
+                    tableInfo = new TableInfo(session, keySpace, table, selectColsString, ttlWTColsString);
                 }
             }
         }
@@ -64,8 +66,14 @@ public class TableInfo {
         return tableInfo;
     }
 
-    private List<String> loadTtlAndWriteTimeCols() {
+    private List<String> loadTtlAndWriteTimeCols(String ttlWTColsString) {
+        final List<String> cols = new ArrayList<>();
+        if (StringUtils.isNotBlank(ttlWTColsString)) {
+            cols.addAll(Arrays.stream(ttlWTColsString.toLowerCase(Locale.ROOT).split(","))
+                    .map(String::trim).collect(Collectors.toList()));
+        }
         return columns.stream()
+                .filter(cm -> cols.isEmpty() || cols.contains(cm.getColName().toLowerCase(Locale.ROOT)))
                 .filter(cm -> cm.isNonKey())
                 .filter(cm -> ((!cm.isCollection() && !cm.isUDT()) || cm.isFrozen()))
                 .map(cm -> cm.getColName())
