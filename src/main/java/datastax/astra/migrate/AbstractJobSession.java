@@ -71,7 +71,8 @@ public class AbstractJobSession extends BaseJobSession {
         logger.info("PARAM -- WriteRateLimit: {}", writeLimiter.getRate());
 
         tableInfo = TableInfo.getInstance(sourceSession, sourceKeyspaceTable.split("\\.")[0],
-                sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"));
+                sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"),
+                Util.getSparkPropOrEmpty(sc, "spark.query.ttlWritetime.cols"));
         String selectCols = String.join(",", tableInfo.getAllColumns());
         String partitionKey = String.join(",", tableInfo.getPartitionKeyColumns());
         ttlWTCols = tableInfo.getTtlAndWriteTimeColumns();

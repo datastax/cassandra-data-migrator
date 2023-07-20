@@ -29,7 +29,7 @@ public class GuardrailJobSession extends BaseJobSession {
         logger.info("PARAM -- guardrailColSizeInKB: {}", guardrailColSizeInKB);
 
         tableInfo = TableInfo.getInstance(session, sourceKeyspaceTable.split("\\.")[0],
-                sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"));
+                sourceKeyspaceTable.split("\\.")[1], Util.getSparkPropOrEmpty(sc, "spark.query.origin"), "");
         String selectCols = String.join(",", tableInfo.getAllColumns());
         String partitionKey = String.join(",", tableInfo.getPartitionKeyColumns());
         String originSelectQry = "SELECT " + selectCols + " FROM " + sourceKeyspaceTable +
