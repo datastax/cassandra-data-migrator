@@ -4,7 +4,8 @@
  record3 |  2000 |  4000
  record5 |   500 |   501
  record2 |    11 |    20
+ record6 |   500 |  null
  record1 |     1 |     2
  record4 | 10000 | 20001
 
-(5 rows)
+(6 rows)
