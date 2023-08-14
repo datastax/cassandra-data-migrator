@@ -1,4 +1,7 @@
 # Release Notes
+## [4.1.3] - 2023-07-06
+- Handle null values in counter table
+
 ## [4.1.2] - 2023-07-06
 - Fixed docker build
 
