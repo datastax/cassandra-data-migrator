@@ -48,7 +48,12 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
 
             try {
                 if(usingCounter && counterIndexes.contains(targetIndex)) {
-                    bindValue = ((Long) cqlTable.getOtherCqlTable().getData(originIndex, originRow) - (null==targetRow ? 0 : (Long) cqlTable.getData(targetIndex, targetRow)));
+                    bindValue = cqlTable.getOtherCqlTable().getData(originIndex, originRow);
+                    if (null == bindValue) {
+                        currentBindIndex++;
+                        continue;
+                    }
+                    bindValue = ((Long) bindValue - (null==targetRow ? 0 : (Long) cqlTable.getData(targetIndex, targetRow)));
                 }
                 else if (targetIndex== explodeMapKeyIndex) {
                     bindValue = explodeMapKey;
