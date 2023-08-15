@@ -1,6 +1,6 @@
 # Release Notes
 ## [4.1.3] - 2023-07-06
-- Handle null values in counter table
+- Counter table columns will usually have zeros to begin with, but in rare edge situations, they can have null values. This release will handle null values in counter table transparently.
 
 ## [4.1.2] - 2023-07-06
 - Fixed docker build
