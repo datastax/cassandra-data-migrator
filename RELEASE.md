@@ -1,5 +1,8 @@
 # Release Notes
-## [4.1.3] - 2023-07-06
+## [4.1.4] - 2023-08-16
+- In rare edge situations, counter tables with existing data in Target can have null values on target. This release will handle null values in Target counter table transparently.
+
+## [4.1.3] - 2023-08-14
 - Counter table columns will usually have zeros to begin with, but in rare edge situations, they can have null values. This release will handle null values in counter table transparently.
 
 ## [4.1.2] - 2023-07-06

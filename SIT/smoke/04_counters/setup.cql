@@ -11,4 +11,6 @@ UPDATE origin.smoke_counters set col1=col1+500 where key='record6';
 DROP TABLE IF EXISTS target.smoke_counters;
 CREATE TABLE target.smoke_counters(key text,col1 counter,col2 counter, PRIMARY KEY (key));
 
+UPDATE target.smoke_counters set col1=col1+1 where key='record1';
+
 SELECT * FROM origin.smoke_counters;

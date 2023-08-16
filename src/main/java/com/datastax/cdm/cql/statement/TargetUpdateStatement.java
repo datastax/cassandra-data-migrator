@@ -42,35 +42,39 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
             boundStatement = boundStatement.set(currentBindIndex++, writeTime, Long.class);
         }
 
-        Object bindValue = null;
+        Object bindValueOrg = null;
+        Object bindValueDest = null;
         for (int targetIndex : columnIndexesToBind) {
             int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
 
             try {
-                if(usingCounter && counterIndexes.contains(targetIndex)) {
-                    bindValue = cqlTable.getOtherCqlTable().getData(originIndex, originRow);
-                    if (null == bindValue) {
+                if (usingCounter && counterIndexes.contains(targetIndex)) {
+                    bindValueOrg = cqlTable.getOtherCqlTable().getData(originIndex, originRow);
+                    if (null == bindValueOrg) {
                         currentBindIndex++;
                         continue;
                     }
-                    bindValue = ((Long) bindValue - (null==targetRow ? 0 : (Long) cqlTable.getData(targetIndex, targetRow)));
+                    bindValueDest = (null == targetRow ? 0L : cqlTable.getData(targetIndex, targetRow));
+                    bindValueDest = ((Long) bindValueOrg - (null == bindValueDest ? 0L : (Long) bindValueDest));
                 }
                 else if (targetIndex== explodeMapKeyIndex) {
-                    bindValue = explodeMapKey;
+                    bindValueDest = explodeMapKey;
                 }
                 else if (targetIndex== explodeMapValueIndex) {
-                    bindValue = explodeMapValue;
+                    bindValueDest = explodeMapValue;
                 } else {
                     if (originIndex < 0)
                         // we don't have data to bind for this column; continue to the next targetIndex
                         continue;
-                    bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                    bindValueDest = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
+                boundStatement = boundStatement.set(currentBindIndex++, bindValueDest, cqlTable.getBindClass(targetIndex));
             }
             catch (Exception e) {
-                logger.error("Error trying to bind value:" + bindValue + " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex)+ "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
+                logger.error("Error trying to bind value:" + bindValueDest + " to column:" +
+                        targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex) + "/"
+                        + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
                 throw e;
             }
         }
