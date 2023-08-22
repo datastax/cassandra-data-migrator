@@ -42,20 +42,20 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
             boundStatement = boundStatement.set(currentBindIndex++, writeTime, Long.class);
         }
 
-        Object bindValueOrigin = null;
+        Object originValue, targetValue;
         Object bindValueTarget = null;
         for (int targetIndex : columnIndexesToBind) {
             int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
 
             try {
                 if (usingCounter && counterIndexes.contains(targetIndex)) {
-                    bindValueOrigin = cqlTable.getOtherCqlTable().getData(originIndex, originRow);
-                    if (null == bindValueOrigin) {
+                    originValue = cqlTable.getOtherCqlTable().getData(originIndex, originRow);
+                    if (null == originValue) {
                         currentBindIndex++;
                         continue;
                     }
-                    bindValueTarget = (null == targetRow ? 0L : cqlTable.getData(targetIndex, targetRow));
-                    bindValueTarget = ((Long) bindValueOrigin - (null == bindValueTarget ? 0L : (Long) bindValueTarget));
+                    targetValue = (null == targetRow ? 0L : cqlTable.getData(targetIndex, targetRow));
+                    bindValueTarget = ((Long) originValue - (null == targetValue ? 0L : (Long) targetValue));
                 }
                 else if (targetIndex== explodeMapKeyIndex) {
                     bindValueTarget = explodeMapKey;
@@ -70,8 +70,7 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                 }
 
                 boundStatement = boundStatement.set(currentBindIndex++, bindValueTarget, cqlTable.getBindClass(targetIndex));
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.error("Error trying to bind value:" + bindValueTarget + " to column:" +
                         targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex) + "/"
                         + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
