@@ -6,6 +6,7 @@
  record2 |    11 |    20
  record6 |   500 |  null
  record1 |     1 |     2
+ record7 |     1 |     2
  record4 | 10000 | 20001
 
-(6 rows)
+(7 rows)
