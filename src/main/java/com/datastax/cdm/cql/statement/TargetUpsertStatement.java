@@ -48,9 +48,9 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
         explodeMapFeature = (ExplodeMap) cqlTable.getFeature(Featureset.EXPLODE_MAP);
 
         setTTLAndWriteTimeBooleans();
-        targetColumnNames.addAll(cqlTable.getColumnNames(false));
+        targetColumnNames.addAll(cqlTable.getColumnNames(true));
         targetColumnTypes.addAll(cqlTable.getColumnCqlTypes());
-        originColumnNames.addAll(cqlTable.getOtherCqlTable().getColumnNames(false));
+        originColumnNames.addAll(cqlTable.getOtherCqlTable().getColumnNames(true));
         originColumnTypes.addAll(cqlTable.getOtherCqlTable().getColumnCqlTypes());
         setConstantColumns();
         if (null!=explodeMapFeature && explodeMapFeature.isEnabled()) {

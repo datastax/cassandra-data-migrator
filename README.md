@@ -36,19 +36,13 @@ tar -xvzf spark-3.3.1-bin-hadoop3.tgz
 ```
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
---master "local[*]" /
+--master "local[*]" --driver-memory 25G --executor-memory 25G /
 --class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 Note:
-- Above command generates a log file `logfile_name.txt` to avoid log output on the console.
-- Add option `--driver-memory 25G --executor-memory 25G` as shown below if the table migrated is large (over 100GB)
-```
-./spark-submit --properties-file cdm.properties /
---conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
---master "local[*]" --driver-memory 25G --executor-memory 25G /
---class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
-```
+- Above command generates a log file `logfile_name_*.txt` to avoid log output on the console.
+- Update the memory options (driver & executor memory) based on your use-case
 
 # Steps for Data-Validation:
 
@@ -57,7 +51,7 @@ Note:
 ```
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
---master "local[*]" /
+--master "local[*]" --driver-memory 25G --executor-memory 25G /
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
@@ -97,7 +91,7 @@ Each line above represents a partition-range (`min,max`). Alternatively, you can
 ./spark-submit --properties-file cdm.properties /
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
  --conf spark.cdm.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" /
- --master "local[*]" /
+--master "local[*]" --driver-memory 25G --executor-memory 25G /
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 This mode is specifically useful to processes a subset of partition-ranges that may have failed during a previous run.
@@ -111,7 +105,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 ./spark-submit --properties-file cdm.properties /
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
 --conf spark.cdm.feature.guardrail.colSizeInKB=10000 /
---master "local[*]" /
+--master "local[*]" --driver-memory 25G --executor-memory 25G /
 --class com.datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
