@@ -225,6 +225,58 @@
           <target>1.8</target>
         </configuration>
       </plugin>
+
+      <!-- Integrate JaCoCo code coverage plugin from https://www.eclemma.org/jacoco/trunk/doc/index.html -->
+      <plugin>
+	    <groupId>org.jacoco</groupId>
+	    <artifactId>jacoco-maven-plugin</artifactId>
+	    <version>0.8.10</version>
+	    <executions>
+	      <execution>
+	        <goals>
+	          <goal>prepare-agent</goal>
+	        </goals>
+	      </execution>
+	      <execution>
+	        <id>report</id>
+	        <phase>prepare-package</phase>
+	          <goals>
+	            <goal>report</goal>
+	          </goals>
+	      </execution>
+          <execution>
+		    <id>jacoco-check</id>
+		    <goals>
+		      <goal>check</goal>
+		    </goals>
+		    <configuration>
+		      <rules>
+		        <rule>
+		          <element>BUNDLE</element>
+		            <limits>
+		              <limit>
+                        <counter>COMPLEXITY</counter>
+		                <value>COVEREDRATIO</value>
+		                <minimum>0.33</minimum>
+		              </limit>
+				      <limit>
+				        <counter>INSTRUCTION</counter>
+				        <value>COVEREDRATIO</value>
+				        <minimum>42%</minimum>
+				      </limit>
+				      <limit>
+				        <counter>LINE</counter>
+				        <value>MISSEDCOUNT</value>
+				        <maximum>1544</maximum>
+				      </limit>
+		            </limits>
+		        </rule>
+		      </rules>
+		    </configuration>
+		  </execution>
+	    </executions>
+	  </plugin>
+
     </plugins>
   </build>
 </project>
