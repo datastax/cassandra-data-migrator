@@ -1,4 +1,7 @@
 # Release Notes
+## [4.1.5] - 2023-08-29
+- Allow reserved keywords used as Target column-names
+
 ## [4.1.4] - 2023-08-16
 - In rare edge situations, counter tables with existing data in Target can have null values on target. This release will handle null values in Target counter table transparently.
 
