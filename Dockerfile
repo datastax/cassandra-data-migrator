@@ -5,7 +5,7 @@ RUN mkdir -p /assets/ && cd /assets && \
     curl -OL https://downloads.datastax.com/dsbulk/dsbulk.tar.gz && \
     tar -xzf ./dsbulk.tar.gz && \
     rm ./dsbulk.tar.gz && \
-    mv /assets/dsbulk-1.10.0 /assets/dsbulk  && \
+    mv /assets/dsbulk-* /assets/dsbulk  && \
     curl -OL https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz && \
     tar -xzf ./cqlsh-astra.tar.gz && \
     rm ./cqlsh-astra.tar.gz && \
