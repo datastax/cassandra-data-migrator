@@ -1,6 +1,6 @@
 #!/bin/bash
 
-assertCmd="egrep 'JobSession.* Final ' \${OUTPUT_FILE} | sed 's/^.*Final //'"
+assertCmd="egrep 'JobCounter.* Final ' \${OUTPUT_FILE} | sed 's/^.*Final //'"
 
 _usage() {
   cat <<EOF

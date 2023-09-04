@@ -337,8 +337,7 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         return sparkConfFullyLoaded;
     }
 
-    @Override
-    public boolean meetsMinimum(String valueName, Integer testValue, Integer minimumValue) {
+    public boolean meetsMinimum(String valueName, Long testValue, Long minimumValue) {
         if (null != minimumValue && null != testValue && testValue >= minimumValue)
             return true;
         logger.warn(valueName + " must be greater than or equal to " + minimumValue + ".  Current value does not meet this requirement: " + testValue);

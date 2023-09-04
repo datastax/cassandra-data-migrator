@@ -15,23 +15,18 @@ import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows> {
 
-    private static CopyPKJobSession copyJobSession;
     private final PKFactory pkFactory;
     private final List<Class> originPKClasses;
     private final boolean isCounterTable;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected AtomicLong readCounter = new AtomicLong(0);
-    protected AtomicLong missingCounter = new AtomicLong(0);
-    protected AtomicLong skipCounter = new AtomicLong(0);
-    protected AtomicLong writeCounter = new AtomicLong(0);
     private OriginSelectByPKStatement originSelectByPKStatement;
 
     protected CopyPKJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc, true);
+        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE, JobCounter.CounterType.SKIPPED, JobCounter.CounterType.MISSING);
         pkFactory = this.originSession.getPKFactory();
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         originPKClasses = this.originSession.getCqlTable().getPKClasses();
@@ -47,10 +42,10 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
     public void getRowAndInsert(SplitPartitions.PKRows rowsList) {
         originSelectByPKStatement = originSession.getOriginSelectByPKStatement();
         for (String row : rowsList.getPkRows()) {
-            readCounter.incrementAndGet();
+            jobCounter.threadIncrement(JobCounter.CounterType.READ);
             EnhancedPK pk = toEnhancedPK(row);
             if (null == pk || pk.isError()) {
-                missingCounter.incrementAndGet();
+                jobCounter.threadIncrement(JobCounter.CounterType.MISSING);
                 logger.error("Could not build PK object with value <{}>; error is: {}", row, (null == pk ? "null" : pk.getMessages()));
                 return;
             }
@@ -58,7 +53,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
             rateLimiterOrigin.acquire(1);
             Record recordFromOrigin = originSelectByPKStatement.getRecord(pk);
             if (null == recordFromOrigin) {
-                missingCounter.incrementAndGet();
+                jobCounter.threadIncrement(JobCounter.CounterType.MISSING);
                 logger.error("Could not find origin row with primary-key: {}", row);
                 return;
             }
@@ -66,7 +61,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
 
             Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
             if (originSelectByPKStatement.shouldFilterRecord(record)) {
-                skipCounter.incrementAndGet();
+                jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                 return;
             }
 
@@ -74,35 +69,20 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
                 String guardrailCheck = guardrailFeature.guardrailChecks(record);
                 if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
                     logger.error("Guardrails failed for PrimaryKey {}; {}", record.getPk(), guardrailCheck);
-                    skipCounter.incrementAndGet();
+                    jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                     return;
                 }
             }
 
             rateLimiterTarget.acquire(1);
             targetSession.getTargetUpsertStatement().putRecord(record);
-            writeCounter.incrementAndGet();
+            jobCounter.threadIncrement(JobCounter.CounterType.WRITE);
 
-            if (readCounter.get() % printStatsAfter == 0) {
-                printCounts(false);
-            }
+            jobCounter.globalIncrement();
+            printCounts(false);
         }
 
         printCounts(true);
-    }
-
-    @Override
-    public void printCounts(boolean isFinal) {
-        if (isFinal) {
-            logger.info("################################################################################################");
-        }
-        logger.info("ThreadID: {} Read Record Count: {}", Thread.currentThread().getId(), readCounter.get());
-        logger.info("ThreadID: {} Missing Record Count: {}", Thread.currentThread().getId(), missingCounter.get());
-        logger.info("ThreadID: {} Skipped Record Count: {}", Thread.currentThread().getId(), skipCounter.get());
-        logger.info("ThreadID: {} Inserted Record Count: {}", Thread.currentThread().getId(), writeCounter.get());
-        if (isFinal) {
-            logger.info("################################################################################################");
-        }
     }
 
     private EnhancedPK toEnhancedPK(String rowString) {

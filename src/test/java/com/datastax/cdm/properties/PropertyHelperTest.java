@@ -498,12 +498,12 @@ public class PropertyHelperTest {
 
     @Test
     public void meetsMinimum_true() {
-        assertTrue(helper.meetsMinimum("a", 100,0));
+        assertTrue(helper.meetsMinimum("a", 100L,0L));
     }
 
     @Test
     public void meetsMinimum_false() {
-        assertFalse(helper.meetsMinimum("a", 1,100));
+        assertFalse(helper.meetsMinimum("a", 1L,100L));
     }
 
     private void setValidSparkConf() {

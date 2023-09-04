@@ -17,25 +17,20 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
-    private static CopyJobSession copyJobSession;
     private final PKFactory pkFactory;
     private final boolean isCounterTable;
     private final Integer fetchSize;
     private final Integer batchSize;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected AtomicLong readCounter = new AtomicLong(0);
-    protected AtomicLong skippedCounter = new AtomicLong(0);
-    protected AtomicLong writeCounter = new AtomicLong(0);
-    protected AtomicLong errorCounter = new AtomicLong(0);
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
+        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE, JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR, JobCounter.CounterType.UNFLUSHED);
 
         pkFactory = this.originSession.getPKFactory();
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
@@ -60,11 +55,8 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         int maxAttempts = maxRetries + 1;
         String guardrailCheck;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
-            long readCnt = 0;
-            long flushedWriteCnt = 0;
-            long skipCnt = 0;
-            long errCnt = 0;
-            long unflushedWrites = 0;
+            jobCounter.threadReset();
+
             try {
                 OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession.getOriginSelectByPartitionRangeStatement();
                 targetUpsertStatement = this.targetSession.getTargetUpsertStatement();
@@ -74,14 +66,11 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
                 for (Row originRow : resultSet) {
                     rateLimiterOrigin.acquire(1);
-                    readCnt++;
-                    if (readCnt % printStatsAfter == 0) {
-                        printCounts(false);
-                    }
+                    jobCounter.threadIncrement(JobCounter.CounterType.READ);
 
                     Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
                     if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-                        skipCnt++;
+                        jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                         continue;
                     }
 
@@ -90,66 +79,47 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                             guardrailCheck = guardrailFeature.guardrailChecks(r);
                             if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
                                 logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
-                                skipCnt++;
+                                jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                                 continue;
                             }
                         }
 
                         BoundStatement boundUpsert = bind(r);
                         if (null == boundUpsert) {
-                            skipCnt++; // TODO: this previously skipped, why not errCnt?
+                            jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED); // TODO: this previously skipped, why not errCnt?
                             continue;
                         }
 
                         rateLimiterTarget.acquire(1);
                         batch = writeAsync(batch, writeResults, boundUpsert);
-                        unflushedWrites++;
+                        jobCounter.threadIncrement(JobCounter.CounterType.UNFLUSHED);
 
-                        if (unflushedWrites > fetchSize) {
+                        if (jobCounter.getCount(JobCounter.CounterType.UNFLUSHED) > fetchSize) {
                             flushAndClearWrites(batch, writeResults);
-                            flushedWriteCnt += unflushedWrites;
-                            unflushedWrites = 0;
+                            jobCounter.threadIncrement(JobCounter.CounterType.WRITE, jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
+                            jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
                         }
                     }
                 }
 
                 flushAndClearWrites(batch, writeResults);
-                flushedWriteCnt += unflushedWrites;
-
-                readCounter.addAndGet(readCnt);
-                writeCounter.addAndGet(flushedWriteCnt);
-                skippedCounter.addAndGet(skipCnt);
+                jobCounter.threadIncrement(JobCounter.CounterType.WRITE, jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
                 done = true;
 
             } catch (Exception e) {
                 if (attempts == maxAttempts) {
-                    readCounter.addAndGet(readCnt);
-                    writeCounter.addAndGet(flushedWriteCnt);
-                    skippedCounter.addAndGet(skipCnt);
-                    errorCounter.addAndGet(readCnt - flushedWriteCnt - skipCnt);
+                    jobCounter.threadIncrement(JobCounter.CounterType.ERROR, jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE) - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
                     logFailedPartitionsInFile(partitionFile, min, max);
                 }
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts);
-                logger.error("Error stats Read#: {}, Wrote#: {}, Skipped#: {}, Error#: {}", readCnt, flushedWriteCnt, skipCnt, (readCnt - flushedWriteCnt - skipCnt));
+                logger.error("Error stats " + jobCounter.getThreadCounters(false));
             }
-        }
-    }
-
-    @Override
-    public synchronized void printCounts(boolean isFinal) {
-        String msg = "ThreadID: " + Thread.currentThread().getId();
-        if (isFinal) {
-            msg += " Final";
-            logger.info("################################################################################################");
-        }
-        logger.info("{} Read Record Count: {}", msg, readCounter.get());
-        logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
-        logger.info("{} Write Record Count: {}", msg, writeCounter.get());
-        logger.info("{} Error Record Count: {}", msg, errorCounter.get());
-        if (isFinal) {
-            logger.info("################################################################################################");
+            finally {
+                jobCounter.globalIncrement();
+                printCounts(false);
+            }
         }
     }
 
