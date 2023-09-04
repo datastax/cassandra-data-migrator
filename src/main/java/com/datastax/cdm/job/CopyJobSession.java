@@ -104,6 +104,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
                 flushAndClearWrites(batch, writeResults);
                 jobCounter.threadIncrement(JobCounter.CounterType.WRITE, jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
+                jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
                 done = true;
 
             } catch (Exception e) {
