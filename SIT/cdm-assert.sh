@@ -5,17 +5,17 @@ assertCmd="egrep 'JobSession.* Final ' \${OUTPUT_FILE} | sed 's/^.*Final //'"
 _usage() {
   cat <<EOF
 
-usage: $0 -f output_file -a assertFile [-d directory]
+usage: $0 -f output_file -a assert_file [-d directory]
 
 Required
   -f output_file   : a file with list of scenarios, same format as cdm.sh
-  -a assertFile    : a file with the assertions
+  -a assert_file    : a file with the assertions
 
 Optional
   -d directory     : directory in which output_file and assertFile may be found
 
 ==================
-assertFile Format
+assert_file Format
 ==================
 Expected to contain the "Final" job session summary information, generated similar to
     ${assertCmd}
@@ -66,7 +66,7 @@ else
 fi
 
 if [[ -z "$ASSERT_FILENAME" ]]; then
-  echo "missing -a assertFile"
+  echo "missing -a assert_file"
   argErrors=1
 else
   if [[ -z "${CONFIG_DIR}" ]]; then

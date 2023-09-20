@@ -121,6 +121,7 @@ public class CqlData {
                 case UDT:
                     return ((UdtValue) value).getFormattedContents();
                 case LIST:
+                case VECTOR:
                     openBracket = "[";
                     closeBracket = "]";
                     break;

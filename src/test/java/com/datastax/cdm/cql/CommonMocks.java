@@ -1,6 +1,7 @@
 package com.datastax.cdm.cql;
 
 import com.datastax.cdm.data.*;
+import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.*;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
@@ -8,6 +9,7 @@ import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
@@ -492,6 +494,7 @@ public class CommonMocks {
             case LIST: return Arrays.asList("1","2","3");
             case SET: return new HashSet(Arrays.asList("1","2","3"));
             case MAP: return new HashMap<String,String>() {{put("1","one");put("2","two");put("3","three");}};
+            case VECTOR: return CqlVector.newInstance(1.1,2.2,3.3);
         }
         return "DataType "+type+" is not supported, so returning a String";
     }
