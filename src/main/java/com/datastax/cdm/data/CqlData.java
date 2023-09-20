@@ -13,6 +13,7 @@ public class CqlData {
         SET,
         MAP,
         TUPLE,
+        VECTOR,
         UNKNOWN
     }
 
@@ -47,6 +48,7 @@ public class CqlData {
         if (dataType instanceof MapType) return Type.MAP;
         if (dataType instanceof TupleType) return Type.TUPLE;
         if (dataType instanceof UserDefinedType) return Type.UDT;
+        if (dataType instanceof VectorType) return Type.VECTOR;
         throw new RuntimeException("Unsupported data type: " + dataType);
     }
 
@@ -60,6 +62,7 @@ public class CqlData {
         if (dataType instanceof SetType) return true;
         if (dataType instanceof MapType) return true;
         if (dataType instanceof TupleType) return true;
+        if (dataType instanceof VectorType) return true;
         return false;
     }
 
@@ -70,6 +73,7 @@ public class CqlData {
         if (dataType instanceof SetType) return ((SetType) dataType).isFrozen();
         if (dataType instanceof MapType) return ((MapType) dataType).isFrozen();
         if (dataType instanceof TupleType) return dataType.asCql(true, false).toLowerCase().contains("frozen<");
+        // vector CQL data type doesn't support frozen
         return false;
     }
 
@@ -81,6 +85,7 @@ public class CqlData {
         if (dataType instanceof MapType) return java.util.Map.class;
         if (dataType instanceof UserDefinedType) return com.datastax.oss.driver.api.core.data.UdtValue.class;
         if (dataType instanceof TupleType) return com.datastax.oss.driver.api.core.data.TupleValue.class;
+        if (dataType instanceof VectorType) return com.datastax.oss.driver.api.core.data.CqlVector.class;
 
         throw new IllegalArgumentException("Unsupported data type: " + dataType);
     }
@@ -98,6 +103,8 @@ public class CqlData {
                 return Arrays.asList(((MapType) dataType).getKeyType(), ((MapType) dataType).getValueType());
             case TUPLE:
                 return ((TupleType) dataType).getComponentTypes();
+            case VECTOR:
+            	return Collections.singletonList(((VectorType) dataType).getElementType());
             default:
                 return null;
         }

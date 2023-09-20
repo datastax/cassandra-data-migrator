@@ -13,9 +13,10 @@
     <spark.version>3.3.1</spark.version>
     <scalatest.version>3.2.12</scalatest.version>
     <connector.version>3.2.0</connector.version>
-    <cassandra.version>3.11.13</cassandra.version>
+    <cassandra.version>3.11.16</cassandra.version>
     <junit.version>5.9.1</junit.version>
     <mockito.version>4.11.0</mockito.version>
+	<java-driver.version>4.17.0</java-driver.version>
   </properties>
 
   <distributionManagement>
@@ -74,7 +75,48 @@
       <groupId>com.datastax.spark</groupId>
       <artifactId>spark-cassandra-connector_${scala.main.version}</artifactId>
       <version>${connector.version}</version>
+	  <exclusions>
+		<exclusion>
+		  <groupId>com.datastax.oss</groupId>
+		  <artifactId>java-driver-core-shaded</artifactId>
+		</exclusion>
+		<exclusion>
+		  <groupId>com.datastax.oss</groupId>
+		  <artifactId>java-driver-mapper-runtime</artifactId>
+		</exclusion>
+		<exclusion>
+		  <groupId>com.datastax.oss</groupId>
+		  <artifactId>java-driver-query-builder</artifactId>
+		</exclusion>
+		<exclusion>
+		  <groupId>com.datastax.oss</groupId>
+		  <artifactId>java-driver-shaded-guava</artifactId>
+		</exclusion>
+	  </exclusions>
     </dependency>
+
+	<!-- Adding Java Driver latest version explicitly -->
+	<dependency>
+	  <groupId>com.datastax.oss</groupId>
+	  <artifactId>java-driver-core-shaded</artifactId>
+	  <version>${java-driver.version}</version>
+	</dependency>
+	<dependency>
+	  <groupId>com.datastax.oss</groupId>
+	  <artifactId>java-driver-mapper-runtime</artifactId>
+	  <version>${java-driver.version}</version>
+	</dependency>
+	<dependency>
+	  <groupId>com.datastax.oss</groupId>
+	  <artifactId>java-driver-query-builder</artifactId>
+	  <version>${java-driver.version}</version>
+	</dependency>
+	<!-- <dependency>
+	  <groupId>com.datastax.oss</groupId>
+	  <artifactId>java-driver-shaded-guava</artifactId>
+	  <version>${java-driver.version}</version>
+	</dependency> -->
+	
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
