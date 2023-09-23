@@ -50,7 +50,7 @@ public class TEXT_DoubleCodec extends AbstractBaseCodec<Double> {
     @Override
     public Double decode(ByteBuffer bytes, @NotNull ProtocolVersion protocolVersion) {
         String stringValue = TypeCodecs.TEXT.decode(bytes, protocolVersion);
-        return new Double(stringValue);
+        return Double.valueOf(stringValue);
     }
 
     @Override

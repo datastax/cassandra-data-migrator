@@ -9,7 +9,7 @@ DELETE FROM target.smoke_counters where key='record3';
 UPDATE origin.smoke_counters SET col2=col2+1 WHERE key='record4';
 UPDATE target.smoke_counters SET col2=col2+1 WHERE key='record4';
 
--- change by different amounts, they shouuld be brought into alignment with 
+-- change by different amounts, they should be brought into alignment with
 -- origin, even if that means going down
 UPDATE origin.smoke_counters SET col2=col2+1 WHERE key='record5';
 UPDATE target.smoke_counters SET col2=col2+2 WHERE key='record5';
