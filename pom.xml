@@ -12,7 +12,7 @@
     <scala.main.version>2.12</scala.main.version>
     <spark.version>3.4.1</spark.version>
     <scalatest.version>3.2.12</scalatest.version>
-    <connector.version>3.4.0</connector.version>
+    <connector.version>3.4.1</connector.version>
     <cassandra.version>5.0-alpha1</cassandra.version>
     <junit.version>5.9.1</junit.version>
     <mockito.version>4.11.0</mockito.version>
@@ -211,7 +211,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.4.1</version>
+        <version>3.5.1</version>
         <executions>
           <execution>
 
