@@ -17,8 +17,11 @@ RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install
     rm -rf /var/lib/apt/lists/*  && \
     service ssh start
 
+COPY scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
+RUN chmod +x ./get-latest-maven-version.sh
+
 # Copy CDM jar & template files
-ARG MAVEN_VERSION=3.9.3
+ARG MAVEN_VERSION=$(./get-latest-maven-version.sh)
 ARG USER_HOME_DIR="/root"
 ARG BASE_URL=https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ENV MAVEN_HOME /usr/share/maven
