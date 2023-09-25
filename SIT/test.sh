@@ -31,7 +31,7 @@ if [[ ! -d ${PHASE} || $(ls -d ${PHASE}/* | wc -l) -eq 0 ]]; then
   _fatal "Phase directory ${PHASE} does not exist, or is empty"
 fi
 
-# Common enviornment and functions
+# Common environment and functions
 . common.sh
 
 _captureOutput() {

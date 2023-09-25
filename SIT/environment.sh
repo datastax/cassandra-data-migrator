@@ -68,13 +68,13 @@ fi
 ###
 # These variables are hard-coded for now
 SUBNET=$(echo ${CIDR} | cut -d. -f1-3)
-CASS_VERSION=3
+CASS_VERSION=4
 CDM_VERSION=latest
 
 #==============================================================================================================================
 # Helper Functions
 #==============================================================================================================================
-# Common enviornment and functions
+# Common environment and functions
 . common.sh
 
 _testDockerNetwork() {
