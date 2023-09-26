@@ -10,3 +10,5 @@ SIT/local
 .classpath
 .project
 .settings/*
+src/main/main.iml
+src/test/test.iml
