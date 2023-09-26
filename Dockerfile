@@ -27,7 +27,7 @@ COPY ./src/resources/cdm.properties /assets/
 COPY ./src/resources/cdm-detailed.properties /assets/
 COPY ./src/resources/partitions.csv /assets/
 COPY ./src/resources/primary_key_rows.csv /assets/
-COPY scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
+COPY ./scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
 
 RUN chmod +x ./get-latest-maven-version.sh && \
     export MAVEN_VERSION=$(./get-latest-maven-version.sh) && \
