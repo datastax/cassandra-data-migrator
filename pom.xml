@@ -3,7 +3,7 @@
 
   <groupId>datastax.cdm</groupId>
   <artifactId>cassandra-data-migrator</artifactId>
-  <version>4.1.7-SNAPSHOT</version>
+  <version>4.1.7</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -183,7 +183,7 @@
     <connection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</connection>
     <developerConnection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</developerConnection>
     <url>https://github.com/datastax/cassandra-data-migrator</url>
-    <tag>@{version}</tag>
+    <tag>4.1.7</tag>
   </scm>
 
   <build>
