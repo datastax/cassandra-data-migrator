@@ -198,7 +198,6 @@ public class TargetInsertStatementTest extends CommonMocks {
         assertTrue(targetInsertStatement.targetColumnNames.contains(vectorCol));
         assertTrue(6 == targetInsertStatement.targetColumnNames.size());
         assertEquals(vectorColType, targetInsertStatement.targetColumnTypes.get(5));
-        //assertEquals(DataTypes.FLOAT, targetInsertStatement.getCQL().);
         BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null,null, null);
         assertNotNull(result);
         verify(boundStatement, times(targetColumnNames.size())).set(anyInt(), any(), any(Class.class));
