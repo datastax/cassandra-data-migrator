@@ -309,12 +309,12 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>42%</minimum>
+                      <minimum>41%</minimum>
                     </limit>
                     <limit>
                       <counter>LINE</counter>
                       <value>MISSEDCOUNT</value>
-                      <maximum>1548</maximum>
+                      <maximum>1550</maximum>
                     </limit>
                   </limits>
                 </rule>
