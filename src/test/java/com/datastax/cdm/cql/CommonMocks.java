@@ -86,6 +86,8 @@ public class CommonMocks {
     public List<DataType> originClusteringKeyTypes;
     public String filterCol;
     public DataType filterColType;
+    public String vectorCol;
+    public DataType vectorColType;
     public List<String> originValueColumns;
     public List<DataType> originValueColumnTypes;
     public List<String> originCounterColumns;
@@ -174,8 +176,10 @@ public class CommonMocks {
         originClusteringKeyTypes = Collections.singletonList(DataTypes.TEXT);
         filterCol = "filter_col";
         filterColType = DataTypes.TEXT;
-        originValueColumns = Arrays.asList("value1", filterCol);
-        originValueColumnTypes = Arrays.asList(DataTypes.TEXT, filterColType);
+        vectorCol = "vector_col";
+        vectorColType = DataTypes.vectorOf(DataTypes.FLOAT,3);
+        originValueColumns = Arrays.asList("value1", filterCol, vectorCol);
+        originValueColumnTypes = Arrays.asList(DataTypes.TEXT, filterColType, vectorColType);
         originCounterColumns = Arrays.asList("counter1","counter2");
         originToTargetNameList = Collections.emptyList();
 

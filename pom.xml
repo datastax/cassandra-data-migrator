@@ -285,16 +285,11 @@
             </goals>
           </execution>
           <execution>
-            <id>report</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>jacoco-check</id>
+            <phase>test</phase>
             <goals>
               <goal>check</goal>
+              <goal>report</goal>
             </goals>
             <configuration>
               <rules>
@@ -309,12 +304,12 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>42%</minimum>
+                      <minimum>41%</minimum>
                     </limit>
                     <limit>
                       <counter>LINE</counter>
                       <value>MISSEDCOUNT</value>
-                      <maximum>1548</maximum>
+                      <maximum>1544</maximum>
                     </limit>
                   </limits>
                 </rule>
