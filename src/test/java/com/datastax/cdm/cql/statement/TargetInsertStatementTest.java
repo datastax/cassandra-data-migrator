@@ -191,4 +191,16 @@ public class TargetInsertStatementTest extends CommonMocks {
         assertThrows(RuntimeException.class, () -> targetInsertStatement.bind(originRow, targetRow, 3600, 123456789L, explodeMapKey, explodeMapValue));
     }
 
+
+    @Test
+    public void bind_withVectorColumns() {
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+        assertTrue(targetInsertStatement.targetColumnNames.contains(vectorCol));
+        assertTrue(6 == targetInsertStatement.targetColumnNames.size());
+        assertEquals(vectorColType, targetInsertStatement.targetColumnTypes.get(5));
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null,null, null);
+        assertNotNull(result);
+        verify(boundStatement, times(targetColumnNames.size())).set(anyInt(), any(), any(Class.class));
+    }
+
 }
