@@ -20,8 +20,8 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 - Install Java8 as spark binaries are compiled with it.
 - Install Spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
 ```
-wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
-tar -xvzf spark-3.4.1-bin-hadoop3.tgz
+wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz
+tar -xvzf spark-3.4.1-bin-hadoop3-scala2.13.tgz
 ```
 
 # Steps for Data-Migration:
