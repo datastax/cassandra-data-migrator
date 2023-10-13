@@ -133,7 +133,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 # Building Jar for local development
 1. Clone this repo
 2. Move to the repo folder `cd cassandra-data-migrator`
-3. Run the build `mvn clean package` (Needs Maven 3.8.x)
+3. Run the build `mvn clean package` (Needs Maven 3.9.x)
 4. The fat jar (`cassandra-data-migrator-4.x.x.jar`) file should now be present in the `target` folder
 
 # Contributors
