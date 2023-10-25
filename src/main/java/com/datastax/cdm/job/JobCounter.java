@@ -133,8 +133,11 @@ public class JobCounter {
     }
 
     public void printProgress() {
-        printProgress(false);
-        printProgress(true);
+        if (printPerThread) {
+            printAndLogProgress("Thread Counts: ", false);
+        } else if (shouldPrintGlobalProgress()) {
+            printAndLogProgress("Progress Counts: ", true);
+        }
     }
 
     // Determines if it's the right time to print global progress
@@ -155,19 +158,6 @@ public class JobCounter {
     protected void printAndLogProgress(String message, boolean global) {
         String fullMessage = message + getThreadCounters(global);
         logger.info(fullMessage);
-    }
-
-    // Method to print the current progress
-    public void printProgress(boolean global) {
-        if (global) {
-            if (shouldPrintGlobalProgress()) {
-                printAndLogProgress("Progress Counts: ", true);
-            }
-        } else {
-            if (printPerThread) {
-                printAndLogProgress("Thread Counts: ", false);
-            }
-        }
     }
 
     public void printFinal() {

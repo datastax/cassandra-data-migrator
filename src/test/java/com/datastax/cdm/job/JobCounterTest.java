@@ -66,8 +66,7 @@ public class JobCounterTest {
         jobCounter.threadIncrement(JobCounter.CounterType.READ, 11);
         jobCounter.globalIncrement();
         // You may use mocking to capture logger outputs
-        jobCounter.printProgress(true);
-        jobCounter.printProgress(false);
+        jobCounter.printProgress();
     }
 
     @Test
