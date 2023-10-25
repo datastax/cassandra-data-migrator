@@ -9,12 +9,12 @@ RUN mkdir -p /assets/ && cd /assets && \
     curl -OL https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz && \
     tar -xzf ./cqlsh-astra.tar.gz && \
     rm ./cqlsh-astra.tar.gz && \
-    curl -OL https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz && \
-    tar -xzf ./spark-3.4.1-bin-hadoop3.tgz && \
-    rm ./spark-3.4.1-bin-hadoop3.tgz
+    curl -OL https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz && \
+    tar -xzf ./spark-3.4.1-bin-hadoop3-scala2.13.tgz && \
+    rm ./spark-3.4.1-bin-hadoop3-scala2.13.tgz
 
 RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*  && \
+    rm -rf /var/lib/apt/lists/* && \
     service ssh start
 
 # Copy CDM jar & template files
@@ -27,7 +27,7 @@ COPY ./src/resources/cdm.properties /assets/
 COPY ./src/resources/cdm-detailed.properties /assets/
 COPY ./src/resources/partitions.csv /assets/
 COPY ./src/resources/primary_key_rows.csv /assets/
-COPY scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
+COPY ./scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
 
 RUN chmod +x ./get-latest-maven-version.sh && \
     export MAVEN_VERSION=$(./get-latest-maven-version.sh) && \
@@ -46,7 +46,7 @@ RUN chmod +x ./get-latest-maven-version.sh && \
     rm -rf "$USER_HOME_DIR/.m2"
 
 # Add all migration tools to path
-ENV PATH="${PATH}:/assets/dsbulk/bin/:/assets/cqlsh-astra/bin/:/assets/spark-3.4.1-bin-hadoop3/bin/"
+ENV PATH="${PATH}:/assets/dsbulk/bin/:/assets/cqlsh-astra/bin/:/assets/spark-3.4.1-bin-hadoop3-scala2.13/bin/"
 
 EXPOSE 22
 
