@@ -31,13 +31,17 @@ if [[ ! -d ${PHASE} || $(ls -d ${PHASE}/* | wc -l) -eq 0 ]]; then
   _fatal "Phase directory ${PHASE} does not exist, or is empty"
 fi
 
-# Common enviornment and functions
+# Common environment and functions
 . common.sh
 
 _captureOutput() {
+  _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output"
   docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output
+  _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output"
   mv ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output
+  _info "Moving ${testDir}/output/$(basename ${testDir})/*.err TO ${testDir}/output"
   mv ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output
+  _info "Removing ${testDir}/output/$(basename ${testDir})"
   rm -rf ${testDir}/output/$(basename ${testDir})
 }
 
@@ -68,6 +72,7 @@ for testDir in $(ls -d ${PHASE}/*); do
   done
   rm -rf ${testDir}/output/*
   mkdir -p ${testDir}/output
+  chmod -R 777 ${testDir}/output
 done
 
 # The .jar file is expected to be present
@@ -89,6 +94,7 @@ echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 for dockerContainer in ${DOCKER_CASS} ${DOCKER_CDM}; do
   docker exec ${dockerContainer} rm -rf /${PHASE}
   docker cp ${PHASE} ${dockerContainer}:/${PHASE}
+  docker exec ${dockerContainer} chmod -R 755 ./${PHASE}/*/*.sh
 done
 
 echo
@@ -121,6 +127,9 @@ for testDir in $(ls -d ${PHASE}/*); do
   docker exec ${DOCKER_CDM} bash -e $testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err
   if [ $? -ne 0 ]; then
     _error "${testDir}/execute.sh failed, see $testDir/output/execute.out and $testDir/output/execute.err"
+    echo "=-=-=-=-=-=-=-=-=-= Directory Listing =-=-=-=-=-=-=-=-=-=-"
+    echo "$(ls -laR ${testDir})"
+    echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-==-=-=-=-=-=-=-=-=-=-=-=-"
     errors=1
   fi
 done

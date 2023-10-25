@@ -1,4 +1,14 @@
 # Release Notes
+## [4.1.8] - 2023-10-13
+- Upgraded to use Scala 2.13 
+
+## [4.1.7] - 2023-09-27
+- Allow support for Spark 3.4.1, SCC 3.4.1 and begin automated testing using Cassandra® latest 4 series.
+- Improved unit test coverage
+
+## [4.1.6] - 2023-09-22
+- Allow support for vector CQL data type
+
 ## [4.1.5] - 2023-08-29
 - Allow reserved keywords used as Target column-names
 

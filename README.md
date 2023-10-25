@@ -1,12 +1,13 @@
 [![License Apache2](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Star on Github](https://img.shields.io/github/stars/datastax/cassandra-data-migrator.svg?style=social)](https://github.com/datastax/cassandra-data-migrator/stargazers)
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/datastax/cassandra-data-migrator?label=latest%20release&color=green&link=!%5BGitHub%20release%20(with%20filter)%5D(https%3A%2F%2Fimg.shields.io%2Fgithub%2Fv%2Frelease%2Fdatastax%2Fcassandra-data-migrator%3Flabel%3Dlatest%2520release%26color%3Dgreen))
+![Docker Pulls](https://img.shields.io/docker/pulls/datastax/cassandra-data-migrator)
 
 # cassandra-data-migrator
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
-> :warning: Please note this job has been tested with spark version [3.3.1](https://archive.apache.org/dist/spark/spark-3.3.1/)
+> :warning: Please note this job has been tested with spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/)
 
 ## Install as a Container
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
@@ -17,10 +18,10 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 ### Prerequisite
 - Install Java8 as spark binaries are compiled with it.
-- Install Spark version [3.3.1](https://archive.apache.org/dist/spark/spark-3.3.1/) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
+- Install Spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
 ```
-wget https://archive.apache.org/dist/spark/spark-3.3.1/spark-3.3.1-bin-hadoop3.tgz
-tar -xvzf spark-3.3.1-bin-hadoop3.tgz
+wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz
+tar -xvzf spark-3.4.1-bin-hadoop3-scala2.13.tgz
 ```
 
 # Steps for Data-Migration:
@@ -132,7 +133,7 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 # Building Jar for local development
 1. Clone this repo
 2. Move to the repo folder `cd cassandra-data-migrator`
-3. Run the build `mvn clean package` (Needs Maven 3.8.x)
+3. Run the build `mvn clean package` (Needs Maven 3.9.x)
 4. The fat jar (`cassandra-data-migrator-4.x.x.jar`) file should now be present in the `target` folder
 
 # Contributors

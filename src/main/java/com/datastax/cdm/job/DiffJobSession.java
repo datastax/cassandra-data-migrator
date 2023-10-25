@@ -2,7 +2,11 @@ package com.datastax.cdm.job;
 
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
-import com.datastax.cdm.data.*;
+import com.datastax.cdm.data.CqlData;
+import com.datastax.cdm.data.DataUtility;
+import com.datastax.cdm.data.EnhancedPK;
+import com.datastax.cdm.data.PKFactory;
+import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.feature.Featureset;

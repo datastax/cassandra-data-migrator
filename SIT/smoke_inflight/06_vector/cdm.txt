@@ -1,0 +1,2 @@
+migrateData com.datastax.cdm.job.Migrate /smoke/06_vector/migrate.properties
+validateData com.datastax.cdm.job.DiffData /smoke/06_vector/migrate.properties

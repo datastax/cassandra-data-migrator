@@ -9,18 +9,16 @@ RUN mkdir -p /assets/ && cd /assets && \
     curl -OL https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz && \
     tar -xzf ./cqlsh-astra.tar.gz && \
     rm ./cqlsh-astra.tar.gz && \
-    curl -OL https://archive.apache.org/dist/spark/spark-3.3.1/spark-3.3.1-bin-hadoop3.tgz && \
-    tar -xzf ./spark-3.3.1-bin-hadoop3.tgz && \
-    rm ./spark-3.3.1-bin-hadoop3.tgz
+    curl -OL https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz && \
+    tar -xzf ./spark-3.4.1-bin-hadoop3-scala2.13.tgz && \
+    rm ./spark-3.4.1-bin-hadoop3-scala2.13.tgz
 
 RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*  && \
+    rm -rf /var/lib/apt/lists/* && \
     service ssh start
 
 # Copy CDM jar & template files
-ARG MAVEN_VERSION=3.9.3
 ARG USER_HOME_DIR="/root"
-ARG BASE_URL=https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 COPY ./src /assets/src
@@ -29,8 +27,12 @@ COPY ./src/resources/cdm.properties /assets/
 COPY ./src/resources/cdm-detailed.properties /assets/
 COPY ./src/resources/partitions.csv /assets/
 COPY ./src/resources/primary_key_rows.csv /assets/
+COPY ./scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
 
-RUN mkdir -p /usr/share/maven /usr/share/maven/ref && \
+RUN chmod +x ./get-latest-maven-version.sh && \
+    export MAVEN_VERSION=$(./get-latest-maven-version.sh) && \
+    export BASE_URL=https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries && \
+    mkdir -p /usr/share/maven /usr/share/maven/ref && \
     curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
     tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 && \
     rm -f /tmp/apache-maven.tar.gz && \
@@ -44,7 +46,7 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref && \
     rm -rf "$USER_HOME_DIR/.m2"
 
 # Add all migration tools to path
-ENV PATH="${PATH}:/assets/dsbulk/bin/:/assets/cqlsh-astra/bin/:/assets/spark-3.3.1-bin-hadoop3/bin/"
+ENV PATH="${PATH}:/assets/dsbulk/bin/:/assets/cqlsh-astra/bin/:/assets/spark-3.4.1-bin-hadoop3-scala2.13/bin/"
 
 EXPOSE 22
 
