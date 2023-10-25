@@ -29,5 +29,5 @@ public interface IPropertyHelper {
 
     boolean isSparkConfFullyLoaded();
 
-    boolean meetsMinimum(String valueName, Integer testValue, Integer minimumValue);
+    boolean meetsMinimum(String valueName, Long testValue, Long minimumValue);
 }

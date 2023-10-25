@@ -27,22 +27,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 public class DiffJobSession extends CopyJobSession {
-    private static DiffJobSession diffJobSession;
     protected final Boolean autoCorrectMissing;
     protected final Boolean autoCorrectMismatch;
-    private final AtomicLong readCounter = new AtomicLong(0);
-    private final AtomicLong mismatchCounter = new AtomicLong(0);
-    private final AtomicLong missingCounter = new AtomicLong(0);
-    private final AtomicLong correctedMissingCounter = new AtomicLong(0);
-    private final AtomicLong correctedMismatchCounter = new AtomicLong(0);
-    private final AtomicLong validCounter = new AtomicLong(0);
-    private final AtomicLong skippedCounter = new AtomicLong(0);
     private final boolean isCounterTable;
     private final boolean forceCounterWhenMissing;
     private final List<String> targetColumnNames;
@@ -57,6 +48,7 @@ public class DiffJobSession extends CopyJobSession {
 
     public DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
+        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID, JobCounter.CounterType.MISMATCH, JobCounter.CounterType.CORRECTED_MISMATCH, JobCounter.CounterType.MISSING, JobCounter.CounterType.CORRECTED_MISSING, JobCounter.CounterType.SKIPPED);
 
         autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING);
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
@@ -108,6 +100,8 @@ public class DiffJobSession extends CopyJobSession {
         int maxAttempts = maxRetries + 1;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             try {
+                jobCounter.threadReset();
+
                 PKFactory pkFactory = originSession.getPKFactory();
                 OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = originSession.getOriginSelectByPartitionRangeStatement();
                 ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
@@ -118,21 +112,18 @@ public class DiffJobSession extends CopyJobSession {
                 StreamSupport.stream(resultSet.spliterator(), false).forEach(originRow -> {
                     rateLimiterOrigin.acquire(1);
                     Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
+                    jobCounter.threadIncrement(JobCounter.CounterType.READ);
 
                     if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-                        readCounter.incrementAndGet();
-                        skippedCounter.incrementAndGet();
+                        jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                     } else {
-                        if (readCounter.incrementAndGet() % printStatsAfter == 0) {
-                            printCounts(false);
-                        }
                         for (Record r : pkFactory.toValidRecordList(record)) {
 
                             if (guardrailEnabled) {
                                 String guardrailCheck = guardrailFeature.guardrailChecks(r);
                                 if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
                                     logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
-                                    skippedCounter.incrementAndGet();
+                                    jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                                     continue;
                                 }
                             }
@@ -141,7 +132,7 @@ public class DiffJobSession extends CopyJobSession {
                             CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement.getAsyncResult(r.getPk());
 
                             if (null == targetResult) {
-                                skippedCounter.incrementAndGet();
+                                jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                             } else {
                                 r.setAsyncTargetRow(targetResult);
                                 recordsToDiff.add(r);
@@ -160,6 +151,9 @@ public class DiffJobSession extends CopyJobSession {
                 if (attempts == maxAttempts) {
                     logFailedPartitionsInFile(partitionFile, min, max);
                 }
+            } finally {
+                jobCounter.globalIncrement();
+                printCounts(false);
             }
         }
     }
@@ -175,32 +169,13 @@ public class DiffJobSession extends CopyJobSession {
         recordsToDiff.clear();
     }
 
-    @Override
-    public synchronized void printCounts(boolean isFinal) {
-        String msg = "ThreadID: " + Thread.currentThread().getId();
-        if (isFinal) {
-            msg += " Final";
-            logger.info("################################################################################################");
-        }
-        logger.info("{} Read Record Count: {}", msg, readCounter.get());
-        logger.info("{} Mismatch Record Count: {}", msg, mismatchCounter.get());
-        logger.info("{} Corrected Mismatch Record Count: {}", msg, correctedMismatchCounter.get());
-        logger.info("{} Missing Record Count: {}", msg, missingCounter.get());
-        logger.info("{} Corrected Missing Record Count: {}", msg, correctedMissingCounter.get());
-        logger.info("{} Valid Record Count: {}", msg, validCounter.get());
-        logger.info("{} Skipped Record Count: {}", msg, skippedCounter.get());
-        if (isFinal) {
-            logger.info("################################################################################################");
-        }
-    }
-
     private void diff(Record record) {
         EnhancedPK originPK = record.getPk();
         Row originRow = record.getOriginRow();
         Row targetRow = record.getTargetRow();
 
         if (targetRow == null) {
-            missingCounter.incrementAndGet();
+            jobCounter.threadIncrement(JobCounter.CounterType.MISSING);
             logger.error("Missing target row found for key: {}", record.getPk());
             if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
                 logger.error("{} is true, but not Inserting as {} is not enabled; key : {}", KnownProperties.AUTOCORRECT_MISSING, KnownProperties.AUTOCORRECT_MISSING_COUNTER, record.getPk());
@@ -211,7 +186,7 @@ public class DiffJobSession extends CopyJobSession {
             if (autoCorrectMissing) {
                 rateLimiterTarget.acquire(1);
                 targetSession.getTargetUpsertStatement().putRecord(record);
-                correctedMissingCounter.incrementAndGet();
+                jobCounter.threadIncrement(JobCounter.CounterType.CORRECTED_MISSING);
                 logger.error("Inserted missing row in target: {}", record.getPk());
             }
             return;
@@ -219,17 +194,17 @@ public class DiffJobSession extends CopyJobSession {
 
         String diffData = isDifferent(originPK, originRow, targetRow);
         if (!diffData.isEmpty()) {
-            mismatchCounter.incrementAndGet();
+            jobCounter.threadIncrement(JobCounter.CounterType.MISMATCH);
             logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
 
             if (autoCorrectMismatch) {
                 rateLimiterTarget.acquire(1);
                 targetSession.getTargetUpsertStatement().putRecord(record);
-                correctedMismatchCounter.incrementAndGet();
+                jobCounter.threadIncrement(JobCounter.CounterType.CORRECTED_MISMATCH);
                 logger.error("Corrected mismatch row in target: {}", record.getPk());
             }
         } else {
-            validCounter.incrementAndGet();
+            jobCounter.threadIncrement(JobCounter.CounterType.VALID);
         }
     }
 

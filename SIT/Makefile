@@ -21,6 +21,8 @@ test_features: reset test_features_cmd
 test_features_cmd:
 	./test.sh -p features
 
+test: test_smoke test_regression_cmd test_features_cmd
+
 # Local tests are not included in automated tests, but provide a means
 # to use the test harness to validate project-specific work
 test_local: reset test_local_cmd

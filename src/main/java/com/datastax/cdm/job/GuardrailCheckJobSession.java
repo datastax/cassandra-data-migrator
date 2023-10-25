@@ -11,21 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
     private static GuardrailCheckJobSession guardrailJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected AtomicLong readCounter = new AtomicLong(0);
-    protected AtomicLong validCounter = new AtomicLong(0);
-    protected AtomicLong skippedCounter = new AtomicLong(0);
-    protected AtomicLong largeRowCounter = new AtomicLong(0);
 
     private final PKFactory pkFactory;
 
     protected GuardrailCheckJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
+        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID, JobCounter.CounterType.SKIPPED, JobCounter.CounterType.LARGE);
 
         pkFactory = this.originSession.getPKFactory();
 
@@ -51,26 +47,22 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
             String checkString;
             for (Row originRow : resultSet) {
                 rateLimiterOrigin.acquire(1);
-                readCounter.addAndGet(1);
-
-                if (readCounter.get() % printStatsAfter == 0) {
-                    printCounts(false);
-                }
+                jobCounter.threadIncrement(JobCounter.CounterType.READ);
 
                 Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
                 if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-                    skippedCounter.addAndGet(1);
+                    jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                     continue;
                 }
 
                 for (Record r : pkFactory.toValidRecordList(record)) {
                     checkString = guardrailFeature.guardrailChecks(r);
                     if (checkString != null && !checkString.isEmpty()) {
-                        largeRowCounter.addAndGet(1);
+                        jobCounter.threadIncrement(JobCounter.CounterType.LARGE);
                         logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), checkString);
                     }
                     else {
-                        validCounter.addAndGet(1);
+                        jobCounter.threadIncrement(JobCounter.CounterType.VALID);
                     }
                 }
             }
@@ -78,23 +70,11 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
             logger.error("Error occurred ", e);
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max);
+        } finally {
+            jobCounter.globalIncrement();
+            printCounts(false);
         }
 
         ThreadContext.remove(THREAD_CONTEXT_LABEL);
-    }
-
-    @Override
-    public synchronized void printCounts(boolean isFinal) {
-        String msg = "ThreadID: " + Thread.currentThread().getId();
-        if (isFinal) {
-            msg += " Final";
-            logger.info("################################################################################################");
-        }
-        logger.info("{} Read Record Count: {}", msg, readCounter.get());
-        logger.info("{} Valid Record Count: {}", msg, validCounter.get());
-        logger.info("{} Large Record Count: {}", msg, largeRowCounter.get());
-        if (isFinal) {
-            logger.info("################################################################################################");
-        }
     }
 }

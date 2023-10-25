@@ -20,6 +20,8 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected Guardrail guardrailFeature;
     protected boolean guardrailEnabled;
     protected String partitionFile = SplitPartitions.getPartitionFile(propertyHelper);
+    protected JobCounter jobCounter;
+    protected Long printStatsAfter;
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
@@ -32,12 +34,13 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
             return;
         }
 
-        printStatsAfter = propertyHelper.getInteger(KnownProperties.PRINT_STATS_AFTER);
-        if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1)) {
+        this.printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
+        if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1L)) {
             logger.warn(KnownProperties.PRINT_STATS_AFTER + " must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.PRINT_STATS_AFTER));
             propertyHelper.setProperty(KnownProperties.PRINT_STATS_AFTER, KnownProperties.getDefault(KnownProperties.PRINT_STATS_AFTER));
-            printStatsAfter = propertyHelper.getInteger(KnownProperties.PRINT_STATS_AFTER);
+            printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
         }
+        this.jobCounter = new JobCounter(printStatsAfter, propertyHelper.getBoolean(KnownProperties.PRINT_STATS_PER_PART));
 
         rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
@@ -77,5 +80,11 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
     public abstract void processSlice(T slice);
 
-    public abstract void printCounts(boolean isFinal);
+    public synchronized void printCounts(boolean isFinal) {
+        if (isFinal) {
+            jobCounter.printFinal();
+        } else {
+            jobCounter.printProgress();
+        }
+    }
 }
