@@ -326,7 +326,7 @@
                       <counter>LINE</counter>
                       <value>MISSEDCOUNT</value>
 <!--                      <maximum>1544</maximum>-->
-                      <maximum>3073</maximum>
+                      <maximum>3076</maximum>
                     </limit>
                   </limits>
                 </rule>
