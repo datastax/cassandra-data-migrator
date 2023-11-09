@@ -1,5 +1,6 @@
 package com.datastax.cdm.data;
 
+import com.datastax.dse.driver.api.core.type.DseDataTypes;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.*;
 
@@ -39,6 +40,10 @@ public class CqlData {
         primitiveDataTypeToJavaClassMap.put(DataTypes.TIMEUUID, java.util.UUID.class);
         primitiveDataTypeToJavaClassMap.put(DataTypes.COUNTER, Long.class);
         primitiveDataTypeToJavaClassMap.put(DataTypes.DURATION, com.datastax.oss.driver.api.core.data.CqlDuration.class);
+        primitiveDataTypeToJavaClassMap.put(DseDataTypes.POLYGON, com.datastax.dse.driver.api.core.data.geometry.Polygon.class);
+        primitiveDataTypeToJavaClassMap.put(DseDataTypes.POINT, com.datastax.dse.driver.api.core.data.geometry.Point.class);
+        primitiveDataTypeToJavaClassMap.put(DseDataTypes.LINE_STRING, com.datastax.dse.driver.api.core.data.geometry.LineString.class);
+        primitiveDataTypeToJavaClassMap.put(DseDataTypes.DATE_RANGE, com.datastax.dse.driver.api.core.data.time.DateRange.class);
     }
 
     public static Type toType(DataType dataType) {

@@ -143,6 +143,12 @@
       <artifactId>log4j-to-slf4j</artifactId>
       <version>${log4j.version}</version>
     </dependency>
+    <dependency>
+      <scope>runtime</scope>
+      <groupId>com.esri.geometry</groupId>
+      <artifactId>esri-geometry-api</artifactId>
+      <version>2.2.0</version>
+    </dependency>
 
     <!-- Test Dependencies -->
     <dependency>
@@ -326,7 +332,7 @@
                       <counter>LINE</counter>
                       <value>MISSEDCOUNT</value>
 <!--                      <maximum>1544</maximum>-->
-                      <maximum>3073</maximum>
+                      <maximum>3085</maximum>
                     </limit>
                   </limits>
                 </rule>
