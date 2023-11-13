@@ -35,9 +35,9 @@ tar -xvzf spark-3.4.1-bin-hadoop3-scala2.13.tgz
 3. Run the below job using `spark-submit` command as shown below:
 
 ```
-./spark-submit --properties-file cdm.properties /
---conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
---master "local[*]" --driver-memory 25G --executor-memory 25G /
+./spark-submit --properties-file cdm.properties \
+--conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
+--master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
@@ -50,9 +50,9 @@ Note:
 - To run the job in Data validation mode, use class option `--class com.datastax.cdm.job.DiffData` as shown below
 
 ```
-./spark-submit --properties-file cdm.properties /
---conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
---master "local[*]" --driver-memory 25G --executor-memory 25G /
+./spark-submit --properties-file cdm.properties \
+--conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
+--master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
