@@ -89,10 +89,10 @@ Note:
 Each line above represents a partition-range (`min,max`). Alternatively, you can also pass the partition-file via command-line param as shown below
 
 ```
-./spark-submit --properties-file cdm.properties /
- --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
- --conf spark.cdm.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" /
---master "local[*]" --driver-memory 25G --executor-memory 25G /
+./spark-submit --properties-file cdm.properties \
+ --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
+ --conf spark.cdm.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" \
+--master "local[*]" --driver-memory 25G --executor-memory 25G \
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 This mode is specifically useful to processes a subset of partition-ranges that may have failed during a previous run.
@@ -103,10 +103,10 @@ This mode is specifically useful to processes a subset of partition-ranges that 
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class com.datastax.cdm.job.GuardrailCheck` as shown below
 ```
-./spark-submit --properties-file cdm.properties /
---conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" /
---conf spark.cdm.feature.guardrail.colSizeInKB=10000 /
---master "local[*]" --driver-memory 25G --executor-memory 25G /
+./spark-submit --properties-file cdm.properties \
+--conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
+--conf spark.cdm.feature.guardrail.colSizeInKB=10000 \
+--master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
