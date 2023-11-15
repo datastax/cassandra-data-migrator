@@ -1,5 +1,5 @@
 name: Build and test jar with integration tests
-on: [push]
+on: [push, pull_request]
 jobs:
   CDM-Integration-Test:
     runs-on: ubuntu-latest
