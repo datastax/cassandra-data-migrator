@@ -62,9 +62,8 @@ public class WritetimeTTL extends AbstractFeature  {
 
         isValid = validateProperties();
         isEnabled = isValid &&
-                ((null != ttlNames && !ttlNames.isEmpty())
-                || (null != writetimeNames && !writetimeNames.isEmpty())
-                || customWritetime > 0);
+                (this.autoWritetimeNames || this.autoTTLNames
+                        || customWritetime > 0);
 
         isLoaded = true;
         return isValid;
