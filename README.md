@@ -24,6 +24,11 @@ wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-s
 tar -xvzf spark-3.4.1-bin-hadoop3-scala2.13.tgz
 ```
 
+> :warning: If the above Spark and Scala version is not properly installed, you'll then see a similar exception like below when running the CDM jobs,
+```
+Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.releaseFence()V
+```
+
 # Steps for Data-Migration:
 
 > :warning: Note that Version 4 of the tool is not backward-compatible with .properties files created in previous versions, and that package names have changed.
