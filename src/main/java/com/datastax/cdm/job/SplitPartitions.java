@@ -35,7 +35,7 @@ public class SplitPartitions {
 
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
 
-    public static Collection<Partition> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max, int coveragePercent) {
+    public static List<Partition> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max, int coveragePercent) {
         logger.info("ThreadID: {} Splitting min: {} max: {}", Thread.currentThread().getId(), min, max);
         List<Partition> partitions = getSubPartitions(numSplits, min, max, coveragePercent);
         Collections.shuffle(partitions);

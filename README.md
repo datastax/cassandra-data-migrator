@@ -18,7 +18,7 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 ### Prerequisite
 - Install Java8 as spark binaries are compiled with it.
-- Install Spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
+- Install Spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
 ```
 wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz
 tar -xvzf spark-3.4.1-bin-hadoop3-scala2.13.tgz
@@ -97,7 +97,7 @@ Each line above represents a partition-range (`min,max`). Alternatively, you can
 ./spark-submit --properties-file cdm.properties \
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
  --conf spark.cdm.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" \
---master "local[*]" --driver-memory 25G --executor-memory 25G \
+ --master "local[*]" --driver-memory 25G --executor-memory 25G \
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 This mode is specifically useful to processes a subset of partition-ranges that may have failed during a previous run.

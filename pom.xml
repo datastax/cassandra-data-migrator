@@ -3,7 +3,7 @@
 
   <groupId>datastax.cdm</groupId>
   <artifactId>cassandra-data-migrator</artifactId>
-  <version>4.1.10-SNAPSHOT</version>
+  <version>4.1.11-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -11,11 +11,10 @@
     <scala.version>2.13.12</scala.version>
     <scala.main.version>2.13</scala.main.version>
     <spark.version>3.4.1</spark.version>
-    <scalatest.version>3.2.17</scalatest.version>
     <connector.version>3.4.1</connector.version>
     <cassandra.version>5.0-alpha1</cassandra.version>
     <junit.version>5.9.1</junit.version>
-    <mockito.version>4.11.0</mockito.version>
+    <mockito.version>5.3.1</mockito.version>
     <java-driver.version>4.17.0</java-driver.version>
     <log4j.version>2.20.0</log4j.version>
   </properties>
@@ -152,12 +151,6 @@
 
     <!-- Test Dependencies -->
     <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.main.version}</artifactId>
-      <version>${scalatest.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
       <version>${junit.version}</version>
@@ -200,20 +193,11 @@
     </resources>
     <plugins>
       <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>4.8.0</version>
-        <executions>
-          <execution>
-            <phase>process-sources</phase>
-            <goals>
-              <goal>compile</goal>
-              <goal>testCompile</goal>
-            </goals>
-
-          </execution>
-        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.2</version>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -239,35 +223,6 @@
                 </filter>
               </filters>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- Instructions from http://www.scalatest.org/user_guide/using_the_scalatest_maven_plugin -->
-      <!-- disable surefire -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.22.2</version>
-        <configuration>
-          <skipTests>true</skipTests>
-        </configuration>
-      </plugin>
-      <!-- enable scalatest -->
-      <plugin>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest-maven-plugin</artifactId>
-        <version>2.2.0</version>
-        <configuration>
-          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-          <junitxml>.</junitxml>
-          <filereports>WDF TestSuite.txt</filereports>
-        </configuration>
-        <executions>
-          <execution>
-            <id>test</id>
-            <goals>
-              <goal>test</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
@@ -304,14 +259,10 @@
             <id>jacoco-check</id>
             <phase>test</phase>
             <goals>
-              <goal>check</goal>
               <goal>report</goal>
+              <goal>check</goal>
             </goals>
             <configuration>
-              <excludes>
-                <!-- Excluding all the Scala classes -->
-                <exclude>com.datastax.cdm.job.*</exclude>
-              </excludes>
               <rules>
                 <rule>
                   <element>BUNDLE</element>
@@ -319,20 +270,17 @@
                     <limit>
                       <counter>COMPLEXITY</counter>
                       <value>COVEREDRATIO</value>
-<!--                      <minimum>0.33</minimum>-->
-                      <minimum>0</minimum>
+                      <minimum>0.40</minimum>
                     </limit>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-<!--                      <minimum>41%</minimum>-->
-                      <minimum>0%</minimum>
+                      <minimum>50%</minimum>
                     </limit>
                     <limit>
                       <counter>LINE</counter>
                       <value>MISSEDCOUNT</value>
-<!--                      <maximum>1544</maximum>-->
-                      <maximum>3085</maximum>
+                      <maximum>1300</maximum>
                     </limit>
                   </limits>
                 </rule>
