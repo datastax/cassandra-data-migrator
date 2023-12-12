@@ -16,7 +16,7 @@
     <junit.version>5.9.1</junit.version>
     <mockito.version>4.11.0</mockito.version>
     <java-driver.version>4.17.0</java-driver.version>
-    <log4j.version>2.20.0</log4j.version>
+    <log4j.version>2.21.0</log4j.version>
   </properties>
 
   <distributionManagement>
