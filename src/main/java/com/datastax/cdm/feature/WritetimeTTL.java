@@ -75,10 +75,12 @@ public class WritetimeTTL extends AbstractFeature  {
             logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.FILTER_WRITETS_MAX, filterMax, Instant.ofEpochMilli(filterMax / 1000));
         }
 
+
         isValid = validateProperties();
         isEnabled = isValid &&
                 ((null != ttlNames && !ttlNames.isEmpty())
                 || (null != writetimeNames && !writetimeNames.isEmpty())
+                || autoTTLNames || autoWritetimeNames
                 || customWritetime > 0);
 
         isLoaded = true;
@@ -308,5 +310,13 @@ public class WritetimeTTL extends AbstractFeature  {
             logger.error("Filter Min {} is greater than Filter Max {}", filterMin, filterMax);
             isValid = false;
         }
+    }
+
+    public List<String> getTtlNames() {
+        return ttlNames;
+    }
+
+    public List<String> getWritetimeNames() {
+        return writetimeNames;
     }
 }
