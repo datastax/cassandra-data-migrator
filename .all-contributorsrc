@@ -139,6 +139,16 @@
       "contributions": [
         "review"
       ]
+    },
+    {
+      "login": "Jeremya",
+      "name": "Jeremy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/576519?v=4",
+      "profile": "https://github.com/Jeremya",
+      "contributions": [
+        "code"
+      ]
     }
-  ]
+  ],
+  "commitType": "docs"
 }
