@@ -22,10 +22,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -108,10 +108,12 @@ class DATERANGETYPE_CodecTest {
 
     @Test
     void parse_ShouldParseStringToDateRange() throws ParseException {
+        DateTimeFormatter df = (new DateTimeFormatterBuilder())
+                .appendInstant(3).toFormatter();
         String formattedDateTime = ZonedDateTime.now()
                 .withZoneSameInstant(ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.MILLIS)
-                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                .format(df);
 
         // Enclose in single quotes as per the error message
         String dateRangeLiteral = "'" + formattedDateTime + "'";
