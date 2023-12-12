@@ -1,4 +1,7 @@
 # Release Notes
+## [4.1.9 to 4.1.11] - 2023-12-11
+- Code test & coverage changes
+
 ## [4.1.8] - 2023-10-13
 - Upgraded to use Scala 2.13 
 
