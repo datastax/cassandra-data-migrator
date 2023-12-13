@@ -1,3 +1,15 @@
+/*
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
 DROP TABLE IF EXISTS origin.codec;
 CREATE TABLE origin.codec(key text, val_int text, val_bigint text, val_timestamp text, val_decimal text, val_double text, PRIMARY KEY (key));
 INSERT INTO origin.codec(key,val_int,val_bigint,val_timestamp,val_decimal,val_double) 
