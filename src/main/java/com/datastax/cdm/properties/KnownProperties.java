@@ -85,10 +85,10 @@ public class KnownProperties {
         required.add(ORIGIN_KEYSPACE_TABLE);
            types.put(ORIGIN_TTL_NAMES, PropertyType.STRING_LIST);
            types.put(ORIGIN_TTL_AUTO, PropertyType.BOOLEAN);
-        defaults.put(ORIGIN_TTL_AUTO, "true");
+        defaults.put(ORIGIN_TTL_AUTO, "false");
            types.put(ORIGIN_WRITETIME_NAMES, PropertyType.STRING_LIST);
            types.put(ORIGIN_WRITETIME_AUTO, PropertyType.BOOLEAN);
-        defaults.put(ORIGIN_WRITETIME_AUTO, "true");
+        defaults.put(ORIGIN_WRITETIME_AUTO, "false");
            types.put(ORIGIN_COLUMN_NAMES_TO_TARGET, PropertyType.STRING_LIST);
     }
 
