@@ -81,7 +81,7 @@ _testDockerNetwork() {
 }
 
 _testDockerCassandra() {
-  dockerPs=$(docker ps -a | awk '{if ($NF == "'${DOCKER_CASS}'") {print "yes"}}')
+  dockerPs=$(docker ps --all --filter "name=${DOCKER_CASS}" --format "{{.Status}}" | awk '{if ($1 == "Up") {print "yes"}}')
   if [ "$dockerPs" != "yes" ]; then
     echo "no"
     return
@@ -154,7 +154,7 @@ _dropKeyspaces() {
 }
 
 _testDockerCDM() {
-  dockerPs=$(docker ps -a | awk '{if ($NF == "'${DOCKER_CDM}'") {print "yes"}}')
+  dockerPs=$(docker ps --all --filter "name=${DOCKER_CDM}" --format "{{.Status}}" | awk '{if ($1 == "Up") {print "yes"}}')
   if [ "$dockerPs" != "yes" ]; then
     echo "no"
   else
@@ -278,7 +278,7 @@ _Validate() {
   fi
 
   if [ "$(_testDockerCassandra)" == "yes" ]; then
-    _info "Cassandra Docker is valid"
+    _info "Cassandra Docker is valid and running"
   else
     _warn "Cassandra Docker is invalid"
     invalid=1
@@ -292,7 +292,7 @@ _Validate() {
   fi  
 
   if [ "$(_testDockerCDM)" == "yes" ]; then
-    _info "CDM Docker is valid"
+    _info "CDM Docker is valid and running"
   else
     _warn "CDM Docker is invalid"
     invalid=1
