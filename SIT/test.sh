@@ -1,5 +1,4 @@
 #!/bin/bash
-
 _usage() {
   cat <<EOF
 
@@ -36,11 +35,11 @@ fi
 
 _captureOutput() {
   _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output"
-  docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output
-  _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output"
-  mv ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output
-  _info "Moving ${testDir}/output/$(basename ${testDir})/*.err TO ${testDir}/output"
-  mv ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output
+  docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output/
+  _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.out TO ${testDir}/output"
+  mv ${testDir}/output/$(basename ${testDir})/output/*.out ${testDir}/output/
+  _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.err TO ${testDir}/output/"
+  mv ${testDir}/output/$(basename ${testDir})/output/*.err ${testDir}/output/
   _info "Removing ${testDir}/output/$(basename ${testDir})"
   rm -rf ${testDir}/output/$(basename ${testDir})
 }
@@ -124,7 +123,7 @@ errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
   _info ${testDir} Executing test
-  docker exec ${DOCKER_CDM} bash -e $testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err
+  docker exec ${DOCKER_CDM} bash -e -c "$testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err"
   if [ $? -ne 0 ]; then
     _error "${testDir}/execute.sh failed, see $testDir/output/execute.out and $testDir/output/execute.err"
     echo "=-=-=-=-=-=-=-=-=-= Directory Listing =-=-=-=-=-=-=-=-=-=-"

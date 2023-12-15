@@ -81,7 +81,7 @@ _testDockerNetwork() {
 }
 
 _testDockerCassandra() {
-  dockerPs=$(docker ps -a | awk '{if ($NF == "'${DOCKER_CASS}'") {print "yes"}}')
+  dockerPs=$(docker ps | awk '{if ($NF == "'${DOCKER_CASS}'") {print "yes"}}')
   if [ "$dockerPs" != "yes" ]; then
     echo "no"
     return
@@ -154,7 +154,7 @@ _dropKeyspaces() {
 }
 
 _testDockerCDM() {
-  dockerPs=$(docker ps -a | awk '{if ($NF == "'${DOCKER_CDM}'") {print "yes"}}')
+  dockerPs=$(docker ps | awk '{if ($NF == "'${DOCKER_CDM}'") {print "yes"}}')
   if [ "$dockerPs" != "yes" ]; then
     echo "no"
   else
