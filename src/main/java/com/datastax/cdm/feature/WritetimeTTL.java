@@ -117,7 +117,6 @@ public class WritetimeTTL extends AbstractFeature  {
                 logger.error("Counter table cannot specify TTL or WriteTimestamp columns as they cannot set on write");
                 isValid = false;
                 isEnabled = false;
-                return false;
             }
 
             logger.info("Counter table does not support TTL or WriteTimestamp columns as they cannot set on write, so feature is disabled");
