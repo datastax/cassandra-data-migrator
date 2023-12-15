@@ -37,12 +37,10 @@ fi
 _captureOutput() {
   _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output"
   docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output
-  _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output"
-  mv ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output
-  _info "Moving ${testDir}/output/$(basename ${testDir})/*.err TO ${testDir}/output"
-  mv ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output
-  _info "Removing ${testDir}/output/$(basename ${testDir})"
-  rm -rf ${testDir}/output/$(basename ${testDir})
+  _info "Moving ${testDir}/output/*.out TO ${testDir}/output"
+  mv ${testDir}/output/*.out ${testDir}/output
+  _info "Moving ${testDir}/output/*.err TO ${testDir}/output"
+  mv ${testDir}/output/*.err ${testDir}/output
 }
 
 EXPECTED_FILES="setup.cql expected.cql expected.out execute.sh"
