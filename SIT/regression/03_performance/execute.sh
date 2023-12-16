@@ -28,5 +28,8 @@ dsbulk load -url $workingDir/data.csv -h $CASS_CLUSTER -u $CASS_USERNAME -p $CAS
 dsbulk load -url $workingDir/data_break.csv -h $CASS_CLUSTER -u $CASS_USERNAME -p $CASS_PASSWORD -k target -t regression_performance
 cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD $CASS_CLUSTER -f $workingDir/breakData.cql > $workingDir/breakData.out 2> $workingDir/breakData.err
 
+# This upsert to origin will update the writetime on origin to be newer than target
+dsbulk load -url $workingDir/data.csv -h $CASS_CLUSTER -u $CASS_USERNAME -p $CASS_PASSWORD -k origin -t regression_performance
+
 /local/cdm.sh -f cdm.txt -s fixData -d "$workingDir" > cdm.fixData.out 2>cdm.fixData.err
 /local/cdm-assert.sh -f cdm.fixData.out -a cdm.fixData.assert -d "$workingDir"

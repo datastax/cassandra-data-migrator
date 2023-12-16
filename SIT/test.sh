@@ -72,7 +72,7 @@ for testDir in $(ls -d ${PHASE}/*); do
 
   # Clean up any previous results that may exist
   for f in ${GENERATED_FILES}; do
-    rm -f ${testDir}/$f
+    rm -rf ${testDir}/$f
   done
   rm -rf ${testDir}/output/*
   mkdir -p ${testDir}/output

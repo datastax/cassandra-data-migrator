@@ -14,5 +14,11 @@
 
 DELETE FROM target.feature_partition_range WHERE key='key1';
 UPDATE target.feature_partition_range SET value='value999' WHERE key='key2';
+
+# This upsert to origin will update the writetime on origin to be newer than target
+INSERT INTO origin.feature_partition_range(key,value) VALUES ('key1','valueA');
+INSERT INTO origin.feature_partition_range(key,value) VALUES ('key2','valueB');
+INSERT INTO origin.feature_partition_range(key,value) VALUES ('key3','valueC');
+
 SELECT * FROM target.feature_partition_range;
 
