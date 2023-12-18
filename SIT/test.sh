@@ -35,12 +35,16 @@ fi
 . common.sh
 
 _captureOutput() {
-  _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output"
-  docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output
-  _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output"
-  mv ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output
-  _info "Moving ${testDir}/output/$(basename ${testDir})/*.err TO ${testDir}/output"
-  mv ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output
+  _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output/"
+  docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output/
+  _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output/"
+  mv -v ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output/
+  _info "Moving ${testDir}/output/$(basename ${testDir})/*.err TO ${testDir}/output/"
+  mv -v ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output/
+  _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.out TO ${testDir}/output/"
+  mv -v ${testDir}/output/$(basename ${testDir})/output/*.out ${testDir}/output/
+  _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.err TO ${testDir}/output/"
+  mv -v ${testDir}/output/$(basename ${testDir})/output/*.err ${testDir}/output/
   _info "Removing ${testDir}/output/$(basename ${testDir})"
   rm -rf ${testDir}/output/$(basename ${testDir})
 }
@@ -68,7 +72,7 @@ for testDir in $(ls -d ${PHASE}/*); do
 
   # Clean up any previous results that may exist
   for f in ${GENERATED_FILES}; do
-    rm -f ${testDir}/$f
+    rm -rf ${testDir}/$f
   done
   rm -rf ${testDir}/output/*
   mkdir -p ${testDir}/output
@@ -124,17 +128,17 @@ errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
   _info ${testDir} Executing test
-  docker exec ${DOCKER_CDM} bash -e $testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err
+  docker exec ${DOCKER_CDM} bash -e -c "$testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err"
   if [ $? -ne 0 ]; then
     _error "${testDir}/execute.sh failed, see $testDir/output/execute.out and $testDir/output/execute.err"
-    echo "=-=-=-=-=-=-=-=-=-= Directory Listing =-=-=-=-=-=-=-=-=-=-"
-    echo "$(ls -laR ${testDir})"
+    echo "=-=-=-=-=-=-=- Container Directory Listing -=-=-=-=-=-=-=-"
+    echo "$(docker exec ${DOCKER_CDM} ls -laR ${testDir})"
     echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-==-=-=-=-=-=-=-=-=-=-=-=-"
+    _captureOutput
     errors=1
   fi
 done
 if [ $errors -ne 0 ]; then
-  _captureOutput
   _fatal "One or more execute.sh failed. See above ERROR(s) for details."
 fi
 
@@ -156,6 +160,7 @@ for testDir in $(ls -d ${PHASE}/*); do
   fi
   if [ $? -ne 0 ]; then
     _error "${testDir}/expected.cql failed, see $testDir/output/actual.out $testDir/output/and actual.err"
+    _captureOutput
     errors=1
     continue
   fi
@@ -164,10 +169,12 @@ for testDir in $(ls -d ${PHASE}/*); do
   if [ $rtn -eq 1 ]; then
     _error "${testDir} files differ (expected vs actual):"
     sdiff -w 200 ${testDir}/expected.out ${testDir}/output/actual.out
+    _captureOutput
     errors=1
     continue
   elif [ $rtn -ne 0 ]; then
     _error "${testDir} had some other problem running diff"
+    _captureOutput
     errors=1
     continue
   fi
@@ -175,7 +182,6 @@ for testDir in $(ls -d ${PHASE}/*); do
   _info "PASS: ${testDir} returned expected results"
 done
 if [ $errors -ne 0 ]; then
-  _captureOutput
   _fatal "One or more expected results failed. See above ERROR(s) for details."
 fi
 

@@ -12,5 +12,11 @@
 
 DELETE FROM target.smoke_autocorrect_kvp WHERE key='key2';
 UPDATE target.smoke_autocorrect_kvp SET value='value999' WHERE key='key3';
+
+# This upsert to origin will update the writetime on origin to be newer than target
+INSERT INTO origin.smoke_autocorrect_kvp(key,value) VALUES ('key1','valueA');
+INSERT INTO origin.smoke_autocorrect_kvp(key,value) VALUES ('key2','valueB');
+INSERT INTO origin.smoke_autocorrect_kvp(key,value) VALUES ('key3','valueC');
+
 SELECT * FROM target.smoke_autocorrect_kvp;
 

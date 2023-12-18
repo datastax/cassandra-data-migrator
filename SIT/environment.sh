@@ -81,7 +81,7 @@ _testDockerNetwork() {
 }
 
 _testDockerCassandra() {
-  dockerPs=$(docker ps -a | awk '{if ($NF == "'${DOCKER_CASS}'") {print "yes"}}')
+  dockerPs=$(docker ps --all --filter "name=${DOCKER_CASS}" --format "{{.Status}}" | awk '{if ($1 == "Up") {print "yes"}}')
   if [ "$dockerPs" != "yes" ]; then
     echo "no"
     return
@@ -154,7 +154,7 @@ _dropKeyspaces() {
 }
 
 _testDockerCDM() {
-  dockerPs=$(docker ps -a | awk '{if ($NF == "'${DOCKER_CDM}'") {print "yes"}}')
+  dockerPs=$(docker ps --all --filter "name=${DOCKER_CDM}" --format "{{.Status}}" | awk '{if ($1 == "Up") {print "yes"}}')
   if [ "$dockerPs" != "yes" ]; then
     echo "no"
   else
@@ -228,8 +228,17 @@ _Setup() {
 
   if [ "$(_testDockerCDM)" != "yes" ]; then  
     dockerContainerVersion=datastax/cassandra-data-migrator:${CDM_VERSION}
+
+    # Uncomment the below 'docker build' lines when making docker changes to ensure you test the docker changes
+    # Also comment the 'docker pull' line when 'docker build' is uncommented.
+    # Note this ('docker build') should be done only when testing docker changes locally (i.e. Do not commit)
+    # If you commit the 'docker build' step, the build will work but it will take too long as each time it will build
+    # CDM docker image instead of just downloading from DockerHub.
     _info "Pulling latest Docker container for ${dockerContainerVersion}"
     docker pull ${dockerContainerVersion}
+    # _info "Building latest Docker container for ${dockerContainerVersion}"
+    # docker build -t ${dockerContainerVersion} ..
+
     _info "Starting Docker container ${DOCKER_CASS}"
     docker run --name ${DOCKER_CDM} --network ${NETWORK_NAME} --ip ${SUBNET}.3 -e "CASS_USERNAME=${CASS_USERNAME}" -e "CASS_PASSWORD=${CASS_PASSWORD}" -e "CASS_CLUSTER=${DOCKER_CASS}" -d ${dockerContainerVersion}
     attempt=1
@@ -278,7 +287,7 @@ _Validate() {
   fi
 
   if [ "$(_testDockerCassandra)" == "yes" ]; then
-    _info "Cassandra Docker is valid"
+    _info "Cassandra Docker is valid and running"
   else
     _warn "Cassandra Docker is invalid"
     invalid=1
@@ -292,7 +301,7 @@ _Validate() {
   fi  
 
   if [ "$(_testDockerCDM)" == "yes" ]; then
-    _info "CDM Docker is valid"
+    _info "CDM Docker is valid and running"
   else
     _warn "CDM Docker is invalid"
     invalid=1
