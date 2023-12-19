@@ -148,6 +148,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "arvy",
+      "name": "Arvydas Jonusonis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4861274?v=4",
+      "profile": "https://github.com/arvy",
+      "contributions": [
+        "userTesting",
+        "doc"
+      ]
     }
   ],
   "commitType": "docs"
