@@ -151,6 +151,9 @@ For recognizing contributions, please follow [this documentation](https://allcon
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/mfmaher2"><img src="https://avatars.githubusercontent.com/u/64795956?v=4?s=50" width="50px;" alt="mfmaher2"/><br /><sub><b>mfmaher2</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/pulls?q=is%3Apr+reviewed-by%3Amfmaher2" title="Reviewed Pull Requests">👀</a></td>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/Jeremya"><img src="https://avatars.githubusercontent.com/u/576519?v=4?s=50" width="50px;" alt="Jeremy"/><br /><sub><b>Jeremy</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/commits?author=Jeremya" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/arvy"><img src="https://avatars.githubusercontent.com/u/4861274?v=4?s=50" width="50px;" alt="Arvydas Jonusonis"/><br /><sub><b>Arvydas Jonusonis</b></sub></a><br /><a href="#userTesting-arvy" title="User Testing">📓</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=arvy" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
 </table>
 
