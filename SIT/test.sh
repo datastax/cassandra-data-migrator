@@ -37,14 +37,19 @@ fi
 _captureOutput() {
   _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output/"
   docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output/
+  
   _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output/"
-  mv -v ${testDir}/output/$(basename ${testDir})/*.out ${testDir}/output/
+  find ${testDir}/output/$(basename ${testDir})/ -type f -name "*.out" | xargs -I{} mv {} ${testDir}/output/
+
   _info "Moving ${testDir}/output/$(basename ${testDir})/*.err TO ${testDir}/output/"
-  mv -v ${testDir}/output/$(basename ${testDir})/*.err ${testDir}/output/
-  _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.out TO ${testDir}/output/"
-  mv -v ${testDir}/output/$(basename ${testDir})/output/*.out ${testDir}/output/
+  find ${testDir}/output/$(basename ${testDir})/ -type f -name "*.err" | xargs -I{} mv {} ${testDir}/output/
+
+  _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.out TO ${testDir}/output"
+  find ${testDir}/output/$(basename ${testDir})/output/ -type f -name "*.out" | xargs -I{} mv {} ${testDir}/output/
+
   _info "Moving ${testDir}/output/$(basename ${testDir})/output/*.err TO ${testDir}/output/"
-  mv -v ${testDir}/output/$(basename ${testDir})/output/*.err ${testDir}/output/
+  find ${testDir}/output/$(basename ${testDir})/output/ -type f -name "*.err" | xargs -I{} mv {} ${testDir}/output/
+
   _info "Removing ${testDir}/output/$(basename ${testDir})"
   rm -rf ${testDir}/output/$(basename ${testDir})
 }
@@ -80,7 +85,7 @@ for testDir in $(ls -d ${PHASE}/*); do
 done
 
 # The .jar file is expected to be present
-docker exec ${DOCKER_CDM} ls -d ${CDM_JAR} >/dev/null 2>&1
+docker exec ${DOCKER_CDM} bash -c "ls -d ${CDM_JAR} >/dev/null 2>&1"
 if [ $? -ne 0 ]; then
   _error "Required file ${CDM_JAR} is not installed in Docker container ${DOCKER_CDM}"
   errors=1
@@ -109,7 +114,7 @@ errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
   _info ${testDir} Setup tables and data 
-  docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/setup.cql > $testDir/output/setup.out 2>$testDir/output/setup.err
+  docker exec ${DOCKER_CASS} bash -c "cqlsh -u ${CASS_USERNAME} -p ${CASS_PASSWORD} -f ${testDir}/setup.cql" > ${testDir}/output/setup.out 2>${testDir}/output/setup.err
   if [ $? -ne 0 ]; then
     _error "${testDir}/setup.cql failed, see $testDir/output/setup.out and $testDir/output/setup.err"
     errors=1
@@ -128,7 +133,7 @@ errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
   _info ${testDir} Executing test
-  docker exec ${DOCKER_CDM} bash -e -c "$testDir/execute.sh /$testDir > $testDir/output/execute.out 2>$testDir/output/execute.err"
+  docker exec ${DOCKER_CDM} bash -e -c "${testDir}/execute.sh /${testDir}" > ${testDir}/output/execute.out 2>${testDir}/output/execute.err
   if [ $? -ne 0 ]; then
     _error "${testDir}/execute.sh failed, see $testDir/output/execute.out and $testDir/output/execute.err"
     echo "=-=-=-=-=-=-=- Container Directory Listing -=-=-=-=-=-=-=-"
@@ -156,7 +161,7 @@ for testDir in $(ls -d ${PHASE}/*); do
     ${testDir}/alternateCheckResults.sh > $testDir/output/actual.out 2>$testDir/output/actual.err
   else 
     _info ${testDir} Check Expected Results 
-    docker exec ${DOCKER_CASS} cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql > $testDir/output/actual.out 2>$testDir/output/actual.err
+    docker exec ${DOCKER_CASS} bash -c "cqlsh -u ${CASS_USERNAME} -p ${CASS_PASSWORD} -f ${testDir}/expected.cql" > ${testDir}/output/actual.out 2>${testDir}/output/actual.err
   fi
   if [ $? -ne 0 ]; then
     _error "${testDir}/expected.cql failed, see $testDir/output/actual.out $testDir/output/and actual.err"
