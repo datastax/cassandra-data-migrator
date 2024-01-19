@@ -17,6 +17,9 @@
     <mockito.version>4.11.0</mockito.version>
     <java-driver.version>4.17.0</java-driver.version>
     <log4j.version>2.21.0</log4j.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
   </properties>
 
   <distributionManagement>
@@ -182,7 +185,7 @@
     <connection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</connection>
     <developerConnection>scm:git:git@github.com:datastax/cassandra-data-migrator.git</developerConnection>
     <url>https://github.com/datastax/cassandra-data-migrator</url>
-    <tag>4.1.8</tag>
+    <tag>4.1.11</tag>
   </scm>
 
   <build>
@@ -246,10 +249,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.1</version>
+        <version>3.12.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <release>${maven.compiler.release}</release>
         </configuration>
       </plugin>
 
