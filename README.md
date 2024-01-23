@@ -7,7 +7,7 @@
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
-> :warning: Please note this job has been tested with spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/)
+> :warning: Please note this job has been tested with spark version [3.4.2](https://archive.apache.org/dist/spark/spark-3.4.2/)
 
 ## Install as a Container
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
@@ -17,11 +17,11 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 - Download the latest jar file from the GitHub [packages area here](https://github.com/datastax/cassandra-data-migrator/packages/1832128)
 
 ### Prerequisite
-- Install Java8 as spark binaries are compiled with it.
-- Install Spark version [3.4.1](https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
+- Install **Java11** (minimum) as Spark binaries are compiled with it.
+- Install Spark version [`3.4.2`](https://archive.apache.org/dist/spark/spark-3.4.2/spark-3.4.2-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
 ```
-wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3-scala2.13.tgz
-tar -xvzf spark-3.4.1-bin-hadoop3-scala2.13.tgz
+wget https://archive.apache.org/dist/spark/spark-3.4.2/spark-3.4.2-bin-hadoop3-scala2.13.tgz
+tar -xvzf spark-3.4.2-bin-hadoop3-scala2.13.tgz
 ```
 
 > :warning: If the above Spark and Scala version is not properly installed, you'll then see a similar exception like below when running the CDM jobs,
