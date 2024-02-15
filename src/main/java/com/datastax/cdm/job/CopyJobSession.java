@@ -106,6 +106,11 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                         }
 
                         rateLimiterTarget.acquire(1);
+                        // Set batchSize to 1 during retry attempts
+                        if (attempts > 1 && batchSize > 1) {
+                            batchSize = 1;
+                            logger.info("Batch size reset to {} on the retry attempt {}", batchSize, attempts);
+                        }
                         batch = writeAsync(batch, writeResults, boundUpsert);
                         jobCounter.threadIncrement(JobCounter.CounterType.UNFLUSHED);
 
