@@ -10,9 +10,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>2.13.12</scala.version>
     <scala.main.version>2.13</scala.main.version>
-    <spark.version>3.4.1</spark.version>
-    <connector.version>3.4.1</connector.version>
-    <cassandra.version>5.0-alpha1</cassandra.version>
+    <spark.version>3.5.1</spark.version>
+    <connector.version>3.5.0</connector.version>
+    <cassandra.version>5.0-beta1</cassandra.version>
     <junit.version>5.9.1</junit.version>
     <mockito.version>4.11.0</mockito.version>
     <java-driver.version>4.17.0</java-driver.version>
@@ -198,7 +198,7 @@
       <plugin>
       <groupId>net.alchim31.maven</groupId>
       <artifactId>scala-maven-plugin</artifactId>
-      <version>4.8.0</version>
+      <version>4.8.1</version>
       <executions>
         <execution>
           <phase>process-sources</phase>

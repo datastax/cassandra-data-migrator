@@ -6,6 +6,7 @@
 .github/workflows/maven.yml
 .github/workflows/snyk-cli-scan.yml
 .github/workflows/snyk-pr-cleanup.yml
+.github/workflows/dependabot.yml
 README.md
 rat-excludes.txt
 pom.xml
@@ -19,7 +20,9 @@ Dockerfile
 .snyk
 .snyk.ignore.example
 PERF/*
+PERF/*/*/output/*
 SIT/*
+SIT/*/*/output/*
 scripts/*
 test-backup/feature/*
 src/resources/partitions.csv
@@ -81,6 +84,7 @@ SIT/smoke/04_counters/cdm.validateData.assert
 SIT/smoke/04_counters/cdm.fixForce.assert
 SIT/smoke/05_reserved_keyword/cdm.txt
 SIT/smoke/05_reserved_keyword/expected.out
+SIT/smoke_inflight/06_vector/cdm.sh
 PERF/logs/scenario_20230523_162859_122.log
 PERF/logs/scenario_20230523_162126_056.log
 PERF/logs/scenario_20230523_162204_904.log
