@@ -34,3 +34,20 @@ jobs:
       run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
       env:
         GITHUB_TOKEN: ${{ github.token }}
+
+  clean:
+    name: Cleanup Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete 4.x Package Versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'datastax.cdm.cassandra-data-migrator'
+          package-type: 'maven'
+          min-versions-to-keep: 7
+      - name: Delete 3.x Package Versions
+        uses: actions/delete-package-versions@v5
+        with:
+	  package-name: 'datastax.astra.migrate.cassandra-data-migrator'
+          package-type: 'maven'
+          min-versions-to-keep: 6
