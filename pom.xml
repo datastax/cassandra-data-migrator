@@ -16,7 +16,7 @@
     <junit.version>5.9.1</junit.version>
     <mockito.version>4.11.0</mockito.version>
     <java-driver.version>4.17.0</java-driver.version>
-    <log4j.version>2.21.0</log4j.version>
+    <log4j.version>2.22.1</log4j.version>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <maven.compiler.release>11</maven.compiler.release>
