@@ -1,4 +1,7 @@
 # Release Notes
+## [4.1.13] - 2024-02-27
+- Upgraded to use Spark `3.5.1`.
+
 ## [4.1.12] - 2024-01-22
 - Upgraded to use Spark `3.4.2`.
 - Added Java `11` as the minimally required pre-requisite to run CDM jobs.
