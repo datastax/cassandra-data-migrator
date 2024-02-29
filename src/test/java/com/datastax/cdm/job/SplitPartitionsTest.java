@@ -14,17 +14,15 @@
 
 package com.datastax.cdm.job;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SplitPartitionsTest {
 
@@ -44,6 +42,27 @@ public class SplitPartitionsTest {
                 BigInteger.valueOf(44), 200);
         assertEquals(8, partitions.size());
     }
+
+    @Test
+    void getSubPartitionsFromFileNoFileTest() throws IOException {
+        Exception excp = assertThrows(RuntimeException.class,
+                () -> SplitPartitions.getSubPartitionsFromFile(8, "partfile.csv"));
+        assertTrue(excp.getMessage().contains("No 'partfile.csv' file found!! Add this file in the current folder & rerun!"));
+    }
+
+    @Test
+    void getSubPartitionsFromFileTest() throws IOException {
+        List<SplitPartitions.Partition> partitions = SplitPartitions.getSubPartitionsFromFile(5, "./src/resources/partitions.csv");
+        assertEquals(25, partitions.size());
+    }
+
+    @Test
+    void getSubPartitionsFromHighNumPartTest() throws IOException {
+        List<SplitPartitions.Partition> partitions = SplitPartitions.getSubPartitionsFromFile(1000, "./src/resources/partitions.csv");
+        assertEquals(50, partitions.size());
+    }
+
+
     @Test
     void batchesTest() {
         List<String> mutable_list = Arrays.asList("e1", "e2", "e3", "e4", "e5", "e6");
@@ -51,4 +70,24 @@ public class SplitPartitionsTest {
         assertEquals(3, out.count());
     }
 
+    @Test
+    void PartitionMinMaxBlankTest() {
+        assertTrue((new SplitPartitions.PartitionMinMax("")).hasError);
+    }
+
+    @Test
+    void PartitionMinMaxInvalidTest() {
+        assertTrue((new SplitPartitions.PartitionMinMax(" # min, max")).hasError);
+    }
+
+    @Test
+    void PartitionMinMaxValidTest() {
+        assertTrue(!(new SplitPartitions.PartitionMinMax(" -123, 456")).hasError);
+    }
+
+    @Test
+    void PartitionMinMaxValidMinMaxTest() {
+        assertEquals(BigInteger.valueOf(-507900353496146534l), (new SplitPartitions.PartitionMinMax(" -507900353496146534, 456")).min);
+        assertEquals(BigInteger.valueOf(9101008634499147643l), (new SplitPartitions.PartitionMinMax(" -507900353496146534,9101008634499147643")).max);
+    }
 }

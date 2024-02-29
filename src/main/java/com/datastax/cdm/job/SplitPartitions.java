@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 public class SplitPartitions {
 
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
+    private static final int MAX_NUM_PARTS_FOR_PARTITION_FILE = 10;
 
     public static List<Partition> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max, int coveragePercent) {
         logger.info("ThreadID: {} Splitting min: {} max: {}", Thread.currentThread().getId(), min, max);
@@ -48,22 +49,49 @@ public class SplitPartitions {
     public static List<Partition> getSubPartitionsFromFile(int numSplits, String inputFilename) throws IOException {
         logger.info("ThreadID: {} Splitting partitions in file: {} using a split-size of {}"
                 , Thread.currentThread().getId(), inputFilename, numSplits);
+        if (numSplits > 10) {
+            logger.warn("Resetting spark.cdm.perfops.numParts value of {} to max allowed value of {} when using a partition file: {}",
+                    numSplits, MAX_NUM_PARTS_FOR_PARTITION_FILE, inputFilename);
+            numSplits = MAX_NUM_PARTS_FOR_PARTITION_FILE;
+        }
         List<Partition> partitions = new ArrayList<Partition>();
         BufferedReader reader = getfileReader(inputFilename);
         String line = null;
+        PartitionMinMax pMinMax;
         while ((line = reader.readLine()) != null) {
-            if (line.startsWith("#")) {
-                continue;
-            }
-            String[] minMax = line.split(",");
             try {
-                partitions.addAll(getSubPartitions(numSplits, new BigInteger(minMax[0]), new BigInteger(minMax[1]), 100));
+                pMinMax = new PartitionMinMax(line);
+                if (pMinMax.hasError) {
+                    logger.error("Skipping " + pMinMax.error);
+                    continue;
+                }
+                partitions.addAll(getSubPartitions(numSplits, pMinMax.min, pMinMax.max, 100));
             } catch (Exception e) {
                 logger.error("Skipping partition: {}", line, e);
             }
         }
 
         return partitions;
+    }
+
+    static class PartitionMinMax {
+        static final Pattern pat = Pattern.compile("^-?[0-9]*,-?[0-9]*");
+        public BigInteger min;
+        public BigInteger max;
+        public boolean hasError = false;
+        public String error;
+
+        public PartitionMinMax(String line) {
+            line = line.replaceAll(" ", "");
+            if (!pat.matcher(line).matches()) {
+                error = "Invaliding partition line: " + line;
+                hasError = true;
+                return;
+            }
+            String[] minMax = line.split(",");
+            min = new BigInteger(minMax[0]);
+            max = new BigInteger(minMax[1]);
+        }
     }
 
     public static List<PKRows> getRowPartsFromFile(int numSplits, String inputFilename) throws IOException {
