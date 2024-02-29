@@ -1,4 +1,7 @@
 # Release Notes
+## [4.1.14] - 2024-02-29
+- Fixed OOM bug caused when using partition file with large value for num-parts
+
 ## [4.1.13] - 2024-02-27
 - Upgraded to use Spark `3.5.1`.
 
