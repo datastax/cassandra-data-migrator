@@ -48,6 +48,6 @@ jobs:
       - name: Delete 3.x Package Versions
         uses: actions/delete-package-versions@v5
         with:
-	  package-name: 'datastax.astra.migrate.cassandra-data-migrator'
+          package-name: 'datastax.astra.migrate.cassandra-data-migrator'
           package-type: 'maven'
           min-versions-to-keep: 6
