@@ -116,7 +116,7 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
             }
             if (originWriteTimeStamp < minWriteTimeStampFilter
                     || originWriteTimeStamp > maxWriteTimeStampFilter) {
-                if (logger.isInfoEnabled()) logger.info("Timestamp filter removing: {}", record.getPk());
+                if (logger.isTraceEnabled()) logger.trace("Timestamp filter removing: {}", record.getPk());
                 return true;
             }
         }

@@ -148,7 +148,7 @@ public class WritetimeTTL extends AbstractFeature  {
         }
 
         if (this.writetimeIncrement == 0L && (null!=writetimeNames && !writetimeNames.isEmpty()) && originTable.hasUnfrozenList()) {
-            logger.warn("Writetime is configured, but the origin table at least one unfrozen List, and there is a zero-value increment configured at "+
+            logger.warn("Writetime is configured, but the origin table has at least one unfrozen List, and there is a zero-value increment configured at "+
                     KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT+"; this may result in duplicate list entries when "+
                     KnownProperties.AUTOCORRECT_MISMATCH+" is enabled.");
         }
