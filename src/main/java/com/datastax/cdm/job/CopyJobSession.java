@@ -141,6 +141,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
     private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) throws Exception {
         if (batch.size() > 0) {
+            batch = batch.setConsistencyLevel(targetSession.getCqlTable().getWriteConsistencyLevel());
             writeResults.add(targetUpsertStatement.executeAsync(batch));
         }
         for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
@@ -165,11 +166,13 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         if (batchSize > 1) {
             batch = batch.add(boundUpsert);
             if (batch.size() >= batchSize) {
+                batch = batch.setConsistencyLevel(targetSession.getCqlTable().getWriteConsistencyLevel());
                 writeResults.add(targetUpsertStatement.executeAsync(batch));
                 return BatchStatement.newInstance(BatchType.UNLOGGED);
             }
             return batch;
         } else {
+            boundUpsert = boundUpsert.setConsistencyLevel(targetSession.getCqlTable().getWriteConsistencyLevel());
             writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
             return batch;
         }
