@@ -96,7 +96,7 @@ Each line above represents a partition-range (`min,max`). Alternatively, you can
 ```
 ./spark-submit --properties-file cdm.properties \
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
- --conf spark.cdm.tokenRange.partitionFile="/<path-to-file>/<csv-input-filename>" \
+ --conf spark.cdm.tokenrange.partitionFile="/<path-to-file>/<csv-input-filename>" \
  --master "local[*]" --driver-memory 25G --executor-memory 25G \
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
