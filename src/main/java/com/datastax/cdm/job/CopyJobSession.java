@@ -125,7 +125,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
             } catch (Exception e) {
                 if (attempts == maxAttempts) {
                     jobCounter.threadIncrement(JobCounter.CounterType.ERROR, jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE) - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
-                    logFailedPartitionsInFile(partitionFile, min, max);
+                    logPartitionsInFile(partitionFileOutput, min, max);
                 }
                 logger.error("Error occurred during Attempt#: {}", attempts, e);
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",

@@ -15,7 +15,7 @@
  */
 package com.datastax.cdm.job
 
-import com.datastax.cdm.job.SplitPartitions.getPartitionFile
+import com.datastax.cdm.job.SplitPartitions.getPartitionFileInput
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{SparkConf, SparkContext}
@@ -53,7 +53,7 @@ abstract class BaseJob[T: ClassTag] extends App {
 
   var originConnection: CassandraConnector = _
   var targetConnection: CassandraConnector = _
-  var partitionFileName: String = ""
+  var partitionFileNameInput: String = ""
 
   def setup(jobName: String, jobFactory: IJobSessionFactory[T]): Unit = {
     logBanner(jobName + " - Starting")
@@ -66,7 +66,7 @@ abstract class BaseJob[T: ClassTag] extends App {
     sContext = spark.sparkContext
     sc = sContext.getConf
     propertyHelper = PropertyHelper.getInstance(sc);
-    this.partitionFileName = getPartitionFile(propertyHelper);
+    this.partitionFileNameInput = getPartitionFileInput(propertyHelper);
 
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)

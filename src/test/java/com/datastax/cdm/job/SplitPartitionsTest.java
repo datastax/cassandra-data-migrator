@@ -14,6 +14,10 @@
 
 package com.datastax.cdm.job;
 
+import com.datastax.cdm.properties.PropertyHelper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -25,6 +29,10 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SplitPartitionsTest {
+    @AfterEach
+    void tearDown() {
+        PropertyHelper.destroyInstance();
+    }
 
     @Test
     void getRandomSubPartitionsTest() {
@@ -89,5 +97,39 @@ public class SplitPartitionsTest {
     void PartitionMinMaxValidMinMaxTest() {
         assertEquals(BigInteger.valueOf(-507900353496146534l), (new SplitPartitions.PartitionMinMax(" -507900353496146534, 456")).min);
         assertEquals(BigInteger.valueOf(9101008634499147643l), (new SplitPartitions.PartitionMinMax(" -507900353496146534,9101008634499147643")).max);
+    }
+
+    @Test
+    void appendPartitionOnDiff() {
+        PropertyHelper helper = PropertyHelper.getInstance();
+        assertFalse(SplitPartitions.appendPartitionOnDiff(helper));
+        helper.setProperty("spark.cdm.tokenrange.partitionFile.appendOnDiff", true);
+        assertTrue(SplitPartitions.appendPartitionOnDiff(helper));
+    }
+
+    @Test
+    void getPartitionFileInput() {
+        PropertyHelper helper = PropertyHelper.getInstance();
+        helper.setProperty("spark.cdm.schema.origin.keyspaceTable", "tb");
+        assertEquals("./tb_partitions.csv", SplitPartitions.getPartitionFileInput(helper));
+
+        helper.setProperty("spark.cdm.tokenrange.partitionFile", "./file.csv");
+        assertEquals("./file.csv", SplitPartitions.getPartitionFileInput(helper));
+
+        helper.setProperty("spark.cdm.tokenrange.partitionFile.input", "./file_input.csv");
+        assertEquals("./file_input.csv", SplitPartitions.getPartitionFileInput(helper));
+    }
+
+    @Test
+    void getPartitionFileOutput() {
+        PropertyHelper helper = PropertyHelper.getInstance();
+        helper.setProperty("spark.cdm.schema.origin.keyspaceTable", "tb");
+        assertEquals("./tb_partitions.csv", SplitPartitions.getPartitionFileOutput(helper));
+
+        helper.setProperty("spark.cdm.tokenrange.partitionFile", "./file.csv");
+        assertEquals("./file.csv", SplitPartitions.getPartitionFileOutput(helper));
+
+        helper.setProperty("spark.cdm.tokenrange.partitionFile.output", "./file_output.csv");
+        assertEquals("./file_output.csv", SplitPartitions.getPartitionFileOutput(helper));
     }
 }

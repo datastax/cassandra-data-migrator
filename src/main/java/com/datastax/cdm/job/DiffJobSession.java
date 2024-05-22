@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -112,6 +113,7 @@ public class DiffJobSession extends CopyJobSession {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         boolean done = false;
+        AtomicBoolean hasDiff = new AtomicBoolean(false);
         int maxAttempts = maxRetries + 1;
         for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
             try {
@@ -152,19 +154,27 @@ public class DiffJobSession extends CopyJobSession {
                                 r.setAsyncTargetRow(targetResult);
                                 recordsToDiff.add(r);
                                 if (recordsToDiff.size() > fetchSizeInRows) {
-                                    diffAndClear(recordsToDiff);
+                                    if(diffAndClear(recordsToDiff)) {
+                                        hasDiff.set(true);
+                                    }
                                 }
                             } // targetRecord!=null
                         } // recordSet iterator
                     } // shouldFilterRecord
                 });
-                diffAndClear(recordsToDiff);
+                if (diffAndClear(recordsToDiff)) {
+                    hasDiff.set(true);
+                }
                 done = true;
+
+                if (hasDiff.get() && appendPartitionOnDiff) {
+                    logPartitionsInFile(partitionFileOutput, min, max);
+                }
             } catch (Exception e) {
                 logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
                         Thread.currentThread().getId(), min, max, attempts, e);
                 if (attempts == maxAttempts) {
-                    logFailedPartitionsInFile(partitionFile, min, max);
+                    logPartitionsInFile(partitionFileOutput, min, max);
                 }
             } finally {
                 jobCounter.globalIncrement();
@@ -173,18 +183,22 @@ public class DiffJobSession extends CopyJobSession {
         }
     }
 
-    private void diffAndClear(List<Record> recordsToDiff) {
+    private boolean diffAndClear(List<Record> recordsToDiff) {
+        boolean isDiff = false;
         for (Record record : recordsToDiff) {
             try {
-                diff(record);
+                if (diff(record)) {
+                    isDiff = true;
+                }
             } catch (Exception e) {
                 logger.error("Could not perform diff for key {}: {}", record.getPk(), e);
             }
         }
         recordsToDiff.clear();
+        return isDiff;
     }
 
-    private void diff(Record record) {
+    private boolean diff(Record record) {
         EnhancedPK originPK = record.getPk();
         Row originRow = record.getOriginRow();
         Row targetRow = record.getTargetRow();
@@ -194,7 +208,7 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Missing target row found for key: {}", record.getPk());
             if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
                 logger.error("{} is true, but not Inserting as {} is not enabled; key : {}", KnownProperties.AUTOCORRECT_MISSING, KnownProperties.AUTOCORRECT_MISSING_COUNTER, record.getPk());
-                return;
+                return true;
             }
 
             //correct data
@@ -204,7 +218,7 @@ public class DiffJobSession extends CopyJobSession {
                 jobCounter.threadIncrement(JobCounter.CounterType.CORRECTED_MISSING);
                 logger.error("Inserted missing row in target: {}", record.getPk());
             }
-            return;
+            return true;
         }
 
         String diffData = isDifferent(originPK, originRow, targetRow);
@@ -218,8 +232,11 @@ public class DiffJobSession extends CopyJobSession {
                 jobCounter.threadIncrement(JobCounter.CounterType.CORRECTED_MISMATCH);
                 logger.error("Corrected mismatch row in target: {}", record.getPk());
             }
+
+            return true;
         } else {
             jobCounter.threadIncrement(JobCounter.CounterType.VALID);
+            return false;
         }
     }
 

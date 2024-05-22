@@ -168,13 +168,32 @@ public class SplitPartitions {
         }
     }
 
-    public static String getPartitionFile(PropertyHelper propertyHelper) {
-        String filePath = propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE);
-        if (StringUtils.isAllBlank(filePath)) {
-            filePath = "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
+    public static boolean appendPartitionOnDiff(PropertyHelper propertyHelper) {
+        return Boolean.TRUE.equals(propertyHelper.getBoolean(KnownProperties.TOKEN_RANGE_PARTITION_FILE_APPEND_ON_DIFF));
+    }
+
+    public static String getPartitionFileInput(PropertyHelper propertyHelper) {
+        if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_INPUT))) {
+            return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_INPUT);
         }
 
-        return filePath;
+        if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE))) {
+            return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE);
+        }
+
+        return "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
+    }
+
+    public static String getPartitionFileOutput(PropertyHelper propertyHelper) {
+        if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_OUTPUT))) {
+            return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_OUTPUT);
+        }
+
+        if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE))) {
+            return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE);
+        }
+
+        return "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
     }
 
     public static class PKRows implements Serializable {
