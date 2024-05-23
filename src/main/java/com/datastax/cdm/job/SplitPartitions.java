@@ -177,20 +177,12 @@ public class SplitPartitions {
             return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_INPUT);
         }
 
-        if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE))) {
-            return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE);
-        }
-
         return "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
     }
 
     public static String getPartitionFileOutput(PropertyHelper propertyHelper) {
         if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_OUTPUT))) {
             return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE_OUTPUT);
-        }
-
-        if (!StringUtils.isAllBlank(propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE))) {
-            return propertyHelper.getString(KnownProperties.TOKEN_RANGE_PARTITION_FILE);
         }
 
         return "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";

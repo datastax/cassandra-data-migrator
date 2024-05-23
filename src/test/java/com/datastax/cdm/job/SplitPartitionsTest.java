@@ -113,9 +113,6 @@ public class SplitPartitionsTest {
         helper.setProperty("spark.cdm.schema.origin.keyspaceTable", "tb");
         assertEquals("./tb_partitions.csv", SplitPartitions.getPartitionFileInput(helper));
 
-        helper.setProperty("spark.cdm.tokenrange.partitionFile", "./file.csv");
-        assertEquals("./file.csv", SplitPartitions.getPartitionFileInput(helper));
-
         helper.setProperty("spark.cdm.tokenrange.partitionFile.input", "./file_input.csv");
         assertEquals("./file_input.csv", SplitPartitions.getPartitionFileInput(helper));
     }
@@ -125,9 +122,6 @@ public class SplitPartitionsTest {
         PropertyHelper helper = PropertyHelper.getInstance();
         helper.setProperty("spark.cdm.schema.origin.keyspaceTable", "tb");
         assertEquals("./tb_partitions.csv", SplitPartitions.getPartitionFileOutput(helper));
-
-        helper.setProperty("spark.cdm.tokenrange.partitionFile", "./file.csv");
-        assertEquals("./file.csv", SplitPartitions.getPartitionFileOutput(helper));
 
         helper.setProperty("spark.cdm.tokenrange.partitionFile.output", "./file_output.csv");
         assertEquals("./file_output.csv", SplitPartitions.getPartitionFileOutput(helper));
