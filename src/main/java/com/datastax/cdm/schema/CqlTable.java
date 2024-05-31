@@ -292,7 +292,7 @@ public class CqlTable extends BaseTable {
         }
 
 		if (removeMapWithNoValues && thisObject instanceof Map) {
-			removeNullValuesFrmMap(thisObject);
+			return removeNullValuesFromMap(thisObject);
 		}
 
         CqlConversion cqlConversion = this.cqlConversions.get(index);
@@ -306,7 +306,7 @@ public class CqlTable extends BaseTable {
         }
     }
 
-	private Object removeNullValuesFrmMap(Object thisObject) {
+	private Object removeNullValuesFromMap(Object thisObject) {
 		Set<Map.Entry> ms = (((Map) thisObject).entrySet());
 		return ms.stream().filter(e -> (e.getValue() != null))
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

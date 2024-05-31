@@ -178,7 +178,7 @@ public class KnownProperties {
     public static final String TRANSFORM_CODECS                                = "spark.cdm.transform.codecs";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT        = "spark.cdm.transform.codecs.timestamp.string.format";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE   = "spark.cdm.transform.codecs.timestamp.string.zone";
-    public static final String TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE          = "spark.cdm.transform.map.remove.null.vaue";
+    public static final String TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE          = "spark.cdm.transform.map.remove.null.value";
 
 
 
