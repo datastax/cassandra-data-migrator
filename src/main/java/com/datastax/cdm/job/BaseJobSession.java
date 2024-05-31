@@ -99,7 +99,7 @@ public abstract class BaseJobSession {
                 StandardOpenOption.APPEND);
     }
 
-    protected void logFailedPartitionsInFile(String partitionFile, BigInteger min, BigInteger max) {
+    protected void logPartitionsInFile(String partitionFile, BigInteger min, BigInteger max) {
         try {
             appendToFile(partitionFile, min + "," + max);
         } catch (Exception ee) {
