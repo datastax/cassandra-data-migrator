@@ -1,4 +1,8 @@
 # Release Notes
+## [4.1.16] - 2024-05-31
+- Added property to manage null values in Map fields
+- Updated README
+  
 ## [4.1.15] - 2024-03-05
 - Internal CI/CD release fix
   

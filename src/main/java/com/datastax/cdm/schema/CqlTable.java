@@ -15,9 +15,29 @@
  */
 package com.datastax.cdm.schema;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.cdm.data.CqlData;
+import com.datastax.cdm.data.DataUtility;
 import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.WritetimeTTL;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -26,22 +46,12 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.datastax.oss.driver.api.core.type.*;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.ListType;
+import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
-import com.datastax.cdm.data.CqlData;
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.cdm.data.DataUtility;
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.properties.PropertyHelper;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class CqlTable extends BaseTable {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -163,6 +173,9 @@ public class CqlTable extends BaseTable {
             return prop;
     }
 
+	private boolean removeMapWithNoValues = propertyHelper
+			.getBoolean(KnownProperties.TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE);
+
     // Adds to the current column list based on the name and type of columns already existing in the table
     // This is useful where a feature is adding a column by name of an existing column.
     // If the column is already present, the bind class is added to the return list.
@@ -277,6 +290,11 @@ public class CqlTable extends BaseTable {
         if (null==thisObject) {
             return convertNull(index);
         }
+
+		if (removeMapWithNoValues && thisObject instanceof Map) {
+			removeNullValuesFrmMap(thisObject);
+		}
+
         CqlConversion cqlConversion = this.cqlConversions.get(index);
         if (null==cqlConversion) {
             if (logTrace) logger.trace("{} Index:{} not converting:{}",isOrigin?"origin":"target",index,thisObject);
@@ -287,6 +305,12 @@ public class CqlTable extends BaseTable {
             return cqlConversion.convert(thisObject);
         }
     }
+
+	private Object removeNullValuesFrmMap(Object thisObject) {
+		Set<Map.Entry> ms = (((Map) thisObject).entrySet());
+		return ms.stream().filter(e -> (e.getValue() != null))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
 
     public Object convertNull(int thisIndex) {
         // We do not need to convert nulls for non-PK columns

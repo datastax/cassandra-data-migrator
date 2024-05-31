@@ -147,11 +147,12 @@ public class WritetimeTTL extends AbstractFeature  {
             isValid = false;
         }
 
-        if (this.writetimeIncrement == 0L && (null!=writetimeNames && !writetimeNames.isEmpty()) && originTable.hasUnfrozenList()) {
-            logger.warn("Writetime is configured, but the origin table at least one unfrozen List, and there is a zero-value increment configured at "+
-                    KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT+"; this may result in duplicate list entries when "+
-                    KnownProperties.AUTOCORRECT_MISMATCH+" is enabled.");
-        }
+		if (this.writetimeIncrement == 0L && (null != writetimeNames && !writetimeNames.isEmpty())
+				&& originTable.hasUnfrozenList()) {
+			logger.warn("Origin table has at least one unfrozen List, and "
+					+ KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT
+					+ " is set to zero; this may result in duplicate list entries on reruns or validation with autocorrect.");
+		}
 
         if (!isValid) isEnabled = false;
         logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled?"enabled":"disabled");
