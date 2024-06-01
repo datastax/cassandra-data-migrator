@@ -15,7 +15,13 @@
  */
 package com.datastax.cdm.properties;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class KnownProperties {
 
@@ -172,24 +178,27 @@ public class KnownProperties {
     public static final String TRANSFORM_CODECS                                = "spark.cdm.transform.codecs";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT        = "spark.cdm.transform.codecs.timestamp.string.format";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE   = "spark.cdm.transform.codecs.timestamp.string.zone";
+    public static final String TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE          = "spark.cdm.transform.map.remove.null.value";
 
 
 
 //    TODO: 3.3.0 refactored how guardrails are handled, this needs to be merged forward
 //    public static final String GUARDRAIL_FIELD_LIMIT_MB         = "spark.guardrail.colSizeInKB"; //10
 
-    static {
-        types.put(TRANSFORM_REPLACE_MISSING_TS, PropertyType.NUMBER);
-        types.put(TRANSFORM_CUSTOM_WRITETIME, PropertyType.NUMBER);
-     defaults.put(TRANSFORM_CUSTOM_WRITETIME, "0");
-        types.put(TRANSFORM_CUSTOM_WRITETIME_INCREMENT, PropertyType.NUMBER);
-     defaults.put(TRANSFORM_CUSTOM_WRITETIME_INCREMENT, "0");
-        types.put(TRANSFORM_CODECS, PropertyType.STRING_LIST);
-        types.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, PropertyType.STRING);
-     defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, "yyyyMMddHHmmss");
-        types.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, PropertyType.STRING);
-     defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, "UTC");
-    }
+	static {
+		types.put(TRANSFORM_REPLACE_MISSING_TS, PropertyType.NUMBER);
+		types.put(TRANSFORM_CUSTOM_WRITETIME, PropertyType.NUMBER);
+		defaults.put(TRANSFORM_CUSTOM_WRITETIME, "0");
+		types.put(TRANSFORM_CUSTOM_WRITETIME_INCREMENT, PropertyType.NUMBER);
+		defaults.put(TRANSFORM_CUSTOM_WRITETIME_INCREMENT, "0");
+		types.put(TRANSFORM_CODECS, PropertyType.STRING_LIST);
+		types.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, PropertyType.STRING);
+		defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT, "yyyyMMddHHmmss");
+		types.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, PropertyType.STRING);
+		defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, "UTC");
+		types.put(TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE, PropertyType.BOOLEAN);
+		defaults.put(TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE, "false");
+	}
 
     //==========================================================================
     // Cassandra-side Filters
