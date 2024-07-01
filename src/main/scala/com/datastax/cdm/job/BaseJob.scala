@@ -32,9 +32,9 @@ import scala.collection.JavaConverters._
 
 abstract class BaseJob[T: ClassTag] extends App {
 
-  val abstractLogger = LoggerFactory.getLogger(this.getClass.getName)
+  private val abstractLogger = LoggerFactory.getLogger(this.getClass.getName)
 
-  var jobName: String = _
+  private var jobName: String = _
   var jobFactory: IJobSessionFactory[T] = _
 
   var spark: SparkSession = _

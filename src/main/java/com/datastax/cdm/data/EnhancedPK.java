@@ -15,11 +15,9 @@
  */
 package com.datastax.cdm.data;
 import com.datastax.cdm.feature.ExplodeMap;
-import com.datastax.cdm.properties.KnownProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 

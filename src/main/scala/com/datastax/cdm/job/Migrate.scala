@@ -29,6 +29,3 @@ object Migrate extends BasePartitionJob {
     })
   }
 }
-
-
-

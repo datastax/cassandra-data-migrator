@@ -51,17 +51,16 @@ public class ConstantColumns extends AbstractFeature {
     protected boolean validateProperties() {
         if ((null == names  || names.isEmpty()) &&
             (null == values || values.isEmpty())) {
-            isValid = true; // feature is disabled, which is valid
+            return true; // feature is disabled, which is valid
         }
-        else {
-            // both names and values must be set, not empty, and of the same size
-            isValid = (null!= names && null!= values &&
-                       names.size() > 0 &&
-                       names.size() == values.size());
-            if (!isValid)
-                logger.error("Constant column names ({}) and values ({}) are of different sizes", names, values);
+        // both names and values must be set, not empty, and of the same size
+        if (null == names || null == values || names.size() == 0 ||
+                names.size() != values.size()) {
+            logger.error("Constant column names ({}) and values ({}) are of different sizes", names, values);
+            return false;
         }
-        return isValid;
+
+        return true;
     }
 
     @Override
