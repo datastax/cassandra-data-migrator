@@ -1,4 +1,9 @@
 # Release Notes
+## [4.2.0] - 2024-07-09
+- Upgraded `constant-column` feature to support `replace` and `remove` of constant columns 
+- Fixed `constant-column` feature to support any data-types within the PK columns
+- Added `Things to know` in docs
+
 ## [4.1.16] - 2024-05-31
 - Added property to manage null values in Map fields
 - Allow separate input and output partition CSV files

@@ -1,8 +1,8 @@
 
  const1 | key  | const2 | value
 --------+------+--------+--------
-    1   | key1 |   1234 | valueA
-    1   | key2 |   1234 | valueB
-    1   | key3 |   1234 | valueC
+      1 | key1 |   1234 | valueA
+      1 | key2 |   1234 | valueB
+      1 | key3 |   1234 | valueC
 
 (3 rows)
