@@ -31,7 +31,6 @@ import java.time.Duration;
 public class TargetInsertStatement extends TargetUpsertStatement {
     public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final boolean logDebug = logger.isDebugEnabled();
-    private final boolean logTrace = logger.isTraceEnabled();
 
     private List<String> bindColumnNames;
     private List<Integer> bindColumnIndexes;

@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>datastax.cdm</groupId>
@@ -6,21 +8,21 @@
 	<version>4.1.17-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scala.version>2.13.14</scala.version>
-    <scala.main.version>2.13</scala.main.version>
-    <spark.version>3.5.1</spark.version>
-    <connector.version>3.5.0</connector.version>
-    <cassandra.version>5.0-beta1</cassandra.version>
-    <junit.version>5.9.1</junit.version>
-    <mockito.version>4.11.0</mockito.version>
-    <java-driver.version>4.18.1</java-driver.version>
-    <log4j.version>2.23.1</log4j.version>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <maven.compiler.release>11</maven.compiler.release>
-  </properties>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<scala.version>2.13.14</scala.version>
+		<scala.main.version>2.13</scala.main.version>
+		<spark.version>3.5.1</spark.version>
+		<connector.version>3.5.0</connector.version>
+		<cassandra.version>5.0-beta1</cassandra.version>
+		<junit.version>5.9.1</junit.version>
+		<mockito.version>4.11.0</mockito.version>
+		<java-driver.version>4.18.1</java-driver.version>
+		<log4j.version>2.23.1</log4j.version>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
+		<maven.compiler.release>11</maven.compiler.release>
+	</properties>
 
 	<distributionManagement>
 		<repository>
@@ -63,26 +65,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-hive_${scala.main.version}</artifactId>
-			<version>${spark.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>log4j</groupId>
-					<artifactId>log4j</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>log4j</groupId>
-					<artifactId>apache-log4j-extras</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-lang</groupId>
-					<artifactId>commons-lang</artifactId>
-				</exclusion>
-			</exclusions>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.datastax.spark</groupId>
 			<artifactId>spark-cassandra-connector_${scala.main.version}</artifactId>
 			<version>${connector.version}</version>
@@ -121,17 +103,6 @@
 			<groupId>org.apache.cassandra</groupId>
 			<artifactId>java-driver-query-builder</artifactId>
 			<version>${java-driver.version}</version>
-		</dependency>
-		<!-- <dependency>
-	                <groupId>org.apache.cassandra</groupId>
-	                <artifactId>java-driver-shaded-guava</artifactId>
-	                <version>${java-driver.version}</version>
-	        </dependency> -->
-
-		<dependency>
-			<groupId>com.github.jnr</groupId>
-			<artifactId>jnr-posix</artifactId>
-			<version>3.1.19</version>
 		</dependency>
 
 		<dependency>
@@ -203,7 +174,7 @@
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>4.8.1</version>
+				<version>4.9.2</version>
 				<executions>
 					<execution>
 						<phase>process-sources</phase>
@@ -225,7 +196,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>3.6.0</version>
 				<executions>
 					<execution>
 
@@ -256,7 +227,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.12.1</version>
+				<version>3.13.0</version>
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
@@ -269,7 +240,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.10</version>
+				<version>0.8.12</version>
 				<executions>
 					<execution>
 						<id>report</id>
@@ -320,7 +291,7 @@
 			<plugin>
 				<groupId>org.apache.rat</groupId>
 				<artifactId>apache-rat-plugin</artifactId>
-				<version>0.15</version>
+				<version>0.16.1</version>
 				<configuration>
 					<excludesFile>rat-excludes.txt</excludesFile>
 				</configuration>

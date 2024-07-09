@@ -15,19 +15,19 @@
  */
 package com.datastax.cdm.feature;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.properties.IPropertyHelper;
+import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
-import com.datastax.cdm.properties.KnownProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class ConstantColumns extends AbstractFeature {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -117,27 +117,22 @@ public class ConstantColumns extends AbstractFeature {
     public List<Class> getBindClasses() { return isEnabled ? bindClasses : Collections.emptyList(); }
     public List<String> getValues() { return isEnabled ? values : Collections.emptyList(); }
 
-    public static List<String> getConstantColumnNames(IPropertyHelper propertyHelper) {
+    private static List<String> getConstantColumnNames(IPropertyHelper propertyHelper) {
         return CqlTable.unFormatNames(propertyHelper.getStringList(KnownProperties.CONSTANT_COLUMN_NAMES));
     }
 
-    public static String getSplitRegex(IPropertyHelper propertyHelper) {
-        return propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
-    }
-
-    public static List<String> getConstantColumnValues(IPropertyHelper propertyHelper) {
+    private static List<String> getConstantColumnValues(IPropertyHelper propertyHelper) {
         String columnValueString = propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES);
-        String regexString = getSplitRegex(propertyHelper);
+        String regexString = propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
 
-        List<String> columnValues = new ArrayList<>();
         if (null!=columnValueString && !columnValueString.isEmpty()) {
             if (null==regexString || regexString.isEmpty()) {
                 throw new RuntimeException("Constant column values are specified [" + columnValueString + "], but no split regex is provided in property " + KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
             } else {
-                columnValues = Arrays.asList(columnValueString.split(regexString));
+                return Arrays.asList(columnValueString.split(regexString));
             }
         }
-        return columnValues;
+        return Collections.emptyList();
     }
 
 }
