@@ -6,21 +6,21 @@
 	<version>4.1.17-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<scala.version>2.13.13</scala.version>
-		<scala.main.version>2.13</scala.main.version>
-		<spark.version>3.5.1</spark.version>
-		<connector.version>3.5.0</connector.version>
-		<cassandra.version>5.0-beta1</cassandra.version>
-		<junit.version>5.9.1</junit.version>
-		<mockito.version>4.11.0</mockito.version>
-		<java-driver.version>4.17.0</java-driver.version>
-		<log4j.version>2.23.1</log4j.version>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
-		<maven.compiler.release>11</maven.compiler.release>
-	</properties>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scala.version>2.13.14</scala.version>
+    <scala.main.version>2.13</scala.main.version>
+    <spark.version>3.5.1</spark.version>
+    <connector.version>3.5.0</connector.version>
+    <cassandra.version>5.0-beta1</cassandra.version>
+    <junit.version>5.9.1</junit.version>
+    <mockito.version>4.11.0</mockito.version>
+    <java-driver.version>4.18.1</java-driver.version>
+    <log4j.version>2.23.1</log4j.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
+  </properties>
 
 	<distributionManagement>
 		<repository>
@@ -108,25 +108,25 @@
 
 		<!-- Adding Java Driver latest version explicitly -->
 		<dependency>
-			<groupId>com.datastax.oss</groupId>
+			<groupId>org.apache.cassandra</groupId>
 			<artifactId>java-driver-core-shaded</artifactId>
 			<version>${java-driver.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.datastax.oss</groupId>
+			<groupId>org.apache.cassandra</groupId>
 			<artifactId>java-driver-mapper-runtime</artifactId>
 			<version>${java-driver.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.datastax.oss</groupId>
+			<groupId>org.apache.cassandra</groupId>
 			<artifactId>java-driver-query-builder</artifactId>
 			<version>${java-driver.version}</version>
 		</dependency>
 		<!-- <dependency>
-	  <groupId>com.datastax.oss</groupId>
-	  <artifactId>java-driver-shaded-guava</artifactId>
-	  <version>${java-driver.version}</version>
-	</dependency> -->
+	                <groupId>org.apache.cassandra</groupId>
+	                <artifactId>java-driver-shaded-guava</artifactId>
+	                <version>${java-driver.version}</version>
+	        </dependency> -->
 
 		<dependency>
 			<groupId>com.github.jnr</groupId>
