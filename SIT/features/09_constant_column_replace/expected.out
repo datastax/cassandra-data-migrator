@@ -1,0 +1,8 @@
+
+ const3 | key  | const4 | value
+--------+------+--------+--------
+      2 | key1 |     31 | valueA
+      2 | key2 |     31 | valueB
+      2 | key3 |     31 | valueC
+
+(3 rows)
