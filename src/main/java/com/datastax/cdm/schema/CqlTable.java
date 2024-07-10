@@ -336,7 +336,7 @@ public class CqlTable extends BaseTable {
     }
 
     public Integer getCorrespondingIndex(int index) {
-        if (index <= 0) return index;
+        if (index < 0) return index;
         return this.correspondingIndexes.get(index);
     }
     private List<Integer> calcCorrespondingIndex() {

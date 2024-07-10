@@ -122,10 +122,6 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
             constantColumnNames.addAll(constantColumnFeature.getNames());
             constantColumnValues.addAll(constantColumnFeature.getValues());
         }
-
-        if (constantColumnNames.size() != constantColumnValues.size()) {
-            throw new RuntimeException("Constant column names and values are not the same size.");
-        }
     }
 
     private void setTTLAndWriteTimeBooleans() {

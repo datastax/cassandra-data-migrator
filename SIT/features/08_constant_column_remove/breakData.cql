@@ -12,13 +12,12 @@
  limitations under the License.
 */
 
-DELETE FROM target.feature_constant_column WHERE key='key2' AND const1=1;
-UPDATE target.feature_constant_column SET value='value999' WHERE key='key3' AND const1=1;
+DELETE FROM target.feature_constant_column_remove WHERE key='key2';
+UPDATE target.feature_constant_column_remove SET value='value999' WHERE key='key3';
 
 # This upsert to origin will update the writetime on origin to be newer than target
-INSERT INTO origin.feature_constant_column(key,value) VALUES ('key1','valueA');
-INSERT INTO origin.feature_constant_column(key,value) VALUES ('key2','valueB');
-INSERT INTO origin.feature_constant_column(key,value) VALUES ('key3','valueC');
+INSERT INTO origin.feature_constant_column_remove(const1, key, value, const2) VALUES (1, 'key1','valueA', 21);
+INSERT INTO origin.feature_constant_column_remove(const1, key, value, const2) VALUES (1, 'key2','valueB', 22);
+INSERT INTO origin.feature_constant_column_remove(const1, key, value, const2) VALUES (1, 'key3','valueC', 23);
 
-SELECT * FROM target.feature_constant_column;
-
+SELECT * FROM target.feature_constant_column_remove;

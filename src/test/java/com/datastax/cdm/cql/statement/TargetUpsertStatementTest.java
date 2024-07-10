@@ -142,15 +142,6 @@ public class TargetUpsertStatementTest extends CommonMocks {
     }
 
     @Test
-    public void constantColumns_badConfig() {
-        commonSetup(false,true,false);
-        when(constantColumnsFeature.getValues()).thenReturn(Collections.singletonList("123"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> new TestTargetUpsertStatement(propertyHelper, targetSession));
-        assertEquals("Constant column names and values are not the same size.", exception.getMessage());
-    }
-
-    @Test
     public void usingTTLTimestamp_NothingEnabled() {
         assertEquals("", targetUpsertStatement.usingTTLTimestamp());
     }

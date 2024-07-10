@@ -3,7 +3,7 @@
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/datastax/cassandra-data-migrator?label=latest%20release&color=green&link=!%5BGitHub%20release%20(with%20filter)%5D(https%3A%2F%2Fimg.shields.io%2Fgithub%2Fv%2Frelease%2Fdatastax%2Fcassandra-data-migrator%3Flabel%3Dlatest%2520release%26color%3Dgreen))
 ![Docker Pulls](https://img.shields.io/docker/pulls/datastax/cassandra-data-migrator)
 
-# cassandra-data-migrator
+# cassandra-data-migrator (also known as CDM)
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
@@ -152,8 +152,12 @@ If `spark.cdm.tokenrange.partitionFile.input` or `spark.cdm.tokenrange.partition
 - Supports adding custom fixed `writetime`
 - Validation - Log partitions range level exceptions, use the exceptions file as input for rerun  
 
-# Known Limitations
-- This tool does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
+# Things to know
+- CDM does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
+- CDM ignores `ttl` & `writetime` on collection and UDT fields while computing the highest value
+- If a table has only collection and/or UDT non-key columns and not table-level `ttl` configuration, the target will have no `ttl`, which can lead to inconsistencies between `origin` and `target` as rows expire on `origin` due to `ttl` expiry.
+- If a table has only collection and/or UDT non-key columns, the `writetime` used on target will be time the job was run. Alternatively if needed, the param `spark.cdm.transform.custom.writetime` can be used to set a static custom value for `writetime`. 
+- When CDM migration (or validation with autocorrect) is run multiple times on the same table (for whatever reasons), it could lead to duplicate entries in `list` type columns. Note this is [due to a Cassandra/DSE bug](https://issues.apache.org/jira/browse/CASSANDRA-11368) and not a CDM issue. This issue can be addressed by enabling and setting a positive value for `spark.cdm.transform.custom.writetime.incrementBy` param. This param was specifically added to address this issue. 
 
 # Building Jar for local development
 1. Clone this repo
