@@ -139,6 +139,14 @@ public class CqlTable extends BaseTable {
         return formatName(this.keyspaceName) + "." + formatName(this.tableName);
     }
 
+    public String getRunInfoTable() {
+        return formatName(this.keyspaceName) + "." + formatName(getRunInfoTableName());
+    }
+
+    public String getRunDetailTable() {
+        return formatName(this.keyspaceName) + "." + formatName(getRunDetailsTableName());
+    }
+
     public void setFeatureMap(Map<Featureset, Feature> featureMap) { this.featureMap = featureMap; }
     public Feature getFeature(Featureset featureEnum) { return featureMap.get(featureEnum); }
 

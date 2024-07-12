@@ -47,6 +47,8 @@ abstract class BaseJob[T: ClassTag] extends App {
   var maxPartition: BigInteger = _
   var coveragePercent: Int = _
   var numSplits: Int = _
+  var trackRun: Boolean = _
+  var prevRunId: Int = _
 
   var parts: util.Collection[T] = _
   var slices: RDD[T] = _
@@ -81,10 +83,14 @@ abstract class BaseJob[T: ClassTag] extends App {
     maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
+    trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
+    prevRunId = propertyHelper.getInteger(KnownProperties.PREV_RUN_ID)
 
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
     abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
+    abstractLogger.info("PARAM -- Track Run : " + trackRun)
+    abstractLogger.info("PARAM -- Previous RunId : " + prevRunId)
     abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
     this.parts = getParts(numSplits)
     this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
@@ -95,27 +101,6 @@ abstract class BaseJob[T: ClassTag] extends App {
   def getParts(pieces: Int): util.Collection[T]
   def printSummary(): Unit = {
     jobFactory.getInstance(null, null, sc).printCounts(true);
-  }
-
-  def execute(): Unit = {
-    slices.foreach(slice => {
-      originConnection.withSessionDo(sourceSession =>
-        targetConnection.withSessionDo(destinationSession =>
-          jobFactory.getInstance(sourceSession, destinationSession, sc)
-            .processSlice(slice)))
-    })
-  }
-
-  def execute(jobName: String, jobFactory: IJobSessionFactory[T]): Unit = {
-      setup(jobName, jobFactory)
-      slices.foreach(slice => {
-        originConnection.withSessionDo(sourceSession =>
-          targetConnection.withSessionDo(destinationSession =>
-            jobFactory.getInstance(sourceSession, destinationSession, sc)
-              .processSlice(slice)))
-      })
-      printSummary()
-      finish()
   }
 
   protected def finish() = {

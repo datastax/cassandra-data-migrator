@@ -17,6 +17,7 @@ package com.datastax.cdm.job;
 
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
+import com.datastax.cdm.cql.statement.TargetUpsertRunDetailsStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
@@ -42,6 +43,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
+    private TargetUpsertRunDetailsStatement runDetailsStatement;
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -51,6 +53,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
         batchSize = this.originSession.getCqlTable().getBatchSize();
+		runDetailsStatement = new TargetUpsertRunDetailsStatement(propertyHelper, this.targetSession);
 
         logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
         logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
@@ -61,6 +64,10 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     public void processSlice(SplitPartitions.Partition slice) {
         this.getDataAndInsert(slice.getMin(), slice.getMax());
     }
+    
+	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts) {
+		parts.forEach(part -> runDetailsStatement.initCdmRun(part));
+	}
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
@@ -134,6 +141,8 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
             }
             finally {
                 jobCounter.globalIncrement();
+                if (trackRun)
+                	runDetailsStatement.updateCdmRun(min, done);
                 printCounts(false);
             }
         }

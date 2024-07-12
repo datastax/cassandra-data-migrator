@@ -23,6 +23,9 @@ import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
+
+import java.util.Collection;
+
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +65,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
         maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
+        trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN);
 
         logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- Partition file input: {}", partitionFileInput);
@@ -97,6 +101,8 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     }
 
     public abstract void processSlice(T slice);
+    
+	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts) {}
 
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {

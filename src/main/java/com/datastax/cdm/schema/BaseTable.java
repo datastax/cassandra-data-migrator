@@ -71,6 +71,14 @@ public class BaseTable implements Table {
     public String getTableName() {
         return this.tableName;
     }
+    
+    public String getRunInfoTableName() {
+        return "cdm_run_info";
+    }
+    
+    public String getRunDetailsTableName() {
+        return "cdm_run_details";
+    }
 
     public String getKeyspaceTable() {
         return this.keyspaceName + "." + this.tableName;

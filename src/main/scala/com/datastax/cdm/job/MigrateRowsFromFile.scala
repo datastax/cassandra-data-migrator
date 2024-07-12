@@ -20,7 +20,7 @@ object MigrateRowsFromFile extends BasePKJob {
   execute()
   finish()
 
-  override def execute(): Unit = {
+  def execute(): Unit = {
     slices.foreach(slice => {
       originConnection.withSessionDo(sourceSession =>
         targetConnection.withSessionDo(destinationSession =>

@@ -108,7 +108,9 @@ public class KnownProperties {
 	public static final String AUTOCORRECT_MISSING = "spark.cdm.autocorrect.missing"; // false
 	public static final String AUTOCORRECT_MISMATCH = "spark.cdm.autocorrect.mismatch"; // false
 	public static final String AUTOCORRECT_MISSING_COUNTER = "spark.cdm.autocorrect.missing.counter"; // false
-
+	public static final String TRACK_RUN = "spark.cdm.trackRun";
+	public static final String PREV_RUN_ID = "spark.cdm.trackRun.previousRunId";
+	
 	public static final String PERF_NUM_PARTS = "spark.cdm.perfops.numParts"; // 10000, was spark.splitSize
 	public static final String PERF_BATCH_SIZE = "spark.cdm.perfops.batchSize"; // 5
 	public static final String PERF_RATELIMIT_ORIGIN = "spark.cdm.perfops.ratelimit.origin"; // 20000
@@ -128,7 +130,11 @@ public class KnownProperties {
 		defaults.put(AUTOCORRECT_MISMATCH, "false");
 		types.put(AUTOCORRECT_MISSING_COUNTER, PropertyType.BOOLEAN);
 		defaults.put(AUTOCORRECT_MISSING_COUNTER, "false");
-
+		types.put(TRACK_RUN, PropertyType.BOOLEAN);
+		defaults.put(TRACK_RUN, "true");
+        types.put(PREV_RUN_ID, PropertyType.NUMBER);
+        defaults.put(PREV_RUN_ID, "0");
+        
 		types.put(PERF_NUM_PARTS, PropertyType.NUMBER);
 		defaults.put(PERF_NUM_PARTS, "10000");
 		types.put(PERF_BATCH_SIZE, PropertyType.NUMBER);

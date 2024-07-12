@@ -98,7 +98,7 @@ public class EnhancedSession {
                     GenericType<?> javaType = codec.getJavaType();
                     if (logDebug) logger.debug("Registering Codec {} for CQL type {} and Java type {}", codec.getClass().getSimpleName(), dataType, javaType);
                     try {
-                        TypeCodec<?> existingCodec = registry.codecFor(dataType, javaType);
+                        registry.codecFor(dataType, javaType);
                     } catch (CodecNotFoundException e) {
                         registry.register(codec);
                     }
