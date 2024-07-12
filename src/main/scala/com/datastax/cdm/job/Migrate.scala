@@ -18,18 +18,18 @@ package com.datastax.cdm.job
 object Migrate extends BasePartitionJob {
   setup("Migrate Job", new CopyJobSessionFactory())
   
-  if (trackRun) originConnection.withSessionDo(sourceSession =>
-    targetConnection.withSessionDo(destinationSession =>
-      jobFactory.getInstance(sourceSession, destinationSession, sc).initCdmRun(this.parts)));
+  originConnection.withSessionDo(originSession =>
+    targetConnection.withSessionDo(targetSession =>
+      jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(this.parts)));
   
   execute()
   finish()
 
   def execute(): Unit = {
     slices.foreach(slice => {
-      originConnection.withSessionDo(sourceSession =>
-        targetConnection.withSessionDo(destinationSession =>
-          jobFactory.getInstance(sourceSession, destinationSession, sc)
+      originConnection.withSessionDo(originSession =>
+        targetConnection.withSessionDo(targetSession =>
+          jobFactory.getInstance(originSession, targetSession, sc)
             .processSlice(slice)))
     })
   }

@@ -43,7 +43,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
-    private TargetUpsertRunDetailsStatement runDetailsStatement;
+    protected TargetUpsertRunDetailsStatement runDetailsStatement;
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
@@ -66,7 +66,8 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     }
     
 	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts) {
-		parts.forEach(part -> runDetailsStatement.initCdmRun(part));
+        if (trackRun)
+        	parts.forEach(part -> runDetailsStatement.initCdmRun(part));
 	}
 
     public void getDataAndInsert(BigInteger min, BigInteger max) {

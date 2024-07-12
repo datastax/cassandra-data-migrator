@@ -17,14 +17,19 @@ package com.datastax.cdm.job
 
 object DiffData extends BasePartitionJob {
   setup("Data Validation Job", new DiffJobSessionFactory())
+  
+  originConnection.withSessionDo(originSession =>
+    targetConnection.withSessionDo(targetSession =>
+      jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(this.parts)));
+  
   execute()
   finish()
 
   def execute(): Unit = {
     slices.foreach(slice => {
-      originConnection.withSessionDo(sourceSession =>
-        targetConnection.withSessionDo(destinationSession =>
-          jobFactory.getInstance(sourceSession, destinationSession, sc)
+      originConnection.withSessionDo(originSession =>
+        targetConnection.withSessionDo(targetSession =>
+          jobFactory.getInstance(originSession, targetSession, sc)
             .processSlice(slice)))
     })
   }

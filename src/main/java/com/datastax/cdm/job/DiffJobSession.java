@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -108,6 +109,11 @@ public class DiffJobSession extends CopyJobSession {
     public void processSlice(SplitPartitions.Partition slice) {
         this.getDataAndDiff(slice.getMin(), slice.getMax());
     }
+    
+	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts) {
+        if (trackRun)
+        	super.initCdmRun(parts);
+	}
 
     public void getDataAndDiff(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
@@ -178,6 +184,8 @@ public class DiffJobSession extends CopyJobSession {
                 }
             } finally {
                 jobCounter.globalIncrement();
+                if (trackRun)
+                	runDetailsStatement.updateCdmRun(min, done);
                 printCounts(false);
             }
         }
