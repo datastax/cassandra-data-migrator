@@ -17,14 +17,40 @@ package com.datastax.cdm.job
 
 import java.util
 import scala.reflect.io.File
+import com.datastax.cdm.feature.TrackRun
+import com.datastax.cdm.properties.KnownProperties
 
 abstract class BasePartitionJob extends BaseJob[SplitPartitions.Partition] {
+  var trackRunFeature: TrackRun = _
+
   override def getParts(pieces: Int): util.Collection[SplitPartitions.Partition] = {
-    if (!File(this.partitionFileNameInput).exists) {
+    var keyspacetable = propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
+  
+    if (trackRun) {
+      trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, keyspacetable))
+    }
+    
+    if (prevRunId != 0) {
+      trackRunFeature.getPendingPartitions(prevRunId)
+    } else if (!File(this.partitionFileNameInput).exists) {
       SplitPartitions.getRandomSubPartitions(pieces, minPartition, maxPartition, coveragePercent)
     } else {
       SplitPartitions.getSubPartitionsFromFile(pieces, this.partitionFileNameInput)
     }
   }
 
+  def execute(): Unit = {
+    if (!parts.isEmpty()) {
+      originConnection.withSessionDo(originSession =>
+        targetConnection.withSessionDo(targetSession =>
+          jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(parts, trackRunFeature)));
+
+      slices.foreach(slice => {
+        originConnection.withSessionDo(originSession =>
+          targetConnection.withSessionDo(targetSession =>
+            jobFactory.getInstance(originSession, targetSession, sc)
+              .processSlice(slice)))
+      })
+    }
+  }
 }

@@ -20,6 +20,7 @@ import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.Guardrail;
+import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
@@ -102,7 +103,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
     public abstract void processSlice(T slice);
     
-	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts) {}
+	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {}
 
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {

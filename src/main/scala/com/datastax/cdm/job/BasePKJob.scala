@@ -23,4 +23,15 @@ abstract class BasePKJob extends BaseJob[SplitPartitions.PKRows] {
     // Each PKRows object contains a list of Strings that contain the PK to be parsed
     SplitPartitions.getRowPartsFromFile(pieces, this.partitionFileNameInput)
   }
+
+  def execute(): Unit = {
+    if (!parts.isEmpty()) {
+      slices.foreach(slice => {
+        originConnection.withSessionDo(originSession =>
+          targetConnection.withSessionDo(targetSession =>
+            jobFactory.getInstance(originSession, targetSession, sc)
+              .processSlice(slice)))
+      })
+    }
+  }
 }

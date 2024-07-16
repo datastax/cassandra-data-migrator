@@ -48,7 +48,7 @@ abstract class BaseJob[T: ClassTag] extends App {
   var coveragePercent: Int = _
   var numSplits: Int = _
   var trackRun: Boolean = _
-  var prevRunId: Int = _
+  var prevRunId: Long = _
 
   var parts: util.Collection[T] = _
   var slices: RDD[T] = _
@@ -84,7 +84,7 @@ abstract class BaseJob[T: ClassTag] extends App {
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
     trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
-    prevRunId = propertyHelper.getInteger(KnownProperties.PREV_RUN_ID)
+    prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
 
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
@@ -93,14 +93,18 @@ abstract class BaseJob[T: ClassTag] extends App {
     abstractLogger.info("PARAM -- Previous RunId : " + prevRunId)
     abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
     this.parts = getParts(numSplits)
-    this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
     abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())
-    abstractLogger.info("Spark parallelize created : " + slices.getNumPartitions + " slices!");
+    if (parts.size() > 0) {
+      this.slices = sContext.parallelize(parts.asScala.toSeq, parts.size);
+	  abstractLogger.info("Spark parallelize created : " + slices.getNumPartitions + " slices!");
+    }
   }
 
   def getParts(pieces: Int): util.Collection[T]
   def printSummary(): Unit = {
-    jobFactory.getInstance(null, null, sc).printCounts(true);
+    if (parts.size() > 0) {
+      jobFactory.getInstance(null, null, sc).printCounts(true);
+    }
   }
 
   protected def finish() = {
