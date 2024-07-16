@@ -23,12 +23,8 @@ import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class OriginSelectByPKStatement extends OriginSelectStatement {
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
     public OriginSelectByPKStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
     }

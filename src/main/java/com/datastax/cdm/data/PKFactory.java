@@ -19,7 +19,6 @@ import com.datastax.cdm.feature.*;
 import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

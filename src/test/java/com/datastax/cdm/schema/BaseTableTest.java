@@ -40,7 +40,20 @@ public class BaseTableTest extends CommonMocks {
         BaseTable bt = new BaseTable(propertyHelper, false);
 
         assertAll(
+                () -> assertEquals(false, bt.isOrigin()),
                 () -> assertEquals("origin_ks", bt.getKeyspaceName()),
+                () -> assertEquals("origin_table", bt.getTableName()),
+                () -> assertEquals("origin_ks.origin_table", bt.getKeyspaceTable())
+        );
+    }
+
+    @Test
+    public void useKSAbsent() {
+        when(propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE)).thenReturn("origin_table");
+        BaseTable bt = new BaseTable(propertyHelper, false);
+
+        assertAll(
+                () -> assertEquals("", bt.getKeyspaceName()),
                 () -> assertEquals("origin_table", bt.getTableName())
         );
     }
