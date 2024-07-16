@@ -43,7 +43,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 	private TargetUpsertStatement targetUpsertStatement;
 	private TargetSelectByPKStatement targetSelectByPKStatement;
-	protected TrackRun trackRunFeature;
 
 	protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
 		super(originSession, targetSession, sc);
@@ -75,7 +74,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
 		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
 		if (trackRun)
-			trackRunFeature.updateCdmRun(min, "STARTED");
+			trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
 
 		BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
 		boolean done = false;
@@ -139,7 +138,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 				jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
 				done = true;
 				if (trackRun)
-					trackRunFeature.updateCdmRun(min, "PASS");
+					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
 
 			} catch (Exception e) {
 				if (attempts == maxAttempts) {
@@ -154,7 +153,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 						Thread.currentThread().getId(), min, max, attempts);
 				logger.error("Error stats " + jobCounter.getThreadCounters(false));
 				if (trackRun)
-					trackRunFeature.updateCdmRun(min, "FAIL");
+					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
 			} finally {
 				jobCounter.globalIncrement();
 				printCounts(false);

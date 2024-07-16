@@ -43,6 +43,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected String partitionFileOutput = SplitPartitions.getPartitionFileOutput(propertyHelper);
     protected JobCounter jobCounter;
     protected Long printStatsAfter;
+	protected TrackRun trackRunFeature;
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
@@ -107,7 +108,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {
-            jobCounter.printFinal();
+            jobCounter.printFinal(trackRun, trackRunFeature);
         } else {
             jobCounter.printProgress();
         }

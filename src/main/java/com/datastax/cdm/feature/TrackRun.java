@@ -27,6 +27,10 @@ import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public class TrackRun {
+	public enum RUN_STATUS {
+		NOT_STARTED, STARTED, PASS, FAIL
+	}
+
 	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 	private TargetUpsertRunDetailsStatement runStatement;
 
@@ -48,8 +52,11 @@ public class TrackRun {
 		return runId;
 	}
 
-	public void updateCdmRun(BigInteger min, String status) {
+	public void updateCdmRun(BigInteger min, RUN_STATUS status) {
 		runStatement.updateCdmRun(min, status);
 	}
 
+	public void endCdmRun(String runInfo) {
+		runStatement.updateCdmRunInfo(runInfo);
+	}
 }

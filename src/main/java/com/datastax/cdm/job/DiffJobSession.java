@@ -15,6 +15,21 @@
  */
 package com.datastax.cdm.job;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
+
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.spark.SparkConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.data.CqlData;
@@ -26,26 +41,13 @@ import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.Guardrail;
+import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.type.DataType;
-import org.apache.logging.log4j.ThreadContext;
-import org.apache.spark.SparkConf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 
 public class DiffJobSession extends CopyJobSession {
 	protected final Boolean autoCorrectMissing;
@@ -119,7 +121,7 @@ public class DiffJobSession extends CopyJobSession {
 		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
 		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
 		if (trackRun)
-			trackRunFeature.updateCdmRun(min, "STARTED");
+			trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
 
 		boolean done = false;
 		AtomicBoolean hasDiff = new AtomicBoolean(false);
@@ -179,7 +181,7 @@ public class DiffJobSession extends CopyJobSession {
 				}
 				done = true;
 				if (trackRun)
-					trackRunFeature.updateCdmRun(min, "PASS");
+					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
 
 				if (hasDiff.get() && appendPartitionOnDiff) {
 					logPartitionsInFile(partitionFileOutput, min, max);
@@ -191,7 +193,7 @@ public class DiffJobSession extends CopyJobSession {
 					logPartitionsInFile(partitionFileOutput, min, max);
 				}
 				if (trackRun)
-					trackRunFeature.updateCdmRun(min, "FAIL");
+					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
 			} finally {
 				jobCounter.globalIncrement();
 				printCounts(false);

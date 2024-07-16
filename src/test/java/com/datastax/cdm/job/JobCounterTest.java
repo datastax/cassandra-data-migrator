@@ -89,7 +89,7 @@ public class JobCounterTest {
         jobCounter.threadIncrement(JobCounter.CounterType.READ, 5);
         jobCounter.globalIncrement();
         // You may use mocking to capture logger outputs
-        jobCounter.printFinal();
+        jobCounter.printFinal(false, null);
     }
 
     @Test
