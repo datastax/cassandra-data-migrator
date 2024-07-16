@@ -19,4 +19,19 @@ object DiffData extends BasePartitionJob {
   setup("Data Validation Job", new DiffJobSessionFactory())
   execute()
   finish()
+  
+  protected def execute(): Unit = {
+    if (!parts.isEmpty()) {
+      originConnection.withSessionDo(originSession =>
+        targetConnection.withSessionDo(targetSession =>
+          jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(parts, trackRunFeature)));
+
+      slices.foreach(slice => {
+        originConnection.withSessionDo(originSession =>
+          targetConnection.withSessionDo(targetSession =>
+            jobFactory.getInstance(originSession, targetSession, sc)
+              .processSlice(slice)))
+      })
+    }
+  }
 }

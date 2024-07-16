@@ -24,14 +24,4 @@ abstract class BasePKJob extends BaseJob[SplitPartitions.PKRows] {
     SplitPartitions.getRowPartsFromFile(pieces, this.partitionFileNameInput)
   }
 
-  def execute(): Unit = {
-    if (!parts.isEmpty()) {
-      slices.foreach(slice => {
-        originConnection.withSessionDo(originSession =>
-          targetConnection.withSessionDo(targetSession =>
-            jobFactory.getInstance(originSession, targetSession, sc)
-              .processSlice(slice)))
-      })
-    }
-  }
 }

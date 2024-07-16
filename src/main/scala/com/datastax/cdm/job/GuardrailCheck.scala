@@ -19,4 +19,19 @@ object GuardrailCheck extends BasePartitionJob {
   setup("Guardrail Check Job", new GuardrailCheckJobSessionFactory())
   execute()
   finish()
+
+  protected def execute(): Unit = {
+    if (!parts.isEmpty()) {
+      originConnection.withSessionDo(originSession =>
+        targetConnection.withSessionDo(targetSession =>
+          jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(parts, trackRunFeature)));
+
+      slices.foreach(slice => {
+        originConnection.withSessionDo(originSession =>
+          targetConnection.withSessionDo(targetSession =>
+            jobFactory.getInstance(originSession, targetSession, sc)
+              .processSlice(slice)))
+      })
+    }
+  }
 }
