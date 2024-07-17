@@ -83,21 +83,22 @@ spark.cdm.autocorrect.mismatch                    false|true
 Note:
 - The validation job will never delete records from target i.e. it only adds or updates data on target
 
-# Rerun Migration or Validation specific token-ranges
-- You can rerun a Migration or Validation to complete a previous run that could have stopped for any reasons. This mode will skip any token-ranges from previous run that were migrated or validation successfully. This is done yb passing the `spark.cdm.trackRun.previousRunId` param as shown below
+# Rerun (previously incomplete) Migration or Validation 
+- You can rerun a Migration or Validation job to complete a previous run that could have stopped for any reasons. This mode will skip any token-ranges from previous run that were migrated or validation successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
 
+```
 ./spark-submit --properties-file cdm.properties \
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
  --conf spark.cdm.trackRun.previousRunId=<prev_run_id> \
  --master "local[*]" --driver-memory 25G --executor-memory 25G \
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
-
+```
 Note: 
-- The above feature tracks & saves each run info in tables `cdm_run_info` and `cdm_run_details` in the target keyspace. 
-- This replaces and improves upon an older similar feature (using param `spark.cdm.tokenrange.partitionFile`) that is now deprecated and will be removed soon.
+- This feature replaces and improves upon an older similar feature (using param `spark.cdm.tokenrange.partitionFile`) that is now deprecated and will be removed soon.
 
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class com.datastax.cdm.job.GuardrailCheck` as shown below
+
 ```
 ./spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
@@ -127,12 +128,13 @@ Note:
 - Validation - Log partitions range level exceptions, use the exceptions file as input for rerun  
 
 # Things to know
+- Each run (Migration and Validation) is tracked by default, you can find summary and details of the same in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.
 - CDM does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
 - CDM ignores `ttl` & `writetime` on collection and UDT fields while computing the highest value
 - If a table has only collection and/or UDT non-key columns and not table-level `ttl` configuration, the target will have no `ttl`, which can lead to inconsistencies between `origin` and `target` as rows expire on `origin` due to `ttl` expiry.
 - If a table has only collection and/or UDT non-key columns, the `writetime` used on target will be time the job was run. Alternatively if needed, the param `spark.cdm.transform.custom.writetime` can be used to set a static custom value for `writetime`. 
 - When CDM migration (or validation with autocorrect) is run multiple times on the same table (for whatever reasons), it could lead to duplicate entries in `list` type columns. Note this is [due to a Cassandra/DSE bug](https://issues.apache.org/jira/browse/CASSANDRA-11368) and not a CDM issue. This issue can be addressed by enabling and setting a positive value for `spark.cdm.transform.custom.writetime.incrementBy` param. This param was specifically added to address this issue.
-- You can find summary and details of each Migration or Validation jobs in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.
+- When you rerun job to resume from a previous run, the `run_info` metrics in the table `cdm_run_info` will be only for the present run. If the previous run was killed for some reasons, its progress metrics may not have been saved in the `cdm_run_info` table. If the previous run did complete (not killed) but with errors, then you will have all metrics from previous run as well.
 
 
 # Building Jar for local development
