@@ -27,8 +27,11 @@ import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public class TrackRun {
+	public enum RUN_TYPE {
+		MIGRATE, DIFF_DATA
+	}	
 	public enum RUN_STATUS {
-		NOT_STARTED, STARTED, PASS, FAIL
+		NOT_STARTED, STARTED, PASS, FAIL, DIFF
 	}
 
 	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -45,8 +48,8 @@ public class TrackRun {
 		return pendingParts;
 	}
 
-	public long initCdmRun(Collection<SplitPartitions.Partition> parts) {
-		long runId = runStatement.initCdmRun(parts);
+	public long initCdmRun(Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
+		long runId = runStatement.initCdmRun(parts, runType);
 		logger.info("###################### Run Id for this job is: {} ######################", runId);
 
 		return runId;

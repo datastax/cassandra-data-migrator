@@ -17,6 +17,7 @@ package com.datastax.cdm.job;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -116,7 +117,14 @@ public class DiffJobSession extends CopyJobSession {
 	public void processSlice(SplitPartitions.Partition slice) {
 		this.getDataAndDiff(slice.getMin(), slice.getMax());
 	}
-
+	
+	@Override
+	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
+		this.trackRunFeature = trackRunFeature;
+		if (trackRun)
+			trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.DIFF_DATA);
+	}
+	
 	public void getDataAndDiff(BigInteger min, BigInteger max) {
 		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
 		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
@@ -180,11 +188,14 @@ public class DiffJobSession extends CopyJobSession {
 					hasDiff.set(true);
 				}
 				done = true;
-				if (trackRun)
-					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
 
-				if (hasDiff.get() && appendPartitionOnDiff) {
-					logPartitionsInFile(partitionFileOutput, min, max);
+				if (hasDiff.get()) {
+					if (trackRun)
+						trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
+					if (appendPartitionOnDiff)
+						logPartitionsInFile(partitionFileOutput, min, max);
+				} else if (trackRun) {
+					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
 				}
 			} catch (Exception e) {
 				logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",

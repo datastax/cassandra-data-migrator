@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import com.datastax.cdm.feature.TrackRun;
+import com.datastax.cdm.feature.TrackRun.RUN_TYPE;
 import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.cdm.job.SplitPartitions.Partition;
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -49,12 +50,12 @@ public class TargetUpsertRunDetailsStatement {
 		String cdmKsTabDetails = this.keyspaceName + ".cdm_run_details";
 
 		this.session.execute("create table if not exists " + cdmKsTabInfo
-				+ " (table_name text, run_id bigint, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, primary key (table_name, run_id))");
+				+ " (table_name text, run_id bigint, run_type text, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, primary key (table_name, run_id))");
 		this.session.execute("create table if not exists " + cdmKsTabDetails
 				+ " (table_name text, run_id bigint, start_time timestamp, token_min bigint, token_max bigint, status text, primary key ((table_name, run_id), token_min))");
 
 		boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
-				+ " (table_name, run_id, prev_run_id, start_time) VALUES (?, ?, ?, dateof(now()))");
+				+ " (table_name, run_id, run_type, prev_run_id, start_time) VALUES (?, ?, ?, ?, dateof(now()))");
 		boundInitStatement = bindStatement("INSERT INTO " + cdmKsTabDetails
 				+ " (table_name, run_id, token_min, token_max, status) VALUES (?, ?, ?, ?, ?)");
 		boundUpdateInfoStatement = bindStatement("UPDATE " + cdmKsTabInfo
@@ -64,7 +65,7 @@ public class TargetUpsertRunDetailsStatement {
 		boundUpdateStartStatement = bindStatement("UPDATE " + cdmKsTabDetails
 				+ " SET start_time = dateof(now()), status = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
 		boundSelectStatement = bindStatement("SELECT token_min, token_max FROM " + cdmKsTabDetails
-				+ " WHERE table_name = ? AND run_id = ? and status in ('NOT STARTED', 'STARTED', 'FAIL') ALLOW FILTERING");
+				+ " WHERE table_name = ? AND run_id = ? and status in ('NOT_STARTED', 'STARTED', 'FAIL', 'DIFF') ALLOW FILTERING");
 	}
 
 	public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) {
@@ -85,10 +86,10 @@ public class TargetUpsertRunDetailsStatement {
 		return pendingParts;
 	}
 
-	public long initCdmRun(Collection<SplitPartitions.Partition> parts) {
+	public long initCdmRun(Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
 		runId = System.currentTimeMillis();
 		session.execute(boundInitInfoStatement.setString("table_name", tableName).setLong("run_id", runId)
-				.setLong("prev_run_id", prevRunId));
+				.setString("run_type", runType.toString()).setLong("prev_run_id", prevRunId));
 		parts.forEach(part -> initCdmRun(part));
 		return runId;
 	}

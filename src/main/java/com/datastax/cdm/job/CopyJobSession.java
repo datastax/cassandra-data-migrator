@@ -67,7 +67,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
 		this.trackRunFeature = trackRunFeature;
 		if (trackRun)
-			trackRunFeature.initCdmRun(parts);
+			trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.MIGRATE);
 	}
 
 	public void getDataAndInsert(BigInteger min, BigInteger max) {

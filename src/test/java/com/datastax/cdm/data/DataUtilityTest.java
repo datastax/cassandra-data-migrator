@@ -136,4 +136,11 @@ public class DataUtilityTest extends CommonMocks {
         List<Object> expectedMap = new ArrayList<>(actualMap.entrySet());
         assertEquals(expectedMap, DataUtility.extractObjectsFromCollection(actualMap));
 	}
+    
+    @Test
+	public void getMyClassMethodLineTest() {
+    	Exception ex = new Exception();
+    	ex.setStackTrace(new StackTraceElement[] {new StackTraceElement("com.datastax.cdm.data.DataUtilityTest", "getMyClassMethodLineTest", "DataUtilityTest.java", 0)});
+		assertEquals("com.datastax.cdm.data.DataUtilityTest.getMyClassMethodLineTest:0", DataUtility.getMyClassMethodLine(ex));
+	}
 }
