@@ -24,10 +24,10 @@ abstract class BasePartitionJob extends BaseJob[SplitPartitions.Partition] {
   var trackRunFeature: TrackRun = _
 
   override def getParts(pieces: Int): util.Collection[SplitPartitions.Partition] = {
-    var keyspacetable = propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
+    var keyspaceTable = propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
   
     if (trackRun) {
-      trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, keyspacetable))
+      trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, keyspaceTable))
     }
     
     if (prevRunId != 0) {

@@ -43,7 +43,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected String partitionFileOutput = SplitPartitions.getPartitionFileOutput(propertyHelper);
     protected JobCounter jobCounter;
     protected Long printStatsAfter;
-	protected TrackRun trackRunFeature;
+    protected TrackRun trackRunFeature;
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
@@ -104,7 +104,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
     public abstract void processSlice(T slice);
     
-	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {}
+    public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {}
 
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {

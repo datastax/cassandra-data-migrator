@@ -1,5 +1,3 @@
-package com.datastax.cdm.feature;
-
 /*
  * Copyright DataStax, Inc.
  *
@@ -15,6 +13,7 @@ package com.datastax.cdm.feature;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.datastax.cdm.feature;
 
 import java.math.BigInteger;
 import java.util.Collection;
@@ -37,8 +36,8 @@ public class TrackRun {
 	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 	private TargetUpsertRunDetailsStatement runStatement;
 
-	public TrackRun(CqlSession session, String keyspacetable) {
-		this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspacetable);
+	public TrackRun(CqlSession session, String keyspaceTable) {
+		this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
 	}
 
 	public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) {

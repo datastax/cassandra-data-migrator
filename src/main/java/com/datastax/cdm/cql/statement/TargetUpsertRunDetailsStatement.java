@@ -41,9 +41,9 @@ public class TargetUpsertRunDetailsStatement {
 	private BoundStatement boundUpdateStartStatement;
 	private BoundStatement boundSelectStatement;
 
-	public TargetUpsertRunDetailsStatement(CqlSession session, String keyspacetable) {
+	public TargetUpsertRunDetailsStatement(CqlSession session, String keyspaceTable) {
 		this.session = session;
-		String[] ksTab = keyspacetable.split("\\.");
+		String[] ksTab = keyspaceTable.split("\\.");
 		this.keyspaceName = ksTab[0];
 		this.tableName = ksTab[1];
 		String cdmKsTabInfo = this.keyspaceName + ".cdm_run_info";
