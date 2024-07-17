@@ -192,7 +192,7 @@ public class DiffJobSession extends CopyJobSession {
 				if (hasDiff.get()) {
 					if (trackRun)
 						trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
-					if (appendPartitionOnDiff)
+					else if (appendPartitionOnDiff)
 						logPartitionsInFile(partitionFileOutput, min, max);
 				} else if (trackRun) {
 					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
@@ -201,10 +201,11 @@ public class DiffJobSession extends CopyJobSession {
 				logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
 						Thread.currentThread().getId(), min, max, attempts, e);
 				if (attempts == maxAttempts) {
-					logPartitionsInFile(partitionFileOutput, min, max);
+					if (trackRun)
+						trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
+					else
+						logPartitionsInFile(partitionFileOutput, min, max);
 				}
-				if (trackRun)
-					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
 			} finally {
 				jobCounter.globalIncrement();
 				printCounts(false);

@@ -43,6 +43,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected String partitionFileOutput = SplitPartitions.getPartitionFileOutput(propertyHelper);
     protected JobCounter jobCounter;
     protected Long printStatsAfter;
+    protected Boolean trackRun = false;
     protected TrackRun trackRunFeature;
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {

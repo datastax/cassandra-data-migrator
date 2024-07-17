@@ -1,7 +1,7 @@
 # Release Notes
 ## [4.3.0] - 2024-07-18
-- Added `track-run` feature to support stop and resume function for Migration and Validation jobs
-- Validation jobs ran with `auto-correct` feature disabled, can now be rerun with `auto-correct` feature enabled in a much optimal way to only address the validation errors during the rerun
+- Added `spark.cdm.trackRun` feature to support stop and resume function for Migration and Validation jobs
+- Validation jobs ran with `auto-correct` feature disabled, can now be rerun with `auto-correct` feature enabled in a much optimal way to only correct the token-ranges with validation errors during the rerun
 - Records summary and details of each run in tables (`cdm_run_info` and `cdm_run_details`) on `target` keyspace
 
 ## [4.2.0] - 2024-07-09

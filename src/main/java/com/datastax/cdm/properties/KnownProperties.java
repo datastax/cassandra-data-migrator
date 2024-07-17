@@ -131,7 +131,7 @@ public class KnownProperties {
 		types.put(AUTOCORRECT_MISSING_COUNTER, PropertyType.BOOLEAN);
 		defaults.put(AUTOCORRECT_MISSING_COUNTER, "false");
 		types.put(TRACK_RUN, PropertyType.BOOLEAN);
-		defaults.put(TRACK_RUN, "true");
+		defaults.put(TRACK_RUN, "false");
         types.put(PREV_RUN_ID, PropertyType.NUMBER);
         defaults.put(PREV_RUN_ID, "0");
         

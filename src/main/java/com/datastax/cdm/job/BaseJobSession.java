@@ -47,7 +47,6 @@ public abstract class BaseJobSession {
     protected RateLimiter rateLimiterOrigin;
     protected RateLimiter rateLimiterTarget;
     protected Integer maxRetries = 10;
-    protected Boolean trackRun = true;
     
     protected BaseJobSession(SparkConf sc) {
         propertyHelper.initializeSparkConf(sc);
