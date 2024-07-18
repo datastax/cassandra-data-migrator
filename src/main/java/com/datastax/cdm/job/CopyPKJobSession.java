@@ -35,7 +35,6 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
 
     private final PKFactory pkFactory;
     private final List<Class> originPKClasses;
-    private final boolean isCounterTable;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private OriginSelectByPKStatement originSelectByPKStatement;
 
@@ -43,7 +42,6 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
         super(originSession, targetSession, sc, true);
         this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE, JobCounter.CounterType.SKIPPED, JobCounter.CounterType.MISSING);
         pkFactory = this.originSession.getPKFactory();
-        isCounterTable = this.originSession.getCqlTable().isCounterTable();
         originPKClasses = this.originSession.getCqlTable().getPKClasses();
 
         logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPKStatement().getCQL());
@@ -56,6 +54,7 @@ public class CopyPKJobSession extends AbstractJobSession<SplitPartitions.PKRows>
 
     public void getRowAndInsert(SplitPartitions.PKRows rowsList) {
         originSelectByPKStatement = originSession.getOriginSelectByPKStatement();
+		jobCounter.threadReset();
         for (String row : rowsList.getPkRows()) {
             jobCounter.threadIncrement(JobCounter.CounterType.READ);
             EnhancedPK pk = toEnhancedPK(row);

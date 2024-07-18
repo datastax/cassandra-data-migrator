@@ -23,14 +23,10 @@ import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 
 public class OriginSelectByPartitionRangeStatement extends OriginSelectStatement {
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
     public OriginSelectByPartitionRangeStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
     }

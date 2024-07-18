@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.datastax.cdm.properties.IPropertyHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,6 @@ import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.WritetimeTTL;
 import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -84,7 +84,7 @@ public class CqlTable extends BaseTable {
     private final Long defaultForMissingTimestamp;
     private final String defaultForMissingString;
 
-    public CqlTable(PropertyHelper propertyHelper, boolean isOrigin, CqlSession session) {
+    public CqlTable(IPropertyHelper propertyHelper, boolean isOrigin, CqlSession session) {
         super(propertyHelper, isOrigin);
         this.keyspaceName = unFormatName(keyspaceName);
         this.tableName = unFormatName(tableName);
@@ -441,7 +441,7 @@ public class CqlTable extends BaseTable {
                 .anyMatch(columnMetadata -> !CqlData.isFrozen(columnMetadata.getType()));
     }
 
-    private static ConsistencyLevel mapToConsistencyLevel(String level) {
+    protected static ConsistencyLevel mapToConsistencyLevel(String level) {
         ConsistencyLevel retVal = ConsistencyLevel.LOCAL_QUORUM;
         if (StringUtils.isNotEmpty(level)) {
             switch (level.toUpperCase()) {

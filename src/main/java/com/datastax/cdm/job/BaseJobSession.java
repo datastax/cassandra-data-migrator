@@ -47,7 +47,7 @@ public abstract class BaseJobSession {
     protected RateLimiter rateLimiterOrigin;
     protected RateLimiter rateLimiterTarget;
     protected Integer maxRetries = 10;
-
+    
     protected BaseJobSession(SparkConf sc) {
         propertyHelper.initializeSparkConf(sc);
         this.featureMap = calcFeatureMap(propertyHelper);

@@ -32,7 +32,6 @@ public class Record {
     private Row originRow;
     private Row targetRow;
     private CompletionStage<AsyncResultSet> targetFutureRow;
-    private Diff diff = Diff.UNKNOWN;
 
     public Record(EnhancedPK pk, Row originRow, Row targetRow, CompletionStage<AsyncResultSet> targetFutureRow) {
         if (null == pk || (null == originRow && null == targetRow && null == targetFutureRow)) {

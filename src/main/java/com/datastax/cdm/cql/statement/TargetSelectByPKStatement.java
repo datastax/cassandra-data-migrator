@@ -26,14 +26,10 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
 public class TargetSelectByPKStatement extends BaseCdmStatement {
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
     public TargetSelectByPKStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
         this.statement = buildStatement();

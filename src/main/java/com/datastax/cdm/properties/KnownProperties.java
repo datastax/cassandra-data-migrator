@@ -108,11 +108,13 @@ public class KnownProperties {
 	public static final String AUTOCORRECT_MISSING = "spark.cdm.autocorrect.missing"; // false
 	public static final String AUTOCORRECT_MISMATCH = "spark.cdm.autocorrect.mismatch"; // false
 	public static final String AUTOCORRECT_MISSING_COUNTER = "spark.cdm.autocorrect.missing.counter"; // false
-
-	public static final String PERF_NUM_PARTS = "spark.cdm.perfops.numParts"; // 10000, was spark.splitSize
+	public static final String TRACK_RUN = "spark.cdm.trackRun";
+	public static final String PREV_RUN_ID = "spark.cdm.trackRun.previousRunId";
+	
+	public static final String PERF_NUM_PARTS = "spark.cdm.perfops.numParts"; // 5000, was spark.splitSize
 	public static final String PERF_BATCH_SIZE = "spark.cdm.perfops.batchSize"; // 5
 	public static final String PERF_RATELIMIT_ORIGIN = "spark.cdm.perfops.ratelimit.origin"; // 20000
-	public static final String PERF_RATELIMIT_TARGET = "spark.cdm.perfops.ratelimit.target"; // 40000
+	public static final String PERF_RATELIMIT_TARGET = "spark.cdm.perfops.ratelimit.target"; // 20000
 
 	public static final String READ_CL = "spark.cdm.perfops.consistency.read";
 	public static final String WRITE_CL = "spark.cdm.perfops.consistency.write";
@@ -128,15 +130,19 @@ public class KnownProperties {
 		defaults.put(AUTOCORRECT_MISMATCH, "false");
 		types.put(AUTOCORRECT_MISSING_COUNTER, PropertyType.BOOLEAN);
 		defaults.put(AUTOCORRECT_MISSING_COUNTER, "false");
-
+		types.put(TRACK_RUN, PropertyType.BOOLEAN);
+		defaults.put(TRACK_RUN, "false");
+        types.put(PREV_RUN_ID, PropertyType.NUMBER);
+        defaults.put(PREV_RUN_ID, "0");
+        
 		types.put(PERF_NUM_PARTS, PropertyType.NUMBER);
-		defaults.put(PERF_NUM_PARTS, "10000");
+		defaults.put(PERF_NUM_PARTS, "5000");
 		types.put(PERF_BATCH_SIZE, PropertyType.NUMBER);
 		defaults.put(PERF_BATCH_SIZE, "5");
 		types.put(PERF_RATELIMIT_ORIGIN, PropertyType.NUMBER);
 		defaults.put(PERF_RATELIMIT_ORIGIN, "20000");
 		types.put(PERF_RATELIMIT_TARGET, PropertyType.NUMBER);
-		defaults.put(PERF_RATELIMIT_TARGET, "40000");
+		defaults.put(PERF_RATELIMIT_TARGET, "20000");
 
 		types.put(READ_CL, PropertyType.STRING);
 		defaults.put(READ_CL, "LOCAL_QUORUM");

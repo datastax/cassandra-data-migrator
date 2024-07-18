@@ -23,4 +23,5 @@ abstract class BasePKJob extends BaseJob[SplitPartitions.PKRows] {
     // Each PKRows object contains a list of Strings that contain the PK to be parsed
     SplitPartitions.getRowPartsFromFile(pieces, this.partitionFileNameInput)
   }
+
 }

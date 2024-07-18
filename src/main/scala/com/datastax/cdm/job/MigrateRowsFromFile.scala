@@ -20,12 +20,14 @@ object MigrateRowsFromFile extends BasePKJob {
   execute()
   finish()
 
-  override def execute(): Unit = {
-    slices.foreach(slice => {
-      originConnection.withSessionDo(sourceSession =>
-        targetConnection.withSessionDo(destinationSession =>
-          jobFactory.getInstance(sourceSession, destinationSession, sc)
-            .processSlice(slice)))
-    })
+  protected def execute(): Unit = {
+    if (!parts.isEmpty()) {
+      slices.foreach(slice => {
+        originConnection.withSessionDo(originSession =>
+          targetConnection.withSessionDo(targetSession =>
+            jobFactory.getInstance(originSession, targetSession, sc)
+              .processSlice(slice)))
+      })
+    }
   }
 }

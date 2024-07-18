@@ -65,6 +65,12 @@ public class SplitPartitionsTest {
     }
 
     @Test
+    void getRowPartsFromFileTest() throws IOException {
+        List<SplitPartitions.PKRows> partitions = SplitPartitions.getRowPartsFromFile(5, "./src/resources/primary_key_rows.csv");
+        assertEquals(6, partitions.size());
+    }
+
+    @Test
     void getSubPartitionsFromHighNumPartTest() throws IOException {
         List<SplitPartitions.Partition> partitions = SplitPartitions.getSubPartitionsFromFile(1000, "./src/resources/partitions.csv");
         assertEquals(50, partitions.size());

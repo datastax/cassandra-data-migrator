@@ -15,18 +15,27 @@
  */
 package com.datastax.cdm.data;
 
-import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.oss.driver.api.core.type.DataTypes;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 
 public class DataUtilityTest extends CommonMocks {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -97,4 +106,41 @@ public class DataUtilityTest extends CommonMocks {
             assertNotEquals(extraColumn, entry.getValue());
         }
     }
+    
+    @Test
+	public void diffTest() {
+		assertFalse(DataUtility.diff(null, null));
+		assertFalse(DataUtility.diff("Hello", "Hello"));
+		assertTrue(DataUtility.diff(null, "Hello"));
+		assertTrue(DataUtility.diff("Hello", null));
+		assertTrue(DataUtility.diff("", "Hello"));
+		assertTrue(DataUtility.diff("hello", "Hello"));
+	}
+    
+    @Test
+	public void extractObjectsFromCollectionTest() {
+    	List<Object> expected = Arrays.asList(1, 2, 3);
+        List<Object> actualList = new ArrayList<>();
+    	actualList.add(1);
+    	actualList.add(2);
+    	actualList.add(3);        	
+        assertEquals(expected, DataUtility.extractObjectsFromCollection(actualList));
+
+        Set<Object> actualSet = new HashSet<>();
+        actualSet.add(1);
+        actualSet.add(2);
+        actualSet.add(3);
+        assertEquals(expected, DataUtility.extractObjectsFromCollection(actualSet));
+        
+        Map<String, String> actualMap = Map.of("1", "one", "2", "two", "3", "three");
+        List<Object> expectedMap = new ArrayList<>(actualMap.entrySet());
+        assertEquals(expectedMap, DataUtility.extractObjectsFromCollection(actualMap));
+	}
+    
+    @Test
+	public void getMyClassMethodLineTest() {
+    	Exception ex = new Exception();
+    	ex.setStackTrace(new StackTraceElement[] {new StackTraceElement("com.datastax.cdm.data.DataUtilityTest", "getMyClassMethodLineTest", "DataUtilityTest.java", 0)});
+		assertEquals("com.datastax.cdm.data.DataUtilityTest.getMyClassMethodLineTest:0", DataUtility.getMyClassMethodLine(ex));
+	}
 }

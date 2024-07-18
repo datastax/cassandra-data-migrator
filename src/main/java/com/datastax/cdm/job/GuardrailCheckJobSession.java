@@ -29,7 +29,6 @@ import java.math.BigInteger;
 
 public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
-    private static GuardrailCheckJobSession guardrailJobSession;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
     private final PKFactory pkFactory;
@@ -60,6 +59,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
             OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession.getOriginSelectByPartitionRangeStatement();
             ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
             String checkString;
+			jobCounter.threadReset();
             for (Row originRow : resultSet) {
                 rateLimiterOrigin.acquire(1);
                 jobCounter.threadIncrement(JobCounter.CounterType.READ);
