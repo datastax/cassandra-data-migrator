@@ -1,7 +1,0 @@
-
- key  | key2 | value
-------+------+--------
- key1 |    A | valueA
- key3 |    C | valueC
-
-(2 rows)

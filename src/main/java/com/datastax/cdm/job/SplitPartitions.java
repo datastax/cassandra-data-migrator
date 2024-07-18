@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -92,25 +91,6 @@ public class SplitPartitions {
             min = new BigInteger(minMax[0]);
             max = new BigInteger(minMax[1]);
         }
-    }
-
-    public static List<PKRows> getRowPartsFromFile(int numSplits, String inputFilename) throws IOException {
-        logger.info("ThreadID: {} Splitting rows in file: {} using a split-size of {}"
-                , Thread.currentThread().getId(), inputFilename, numSplits);
-        List<String> pkRows = new ArrayList<String>();
-        BufferedReader reader = getfileReader(inputFilename);
-        String pkRow = null;
-        while ((pkRow = reader.readLine()) != null) {
-            if (pkRow.startsWith("#")) {
-                continue;
-            }
-            pkRows.add(pkRow);
-        }
-        int partSize = pkRows.size() / numSplits;
-        if (partSize == 0) {
-            partSize = pkRows.size();
-        }
-        return batches(pkRows, partSize).map(l -> (new PKRows(l))).collect(Collectors.toList());
     }
 
     public static <T> Stream<List<T>> batches(List<T> source, int length) {
@@ -186,19 +166,6 @@ public class SplitPartitions {
         }
 
         return "./" + propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE) + "_partitions.csv";
-    }
-
-    public static class PKRows implements Serializable {
-        private static final long serialVersionUID = 1L;
-        private List<String> pkRows;
-
-        public List<String> getPkRows() {
-            return pkRows;
-        }
-
-        public PKRows(List<String> rows) {
-            pkRows = new ArrayList<>(rows);
-        }
     }
 
     public static class Partition implements Serializable {
