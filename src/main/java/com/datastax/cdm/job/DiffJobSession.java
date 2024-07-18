@@ -117,14 +117,14 @@ public class DiffJobSession extends CopyJobSession {
 	public void processSlice(SplitPartitions.Partition slice) {
 		this.getDataAndDiff(slice.getMin(), slice.getMax());
 	}
-	
+
 	@Override
 	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
 		this.trackRunFeature = trackRunFeature;
 		if (trackRun)
 			trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.DIFF_DATA);
 	}
-	
+
 	public void getDataAndDiff(BigInteger min, BigInteger max) {
 		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
 		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
@@ -214,26 +214,13 @@ public class DiffJobSession extends CopyJobSession {
 	}
 
 	private boolean diffAndClear(List<Record> recordsToDiff) {
-		boolean isDiff = false;
-		for (Record record : recordsToDiff) {
-			try {
-				if (diff(record)) {
-					isDiff = true;
-				}
-			} catch (Exception e) {
-				logger.error("Could not perform diff for key {}: {}", record.getPk(), e);
-			}
-		}
+		boolean isDiff = recordsToDiff.stream().map(r -> diff(r)).filter(b -> b == true).count() > 0;
 		recordsToDiff.clear();
 		return isDiff;
 	}
 
 	private boolean diff(Record record) {
-		EnhancedPK originPK = record.getPk();
-		Row originRow = record.getOriginRow();
-		Row targetRow = record.getTargetRow();
-
-		if (targetRow == null) {
+		if (record.getTargetRow() == null) {
 			jobCounter.threadIncrement(JobCounter.CounterType.MISSING);
 			logger.error("Missing target row found for key: {}", record.getPk());
 			if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
@@ -253,7 +240,7 @@ public class DiffJobSession extends CopyJobSession {
 			return true;
 		}
 
-		String diffData = isDifferent(originPK, originRow, targetRow);
+		String diffData = isDifferent(record);
 		if (!diffData.isEmpty()) {
 			jobCounter.threadIncrement(JobCounter.CounterType.MISMATCH);
 			logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
@@ -272,7 +259,11 @@ public class DiffJobSession extends CopyJobSession {
 		}
 	}
 
-	private String isDifferent(EnhancedPK pk, Row originRow, Row targetRow) {
+	private String isDifferent(Record record) {
+		EnhancedPK pk = record.getPk();
+		Row originRow = record.getOriginRow();
+		Row targetRow = record.getTargetRow();
+
 		StringBuffer diffData = new StringBuffer();
 		IntStream.range(0, targetColumnNames.size()).parallel().forEach(targetIndex -> {
 			String previousLabel = ThreadContext.get(THREAD_CONTEXT_LABEL);
