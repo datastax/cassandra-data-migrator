@@ -1,4 +1,7 @@
 # Release Notes
+## [4.3.2] - 2024-07-19
+- Removed deprecated functionality related to retry
+
 ## [4.3.1] - 2024-07-19
 - Fixed a validation run [bug] (https://github.com/datastax/cassandra-data-migrator/issues/266) that sometimes did not report a failed token-range
 - Removed deprecated MigrateRowsFromFile job
