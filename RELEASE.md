@@ -1,4 +1,7 @@
 # Release Notes
+## [4.3.3] - 2024-07-22
+- Removed deprecated functionality related to processing token-ranges via partition-file 
+
 ## [4.3.2] - 2024-07-19
 - Removed deprecated functionality related to retry
 
