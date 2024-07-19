@@ -1,5 +1,4 @@
-# This is a sample input file for job: MigratePartitionsFromFile
-# list of primary-key fields separated by ' %% '
+# List of token-ranges
 -6220480106867985210,-6120480106867985210
 -4782224463879838018,-4682224463879838018
 -507900353496146534,-407285462027022883
