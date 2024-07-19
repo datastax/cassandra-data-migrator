@@ -38,9 +38,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected EnhancedSession targetSession;
     protected Guardrail guardrailFeature;
     protected boolean guardrailEnabled;
-    protected boolean appendPartitionOnDiff = SplitPartitions.appendPartitionOnDiff(propertyHelper);
-    protected String partitionFileInput = SplitPartitions.getPartitionFileInput(propertyHelper);
-    protected String partitionFileOutput = SplitPartitions.getPartitionFileOutput(propertyHelper);
     protected JobCounter jobCounter;
     protected Long printStatsAfter;
     protected Boolean trackRun = false;
@@ -69,8 +66,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
         trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN);
 
-        logger.info("PARAM -- Partition file input: {}", partitionFileInput);
-        logger.info("PARAM -- Partition file output: {}", partitionFileOutput);
         logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
         logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
 

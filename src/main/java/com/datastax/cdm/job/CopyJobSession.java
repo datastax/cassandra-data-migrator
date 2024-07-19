@@ -15,6 +15,16 @@
  */
 package com.datastax.cdm.job;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
+
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.spark.SparkConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
@@ -23,16 +33,12 @@ import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.*;
-import org.apache.logging.log4j.ThreadContext;
-import org.apache.spark.SparkConf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.CompletionStage;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 
 public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
@@ -111,8 +117,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
 					BoundStatement boundUpsert = bind(r);
 					if (null == boundUpsert) {
-						jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED); // TODO: this previously
-																					// skipped, why not errCnt?
+						jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
 						continue;
 					}
 
@@ -142,8 +147,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 							- jobCounter.getCount(JobCounter.CounterType.SKIPPED));
 			if (trackRun)
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
-			else
-				logPartitionsInFile(partitionFileOutput, min, max);
 			logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
 					Thread.currentThread().getId(), min, max);
 			logger.error("Error stats " + jobCounter.getThreadCounters(false));

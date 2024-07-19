@@ -13,8 +13,6 @@ Dockerfile
 .github/**
 scripts/*
 test-backup/feature/*
-src/resources/partitions.csv
-src/resources/primary_key_rows.csv
 src/resources/log4j.xml
 SIT/*/*/*.assert
 SIT/*/*/*.out

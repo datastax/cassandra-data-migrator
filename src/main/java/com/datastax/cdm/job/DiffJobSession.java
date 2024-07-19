@@ -185,11 +185,8 @@ public class DiffJobSession extends CopyJobSession {
 				hasDiff.set(true);
 			}
 
-			if (hasDiff.get()) {
-				if (trackRun)
-					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
-				else if (appendPartitionOnDiff)
-					logPartitionsInFile(partitionFileOutput, min, max);
+			if (hasDiff.get() && trackRun) {
+				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
 			} else if (trackRun) {
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
 			}
@@ -198,8 +195,6 @@ public class DiffJobSession extends CopyJobSession {
 					Thread.currentThread().getId(), min, max, e);
 			if (trackRun)
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
-			else
-				logPartitionsInFile(partitionFileOutput, min, max);
 		} finally {
 			jobCounter.globalIncrement();
 			printCounts(false);

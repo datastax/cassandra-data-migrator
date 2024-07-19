@@ -93,8 +93,6 @@ Note:
  --master "local[*]" --driver-memory 25G --executor-memory 25G \
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
-Note: 
-- This feature replaces and improves upon an older similar feature (using param `spark.cdm.tokenrange.partitionFile`) that is now deprecated and will be removed soon.
 
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class com.datastax.cdm.job.GuardrailCheck` as shown below
@@ -125,7 +123,6 @@ Note:
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Supports adding custom fixed `writetime`
 - Track run information (start-time, end-time, status, etc.) in tables (`cdm_run_info` and `cdm_run_details`) on the target keyspace
-- Validation - Log partitions range level exceptions, use the exceptions file as input for rerun  
 
 # Things to know
 - Each run (Migration or Validation) can be tracked (when enabled). You can find summary and details of the same in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.
