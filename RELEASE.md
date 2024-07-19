@@ -1,4 +1,8 @@
 # Release Notes
+## [4.3.1] - 2024-07-19
+- Fixed a validation run [bug] (https://github.com/datastax/cassandra-data-migrator/issues/266) that sometimes did not report a failed token-range
+- Removed deprecated MigrateRowsFromFile job
+
 ## [4.3.0] - 2024-07-18
 - Added `spark.cdm.trackRun` feature to support stop and resume function for Migration and Validation jobs
 - Validation jobs ran with `auto-correct` feature disabled, can now be rerun with `auto-correct` feature enabled in a much optimal way to only correct the token-ranges with validation errors during the rerun
