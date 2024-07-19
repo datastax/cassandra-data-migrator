@@ -46,7 +46,6 @@ public abstract class BaseJobSession {
     protected Map<Featureset, Feature> featureMap;
     protected RateLimiter rateLimiterOrigin;
     protected RateLimiter rateLimiterTarget;
-    protected Integer maxRetries = 10;
     
     protected BaseJobSession(SparkConf sc) {
         propertyHelper.initializeSparkConf(sc);

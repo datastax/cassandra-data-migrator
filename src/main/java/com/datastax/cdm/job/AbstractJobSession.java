@@ -67,10 +67,8 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
         rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
-        maxRetries = propertyHelper.getInteger(KnownProperties.MAX_RETRIES);
         trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN);
 
-        logger.info("PARAM -- Max Retries: {}", maxRetries);
         logger.info("PARAM -- Partition file input: {}", partitionFileInput);
         logger.info("PARAM -- Partition file output: {}", partitionFileOutput);
         logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
