@@ -100,7 +100,7 @@ public class Guardrail extends AbstractFeature  {
         int colSize = targetTable.byteCount(targetIndex, targetValue);
         if (logTrace) logger.trace("Column {} at targetIndex {} has size {} bytes", targetTable.getColumnNames(false).get(targetIndex), targetIndex, colSize);
         if (colSize > colSizeInKB * BASE_FACTOR) {
-            if (null==currentChecks) currentChecks = new HashMap();
+            if (null==currentChecks) currentChecks = new HashMap<String,Integer>();
             currentChecks.put(targetTable.getColumnNames(false).get(targetIndex), colSize);
         }
         return currentChecks;

@@ -125,91 +125,84 @@ public class DiffJobSession extends CopyJobSession {
 			trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.DIFF_DATA);
 	}
 
-	public void getDataAndDiff(BigInteger min, BigInteger max) {
+	private void getDataAndDiff(BigInteger min, BigInteger max) {
 		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
 		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
 		if (trackRun)
 			trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
 
-		boolean done = false;
 		AtomicBoolean hasDiff = new AtomicBoolean(false);
-		int maxAttempts = maxRetries + 1;
-		for (int attempts = 1; attempts <= maxAttempts && !done; attempts++) {
-			try {
-				jobCounter.threadReset();
+		try {
+			jobCounter.threadReset();
 
-				PKFactory pkFactory = originSession.getPKFactory();
-				OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = originSession
-						.getOriginSelectByPartitionRangeStatement();
-				ResultSet resultSet = originSelectByPartitionRangeStatement
-						.execute(originSelectByPartitionRangeStatement.bind(min, max));
-				TargetSelectByPKStatement targetSelectByPKStatement = targetSession.getTargetSelectByPKStatement();
-				Integer fetchSizeInRows = originSession.getCqlTable().getFetchSizeInRows();
+			PKFactory pkFactory = originSession.getPKFactory();
+			OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = originSession
+					.getOriginSelectByPartitionRangeStatement();
+			ResultSet resultSet = originSelectByPartitionRangeStatement
+					.execute(originSelectByPartitionRangeStatement.bind(min, max));
+			TargetSelectByPKStatement targetSelectByPKStatement = targetSession.getTargetSelectByPKStatement();
+			Integer fetchSizeInRows = originSession.getCqlTable().getFetchSizeInRows();
 
-				List<Record> recordsToDiff = new ArrayList<>(fetchSizeInRows);
-				StreamSupport.stream(resultSet.spliterator(), false).forEach(originRow -> {
-					rateLimiterOrigin.acquire(1);
-					Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
-					jobCounter.threadIncrement(JobCounter.CounterType.READ);
+			List<Record> recordsToDiff = new ArrayList<>(fetchSizeInRows);
+			StreamSupport.stream(resultSet.spliterator(), false).forEach(originRow -> {
+				rateLimiterOrigin.acquire(1);
+				Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
+				jobCounter.threadIncrement(JobCounter.CounterType.READ);
 
-					if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-						jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-					} else {
-						for (Record r : pkFactory.toValidRecordList(record)) {
+				if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
+					jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+				} else {
+					for (Record r : pkFactory.toValidRecordList(record)) {
 
-							if (guardrailEnabled) {
-								String guardrailCheck = guardrailFeature.guardrailChecks(r);
-								if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
-									logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
-									jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-									continue;
+						if (guardrailEnabled) {
+							String guardrailCheck = guardrailFeature.guardrailChecks(r);
+							if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+								logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
+								jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+								continue;
+							}
+						}
+
+						rateLimiterTarget.acquire(1);
+						CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement
+								.getAsyncResult(r.getPk());
+
+						if (null == targetResult) {
+							jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+						} else {
+							r.setAsyncTargetRow(targetResult);
+							recordsToDiff.add(r);
+							if (recordsToDiff.size() > fetchSizeInRows) {
+								if (diffAndClear(recordsToDiff)) {
+									hasDiff.set(true);
 								}
 							}
-
-							rateLimiterTarget.acquire(1);
-							CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement
-									.getAsyncResult(r.getPk());
-
-							if (null == targetResult) {
-								jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-							} else {
-								r.setAsyncTargetRow(targetResult);
-								recordsToDiff.add(r);
-								if (recordsToDiff.size() > fetchSizeInRows) {
-									if (diffAndClear(recordsToDiff)) {
-										hasDiff.set(true);
-									}
-								}
-							} // targetRecord!=null
-						} // recordSet iterator
-					} // shouldFilterRecord
-				});
-				if (diffAndClear(recordsToDiff)) {
-					hasDiff.set(true);
-				}
-				done = true;
-
-				if (hasDiff.get()) {
-					if (trackRun)
-						trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
-					else if (appendPartitionOnDiff)
-						logPartitionsInFile(partitionFileOutput, min, max);
-				} else if (trackRun) {
-					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
-				}
-			} catch (Exception e) {
-				logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {} -- Attempt# {}",
-						Thread.currentThread().getId(), min, max, attempts, e);
-				if (attempts == maxAttempts) {
-					if (trackRun)
-						trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
-					else
-						logPartitionsInFile(partitionFileOutput, min, max);
-				}
-			} finally {
-				jobCounter.globalIncrement();
-				printCounts(false);
+						} // targetRecord!=null
+					} // recordSet iterator
+				} // shouldFilterRecord
+			});
+			if (diffAndClear(recordsToDiff)) {
+				hasDiff.set(true);
 			}
+
+			if (hasDiff.get()) {
+				if (trackRun)
+					trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
+				else if (appendPartitionOnDiff)
+					logPartitionsInFile(partitionFileOutput, min, max);
+			} else if (trackRun) {
+				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
+			}
+		} catch (Exception e) {
+			logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
+					Thread.currentThread().getId(), min, max, e);
+			if (trackRun)
+				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
+			else
+				logPartitionsInFile(partitionFileOutput, min, max);
+		} finally {
+			jobCounter.globalIncrement();
+			printCounts(false);
 		}
 	}
 

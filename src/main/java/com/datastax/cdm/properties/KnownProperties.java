@@ -119,7 +119,6 @@ public class KnownProperties {
 	public static final String READ_CL = "spark.cdm.perfops.consistency.read";
 	public static final String WRITE_CL = "spark.cdm.perfops.consistency.write";
 	public static final String PERF_FETCH_SIZE = "spark.cdm.perfops.fetchSizeInRows";
-	public static final String MAX_RETRIES = "spark.cdm.perfops.errorLimit";
 	public static final String PRINT_STATS_AFTER = "spark.cdm.perfops.printStatsAfter";
 	public static final String PRINT_STATS_PER_PART = "spark.cdm.perfops.printStatsPerPart";
 
@@ -154,8 +153,6 @@ public class KnownProperties {
 		defaults.put(PRINT_STATS_PER_PART, "false");
 		types.put(PERF_FETCH_SIZE, PropertyType.NUMBER);
 		defaults.put(PERF_FETCH_SIZE, "1000");
-		types.put(MAX_RETRIES, PropertyType.NUMBER);
-		defaults.put(MAX_RETRIES, "0");
 	}
 
 	// ==========================================================================
