@@ -49,6 +49,13 @@ Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.re
 Note:
 - Above command generates a log file `logfile_name_*.txt` to avoid log output on the console.
 - Update the memory options (driver & executor memory) based on your use-case
+- To track details of a run in the `target` keyspace, pass param `--conf spark.cdm.trackRun=true`
+- To filter and migrate data only in a specific token range, you can pass the below two additional params to the `Migration` or `Validation` jobs 
+
+```
+--conf spark.cdm.filter.cassandra.partition.min=<token-range-min>
+--conf spark.cdm.filter.cassandra.partition.max=<token-range-max>
+```
 
 # Steps for Data-Validation:
 
@@ -84,7 +91,7 @@ Note:
 - The validation job will never delete records from target i.e. it only adds or updates data on target
 
 # Rerun (previously incomplete) Migration or Validation 
-- You can rerun a Migration or Validation job to complete a previous run that could have stopped for any reasons. This mode will skip any token-ranges from previous run that were migrated or validated successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
+- You can rerun/resume a Migration or Validation job to complete a previous run that could have stopped (or completed with some errors) for any reasons. This mode will skip any token-ranges from the previous run that were migrated (or validated) successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
 
 ```
 ./spark-submit --properties-file cdm.properties \

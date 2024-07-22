@@ -80,8 +80,8 @@ abstract class BaseJob[T: ClassTag] extends App {
     maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
-    trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
     prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
+    trackRun = if (0 != prevRunId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
 
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
