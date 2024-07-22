@@ -277,7 +277,7 @@
 										<limit>
 											<counter>LINE</counter>
 											<value>MISSEDCOUNT</value>
-											<maximum>1500</maximum>
+											<maximum>1400</maximum>
 										</limit>
 									</limits>
 								</rule>

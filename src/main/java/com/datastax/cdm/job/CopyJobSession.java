@@ -15,6 +15,16 @@
  */
 package com.datastax.cdm.job;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
+
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.spark.SparkConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
@@ -23,16 +33,12 @@ import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.*;
-import org.apache.logging.log4j.ThreadContext;
-import org.apache.spark.SparkConf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.CompletionStage;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 
 public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
@@ -66,14 +72,14 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
 	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
 		this.trackRunFeature = trackRunFeature;
-		if (trackRun)
+		if (null != trackRunFeature)
 			trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.MIGRATE);
 	}
 
 	private void getDataAndInsert(BigInteger min, BigInteger max) {
 		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
 		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
-		if (trackRun)
+		if (null != trackRunFeature)
 			trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
 
 		BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
@@ -111,8 +117,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 
 					BoundStatement boundUpsert = bind(r);
 					if (null == boundUpsert) {
-						jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED); // TODO: this previously
-																					// skipped, why not errCnt?
+						jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
 						continue;
 					}
 
@@ -133,17 +138,15 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 			jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
 					jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
 			jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
-			if (trackRun)
+			if (null != trackRunFeature)
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
 
 		} catch (Exception e) {
 			jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
 					jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
 							- jobCounter.getCount(JobCounter.CounterType.SKIPPED));
-			if (trackRun)
+			if (null != trackRunFeature)
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
-			else
-				logPartitionsInFile(partitionFileOutput, min, max);
 			logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
 					Thread.currentThread().getId(), min, max);
 			logger.error("Error stats " + jobCounter.getThreadCounters(false));
@@ -153,16 +156,11 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 		}
 	}
 
-	private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults)
-			throws Exception {
+	private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) {
 		if (batch.size() > 0) {
 			writeResults.add(targetUpsertStatement.executeAsync(batch));
 		}
-		for (CompletionStage<AsyncResultSet> writeResult : writeResults) {
-			// wait for the writes to complete for the batch. The Retry policy, if defined,
-			// should retry the write on timeouts.
-			writeResult.toCompletableFuture().get().one();
-		}
+		writeResults.stream().forEach(writeResult -> writeResult.toCompletableFuture().join().one());
 		writeResults.clear();
 	}
 

@@ -178,8 +178,8 @@ public class JobCounter {
 		logger.info(fullMessage);
 	}
 
-	public void printFinal(boolean trackRun, TrackRun trackRunFeature) {
-		if (trackRun && null != trackRunFeature) {
+	public void printFinal(TrackRun trackRunFeature) {
+		if (null != trackRunFeature) {
 			StringBuilder sb = new StringBuilder();
 			if (counterMap.containsKey(CounterType.READ))
 				sb.append("Read: " + counterMap.get(CounterType.READ).getGlobalCounter());

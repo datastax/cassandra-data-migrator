@@ -25,7 +25,6 @@ COPY ./src /assets/src
 COPY ./pom.xml /assets/pom.xml
 COPY ./src/resources/cdm.properties /assets/
 COPY ./src/resources/cdm-detailed.properties /assets/
-COPY ./src/resources/partitions.csv /assets/
 COPY ./scripts/get-latest-maven-version.sh ./get-latest-maven-version.sh
 
 RUN chmod +x ./get-latest-maven-version.sh && \

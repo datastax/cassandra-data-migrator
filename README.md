@@ -49,6 +49,13 @@ Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.re
 Note:
 - Above command generates a log file `logfile_name_*.txt` to avoid log output on the console.
 - Update the memory options (driver & executor memory) based on your use-case
+- To track details of a run in the `target` keyspace, pass param `--conf spark.cdm.trackRun=true`
+- To filter and migrate data only in a specific token range, you can pass the below two additional params to the `Migration` or `Validation` jobs 
+
+```
+--conf spark.cdm.filter.cassandra.partition.min=<token-range-min>
+--conf spark.cdm.filter.cassandra.partition.max=<token-range-max>
+```
 
 # Steps for Data-Validation:
 
@@ -84,7 +91,7 @@ Note:
 - The validation job will never delete records from target i.e. it only adds or updates data on target
 
 # Rerun (previously incomplete) Migration or Validation 
-- You can rerun a Migration or Validation job to complete a previous run that could have stopped for any reasons. This mode will skip any token-ranges from previous run that were migrated or validated successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
+- You can rerun/resume a Migration or Validation job to complete a previous run that could have stopped (or completed with some errors) for any reasons. This mode will skip any token-ranges from the previous run that were migrated (or validated) successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
 
 ```
 ./spark-submit --properties-file cdm.properties \
@@ -93,8 +100,6 @@ Note:
  --master "local[*]" --driver-memory 25G --executor-memory 25G \
  --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
-Note: 
-- This feature replaces and improves upon an older similar feature (using param `spark.cdm.tokenrange.partitionFile`) that is now deprecated and will be removed soon.
 
 # Perform large-field Guardrail violation checks
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class com.datastax.cdm.job.GuardrailCheck` as shown below
@@ -125,7 +130,6 @@ Note:
 - Validate migration accuracy and performance using a smaller randomized data-set
 - Supports adding custom fixed `writetime`
 - Track run information (start-time, end-time, status, etc.) in tables (`cdm_run_info` and `cdm_run_details`) on the target keyspace
-- Validation - Log partitions range level exceptions, use the exceptions file as input for rerun  
 
 # Things to know
 - Each run (Migration or Validation) can be tracked (when enabled). You can find summary and details of the same in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.

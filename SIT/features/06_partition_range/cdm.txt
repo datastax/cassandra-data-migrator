@@ -1,4 +1,0 @@
-migrateDataDefault com.datastax.cdm.job.Migrate migrate.properties
-validateDataDefault com.datastax.cdm.job.DiffData migrate.properties
-migrateData com.datastax.cdm.job.Migrate migrate_with_partitionfile.properties
-validateData com.datastax.cdm.job.DiffData migrate_with_partitionfile.properties

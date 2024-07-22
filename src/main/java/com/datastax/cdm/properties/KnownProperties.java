@@ -156,18 +156,6 @@ public class KnownProperties {
 	}
 
 	// ==========================================================================
-	// Partition File
-	// ==========================================================================
-	public static final String TOKEN_RANGE_PARTITION_FILE_APPEND_ON_DIFF = "spark.cdm.tokenrange.partitionFile.appendOnDiff";
-	public static final String TOKEN_RANGE_PARTITION_FILE_INPUT = "spark.cdm.tokenrange.partitionFile.input";
-	public static final String TOKEN_RANGE_PARTITION_FILE_OUTPUT = "spark.cdm.tokenrange.partitionFile.output";
-	static {
-		types.put(TOKEN_RANGE_PARTITION_FILE_APPEND_ON_DIFF, PropertyType.BOOLEAN);
-		types.put(TOKEN_RANGE_PARTITION_FILE_INPUT, PropertyType.STRING);
-		types.put(TOKEN_RANGE_PARTITION_FILE_OUTPUT, PropertyType.STRING);
-	}
-
-	// ==========================================================================
 	// Transformations
 	// ==========================================================================
 	public static final String TRANSFORM_REPLACE_MISSING_TS = "spark.cdm.transform.missing.key.ts.replace.value";

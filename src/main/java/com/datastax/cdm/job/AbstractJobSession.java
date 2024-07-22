@@ -33,83 +33,83 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractJobSession<T> extends BaseJobSession {
 
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected EnhancedSession originSession;
-    protected EnhancedSession targetSession;
-    protected Guardrail guardrailFeature;
-    protected boolean guardrailEnabled;
-    protected boolean appendPartitionOnDiff = SplitPartitions.appendPartitionOnDiff(propertyHelper);
-    protected String partitionFileInput = SplitPartitions.getPartitionFileInput(propertyHelper);
-    protected String partitionFileOutput = SplitPartitions.getPartitionFileOutput(propertyHelper);
-    protected JobCounter jobCounter;
-    protected Long printStatsAfter;
-    protected Boolean trackRun = false;
-    protected TrackRun trackRunFeature;
+	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+	protected EnhancedSession originSession;
+	protected EnhancedSession targetSession;
+	protected Guardrail guardrailFeature;
+	protected boolean guardrailEnabled;
+	protected JobCounter jobCounter;
+	protected Long printStatsAfter;
+	protected TrackRun trackRunFeature;
 
-    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        this(originSession, targetSession, sc, false);
-    }
+	protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+		this(originSession, targetSession, sc, false);
+	}
 
-    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc, boolean isJobMigrateRowsFromFile) {
-        super(sc);
+	protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc,
+			boolean isJobMigrateRowsFromFile) {
+		super(sc);
 
-        if (originSession == null) {
-            return;
-        }
+		if (originSession == null) {
+			return;
+		}
 
-        this.printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
-        if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1L)) {
-            logger.warn(KnownProperties.PRINT_STATS_AFTER + " must be greater than 0.  Setting to default value of " + KnownProperties.getDefaultAsString(KnownProperties.PRINT_STATS_AFTER));
-            propertyHelper.setProperty(KnownProperties.PRINT_STATS_AFTER, KnownProperties.getDefault(KnownProperties.PRINT_STATS_AFTER));
-            printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
-        }
-        this.jobCounter = new JobCounter(printStatsAfter, propertyHelper.getBoolean(KnownProperties.PRINT_STATS_PER_PART));
+		this.printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
+		if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1L)) {
+			logger.warn(KnownProperties.PRINT_STATS_AFTER + " must be greater than 0.  Setting to default value of "
+					+ KnownProperties.getDefaultAsString(KnownProperties.PRINT_STATS_AFTER));
+			propertyHelper.setProperty(KnownProperties.PRINT_STATS_AFTER,
+					KnownProperties.getDefault(KnownProperties.PRINT_STATS_AFTER));
+			printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
+		}
+		this.jobCounter = new JobCounter(printStatsAfter,
+				propertyHelper.getBoolean(KnownProperties.PRINT_STATS_PER_PART));
 
-        rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
-        rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
-        trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN);
+		rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
+		rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
 
-        logger.info("PARAM -- Partition file input: {}", partitionFileInput);
-        logger.info("PARAM -- Partition file output: {}", partitionFileOutput);
-        logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
-        logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
+		logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
+		logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
 
-        this.originSession = new EnhancedSession(propertyHelper, originSession, true);
-        this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);
-        this.originSession.getCqlTable().setOtherCqlTable(this.targetSession.getCqlTable());
-        this.targetSession.getCqlTable().setOtherCqlTable(this.originSession.getCqlTable());
-        this.originSession.getCqlTable().setFeatureMap(featureMap);
-        this.targetSession.getCqlTable().setFeatureMap(featureMap);
+		this.originSession = new EnhancedSession(propertyHelper, originSession, true);
+		this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);
+		this.originSession.getCqlTable().setOtherCqlTable(this.targetSession.getCqlTable());
+		this.targetSession.getCqlTable().setOtherCqlTable(this.originSession.getCqlTable());
+		this.originSession.getCqlTable().setFeatureMap(featureMap);
+		this.targetSession.getCqlTable().setFeatureMap(featureMap);
 
-        boolean allFeaturesValid = true;
-        for (Feature f : featureMap.values()) {
-            if (!f.initializeAndValidate(this.originSession.getCqlTable(), this.targetSession.getCqlTable())) {
-                allFeaturesValid = false;
-                logger.error("Feature {} is not valid.  Please check the configuration.", f.getClass().getName());
-            }
-        }
-        if (!allFeaturesValid) {
-            throw new RuntimeException("One or more features are not valid.  Please check the configuration.");
-        }
+		boolean allFeaturesValid = true;
+		for (Feature f : featureMap.values()) {
+			if (!f.initializeAndValidate(this.originSession.getCqlTable(), this.targetSession.getCqlTable())) {
+				allFeaturesValid = false;
+				logger.error("Feature {} is not valid.  Please check the configuration.", f.getClass().getName());
+			}
+		}
+		if (!allFeaturesValid) {
+			throw new RuntimeException("One or more features are not valid.  Please check the configuration.");
+		}
 
-        PKFactory pkFactory = new PKFactory(propertyHelper, this.originSession.getCqlTable(), this.targetSession.getCqlTable());
-        this.originSession.setPKFactory(pkFactory);
-        this.targetSession.setPKFactory(pkFactory);
+		PKFactory pkFactory = new PKFactory(propertyHelper, this.originSession.getCqlTable(),
+				this.targetSession.getCqlTable());
+		this.originSession.setPKFactory(pkFactory);
+		this.targetSession.setPKFactory(pkFactory);
 
-        // Guardrail is referenced by many jobs, and is evaluated against the target table
-        this.guardrailFeature = (Guardrail) this.targetSession.getCqlTable().getFeature(Featureset.GUARDRAIL_CHECK);
-        this.guardrailEnabled = this.guardrailFeature.isEnabled();
-    }
+		// Guardrail is referenced by many jobs, and is evaluated against the target
+		// table
+		this.guardrailFeature = (Guardrail) this.targetSession.getCqlTable().getFeature(Featureset.GUARDRAIL_CHECK);
+		this.guardrailEnabled = this.guardrailFeature.isEnabled();
+	}
 
-    public abstract void processSlice(T slice);
-    
-    public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {}
+	public abstract void processSlice(T slice);
 
-    public synchronized void printCounts(boolean isFinal) {
-        if (isFinal) {
-            jobCounter.printFinal(trackRun, trackRunFeature);
-        } else {
-            jobCounter.printProgress();
-        }
-    }
+	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
+	}
+
+	public synchronized void printCounts(boolean isFinal) {
+		if (isFinal) {
+			jobCounter.printFinal(trackRunFeature);
+		} else {
+			jobCounter.printProgress();
+		}
+	}
 }

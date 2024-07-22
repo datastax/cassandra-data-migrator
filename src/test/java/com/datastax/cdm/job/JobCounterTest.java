@@ -101,7 +101,7 @@ public class JobCounterTest {
 		jobCounter.threadIncrement(JobCounter.CounterType.READ, 5);
 		jobCounter.globalIncrement();
 		// You may use mocking to capture logger outputs
-		jobCounter.printFinal(false, null);
+		jobCounter.printFinal(null);
 	}
 
 	@Captor
@@ -116,7 +116,7 @@ public class JobCounterTest {
 		jobCounter.threadIncrement(JobCounter.CounterType.LARGE, 42);
 		jobCounter.globalIncrement();
 		// You may use mocking to capture logger outputs
-		jobCounter.printFinal(true, trackRun);
+		jobCounter.printFinal(trackRun);
 		Mockito.verify(trackRun).endCdmRun(trackRunInfoCaptor.capture());
 		assertEquals(expected, trackRunInfoCaptor.getValue());
 	}

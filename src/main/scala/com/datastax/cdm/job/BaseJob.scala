@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.job
 
-import com.datastax.cdm.job.SplitPartitions.getPartitionFileInput
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{SparkConf, SparkContext}
@@ -55,7 +54,6 @@ abstract class BaseJob[T: ClassTag] extends App {
 
   var originConnection: CassandraConnector = _
   var targetConnection: CassandraConnector = _
-  var partitionFileNameInput: String = ""
 
   def setup(jobName: String, jobFactory: IJobSessionFactory[T]): Unit = {
     logBanner(jobName + " - Starting")
@@ -68,7 +66,6 @@ abstract class BaseJob[T: ClassTag] extends App {
     sContext = spark.sparkContext
     sc = sContext.getConf
     propertyHelper = PropertyHelper.getInstance(sc);
-    this.partitionFileNameInput = getPartitionFileInput(propertyHelper);
 
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
@@ -83,8 +80,8 @@ abstract class BaseJob[T: ClassTag] extends App {
     maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
-    trackRun = propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
     prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
+    trackRun = if (0 != prevRunId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
 
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
