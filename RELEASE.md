@@ -1,6 +1,8 @@
 # Release Notes
 ## [4.3.3] - 2024-07-22
-- Removed deprecated functionality related to processing token-ranges via partition-file 
+- Removed deprecated functionality related to processing token-ranges via partition-file
+- Upgraded Spark Cassandra Connector (SCC) version to 3.5.1.
+- Minor big fix (Enable tracking when only `previousRunId` provided, but `trackRun` not set to `true`)
 
 ## [4.3.2] - 2024-07-19
 - Removed deprecated functionality related to retry
