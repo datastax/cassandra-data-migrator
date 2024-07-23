@@ -13,7 +13,7 @@ jobs:
       # Only build and publish a commit based tag
       - name: Setup Docker meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v5
         with:
           images: |
             datastax/cassandra-data-migrator
