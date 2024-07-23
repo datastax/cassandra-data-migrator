@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # Setup metadata based on the commit/tag that will be used for tagging the image
       - name: Setup Docker meta
         id: meta
