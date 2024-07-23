@@ -12,7 +12,7 @@ jobs:
       # Setup metadata based on the commit/tag that will be used for tagging the image
       - name: Setup Docker meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v5
         with:
           images: |
             datastax/cassandra-data-migrator
