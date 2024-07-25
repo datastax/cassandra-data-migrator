@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,76 +39,76 @@ import com.datastax.cdm.cql.CommonMocks;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 
 public class DataUtilityTest extends CommonMocks {
-    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    @BeforeEach
-    public void setup() {
-        defaultClassVariables();
-        setTestVariables();
-        commonSetupWithoutDefaultClassVariables();
-    }
+	@BeforeEach
+	public void setup() {
+		defaultClassVariables();
+		setTestVariables();
+		commonSetupWithoutDefaultClassVariables();
+	}
 
-    private void setTestVariables() {
-        originValueColumns = new ArrayList<>(originValueColumns);
-        originValueColumnTypes = new ArrayList<>(originValueColumnTypes);
-        // Target values are not set until commonSetup(), so default them from origin
-        targetValueColumns = new ArrayList<>(originValueColumns);
-        targetValueColumnTypes = new ArrayList<>(originValueColumnTypes);
+	private void setTestVariables() {
+		originValueColumns = new ArrayList<>(originValueColumns);
+		originValueColumnTypes = new ArrayList<>(originValueColumnTypes);
+		// Target values are not set until commonSetup(), so default them from origin
+		targetValueColumns = new ArrayList<>(originValueColumns);
+		targetValueColumnTypes = new ArrayList<>(originValueColumnTypes);
 
-        originValueColumns.addAll(Arrays.asList("parameter-value","PaRaMeTeR-Value-MiXedCaSE"));
-        originValueColumnTypes.addAll(Arrays.asList(DataTypes.INT, DataTypes.TEXT));
+		originValueColumns.addAll(Arrays.asList("parameter-value", "PaRaMeTeR-Value-MiXedCaSE"));
+		originValueColumnTypes.addAll(Arrays.asList(DataTypes.INT, DataTypes.TEXT));
 
         originToTargetNameList = Arrays.asList("parameter-value:parameter_value","PaRaMeTeR-Value-MiXedCaSE:parameter_value_standard_case");
 
-        targetValueColumns.addAll(Arrays.asList("parameter_value","parameter_value_standard_case"));
-        targetValueColumnTypes.addAll(Arrays.asList(DataTypes.INT, DataTypes.TEXT));
-    }
+		targetValueColumns.addAll(Arrays.asList("parameter_value", "parameter_value_standard_case"));
+		targetValueColumnTypes.addAll(Arrays.asList(DataTypes.INT, DataTypes.TEXT));
+	}
 
-    @Test
-    public void originToTarget() {
-        Map<String,String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, originTable, targetTable);
+	@Test
+	public void originToTarget() {
+		Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, originTable, targetTable);
 
         assertAll(
                 () -> assertEquals("parameter_value", map.get("parameter-value"), "encapsulated name"),
                 () -> assertEquals("parameter_value_standard_case", map.get("PaRaMeTeR-Value-MiXedCaSE"), "Mixed and complete rename"),
                 () -> assertEquals(targetColumnNames.size(), map.size(), "Map size should match origin column count")
         );
-    }
+	}
 
-    @Test
-    public void targetToOrigin() {
-        Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, targetTable, originTable);
+	@Test
+	public void targetToOrigin() {
+		Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, targetTable, originTable);
 
         assertAll(
                 () -> assertEquals("parameter-value", map.get("parameter_value"), "encapsulated name"),
                 () -> assertEquals("PaRaMeTeR-Value-MiXedCaSE", map.get("parameter_value_standard_case"), "Mixed and complete rename"),
                 () -> assertEquals(originColumnNames.size(), map.size(), "Map size should match target column count")
         );
-    }
+	}
 
-    @Test
-    public void columnOnThisNotThat() {
-        String extraColumn = "extraColumn";
-        originColumnNames.add(extraColumn);
+	@Test
+	public void columnOnThisNotThat() {
+		String extraColumn = "extraColumn";
+		originColumnNames.add(extraColumn);
 
-        Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, originTable, targetTable);
-        // When there is no corresponding value on That, the value should be null
-        assertNull(map.get(extraColumn));
-    }
+		Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, originTable, targetTable);
+		// When there is no corresponding value on That, the value should be null
+		assertNull(map.get(extraColumn));
+	}
 
-    @Test
-    public void columnOnThatNotThis() {
-        String extraColumn = "extraColumn";
-        targetColumnNames.add(extraColumn);
+	@Test
+	public void columnOnThatNotThis() {
+		String extraColumn = "extraColumn";
+		targetColumnNames.add(extraColumn);
 
-        Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, originTable, targetTable);
-        // Loop over the map entries, extraColumn should not be present
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            assertNotEquals(extraColumn, entry.getValue());
-        }
-    }
-    
-    @Test
+		Map<String, String> map = DataUtility.getThisToThatColumnNameMap(propertyHelper, originTable, targetTable);
+		// Loop over the map entries, extraColumn should not be present
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			assertNotEquals(extraColumn, entry.getValue());
+		}
+	}
+
+	@Test
 	public void diffTest() {
 		assertFalse(DataUtility.diff(null, null));
 		assertFalse(DataUtility.diff("Hello", "Hello"));
@@ -116,30 +117,36 @@ public class DataUtilityTest extends CommonMocks {
 		assertTrue(DataUtility.diff("", "Hello"));
 		assertTrue(DataUtility.diff("hello", "Hello"));
 	}
-    
-    @Test
-	public void extractObjectsFromCollectionTest() {
-    	List<Object> expected = Arrays.asList(1, 2, 3);
-        List<Object> actualList = new ArrayList<>();
-    	actualList.add(1);
-    	actualList.add(2);
-    	actualList.add(3);        	
-        assertEquals(expected, DataUtility.extractObjectsFromCollection(actualList));
 
-        Set<Object> actualSet = new HashSet<>();
-        actualSet.add(1);
-        actualSet.add(2);
-        actualSet.add(3);
-        assertEquals(expected, DataUtility.extractObjectsFromCollection(actualSet));
-        
-        Map<String, String> actualMap = Map.of("1", "one", "2", "two", "3", "three");
-        List<Object> expectedMap = new ArrayList<>(actualMap.entrySet());
-        assertEquals(expectedMap, DataUtility.extractObjectsFromCollection(actualMap));
+	@Test
+	public void extractObjectsFromCollectionTest() {
+		List<Object> expected = Arrays.asList(1, 2, 3);
+		List<Object> actualList = new ArrayList<>();
+		actualList.add(1);
+		actualList.add(2);
+		actualList.add(3);
+		assertEquals(expected, DataUtility.extractObjectsFromCollection(actualList));
+
+		Set<Object> actualSet = new HashSet<>();
+		actualSet.add(1);
+		actualSet.add(2);
+		actualSet.add(3);
+		assertEquals(expected, DataUtility.extractObjectsFromCollection(actualSet));
+
+		Map<String, String> actualMap = new HashMap<String, String>() {
+			{
+				put("1", "one");
+				put("2", "two");
+				put("3", "three");
+			}
+		};
+		List<Object> expectedMap = new ArrayList<>(actualMap.entrySet());
+		assertEquals(expectedMap, DataUtility.extractObjectsFromCollection(actualMap));
 	}
-    
-    @Test
+
+	@Test
 	public void getMyClassMethodLineTest() {
-    	Exception ex = new Exception();
+		Exception ex = new Exception();
     	ex.setStackTrace(new StackTraceElement[] {new StackTraceElement("com.datastax.cdm.data.DataUtilityTest", "getMyClassMethodLineTest", "DataUtilityTest.java", 0)});
 		assertEquals("com.datastax.cdm.data.DataUtilityTest.getMyClassMethodLineTest:0", DataUtility.getMyClassMethodLine(ex));
 	}

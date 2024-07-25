@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>datastax.cdm</groupId>
@@ -8,18 +10,17 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<scala.version>2.13.14</scala.version>
-		<scala.main.version>2.13</scala.main.version>
-		<spark.version>3.5.1</spark.version>
-		<connector.version>3.5.1</connector.version>
+		<scala.version>2.12.19</scala.version>
+		<scala.main.version>2.12</scala.main.version>
+		<spark.version>3.3.4</spark.version>
+		<connector.version>3.3.0</connector.version>
 		<cassandra.version>5.0-beta1</cassandra.version>
 		<junit.version>5.9.1</junit.version>
 		<mockito.version>4.11.0</mockito.version>
 		<java-driver.version>4.18.1</java-driver.version>
 		<log4j.version>2.23.1</log4j.version>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
-		<maven.compiler.release>11</maven.compiler.release>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<distributionManagement>
@@ -229,7 +230,6 @@
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
-					<release>${maven.compiler.release}</release>
 				</configuration>
 			</plugin>
 
@@ -286,6 +286,7 @@
 					</execution>
 				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.rat</groupId>
 				<artifactId>apache-rat-plugin</artifactId>
@@ -302,6 +303,7 @@
 					</execution>
 				</executions>
 			</plugin>
+
 		</plugins>
 	</build>
 </project>
