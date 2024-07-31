@@ -24,10 +24,16 @@ abstract class BasePartitionJob extends BaseJob[SplitPartitions.Partition] {
   var trackRunFeature: TrackRun = _
 
   override def getParts(pieces: Int): util.Collection[SplitPartitions.Partition] = {
-    var keyspaceTable = propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)
+    var keyspaceTable: Option[String] = Option(propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE))
+      .orElse(Option(propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE)))
+      
+    val keyspaceTableValue: String = keyspaceTable.getOrElse {
+      throw new RuntimeException("Both " + KnownProperties.TARGET_KEYSPACE_TABLE + " and " 
+        + KnownProperties.ORIGIN_KEYSPACE_TABLE + " properties are missing.")
+    }
   
     if (trackRun) {
-      trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, keyspaceTable))
+      trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, keyspaceTableValue))
     }
     
     if (prevRunId != 0) {

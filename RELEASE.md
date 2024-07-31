@@ -1,4 +1,7 @@
 # Release Notes
+## [4.3.4] - 2024-07-31
+- Use `spark.cdm.schema.origin.keyspaceTable` when `spark.cdm.schema.target.keyspaceTable` is missing. Fixes [bug introduced in prior version](https://github.com/datastax/cassandra-data-migrator/issues/284).
+
 ## [4.3.3] - 2024-07-22
 - Removed deprecated functionality related to processing token-ranges via partition-file
 - Upgraded Spark Cassandra Connector (SCC) version to 3.5.1.
@@ -8,7 +11,7 @@
 - Removed deprecated functionality related to retry
 
 ## [4.3.1] - 2024-07-19
-- Fixed a validation run [bug] (https://github.com/datastax/cassandra-data-migrator/issues/266) that sometimes did not report a failed token-range
+- Fixed a validation run [bug](https://github.com/datastax/cassandra-data-migrator/issues/266) that sometimes did not report a failed token-range
 - Removed deprecated MigrateRowsFromFile job
 
 ## [4.3.0] - 2024-07-18
