@@ -25,9 +25,10 @@ abstract class BasePartitionJob extends BaseJob[SplitPartitions.Partition] {
 
   override def getParts(pieces: Int): util.Collection[SplitPartitions.Partition] = {
     var keyspaceTable: Option[String] = Option(propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE))
+      .filter(_.nonEmpty)
       .orElse(Option(propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE)))
       
-    val keyspaceTableValue: String = keyspaceTable.getOrElse {
+    var keyspaceTableValue: String = keyspaceTable.getOrElse {
       throw new RuntimeException("Both " + KnownProperties.TARGET_KEYSPACE_TABLE + " and " 
         + KnownProperties.ORIGIN_KEYSPACE_TABLE + " properties are missing.")
     }
