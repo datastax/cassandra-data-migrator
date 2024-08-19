@@ -61,11 +61,11 @@ public class TargetInsertStatement extends TargetUpsertStatement {
             try {
                 if (targetIndex== explodeMapKeyIndex) {
                     bindValue = explodeMapKey;
-                }
-                else if (targetIndex== explodeMapValueIndex) {
+                } else if (targetIndex== explodeMapValueIndex) {
                     bindValue = explodeMapValue;
-                }
-                else {
+                } else if (targetIndex == extractJsonIndex) {
+                    bindValue = extractJsonFeature.extract(originRow.getString(targetIndex), extractJsonFeature.getTargetColumnName());
+                } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
                         continue;
@@ -73,10 +73,9 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                 }
 
                 boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.error("Error trying to bind value:" + bindValue + " of class:" +(null==bindValue?"unknown":bindValue.getClass().getName())+ " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex)+ "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex + " and bind index: "+ (currentBindIndex-1) + " of statement:" + this.getCQL());
-                throw e;
+                throw new RuntimeException("Error trying to bind value: ", e);
             }
         }
 

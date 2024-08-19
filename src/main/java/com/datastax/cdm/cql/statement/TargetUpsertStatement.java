@@ -20,6 +20,7 @@ import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
+import com.datastax.cdm.feature.ExtractJson;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.WritetimeTTL;
 import com.datastax.cdm.properties.IPropertyHelper;
@@ -53,6 +54,9 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     protected int explodeMapValueIndex = -1;
     private Boolean haveCheckedBindInputsOnce = false;
 
+    protected ExtractJson extractJsonFeature;
+    protected int extractJsonIndex = -1;
+
     protected abstract String buildStatement();
     protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
 
@@ -61,6 +65,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
 
         constantColumnFeature = (ConstantColumns) cqlTable.getFeature(Featureset.CONSTANT_COLUMNS);
         explodeMapFeature = (ExplodeMap) cqlTable.getFeature(Featureset.EXPLODE_MAP);
+        extractJsonFeature = (ExtractJson) cqlTable.getFeature(Featureset.EXTRACT_JSON);
 
         setTTLAndWriteTimeBooleans();
         targetColumnNames.addAll(cqlTable.getColumnNames(true));
@@ -72,6 +77,9 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
             this.explodeMapKeyIndex = explodeMapFeature.getKeyColumnIndex();
             this.explodeMapValueIndex = explodeMapFeature.getValueColumnIndex();
         }
+        if (null!=extractJsonFeature && extractJsonFeature.isEnabled()) {
+            this.extractJsonIndex = extractJsonFeature.getOriginColumnIndex();
+        }        
         this.counterIndexes = cqlTable.getCounterIndexes();
         this.usingCounter = !counterIndexes.isEmpty();
 

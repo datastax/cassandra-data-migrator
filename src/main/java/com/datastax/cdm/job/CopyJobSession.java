@@ -140,7 +140,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 			jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
 			if (null != trackRunFeature)
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
-
 		} catch (Exception e) {
 			jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
 					jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
@@ -148,7 +147,7 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
 			if (null != trackRunFeature)
 				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
 			logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
-					Thread.currentThread().getId(), min, max);
+					Thread.currentThread().getId(), min, max, e);
 			logger.error("Error stats " + jobCounter.getThreadCounters(false));
 		} finally {
 			jobCounter.globalIncrement();
