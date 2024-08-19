@@ -115,9 +115,8 @@ public class ExtractJson extends AbstractFeature {
 		// Initialize Target variables
 		List<Class> targetBindClasses = targetTable.extendColumns(Arrays.asList(targetColumnName));
 		if (null == targetBindClasses || targetBindClasses.size() != 1 || null == targetBindClasses.get(0)) {
-			if (null == targetBindClasses.get(0))
-				logger.error("Target column {} is not found on the target table {}", targetColumnName,
-						targetTable.getKeyspaceTable());
+			logger.error("Target column {} is not found on the target table {}", targetColumnName,
+					targetTable.getKeyspaceTable());
 			isValid = false;
 		} else {
 			this.targetColumnIndex = targetTable.indexOf(targetColumnName);
@@ -143,9 +142,13 @@ public class ExtractJson extends AbstractFeature {
 
 		return "";
 	}
-	
+
 	public Integer getOriginColumnIndex() {
 		return isEnabled ? originColumnIndex : -1;
+	}
+
+	public Integer getTargetColumnIndex() {
+		return isEnabled ? targetColumnIndex : -1;
 	}
 
 	public String getTargetColumnName() {

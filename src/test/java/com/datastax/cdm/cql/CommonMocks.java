@@ -79,6 +79,7 @@ public class CommonMocks {
 
     @Mock public ConstantColumns constantColumnsFeature;
     @Mock public ExplodeMap explodeMapFeature;
+    @Mock public ExtractJson extractJsonFeature;
     @Mock public WritetimeTTL writetimeTTLFeature;
     @Mock public OriginFilterCondition originFilterConditionFeature;
 
@@ -295,6 +296,7 @@ public class CommonMocks {
         when(pkFactory.getWhereClause(PKFactory.Side.ORIGIN)).thenReturn(keyEqualsBindJoinedWithAND(CqlTable.formatNames(originPrimaryKey)));
 
         when(originTable.getFeature(Featureset.EXPLODE_MAP)).thenReturn(explodeMapFeature);
+        when(originTable.getFeature(Featureset.EXTRACT_JSON)).thenReturn(extractJsonFeature);
         when(originTable.getFeature(Featureset.CONSTANT_COLUMNS)).thenReturn(constantColumnsFeature);
 
         when(originTable.getFeature(Featureset.WRITETIME_TTL)).thenReturn(writetimeTTLFeature);
@@ -422,6 +424,11 @@ public class CommonMocks {
             when(explodeMapFeature.getKeyColumnIndex()).thenReturn(-1);
             when(explodeMapFeature.getValueColumnIndex()).thenReturn(-1);
         }
+
+        when(targetTable.getFeature(Featureset.EXTRACT_JSON)).thenReturn(extractJsonFeature);
+        when(extractJsonFeature.isEnabled()).thenReturn(false);
+        when(extractJsonFeature.getOriginColumnIndex()).thenReturn(-1);
+        when(extractJsonFeature.getTargetColumnIndex()).thenReturn(-1);
 
         when(targetTable.getFeature(Featureset.WRITETIME_TTL)).thenReturn(writetimeTTLFeature);
         when(writetimeTTLFeature.isEnabled()).thenReturn(false);

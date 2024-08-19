@@ -55,7 +55,6 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     private Boolean haveCheckedBindInputsOnce = false;
 
     protected ExtractJson extractJsonFeature;
-    protected int extractJsonIndex = -1;
 
     protected abstract String buildStatement();
     protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
@@ -77,9 +76,6 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
             this.explodeMapKeyIndex = explodeMapFeature.getKeyColumnIndex();
             this.explodeMapValueIndex = explodeMapFeature.getValueColumnIndex();
         }
-        if (null!=extractJsonFeature && extractJsonFeature.isEnabled()) {
-            this.extractJsonIndex = extractJsonFeature.getOriginColumnIndex();
-        }        
         this.counterIndexes = cqlTable.getCounterIndexes();
         this.usingCounter = !counterIndexes.isEmpty();
 

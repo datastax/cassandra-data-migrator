@@ -63,8 +63,9 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                     bindValue = explodeMapKey;
                 } else if (targetIndex== explodeMapValueIndex) {
                     bindValue = explodeMapValue;
-                } else if (targetIndex == extractJsonIndex) {
-                    bindValue = extractJsonFeature.extract(originRow.getString(targetIndex), extractJsonFeature.getTargetColumnName());
+                } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+                    int originIndex = extractJsonFeature.getOriginColumnIndex();
+                    bindValue = extractJsonFeature.extract(originRow.getString(originIndex), extractJsonFeature.getTargetColumnName());
                 } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
@@ -74,7 +75,12 @@ public class TargetInsertStatement extends TargetUpsertStatement {
 
                 boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
             } catch (Exception e) {
-                logger.error("Error trying to bind value:" + bindValue + " of class:" +(null==bindValue?"unknown":bindValue.getClass().getName())+ " to column:" + targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex)+ "/" + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex + " and bind index: "+ (currentBindIndex-1) + " of statement:" + this.getCQL());
+				logger.error("Error trying to bind value:" + bindValue + " of class:"
+						+ (null == bindValue ? "unknown" : bindValue.getClass().getName()) + " to column:"
+						+ targetColumnNames.get(targetIndex) + " of targetDataType:"
+						+ targetColumnTypes.get(targetIndex) + "/" + cqlTable.getBindClass(targetIndex).getName()
+						+ " at column index:" + targetIndex + " and bind index: " + (currentBindIndex - 1)
+						+ " of statement:" + this.getCQL());
                 throw new RuntimeException("Error trying to bind value: ", e);
             }
         }
