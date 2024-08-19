@@ -140,7 +140,7 @@ public class ExtractJson extends AbstractFeature {
 			return mapper.readValue(jsonString, Map.class).get(field);
 		}
 
-		return "";
+		return null;
 	}
 
 	public Integer getOriginColumnIndex() {
