@@ -40,6 +40,7 @@ import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
+import com.datastax.cdm.feature.ExtractJson;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
@@ -64,6 +65,7 @@ public class DiffJobSession extends CopyJobSession {
 	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 	boolean logDebug = logger.isDebugEnabled();
 	boolean logTrace = logger.isTraceEnabled();
+	private ExtractJson extractJsonFeature;
 
 	public DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
 		super(originSession, targetSession, sc);
@@ -107,6 +109,8 @@ public class DiffJobSession extends CopyJobSession {
 			this.explodeMapKeyIndex = -1;
 			this.explodeMapValueIndex = -1;
 		}
+
+		extractJsonFeature = (ExtractJson) this.targetSession.getCqlTable().getFeature(Featureset.EXTRACT_JSON);
 
 		logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
 		logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
@@ -285,6 +289,9 @@ public class DiffJobSession extends CopyJobSession {
 						if (logTrace)
 							logger.trace("PK {}, targetIndex {} column {} using explodeMapValue stored on PK: {}", pk,
 									targetIndex, targetColumnNames.get(targetIndex), origin);
+	                } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+	                    originIndex = extractJsonFeature.getOriginColumnIndex();
+	                    origin = extractJsonFeature.extract(originRow.getString(originIndex));
 					} else {
 						throw new RuntimeException(
 								"Target column \"" + targetColumnNames.get(targetIndex) + "\" at index " + targetIndex
@@ -308,6 +315,9 @@ public class DiffJobSession extends CopyJobSession {
 						diffData.append("Target column:").append(targetColumnNames.get(targetIndex)).append("-origin[")
 								.append(originContent).append("]").append("-target[").append(targetContent)
 								.append("]; ");
+					} else if (null == origin && null != targetAsOriginType) {
+						diffData.append("Target column:").append(targetColumnNames.get(targetIndex))
+								.append(" origin is null, target is ").append(targetAsOriginType).append("; ");
 					}
 				} catch (Exception e) {
 					String exceptionName;

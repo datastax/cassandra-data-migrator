@@ -65,7 +65,7 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                     bindValue = explodeMapValue;
                 } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
                     int originIndex = extractJsonFeature.getOriginColumnIndex();
-                    bindValue = extractJsonFeature.extract(originRow.getString(originIndex), extractJsonFeature.getTargetColumnName());
+                    bindValue = extractJsonFeature.extract(originRow.getString(originIndex));
                 } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex

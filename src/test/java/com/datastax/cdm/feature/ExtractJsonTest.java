@@ -27,7 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import static org.apache.hadoop.shaded.com.google.common.base.CharMatcher.any;
 import static org.junit.jupiter.api.Assertions.*;
@@ -89,21 +90,39 @@ public class ExtractJsonTest {
     }
 
     @Test
-    public void smokeTest_loadProperties() {
+    public void loadProperties() {
         boolean loaded = feature.loadProperties(propertyHelper);
 
         assertAll(
                 () -> assertTrue(loaded, "properties are loaded and valid"),
                 () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals(standardTargetName, feature.getTargetColumnName(), "age")
+                () -> assertEquals(standardTargetName, feature.getTargetColumnName())
         );
+    }
+    
+    @Test
+    public void loadPropertiesException() {
+    	IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.loadProperties(null));
+        assertTrue(thrown.getMessage().contains("helper is null"));
     }
 
     @Test
-    public void smokeTest_initializeAndValidate() {
+    public void loadPropertiesOriginError() {
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn(null);
+        assertFalse(feature.loadProperties(propertyHelper), "Origin column name is not set");
+    }
+    
+    @Test
+    public void loadPropertiesTargetError() {
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME)).thenReturn(null);
+        assertFalse(feature.loadProperties(propertyHelper), "Target column name is not set");
+    }
+    
+    @Test
+    public void initializeAndValidate() {
         feature.loadProperties(propertyHelper);
-
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
+
         assertAll(
                 () -> assertTrue(valid, "configuration is valid"),
                 () -> assertEquals(standardOriginNames.indexOf(standardOriginName), feature.getOriginColumnIndex(), "origin index"),
@@ -112,7 +131,17 @@ public class ExtractJsonTest {
     }
 
     @Test
-    public void smokeTest_disabledFeature() {
+    public void extractNull() throws JsonMappingException, JsonProcessingException{
+        feature.loadProperties(propertyHelper);
+        boolean valid = feature.initializeAndValidate(originTable, targetTable);
+
+        assertNull(feature.extract("{\"name\":\"Pravin\"}"));
+        assertNull(feature.extract("{}"));
+        assertNull(feature.extract(""));
+    }
+
+    @Test
+    public void disabledFeature() {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn("");
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME)).thenReturn("");
 
@@ -124,6 +153,66 @@ public class ExtractJsonTest {
                 () -> assertEquals("", feature.getTargetColumnName(), "target name"),
                 () -> assertEquals(-1, feature.getTargetColumnIndex(), "target index"),
                 () -> assertEquals(-1, feature.getOriginColumnIndex(), "origin index")
+        );
+        
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME)).thenReturn(null);
+        assertEquals("", feature.getTargetColumnName(), "target name");
+    }
+
+    @Test
+    public void initializeAndValidateExceptionOriginNull() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(null, targetTable));
+        assertTrue(thrown.getMessage().contains("originTable and/or targetTable is null"));
+    }
+    
+    @Test
+    public void initializeAndValidateExceptionTargetNull() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, null));
+        assertTrue(thrown.getMessage().contains("originTable and/or targetTable is null"));
+    }
+    
+    @Test
+    public void initializeAndValidateExceptionOriginColumn() {
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn("incorrect_column");
+
+        feature.loadProperties(propertyHelper);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+    }
+    
+    @Test
+    public void initializeAndValidateExceptionTargetColumn() {
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME)).thenReturn("incorrect_column");
+        
+        feature.loadProperties(propertyHelper);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+    }
+    
+    @Test
+    public void initializeAndValidateExceptionOriginIncorrect() {
+        when(originTable.isOrigin()).thenReturn(false);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+        assertTrue(thrown.getMessage().contains("Origin table is not an origin table"));
+    }
+
+    @Test
+    public void initializeAndValidateExceptionTargetIncorrect() {
+        when(targetTable.isOrigin()).thenReturn(true);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+        assertTrue(thrown.getMessage().contains("Target table is not a target table"));
+    }
+
+    @Test
+    public void invalidFeature() {
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn("");
+
+        assertAll(
+                () -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
+                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
         );
     }
 

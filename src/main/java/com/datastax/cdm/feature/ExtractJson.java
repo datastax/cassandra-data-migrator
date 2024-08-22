@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.feature;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +35,7 @@ public class ExtractJson extends AbstractFeature {
 	private ObjectMapper mapper = new ObjectMapper();
 
 	private String originColumnName = "";
+	private String originJsonFieldName = "";
 	private Integer originColumnIndex = -1;
 
 	private String targetColumnName = "";
@@ -47,39 +47,43 @@ public class ExtractJson extends AbstractFeature {
 			throw new IllegalArgumentException("helper is null");
 		}
 
-		this.originColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME);
-		this.targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME);
-		logger.warn("Origin column name ({}) ", originColumnName);
-		logger.warn("Target column name ({}) ", targetColumnName);
+		originColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME);
+		targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME);
+		// Convert columnToFieldMapping to targetColumnName and originJsonFieldName
+		if (!targetColumnName.isBlank()) {
+			String[] parts = targetColumnName.split("\\:");
+			if (parts.length == 2) {
+				targetColumnName = parts[0];
+				originJsonFieldName = parts[1];
+			} else {
+				originJsonFieldName = targetColumnName;
+			}
+		}
 
 		isValid = validateProperties();
-		logger.warn("ExtractJson valid ({}) ", isValid);
-
 		isEnabled = isValid && !originColumnName.isEmpty() && !targetColumnName.isEmpty();
-		logger.warn("ExtractJson isEnabled ({}) ", isEnabled);
-
 		isLoaded = true;
+
 		return isLoaded && isValid;
 	}
 
 	@Override
 	protected boolean validateProperties() {
-		isValid = true;
 		if ((null == originColumnName || originColumnName.isEmpty())
 				&& (null == targetColumnName || targetColumnName.isEmpty()))
 			return true;
 
 		if (null == originColumnName || originColumnName.isEmpty()) {
 			logger.error("Origin column name is not set when Target ({}) are set", targetColumnName);
-			isValid = false;
+			return false;
 		}
 
 		if (null == targetColumnName || targetColumnName.isEmpty()) {
 			logger.error("Target column name is not set when Origin ({}) are set", originColumnName);
-			isValid = false;
+			return false;
 		}
 
-		return isValid;
+		return true;
 	}
 
 	@Override
@@ -94,7 +98,6 @@ public class ExtractJson extends AbstractFeature {
 			throw new IllegalArgumentException("Target table is not a target table");
 		}
 
-		isValid = true;
 		if (!validateProperties()) {
 			isEnabled = false;
 			return false;
@@ -105,39 +108,28 @@ public class ExtractJson extends AbstractFeature {
 		// Initialize Origin variables
 		List<Class> originBindClasses = originTable.extendColumns(Collections.singletonList(originColumnName));
 		if (null == originBindClasses || originBindClasses.size() != 1 || null == originBindClasses.get(0)) {
-			logger.error("Origin column {} is not found on the origin table {}", originColumnName,
-					originTable.getKeyspaceTable());
-			isValid = false;
+			throw new IllegalArgumentException("Origin column " + originColumnName
+					+ " is not found on the origin table " + originTable.getKeyspaceTable());
 		} else {
 			this.originColumnIndex = originTable.indexOf(originColumnName);
 		}
 
 		// Initialize Target variables
-		List<Class> targetBindClasses = targetTable.extendColumns(Arrays.asList(targetColumnName));
+		List<Class> targetBindClasses = targetTable.extendColumns(Collections.singletonList(targetColumnName));
 		if (null == targetBindClasses || targetBindClasses.size() != 1 || null == targetBindClasses.get(0)) {
-			logger.error("Target column {} is not found on the target table {}", targetColumnName,
-					targetTable.getKeyspaceTable());
-			isValid = false;
+			throw new IllegalArgumentException("Target column " + targetColumnName
+					+ " is not found on the target table " + targetTable.getKeyspaceTable());
 		} else {
 			this.targetColumnIndex = targetTable.indexOf(targetColumnName);
 		}
-		logger.warn("ExtractJson originColumnIndex ({}) ", originColumnIndex);
-		logger.warn("ExtractJson targetColumnIndex ({}) ", targetColumnIndex);
 
-		if (isEnabled && logger.isTraceEnabled()) {
-			logger.trace("Origin column {} is at index {}", originColumnName, originColumnIndex);
-			logger.trace("Target column {} is at index {}", targetColumnName, targetColumnIndex);
-		}
-
-		if (!isValid)
-			isEnabled = false;
 		logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled ? "enabled" : "disabled");
-		return isValid;
+		return true;
 	}
 
-	public Object extract(String jsonString, String field) throws JsonMappingException, JsonProcessingException {
+	public Object extract(String jsonString) throws JsonMappingException, JsonProcessingException {
 		if (StringUtils.isNotBlank(jsonString)) {
-			return mapper.readValue(jsonString, Map.class).get(field);
+			return mapper.readValue(jsonString, Map.class).get(originJsonFieldName);
 		}
 
 		return null;
@@ -155,10 +147,7 @@ public class ExtractJson extends AbstractFeature {
 		return isEnabled ? targetColumnName : "";
 	}
 
-	public static String getColumnName(IPropertyHelper helper, String colName) {
-		if (null == helper) {
-			throw new IllegalArgumentException("helper is null");
-		}
+	private String getColumnName(IPropertyHelper helper, String colName) {
 		String columnName = CqlTable.unFormatName(helper.getString(colName));
 		return (null == columnName) ? "" : columnName;
 	}
