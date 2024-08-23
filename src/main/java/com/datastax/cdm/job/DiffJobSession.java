@@ -270,35 +270,38 @@ public class DiffJobSession extends CopyJobSession {
 							logger.trace("PK {}, targetIndex {} skipping constant column {}", pk, targetIndex,
 									targetColumnNames.get(targetIndex));
 						return; // nothing to compare in origin
+					} else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+						originIndex = extractJsonFeature.getOriginColumnIndex();
+						origin = extractJsonFeature.extract(originRow.getString(originIndex));
+					} else {
+						originIndex = targetSession.getCqlTable().getCorrespondingIndex(targetIndex);
+						if (originIndex >= 0) {
+							origin = originSession.getCqlTable().getData(originIndex, originRow);
+							if (logTrace)
+								logger.trace(
+										"PK {}, targetIndex {} column {} using value from origin table at index {}: {}",
+										pk, targetIndex, targetColumnNames.get(targetIndex), originIndex, origin);
+						} else if (targetIndex == explodeMapKeyIndex) {
+							origin = pk.getExplodeMapKey();
+							if (logTrace)
+								logger.trace("PK {}, targetIndex {} column {} using explodeMapKey stored on PK: {}", pk,
+										targetIndex, targetColumnNames.get(targetIndex), origin);
+						} else if (targetIndex == explodeMapValueIndex) {
+							origin = pk.getExplodeMapValue();
+							if (logTrace)
+								logger.trace("PK {}, targetIndex {} column {} using explodeMapValue stored on PK: {}",
+										pk, targetIndex, targetColumnNames.get(targetIndex), origin);
+						} else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+							originIndex = extractJsonFeature.getOriginColumnIndex();
+						} else {
+							throw new RuntimeException("Target column \"" + targetColumnNames.get(targetIndex)
+									+ "\" at index " + targetIndex
+									+ " cannot be found on Origin, and is neither a constant column (indexes:"
+									+ constantColumnIndexes + ") nor an explode map column (keyIndex:"
+									+ explodeMapKeyIndex + ", valueIndex:" + explodeMapValueIndex + ")");
+						}
 					}
 					targetAsOriginType = targetSession.getCqlTable().getAndConvertData(targetIndex, targetRow);
-					originIndex = targetSession.getCqlTable().getCorrespondingIndex(targetIndex);
-					if (originIndex >= 0) {
-						origin = originSession.getCqlTable().getData(originIndex, originRow);
-						if (logTrace)
-							logger.trace(
-									"PK {}, targetIndex {} column {} using value from origin table at index {}: {}", pk,
-									targetIndex, targetColumnNames.get(targetIndex), originIndex, origin);
-					} else if (targetIndex == explodeMapKeyIndex) {
-						origin = pk.getExplodeMapKey();
-						if (logTrace)
-							logger.trace("PK {}, targetIndex {} column {} using explodeMapKey stored on PK: {}", pk,
-									targetIndex, targetColumnNames.get(targetIndex), origin);
-					} else if (targetIndex == explodeMapValueIndex) {
-						origin = pk.getExplodeMapValue();
-						if (logTrace)
-							logger.trace("PK {}, targetIndex {} column {} using explodeMapValue stored on PK: {}", pk,
-									targetIndex, targetColumnNames.get(targetIndex), origin);
-	                } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
-	                    originIndex = extractJsonFeature.getOriginColumnIndex();
-	                    origin = extractJsonFeature.extract(originRow.getString(originIndex));
-					} else {
-						throw new RuntimeException(
-								"Target column \"" + targetColumnNames.get(targetIndex) + "\" at index " + targetIndex
-										+ " cannot be found on Origin, and is neither a constant column (indexes:"
-										+ constantColumnIndexes + ") nor an explode map column (keyIndex:"
-										+ explodeMapKeyIndex + ", valueIndex:" + explodeMapValueIndex + ")");
-					}
 
 					if (logDebug)
 						logger.debug(
