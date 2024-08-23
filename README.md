@@ -123,6 +123,7 @@ Note:
 - Perform guardrail checks (identify large fields)
 - Supports adding `constants` as new columns on `Target`
 - Supports expanding `Map` columns on `Origin` into multiple records on `Target`
+- Supports extracting value from a JSON column in `Origin` and map it to a specific field on `Target`
 - Fully containerized (Docker and K8s friendly)
 - SSL Support (including custom cipher algorithms)
 - Migrate from any Cassandra `Origin` ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra)) to any Cassandra `Target` ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra))
