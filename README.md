@@ -7,7 +7,7 @@
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
-> :warning: Please note this job has been tested with spark version [3.5.1](https://archive.apache.org/dist/spark/spark-3.5.1/)
+> :warning: Please note this job has been tested with spark version [3.5.2](https://archive.apache.org/dist/spark/spark-3.5.2/)
 
 ## Install as a Container
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
