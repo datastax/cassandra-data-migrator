@@ -21,6 +21,7 @@ public class FeatureFactory {
             case ORIGIN_FILTER: return new OriginFilterCondition();
             case CONSTANT_COLUMNS: return new ConstantColumns();
             case EXPLODE_MAP: return new ExplodeMap();
+            case EXTRACT_JSON: return new ExtractJson();
             case WRITETIME_TTL: return new WritetimeTTL();
             case GUARDRAIL_CHECK: return new Guardrail();
             default:

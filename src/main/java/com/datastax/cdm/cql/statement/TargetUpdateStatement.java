@@ -74,9 +74,11 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                 }
                 else if (targetIndex== explodeMapKeyIndex) {
                     bindValueTarget = explodeMapKey;
-                }
-                else if (targetIndex== explodeMapValueIndex) {
+                } else if (targetIndex== explodeMapValueIndex) {
                     bindValueTarget = explodeMapValue;
+                } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+                    originIndex = extractJsonFeature.getOriginColumnIndex();
+                    bindValueTarget = extractJsonFeature.extract(originRow.getString(originIndex));
                 } else {
                     if (originIndex < 0)
                         // we don't have data to bind for this column; continue to the next targetIndex
@@ -89,7 +91,7 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                 logger.error("Error trying to bind value:" + bindValueTarget + " to column:" +
                         targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex) + "/"
                         + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
-                throw e;
+                throw new RuntimeException("Error trying to bind value: ", e);
             }
         }
 

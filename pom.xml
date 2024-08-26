@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>datastax.cdm</groupId>
@@ -10,9 +12,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<scala.version>2.13.14</scala.version>
 		<scala.main.version>2.13</scala.main.version>
-		<spark.version>3.5.1</spark.version>
+		<spark.version>3.5.2</spark.version>
 		<connector.version>3.5.1</connector.version>
-		<cassandra.version>5.0-beta1</cassandra.version>
+		<cassandra.version>5.0-rc1</cassandra.version>
 		<junit.version>5.9.1</junit.version>
 		<mockito.version>4.11.0</mockito.version>
 		<java-driver.version>4.18.1</java-driver.version>
@@ -102,6 +104,11 @@
 			<artifactId>java-driver-query-builder</artifactId>
 			<version>${java-driver.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.15.2</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
@@ -123,6 +130,12 @@
 			<groupId>com.esri.geometry</groupId>
 			<artifactId>esri-geometry-api</artifactId>
 			<version>2.2.4</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Test Dependencies -->

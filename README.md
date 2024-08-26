@@ -7,7 +7,7 @@
 
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
-> :warning: Please note this job has been tested with spark version [3.5.1](https://archive.apache.org/dist/spark/spark-3.5.1/)
+> :warning: Please note this job has been tested with spark version [3.5.2](https://archive.apache.org/dist/spark/spark-3.5.2/)
 
 ## Install as a Container
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
@@ -18,10 +18,10 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 ### Prerequisite
 - Install **Java11** (minimum) as Spark binaries are compiled with it.
-- Install Spark version [`3.5.1`](https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
+- Install Spark version [`3.5.2`](https://archive.apache.org/dist/spark/spark-3.5.2/spark-3.5.2-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. Spark can be installed by running the following: -
 ```
-wget https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3-scala2.13.tgz
-tar -xvzf spark-3.5.1-bin-hadoop3-scala2.13.tgz
+wget https://archive.apache.org/dist/spark/spark-3.5.2/spark-3.5.2-bin-hadoop3-scala2.13.tgz
+tar -xvzf spark-3.5.2-bin-hadoop3-scala2.13.tgz
 ```
 
 > :warning: If the above Spark and Scala version is not properly installed, you'll then see a similar exception like below when running the CDM jobs,
@@ -123,6 +123,7 @@ Note:
 - Perform guardrail checks (identify large fields)
 - Supports adding `constants` as new columns on `Target`
 - Supports expanding `Map` columns on `Origin` into multiple records on `Target`
+- Supports extracting value from a JSON column in `Origin` and map it to a specific field on `Target`
 - Fully containerized (Docker and K8s friendly)
 - SSL Support (including custom cipher algorithms)
 - Migrate from any Cassandra `Origin` ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra)) to any Cassandra `Target` ([Apache Cassandra®](https://cassandra.apache.org) / [DataStax Enterprise&trade;](https://www.datastax.com/products/datastax-enterprise) / [DataStax Astra DB&trade;](https://www.datastax.com/products/datastax-astra))

@@ -238,6 +238,20 @@ public class KnownProperties {
 	}
 
 	// ==========================================================================
+	// Extract JsonFeature
+	// ==========================================================================
+	public static final String EXTRACT_JSON_EXCLUSIVE = "spark.cdm.feature.extractJson.exclusive";
+	public static final String EXTRACT_JSON_ORIGIN_COLUMN_NAME = "spark.cdm.feature.extractJson.originColumn";
+	public static final String EXTRACT_JSON_TARGET_COLUMN_MAPPING = "spark.cdm.feature.extractJson.propertyMapping";
+
+	static {
+		types.put(EXTRACT_JSON_EXCLUSIVE, PropertyType.BOOLEAN);
+		defaults.put(EXTRACT_JSON_EXCLUSIVE, "false");
+		types.put(EXTRACT_JSON_ORIGIN_COLUMN_NAME, PropertyType.STRING);
+		types.put(EXTRACT_JSON_TARGET_COLUMN_MAPPING, PropertyType.STRING);
+	}
+
+	// ==========================================================================
 	// Guardrail Feature
 	// ==========================================================================
 	public static final String GUARDRAIL_COLSIZE_KB = "spark.cdm.feature.guardrail.colSizeInKB";
