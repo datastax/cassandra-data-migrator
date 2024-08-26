@@ -48,13 +48,13 @@ public class ExtractJson extends AbstractFeature {
 		}
 
 		originColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME);
-		targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME);
+		targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING);
 		// Convert columnToFieldMapping to targetColumnName and originJsonFieldName
 		if (!targetColumnName.isBlank()) {
 			String[] parts = targetColumnName.split("\\:");
 			if (parts.length == 2) {
-				targetColumnName = parts[0];
-				originJsonFieldName = parts[1];
+				originJsonFieldName = parts[0];
+				targetColumnName = parts[1];
 			} else {
 				originJsonFieldName = targetColumnName;
 			}
@@ -89,13 +89,13 @@ public class ExtractJson extends AbstractFeature {
 	@Override
 	public boolean initializeAndValidate(CqlTable originTable, CqlTable targetTable) {
 		if (null == originTable || null == targetTable) {
-			throw new IllegalArgumentException("originTable and/or targetTable is null");
+			throw new IllegalArgumentException("Origin table and/or Target table is null");
 		}
 		if (!originTable.isOrigin()) {
-			throw new IllegalArgumentException("Origin table is not an origin table");
+			throw new IllegalArgumentException(originTable.getKeyspaceTable() + " is not an origin table");
 		}
 		if (targetTable.isOrigin()) {
-			throw new IllegalArgumentException("Target table is not a target table");
+			throw new IllegalArgumentException(targetTable.getKeyspaceTable() + " is not a target table");
 		}
 
 		if (!validateProperties()) {

@@ -400,10 +400,10 @@ public class CqlTable extends BaseTable {
 			String originColumnName = unFormatName(
 					propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME));
 			String targetColumnName = unFormatName(
-					propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_NAME));
+					propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING));
 			extractColumnName = isOrigin ? originColumnName : targetColumnName;
 			if (!extractColumnName.isBlank() && extractColumnName.contains(":")) {
-				extractColumnName = extractColumnName.split("\\:")[0];
+				extractColumnName = extractColumnName.split("\\:")[1];
 			}
 		}
 		String columnName = extractColumnName;
