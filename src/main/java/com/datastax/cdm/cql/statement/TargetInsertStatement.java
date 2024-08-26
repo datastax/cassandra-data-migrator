@@ -15,18 +15,19 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.time.Duration;
 
 public class TargetInsertStatement extends TargetUpsertStatement {
     public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -75,12 +76,12 @@ public class TargetInsertStatement extends TargetUpsertStatement {
 
                 boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
             } catch (Exception e) {
-				logger.error("Error trying to bind value:" + bindValue + " of class:"
-						+ (null == bindValue ? "unknown" : bindValue.getClass().getName()) + " to column:"
-						+ targetColumnNames.get(targetIndex) + " of targetDataType:"
-						+ targetColumnTypes.get(targetIndex) + "/" + cqlTable.getBindClass(targetIndex).getName()
-						+ " at column index:" + targetIndex + " and bind index: " + (currentBindIndex - 1)
-						+ " of statement:" + this.getCQL());
+				logger.error(
+						"Error trying to bind value: {} of class: {} to column: {} of targetDataType: {}/{} at column index: {} and bind index: {} of statement: {}",
+						bindValue, (null == bindValue ? "unknown" : bindValue.getClass().getName()),
+						targetColumnNames.get(targetIndex), targetColumnTypes.get(targetIndex),
+						cqlTable.getBindClass(targetIndex).getName(), targetIndex, (currentBindIndex - 1),
+						this.getCQL());
                 throw new RuntimeException("Error trying to bind value: ", e);
             }
         }

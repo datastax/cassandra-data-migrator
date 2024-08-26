@@ -69,17 +69,16 @@ public class ExtractJson extends AbstractFeature {
 
 	@Override
 	protected boolean validateProperties() {
-		if ((null == originColumnName || originColumnName.isEmpty())
-				&& (null == targetColumnName || targetColumnName.isEmpty()))
+		if (StringUtils.isBlank(originColumnName) && StringUtils.isBlank(targetColumnName))
 			return true;
 
-		if (null == originColumnName || originColumnName.isEmpty()) {
-			logger.error("Origin column name is not set when Target ({}) are set", targetColumnName);
+		if (StringUtils.isBlank(originColumnName)) {
+			logger.error("Origin column name is not set when Target ({}) is set", targetColumnName);
 			return false;
 		}
 
-		if (null == targetColumnName || targetColumnName.isEmpty()) {
-			logger.error("Target column name is not set when Origin ({}) are set", originColumnName);
+		if (StringUtils.isBlank(targetColumnName)) {
+			logger.error("Target column name is not set when Origin ({}) is set", originColumnName);
 			return false;
 		}
 
