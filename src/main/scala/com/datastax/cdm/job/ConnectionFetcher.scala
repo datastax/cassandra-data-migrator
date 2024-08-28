@@ -17,21 +17,36 @@ package com.datastax.cdm.job
 
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.google.cloud.secretmanager.v1.{AccessSecretVersionRequest, SecretManagerServiceClient, SecretPayload}
 import org.apache.spark.{SparkConf, SparkContext}
+import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 
 // TODO: CDM-31 - add localDC configuration support
 class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelper) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  def getConnectionDetails(side: String): ConnectionDetails = {
+    def getConnectionDetails(side: String): ConnectionDetails = {
+    val (username, password) = if ("ORIGIN".equals(side.toUpperCase)) {
+      getCredentials(
+        KnownProperties.CONNECT_ORIGIN_USERNAME,
+        KnownProperties.CONNECT_ORIGIN_PASSWORD,
+        KnownProperties.CONNECT_ORIGIN_GCP_SECRET_NAME
+      )
+    } else {
+      getCredentials(
+        KnownProperties.CONNECT_TARGET_USERNAME,
+        KnownProperties.CONNECT_TARGET_PASSWORD,
+        KnownProperties.CONNECT_TARGET_GCP_SECRET_NAME
+      )
+    }
     if ("ORIGIN".equals(side.toUpperCase)) {
       ConnectionDetails(
         propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_SCB),
         propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_HOST),
         propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PORT),
-        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_USERNAME),
-        propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD),
+        username,
+        password,
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ENABLED),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD),
@@ -40,14 +55,13 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PASSWORD),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ALGORITHMS)
       )
-    }
-    else {
+    } else {
       ConnectionDetails(
         propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_SCB),
         propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_HOST),
         propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_PORT),
-        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_USERNAME),
-        propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_PASSWORD),
+        username,
+        password,
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_ENABLED),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD),
@@ -105,6 +119,42 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.host", connectionDetails.host)
         .set("spark.cassandra.connection.port", connectionDetails.port))
+    }
+  }
+
+  private def getSecret(projectId: String, secretId: String): (String, String) = {
+    var client: SecretManagerServiceClient = null
+    try {
+      client = SecretManagerServiceClient.create()
+      val secretName = s"projects/$projectId/secrets/$secretId/versions/latest"
+      logger.info("Secret Name is: " + secretName)
+      val request = AccessSecretVersionRequest.newBuilder().setName(secretName).build()
+      val payload: SecretPayload = client.accessSecretVersion(request).getPayload
+      val jsonObject: JSONObject = new JSONObject(payload.getData.toStringUtf8)
+
+      val client_id = jsonObject.get("client_id").toString
+      val secret =  jsonObject.get("secret").toString
+      (client_id, secret)
+    } catch {
+      case e: Exception => throw new RuntimeException("Failed to get access secret ", e)
+    } finally {
+      if (client != null) client.close()
+    }
+  }
+
+  private def getCredentials(usernameKey: String, passwordKey: String, secretNameKey: String): (String, String) = {
+    val username = propertyHelper.getAsString(usernameKey)
+    val password = propertyHelper.getAsString(passwordKey)
+
+    if ((username != null && username.nonEmpty) && (password != null && password.nonEmpty)) {
+      logger.info("Using provided username and password...")
+      (username, password)
+    } else {
+      logger.info("Fetching credentials from GSM...")
+      val projectId = propertyHelper.getAsString(KnownProperties.CONNECT_GCP_SECRET_PROJECT_ID)
+      val secretName = propertyHelper.getAsString(secretNameKey)
+      val (username, password)  = getSecret(projectId, secretName)
+      (username, password)
     }
   }
 }
