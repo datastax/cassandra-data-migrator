@@ -66,6 +66,7 @@ public class DiffJobSession extends CopyJobSession {
 	boolean logDebug = logger.isDebugEnabled();
 	boolean logTrace = logger.isTraceEnabled();
 	private ExtractJson extractJsonFeature;
+	private boolean overwriteTarget;
 
 	public DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
 		super(originSession, targetSession, sc);
@@ -111,6 +112,7 @@ public class DiffJobSession extends CopyJobSession {
 		}
 
 		extractJsonFeature = (ExtractJson) this.targetSession.getCqlTable().getFeature(Featureset.EXTRACT_JSON);
+		overwriteTarget = extractJsonFeature.isEnabled() && extractJsonFeature.overwriteTarget();
 
 		logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
 		logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
@@ -270,7 +272,13 @@ public class DiffJobSession extends CopyJobSession {
 							logger.trace("PK {}, targetIndex {} skipping constant column {}", pk, targetIndex,
 									targetColumnNames.get(targetIndex));
 						return; // nothing to compare in origin
-					} else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+					} 
+					
+					targetAsOriginType = targetSession.getCqlTable().getAndConvertData(targetIndex, targetRow);
+					if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
+						if (!overwriteTarget && null != targetAsOriginType) {
+							return; // skip validation when target has data
+						}
 						originIndex = extractJsonFeature.getOriginColumnIndex();
 						origin = extractJsonFeature.extract(originRow.getString(originIndex));
 					} else {
@@ -301,7 +309,6 @@ public class DiffJobSession extends CopyJobSession {
 									+ explodeMapKeyIndex + ", valueIndex:" + explodeMapValueIndex + ")");
 						}
 					}
-					targetAsOriginType = targetSession.getCqlTable().getAndConvertData(targetIndex, targetRow);
 
 					if (logDebug)
 						logger.debug(

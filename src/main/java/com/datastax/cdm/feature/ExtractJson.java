@@ -40,6 +40,7 @@ public class ExtractJson extends AbstractFeature {
 
 	private String targetColumnName = "";
 	private Integer targetColumnIndex = -1;
+	private boolean overwriteTarget = false;
 
 	@Override
 	public boolean loadProperties(IPropertyHelper helper) {
@@ -49,6 +50,8 @@ public class ExtractJson extends AbstractFeature {
 
 		originColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME);
 		targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING);
+		overwriteTarget = helper.getBoolean(KnownProperties.EXTRACT_JSON_TARGET_OVERWRITE);
+		
 		// Convert columnToFieldMapping to targetColumnName and originJsonFieldName
 		if (!targetColumnName.isBlank()) {
 			String[] parts = targetColumnName.split("\\:");
@@ -146,6 +149,10 @@ public class ExtractJson extends AbstractFeature {
 		return isEnabled ? targetColumnName : "";
 	}
 
+	public boolean overwriteTarget() {
+		return overwriteTarget;
+	}
+	
 	private String getColumnName(IPropertyHelper helper, String colName) {
 		String columnName = CqlTable.unFormatName(helper.getString(colName));
 		return (null == columnName) ? "" : columnName;

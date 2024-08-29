@@ -59,6 +59,7 @@ public class ExtractJsonTest {
 
     String standardOriginName = "content";
     String standardTargetName = "age";
+    String mappedTargetName = "personAge:person_age";
 
     @BeforeEach
     public void setup() {
@@ -98,7 +99,20 @@ public class ExtractJsonTest {
         assertAll(
                 () -> assertTrue(loaded, "properties are loaded and valid"),
                 () -> assertTrue(feature.isEnabled()),
+                () -> assertFalse(feature.overwriteTarget()),
                 () -> assertEquals(standardTargetName, feature.getTargetColumnName())
+        );
+    }
+
+    @Test
+    public void loadPropertiesWithMapping() {
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn(mappedTargetName);
+        boolean loaded = feature.loadProperties(propertyHelper);
+
+        assertAll(
+                () -> assertTrue(loaded, "properties are loaded and valid"),
+                () -> assertTrue(feature.isEnabled()),
+                () -> assertEquals("person_age", feature.getTargetColumnName())
         );
     }
     
