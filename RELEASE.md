@@ -1,4 +1,7 @@
 # Release Notes
+## [4.3.6] - 2024-08-29
+- Added `overwrite` option to conditionally check or skip `Validation` when it has a non-null value in `target` for the `spark.cdm.feature.extractJson` feature.
+
 ## [4.3.5] - 2024-08-23
 - Added feature `spark.cdm.feature.extractJson` which allows you to extract a json value from a column with json content in an Origin table and map it to a column in the Target table.
 - Upgraded to use Spark `3.5.2`.
