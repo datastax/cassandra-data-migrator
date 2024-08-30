@@ -36,24 +36,30 @@ public class KnownProperties {
 	// ==========================================================================
 	// Common connection parameters
 	// ==========================================================================
+	public static final String CONNECT_GCP_SECRET_PROJECT_ID = "spark.cdm.connect.gcp.secret.project.id";
+
 	public static final String CONNECT_ORIGIN_HOST = "spark.cdm.connect.origin.host";
 	public static final String CONNECT_ORIGIN_PORT = "spark.cdm.connect.origin.port";
 	public static final String CONNECT_ORIGIN_SCB = "spark.cdm.connect.origin.scb";
 	public static final String CONNECT_ORIGIN_USERNAME = "spark.cdm.connect.origin.username";
 	public static final String CONNECT_ORIGIN_PASSWORD = "spark.cdm.connect.origin.password";
+	public static final String CONNECT_ORIGIN_GCP_SECRET_NAME = "spark.cdm.connect.origin.gcp.secret.name";
 
 	public static final String CONNECT_TARGET_HOST = "spark.cdm.connect.target.host";
 	public static final String CONNECT_TARGET_PORT = "spark.cdm.connect.target.port";
 	public static final String CONNECT_TARGET_SCB = "spark.cdm.connect.target.scb";
 	public static final String CONNECT_TARGET_USERNAME = "spark.cdm.connect.target.username";
 	public static final String CONNECT_TARGET_PASSWORD = "spark.cdm.connect.target.password";
+	public static final String CONNECT_TARGET_GCP_SECRET_NAME = "spark.cdm.connect.target.gcp.secret.name";
 
 	static {
+		types.put(CONNECT_GCP_SECRET_PROJECT_ID, PropertyType.STRING);
 		types.put(CONNECT_ORIGIN_HOST, PropertyType.STRING);
 		defaults.put(CONNECT_ORIGIN_HOST, "localhost");
 		types.put(CONNECT_ORIGIN_PORT, PropertyType.NUMBER);
 		defaults.put(CONNECT_ORIGIN_PORT, "9042");
 		types.put(CONNECT_ORIGIN_SCB, PropertyType.STRING);
+		types.put(CONNECT_ORIGIN_GCP_SECRET_NAME, PropertyType.STRING);
 		types.put(CONNECT_ORIGIN_USERNAME, PropertyType.STRING);
 		defaults.put(CONNECT_ORIGIN_USERNAME, "cassandra");
 		types.put(CONNECT_ORIGIN_PASSWORD, PropertyType.STRING);
@@ -64,6 +70,7 @@ public class KnownProperties {
 		types.put(CONNECT_TARGET_PORT, PropertyType.NUMBER);
 		defaults.put(CONNECT_TARGET_PORT, "9042");
 		types.put(CONNECT_TARGET_SCB, PropertyType.STRING);
+		types.put(CONNECT_TARGET_GCP_SECRET_NAME, PropertyType.STRING);
 		types.put(CONNECT_TARGET_USERNAME, PropertyType.STRING);
 		defaults.put(CONNECT_TARGET_USERNAME, "cassandra");
 		types.put(CONNECT_TARGET_PASSWORD, PropertyType.STRING);
