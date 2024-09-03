@@ -37,6 +37,7 @@ public class WritetimeTTL extends AbstractFeature  {
     private List<String> writetimeNames;
     private boolean autoWritetimeNames;
     private Long customWritetime = 0L;
+    private Long customTTL = 0L;
     private List<Integer> ttlSelectColumnIndexes = null;
     private List<Integer> writetimeSelectColumnIndexes = null;
     private Long filterMin;
@@ -67,6 +68,11 @@ public class WritetimeTTL extends AbstractFeature  {
 
         this.writetimeIncrement = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT);
 
+        this.customTTL = getCustomTTL(propertyHelper);
+        if (this.customTTL > 0) {
+            logger.info("PARAM -- {} is set to TTL {} ", KnownProperties.TRANSFORM_CUSTOM_TTL, customTTL);
+        }
+
         this.filterMin = getMinFilter(propertyHelper);
         this.filterMax = getMaxFilter(propertyHelper);
         this.hasWriteTimestampFilter = (null != filterMin && null != filterMax && filterMin > 0 && filterMax > 0 && filterMax > filterMin);
@@ -81,7 +87,7 @@ public class WritetimeTTL extends AbstractFeature  {
                 ((null != ttlNames && !ttlNames.isEmpty())
                 || (null != writetimeNames && !writetimeNames.isEmpty())
                 || autoTTLNames || autoWritetimeNames
-                || customWritetime > 0);
+                || customWritetime > 0 || customTTL > 0);
 
         isLoaded = true;
         return isValid;
@@ -167,10 +173,15 @@ public class WritetimeTTL extends AbstractFeature  {
         return CqlTable.unFormatNames(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES));
     }
 
-    public static Long getCustomWritetime(IPropertyHelper propertyHelper) {
+    protected static Long getCustomWritetime(IPropertyHelper propertyHelper) {
         Long cwt = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME);
         return null==cwt ? 0L : cwt;
     }
+
+    protected static Long getCustomTTL(IPropertyHelper propertyHelper) {
+		Long cttl = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL);
+		return null == cttl ? 0L : cttl;
+	}
 
     public static Long getMinFilter(IPropertyHelper propertyHelper) {
         return propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN);
@@ -181,11 +192,15 @@ public class WritetimeTTL extends AbstractFeature  {
     }
 
     public Long getCustomWritetime() { return customWritetime; }
+    public Long getCustomTTL() { return customTTL; }
     public boolean hasWriteTimestampFilter() { return isEnabled && hasWriteTimestampFilter; }
     public Long getMinWriteTimeStampFilter() { return (this.hasWriteTimestampFilter && null!=this.filterMin) ? this.filterMin : Long.MIN_VALUE; }
     public Long getMaxWriteTimeStampFilter() { return (this.hasWriteTimestampFilter && null!=this.filterMax) ? this.filterMax : Long.MAX_VALUE; }
 
-    public boolean hasTTLColumns() { return null!=this.ttlSelectColumnIndexes && !this.ttlSelectColumnIndexes.isEmpty(); }
+	public boolean hasTTLColumns() {
+		return customTTL > 0 || null != this.ttlSelectColumnIndexes && !this.ttlSelectColumnIndexes.isEmpty();
+	}
+
     public boolean hasWritetimeColumns() { return customWritetime>0 || null!=this.writetimeSelectColumnIndexes && !this.writetimeSelectColumnIndexes.isEmpty(); }
 
     public Long getLargestWriteTimeStamp(Row row) {
@@ -200,7 +215,8 @@ public class WritetimeTTL extends AbstractFeature  {
     }
 
     public Integer getLargestTTL(Row row) {
-        if (logDebug) logger.debug("getLargestTTL: ttlSelectColumnIndexes={}", ttlSelectColumnIndexes);
+        if (logDebug) logger.debug("getLargestTTL: customTTL={}, ttlSelectColumnIndexes={}", customTTL, ttlSelectColumnIndexes);
+        if (this.customTTL > 0) return this.customTTL.intValue();
         if (null==this.ttlSelectColumnIndexes || this.ttlSelectColumnIndexes.isEmpty()) return null;
         OptionalInt max = this.ttlSelectColumnIndexes.stream()
                 .mapToInt(row::getInt)

@@ -34,6 +34,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
 
     WritetimeTTL feature;
     Long customWritetime = 123456789L;
+    Long customTTL = 1000L;
     Long filterMin = 100000000L;
     Long filterMax = 200000000L;
     String writetimeColumnName = "writetime_col";
@@ -69,6 +70,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
             String argument = invocation.getArgument(0);
             return originValueColumns.contains(argument);
         });
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(customTTL);
     }
 
 
@@ -83,6 +85,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
         assertAll(
                 () -> assertTrue(feature.isEnabled(), "enabled"),
                 () -> assertEquals(customWritetime, feature.getCustomWritetime(), "customWritetime"),
+                () -> assertEquals(customTTL, feature.getCustomTTL(), "customTTL"),
                 () -> assertTrue(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
                 () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns with custom writetime"),
                 () -> assertEquals(customWritetime, feature.getCustomWritetime(), "customWritetime is set"),
@@ -113,6 +116,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
         when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(Boolean.FALSE);
         when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(Boolean.FALSE);
@@ -135,6 +139,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(null);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
         when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(Boolean.TRUE);
         when(propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO)).thenReturn(Boolean.FALSE);
@@ -174,6 +179,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
     @Test
     public void smoke_writetimeWithoutTTL() {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_TTL_NAMES)).thenReturn(null);
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(filterMin);
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX)).thenReturn(filterMax);
@@ -225,6 +231,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
     @Test
     public void smoke_autoWritetime_noCustomWritetime() {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
         when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
@@ -244,6 +251,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
     @Test
     public void smoke_autoWritetime_CustomWritetime() {
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(100L);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(propertyHelper.getStringList(KnownProperties.ORIGIN_WRITETIME_NAMES)).thenReturn(null);
         when(propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO)).thenReturn(true);
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(null);
@@ -373,6 +381,7 @@ public class TTLAndWritetimeTest extends CommonMocks {
 
     @Test
     public void getLargestTTLTest() {
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(originTable.indexOf("TTL("+ttlColumnName+")")).thenReturn(100);
         when(originRow.getInt(eq(100))).thenReturn(30);
         when(originTable.indexOf("TTL("+writetimeTTLColumnName+")")).thenReturn(101);
