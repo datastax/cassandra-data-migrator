@@ -18,14 +18,20 @@ package com.datastax.cdm.feature;
 public class FeatureFactory {
     public static Feature getFeature(Featureset feature) {
         switch (feature) {
-            case ORIGIN_FILTER: return new OriginFilterCondition();
-            case CONSTANT_COLUMNS: return new ConstantColumns();
-            case EXPLODE_MAP: return new ExplodeMap();
-            case EXTRACT_JSON: return new ExtractJson();
-            case WRITETIME_TTL: return new WritetimeTTL();
-            case GUARDRAIL_CHECK: return new Guardrail();
-            default:
-                throw new IllegalArgumentException("Unknown feature: " + feature);
+        case ORIGIN_FILTER:
+            return new OriginFilterCondition();
+        case CONSTANT_COLUMNS:
+            return new ConstantColumns();
+        case EXPLODE_MAP:
+            return new ExplodeMap();
+        case EXTRACT_JSON:
+            return new ExtractJson();
+        case WRITETIME_TTL:
+            return new WritetimeTTL();
+        case GUARDRAIL_CHECK:
+            return new Guardrail();
+        default:
+            throw new IllegalArgumentException("Unknown feature: " + feature);
         }
     }
 

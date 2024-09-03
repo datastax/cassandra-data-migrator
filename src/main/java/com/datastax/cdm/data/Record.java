@@ -15,17 +15,14 @@
  */
 package com.datastax.cdm.data;
 
+import java.util.concurrent.CompletionStage;
+
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 
-import java.util.concurrent.CompletionStage;
-
 public class Record {
     public enum Diff {
-        UNKNOWN,
-        NONE,
-        MISSING_TARGET,
-        FIELD_DIFF
+        UNKNOWN, NONE, MISSING_TARGET, FIELD_DIFF
     }
 
     private EnhancedPK pk;
@@ -51,8 +48,14 @@ public class Record {
         this(pk, null, null, targetFutureRow);
     }
 
-    public EnhancedPK getPk() {return pk;}
-    public Row getOriginRow() {return originRow;}
+    public EnhancedPK getPk() {
+        return pk;
+    }
+
+    public Row getOriginRow() {
+        return originRow;
+    }
+
     public Row getTargetRow() {
         if (null == targetRow && null != targetFutureRow) {
             AsyncResultSet asyncResultSet = targetFutureRow.toCompletableFuture().join();
@@ -61,7 +64,10 @@ public class Record {
         return targetRow;
     }
 
-    public void setTargetRow(Row targetRow) {this.targetRow = targetRow;}
+    public void setTargetRow(Row targetRow) {
+        this.targetRow = targetRow;
+    }
+
     public void setAsyncTargetRow(CompletionStage<AsyncResultSet> targetFutureRow) {
         this.targetRow = null;
         this.targetFutureRow = targetFutureRow;
@@ -73,11 +79,8 @@ public class Record {
 
     @Override
     public String toString() {
-        return "Record{" +
-                "pk=" + pk +
-                ", originRow is " + ((null==originRow) ? "not set" : "set") +
-                ", targetRow is " + ((null==targetRow) ? "not set" : "set") +
-                '}';
+        return "Record{" + "pk=" + pk + ", originRow is " + ((null == originRow) ? "not set" : "set")
+                + ", targetRow is " + ((null == targetRow) ? "not set" : "set") + '}';
     }
 
 }

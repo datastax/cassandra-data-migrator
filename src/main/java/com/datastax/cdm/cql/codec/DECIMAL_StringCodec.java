@@ -15,16 +15,17 @@
  */
 package com.datastax.cdm.cql.codec;
 
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import org.jetbrains.annotations.NotNull;
-
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 
 public class DECIMAL_StringCodec extends AbstractBaseCodec<String> {
 
@@ -70,4 +71,3 @@ public class DECIMAL_StringCodec extends AbstractBaseCodec<String> {
         return decimalValue == null ? null : decimalValue.toString();
     }
 }
-

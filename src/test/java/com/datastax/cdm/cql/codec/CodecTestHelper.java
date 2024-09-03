@@ -15,14 +15,15 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import org.junit.jupiter.api.Assertions;
-
 import java.nio.ByteBuffer;
+
+import org.junit.jupiter.api.Assertions;
 
 public class CodecTestHelper {
     public static void assertByteBufferEquals(ByteBuffer expected, ByteBuffer actual) {
         Assertions.assertEquals(expected.remaining(), actual.remaining(),
-                () -> String.format("ByteBuffers have different remaining bytes:%nExpected byte[]: %s%nActual byte[]: %s",
+                () -> String.format(
+                        "ByteBuffers have different remaining bytes:%nExpected byte[]: %s%nActual byte[]: %s",
                         byteBufferToHexString(expected), byteBufferToHexString(actual)));
 
         Assertions.assertTrue(expected.equals(actual),

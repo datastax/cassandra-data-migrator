@@ -15,11 +15,8 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.dse.driver.api.core.data.time.DateRange;
-import com.datastax.dse.driver.internal.core.type.codec.time.DateRangeCodec;
-import com.datastax.oss.driver.api.core.ProtocolVersion;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.time.ZoneOffset;
@@ -28,7 +25,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.dse.driver.api.core.data.time.DateRange;
+import com.datastax.dse.driver.internal.core.type.codec.time.DateRangeCodec;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
 
 class DATERANGETYPE_CodecTest {
 
@@ -108,12 +110,9 @@ class DATERANGETYPE_CodecTest {
 
     @Test
     void parse_ShouldParseStringToDateRange() throws ParseException {
-        DateTimeFormatter df = (new DateTimeFormatterBuilder())
-                .appendInstant(3).toFormatter();
-        String formattedDateTime = ZonedDateTime.now()
-                .withZoneSameInstant(ZoneOffset.UTC)
-                .truncatedTo(ChronoUnit.MILLIS)
-                .format(df);
+        DateTimeFormatter df = (new DateTimeFormatterBuilder()).appendInstant(3).toFormatter();
+        String formattedDateTime = ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)
+                .truncatedTo(ChronoUnit.MILLIS).format(df);
 
         // Enclose in single quotes as per the error message
         String dateRangeLiteral = "'" + formattedDateTime + "'";

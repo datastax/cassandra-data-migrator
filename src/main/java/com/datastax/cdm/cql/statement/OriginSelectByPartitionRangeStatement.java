@@ -15,6 +15,8 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import java.math.BigInteger;
+
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.OriginFilterCondition;
@@ -24,8 +26,6 @@ import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 
-import java.math.BigInteger;
-
 public class OriginSelectByPartitionRangeStatement extends OriginSelectStatement {
     public OriginSelectByPartitionRangeStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
@@ -33,9 +33,7 @@ public class OriginSelectByPartitionRangeStatement extends OriginSelectStatement
 
     @Override
     public BoundStatement bind(Object... binds) {
-        if (null==binds
-                || binds.length != 2
-                || !(binds[0] instanceof BigInteger)
+        if (null == binds || binds.length != 2 || !(binds[0] instanceof BigInteger)
                 || !(binds[1] instanceof BigInteger))
             throw new RuntimeException("Expected 2 not-null binds of type BigInteger, got " + binds.length);
 
@@ -44,16 +42,16 @@ public class OriginSelectByPartitionRangeStatement extends OriginSelectStatement
 
         PreparedStatement preparedStatement = prepareStatement();
         // random partitioner uses BigInteger, the normal partitioner uses long
-        return preparedStatement.bind(
-                    cqlTable.hasRandomPartitioner() ? min : min.longValueExact(),
-                    cqlTable.hasRandomPartitioner() ? max : max.longValueExact())
-                .setConsistencyLevel(cqlTable.getReadConsistencyLevel())
-                .setPageSize(cqlTable.getFetchSizeInRows());
+        return preparedStatement
+                .bind(cqlTable.hasRandomPartitioner() ? min : min.longValueExact(),
+                        cqlTable.hasRandomPartitioner() ? max : max.longValueExact())
+                .setConsistencyLevel(cqlTable.getReadConsistencyLevel()).setPageSize(cqlTable.getFetchSizeInRows());
     }
 
     @Override
     protected String whereBinds() {
-        String partitionKey = PropertyHelper.asString(cqlTable.getPartitionKeyNames(true), KnownProperties.PropertyType.STRING_LIST).trim();
+        String partitionKey = PropertyHelper
+                .asString(cqlTable.getPartitionKeyNames(true), KnownProperties.PropertyType.STRING_LIST).trim();
         return "TOKEN(" + partitionKey + ") >= ? AND TOKEN(" + partitionKey + ") <= ?";
     }
 

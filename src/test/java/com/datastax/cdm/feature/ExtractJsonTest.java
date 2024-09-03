@@ -15,21 +15,6 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.cdm.data.CqlData;
-import com.datastax.cdm.properties.IPropertyHelper;
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.schema.CqlTable;
-import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
 import static org.apache.hadoop.shaded.com.google.common.base.CharMatcher.any;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -38,6 +23,22 @@ import static org.mockito.Mockito.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.cdm.data.CqlData;
+import com.datastax.cdm.properties.IPropertyHelper;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.schema.CqlTable;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class ExtractJsonTest {
 
@@ -52,8 +53,8 @@ public class ExtractJsonTest {
     @Mock
     CqlTable targetTable;
 
-    List<String> standardOriginNames = Arrays.asList("id","content");
-    List<String> standardTargetNames = Arrays.asList("id","age");
+    List<String> standardOriginNames = Arrays.asList("id", "content");
+    List<String> standardTargetNames = Arrays.asList("id", "age");
     List<DataType> standardOriginTypes = Arrays.asList(DataTypes.TEXT, DataTypes.TEXT);
     List<DataType> standardTargetTypes = Arrays.asList(DataTypes.TEXT, DataTypes.TEXT);
 
@@ -67,25 +68,26 @@ public class ExtractJsonTest {
         MockitoAnnotations.openMocks(this);
 
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn(standardOriginName);
-        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn(standardTargetName);
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING))
+                .thenReturn(standardTargetName);
 
         when(originTable.getKeyspaceTable()).thenReturn("ORIGIN_TABLE");
         when(originTable.isOrigin()).thenReturn(true);
-        when(originTable.extendColumns(Collections.singletonList(standardOriginName))).
-        thenReturn(Collections.singletonList(CqlData.getBindClass(standardOriginTypes.get(1))));
+        when(originTable.extendColumns(Collections.singletonList(standardOriginName)))
+                .thenReturn(Collections.singletonList(CqlData.getBindClass(standardOriginTypes.get(1))));
 
         when(targetTable.getKeyspaceTable()).thenReturn("TARGET_TABLE");
         when(targetTable.isOrigin()).thenReturn(false);
-        when(targetTable.extendColumns(Collections.singletonList(standardTargetName))).
-        thenReturn(Collections.singletonList(CqlData.getBindClass(standardTargetTypes.get(1))));
+        when(targetTable.extendColumns(Collections.singletonList(standardTargetName)))
+                .thenReturn(Collections.singletonList(CqlData.getBindClass(standardTargetTypes.get(1))));
 
-        for (int i = 0; i< standardOriginNames.size(); i++) {
+        for (int i = 0; i < standardOriginNames.size(); i++) {
             when(originTable.getColumnNames(false)).thenReturn(standardOriginNames);
             when(originTable.indexOf(standardOriginNames.get(i))).thenReturn(i);
             when(originTable.getBindClass(i)).thenReturn(CqlData.getBindClass(standardOriginTypes.get(i)));
         }
 
-        for (int i = 0; i< standardTargetNames.size(); i++) {
+        for (int i = 0; i < standardTargetNames.size(); i++) {
             when(targetTable.getColumnNames(false)).thenReturn(standardTargetNames);
             when(targetTable.indexOf(standardTargetNames.get(i))).thenReturn(i);
             when(targetTable.getBindClass(i)).thenReturn(CqlData.getBindClass(standardTargetTypes.get(i)));
@@ -96,12 +98,9 @@ public class ExtractJsonTest {
     public void loadProperties() {
         boolean loaded = feature.loadProperties(propertyHelper);
 
-        assertAll(
-                () -> assertTrue(loaded, "properties are loaded and valid"),
-                () -> assertTrue(feature.isEnabled()),
+        assertAll(() -> assertTrue(loaded, "properties are loaded and valid"), () -> assertTrue(feature.isEnabled()),
                 () -> assertFalse(feature.overwriteTarget()),
-                () -> assertEquals(standardTargetName, feature.getTargetColumnName())
-        );
+                () -> assertEquals(standardTargetName, feature.getTargetColumnName()));
     }
 
     @Test
@@ -115,10 +114,11 @@ public class ExtractJsonTest {
                 () -> assertEquals("person_age", feature.getTargetColumnName())
         );
     }
-    
+
     @Test
     public void loadPropertiesException() {
-    	IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.loadProperties(null));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.loadProperties(null));
         assertTrue(thrown.getMessage().contains("helper is null"));
     }
 
@@ -127,27 +127,27 @@ public class ExtractJsonTest {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn(null);
         assertFalse(feature.loadProperties(propertyHelper), "Origin column name is not set");
     }
-    
+
     @Test
     public void loadPropertiesTargetError() {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn(null);
         assertFalse(feature.loadProperties(propertyHelper), "Target column name is not set");
     }
-    
+
     @Test
     public void initializeAndValidate() {
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
 
-        assertAll(
-                () -> assertTrue(valid, "configuration is valid"),
-                () -> assertEquals(standardOriginNames.indexOf(standardOriginName), feature.getOriginColumnIndex(), "origin index"),
-                () -> assertEquals(standardTargetNames.indexOf(standardTargetName), feature.getTargetColumnIndex(), "target index")
-        );
+        assertAll(() -> assertTrue(valid, "configuration is valid"),
+                () -> assertEquals(standardOriginNames.indexOf(standardOriginName), feature.getOriginColumnIndex(),
+                        "origin index"),
+                () -> assertEquals(standardTargetNames.indexOf(standardTargetName), feature.getTargetColumnIndex(),
+                        "target index"));
     }
 
     @Test
-    public void extractNull() throws JsonMappingException, JsonProcessingException{
+    public void extractNull() throws JsonMappingException, JsonProcessingException {
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
 
@@ -170,23 +170,25 @@ public class ExtractJsonTest {
                 () -> assertEquals(-1, feature.getTargetColumnIndex(), "target index"),
                 () -> assertEquals(-1, feature.getOriginColumnIndex(), "origin index")
         );
-        
+
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn(null);
         assertEquals("", feature.getTargetColumnName(), "target name");
     }
 
     @Test
     public void initializeAndValidateExceptionOriginNull() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(null, targetTable));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.initializeAndValidate(null, targetTable));
         assertTrue(thrown.getMessage().contains("Origin table and/or Target table is null"));
     }
-    
+
     @Test
     public void initializeAndValidateExceptionTargetNull() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, null));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.initializeAndValidate(originTable, null));
         assertTrue(thrown.getMessage().contains("Origin table and/or Target table is null"));
     }
-    
+
     @Test
     public void initializeAndValidateExceptionOriginColumn() {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn("incorrect_column");
@@ -195,16 +197,16 @@ public class ExtractJsonTest {
 
         IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
     }
-    
+
     @Test
     public void initializeAndValidateExceptionTargetColumn() {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn("incorrect_column");
-        
+
         feature.loadProperties(propertyHelper);
 
         IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
     }
-    
+
     @Test
     public void initializeAndValidateExceptionOriginIncorrect() {
         when(originTable.isOrigin()).thenReturn(false);
@@ -233,4 +235,3 @@ public class ExtractJsonTest {
     }
 
 }
-

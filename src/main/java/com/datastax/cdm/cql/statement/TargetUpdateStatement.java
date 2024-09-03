@@ -15,18 +15,19 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
 public class TargetUpdateStatement extends TargetUpsertStatement {
     public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -39,7 +40,8 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
     }
 
     @Override
-    protected BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
+    protected BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey,
+            Object explodeMapValue) {
         // We reference the originRow and convert it to the target type.
         // We need the targetRow
         if (null == originRow)
@@ -71,10 +73,9 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     }
                     targetValue = (null == targetRow ? 0L : cqlTable.getData(targetIndex, targetRow));
                     bindValueTarget = ((Long) originValue - (null == targetValue ? 0L : (Long) targetValue));
-                }
-                else if (targetIndex== explodeMapKeyIndex) {
+                } else if (targetIndex == explodeMapKeyIndex) {
                     bindValueTarget = explodeMapKey;
-                } else if (targetIndex== explodeMapValueIndex) {
+                } else if (targetIndex == explodeMapValueIndex) {
                     bindValueTarget = explodeMapValue;
                 } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
                     originIndex = extractJsonFeature.getOriginColumnIndex();
@@ -86,11 +87,13 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     bindValueTarget = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                boundStatement = boundStatement.set(currentBindIndex++, bindValueTarget, cqlTable.getBindClass(targetIndex));
+                boundStatement = boundStatement.set(currentBindIndex++, bindValueTarget,
+                        cqlTable.getBindClass(targetIndex));
             } catch (Exception e) {
-                logger.error("Error trying to bind value:" + bindValueTarget + " to column:" +
-                        targetColumnNames.get(targetIndex) + " of targetDataType:" + targetColumnTypes.get(targetIndex) + "/"
-                        + cqlTable.getBindClass(targetIndex).getName() + " at column index:" + targetIndex);
+                logger.error("Error trying to bind value:" + bindValueTarget + " to column:"
+                        + targetColumnNames.get(targetIndex) + " of targetDataType:"
+                        + targetColumnTypes.get(targetIndex) + "/" + cqlTable.getBindClass(targetIndex).getName()
+                        + " at column index:" + targetIndex);
                 throw new RuntimeException("Error trying to bind value: ", e);
             }
         }
@@ -99,8 +102,7 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
         EnhancedPK pk = pkFactory.getTargetPK(originRow);
         boundStatement = pkFactory.bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, currentBindIndex);
 
-        return boundStatement
-                .setConsistencyLevel(cqlTable.getWriteConsistencyLevel())
+        return boundStatement.setConsistencyLevel(cqlTable.getWriteConsistencyLevel())
                 .setTimeout(Duration.ofSeconds(10));
     }
 

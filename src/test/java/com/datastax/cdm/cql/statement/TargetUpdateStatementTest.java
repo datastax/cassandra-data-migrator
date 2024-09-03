@@ -15,17 +15,18 @@
  */
 package com.datastax.cdm.cql.statement;
 
-import com.datastax.oss.driver.api.core.cql.BoundStatement;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.cdm.cql.CommonMocks;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 
 public class TargetUpdateStatementTest extends CommonMocks {
 
@@ -36,18 +37,16 @@ public class TargetUpdateStatementTest extends CommonMocks {
     @BeforeEach
     public void setup() {
         // UPDATE is needed by counters, though the class should handle non-counter updates
-        commonSetup(false,false,true);
+        commonSetup(false, false, true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
 
         updateCQLBeginning = "UPDATE " + targetKeyspaceTableName;
 
         StringBuilder sb = new StringBuilder();
         sb.append(" SET ")
-            .append(targetCounterColumns.stream()
-                    .map(column -> column + "=" + column + "+?")
-                    .collect(Collectors.joining(",")))
-            .append(" WHERE ")
-            .append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
+                .append(targetCounterColumns.stream().map(column -> column + "=" + column + "+?")
+                        .collect(Collectors.joining(",")))
+                .append(" WHERE ").append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
         counterUpdateCQLEnding = sb.toString();
 
     }
@@ -59,15 +58,11 @@ public class TargetUpdateStatementTest extends CommonMocks {
 
     @Test
     public void smoke_basicCQL_Other() {
-        commonSetup(false,false,false);
+        commonSetup(false, false, false);
         StringBuilder sb = new StringBuilder();
-        sb.append(updateCQLBeginning)
-            .append(" SET ")
-            .append(targetValueColumns.stream()
-                    .map(column -> column + "=?")
-                    .collect(Collectors.joining(",")))
-            .append(" WHERE ")
-            .append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
+        sb.append(updateCQLBeginning).append(" SET ")
+                .append(targetValueColumns.stream().map(column -> column + "=?").collect(Collectors.joining(",")))
+                .append(" WHERE ").append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
 
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
         assertEquals(sb.toString(), targetUpdateStatement.getCQL());
@@ -75,19 +70,15 @@ public class TargetUpdateStatementTest extends CommonMocks {
 
     @Test
     public void smoke_basicCQL_Constant() {
-        commonSetup(false,true,false);
+        commonSetup(false, true, false);
         StringBuilder sb = new StringBuilder();
-        sb.append(updateCQLBeginning)
-                .append(" SET ")
-                .append(targetValueColumns.stream()
-                        .map(column -> column + "=?")
-                        .collect(Collectors.joining(",")))
+        sb.append(updateCQLBeginning).append(" SET ")
+                .append(targetValueColumns.stream().map(column -> column + "=?").collect(Collectors.joining(",")))
                 .append(",")
                 .append(IntStream.range(0, constantColumns.size())
                         .mapToObj(i -> constantColumns.get(i) + "=" + constantColumnValues.get(i))
                         .collect(Collectors.joining(",")))
-                .append(" WHERE ")
-                .append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
+                .append(" WHERE ").append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
 
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
         assertEquals(sb.toString(), targetUpdateStatement.getCQL());
@@ -120,7 +111,7 @@ public class TargetUpdateStatementTest extends CommonMocks {
 
     @Test
     public void bind_withStandardInput() {
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null,null,null,null);
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, null, null, null);
         assertNotNull(result);
         verify(boundStatement, times(targetColumnNames.size())).set(anyInt(), any(), any(Class.class));
     }
@@ -161,37 +152,39 @@ public class TargetUpdateStatementTest extends CommonMocks {
 
     @Test
     public void testBindOriginRowNull() {
-        assertThrows(RuntimeException.class, () -> targetUpdateStatement.bind(null, targetRow, 30, 123456789L, getSampleData(explodeMapKeyType),getSampleData(explodeMapValueType)));
+        assertThrows(RuntimeException.class, () -> targetUpdateStatement.bind(null, targetRow, 30, 123456789L,
+                getSampleData(explodeMapKeyType), getSampleData(explodeMapValueType)));
     }
 
     @Test
     public void bind_nonCounter_withStandardInput() {
-        commonSetup(false,false,false);
+        commonSetup(false, false, false);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null,null,null,null);
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, null, null, null);
         assertNotNull(result);
         verify(boundStatement, times(targetColumnNames.size())).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
     public void bind_explodeMap_withStandardInput() {
-        commonSetup(true,false,false);
+        commonSetup(true, false, false);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null,null,getSampleData(explodeMapKeyType),getSampleData(explodeMapValueType));
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, null,
+                getSampleData(explodeMapKeyType), getSampleData(explodeMapValueType));
         assertNotNull(result);
         verify(boundStatement, times(targetColumnNames.size())).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
     public void bind_nonCounter_withExtraColumn() {
-        commonSetup(false,false,false);
+        commonSetup(false, false, false);
         targetColumnNames.add("extraColumn");
         targetColumnTypes.add(DataTypes.TEXT);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null,null,null,null);
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, null, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()-1)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() - 1)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test

@@ -15,67 +15,68 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.cdm.data.CqlData;
-import com.datastax.cdm.properties.KnownProperties;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.data.CqlData;
+import com.datastax.cdm.properties.KnownProperties;
+
 public class ConstantColumnsTest extends CommonMocks {
 
     ConstantColumns feature;
     List<Class> expectedBindClasses;
 
-//    String standardValues = "'abcd',1234,543";
-//    String standardRegex = ",";
-//    List<Class> standardBindClasses = standardDataTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList());
-//    List<String> standardValuesAsList = Arrays.asList(standardValues.split(standardRegex));
+    // String standardValues = "'abcd',1234,543";
+    // String standardRegex = ",";
+    // List<Class> standardBindClasses =
+    // standardDataTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList());
+    // List<String> standardValuesAsList = Arrays.asList(standardValues.split(standardRegex));
 
     @BeforeEach
     public void setup() {
         defaultClassVariables();
-//        setTestVariables();
-        commonSetupWithoutDefaultClassVariables(false,true,false);
-//        setTestWhens();
+        // setTestVariables();
+        commonSetupWithoutDefaultClassVariables(false, true, false);
+        // setTestWhens();
         feature = new ConstantColumns();
         expectedBindClasses = constantColumnTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList());
 
         when(propertyHelper.getStringList(KnownProperties.CONSTANT_COLUMN_NAMES)).thenReturn(constantColumns);
-        when(propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES)).thenReturn(String.join(",", constantColumnValues));
+        when(propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES))
+                .thenReturn(String.join(",", constantColumnValues));
         when(propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX)).thenReturn(",");
 
     }
 
-//    private void setTestVariables() {
-//        targetValueColumns = new ArrayList<>(originValueColumns);
-//        targetValueColumns.addAll(standardNames);
-//        targetValueColumnTypes = new ArrayList<>(originValueColumnTypes);
-//        targetValueColumnTypes.addAll(standardDataTypes);
-//    }
+    // private void setTestVariables() {
+    // targetValueColumns = new ArrayList<>(originValueColumns);
+    // targetValueColumns.addAll(standardNames);
+    // targetValueColumnTypes = new ArrayList<>(originValueColumnTypes);
+    // targetValueColumnTypes.addAll(standardDataTypes);
+    // }
 
-//    private void setTestWhens(){
-//        when(targetCodec.parse(anyString())).thenReturn(any());
-//    }
+    // private void setTestWhens(){
+    // when(targetCodec.parse(anyString())).thenReturn(any());
+    // }
 
     @Test
     public void smokeTest_loadProperties() {
         feature.loadProperties(propertyHelper);
-        assertAll(
-                () -> assertTrue(feature.isEnabled()),
+        assertAll(() -> assertTrue(feature.isEnabled()),
                 () -> assertEquals(constantColumns, feature.getNames(), "names"),
-                () -> assertEquals(constantColumnValues, feature.getValues(), "values")
-        );
+                () -> assertEquals(constantColumnValues, feature.getValues(), "values"));
     }
 
     @Test
@@ -83,10 +84,8 @@ public class ConstantColumnsTest extends CommonMocks {
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
-        assertAll(
-                () -> assertTrue(valid, "correct validation"),
-                () -> assertEquals(expectedBindClasses, feature.getBindClasses(), "bind classes")
-        );
+        assertAll(() -> assertTrue(valid, "correct validation"),
+                () -> assertEquals(expectedBindClasses, feature.getBindClasses(), "bind classes"));
     }
 
     @Test
@@ -112,10 +111,8 @@ public class ConstantColumnsTest extends CommonMocks {
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
-        assertAll(
-                () -> assertFalse(valid, "null string is invalid"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+        assertAll(() -> assertFalse(valid, "null string is invalid"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
     @Test
@@ -125,10 +122,8 @@ public class ConstantColumnsTest extends CommonMocks {
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
-        assertAll(
-                () -> assertFalse(valid, "Validation should fail with mismatched names and values"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+        assertAll(() -> assertFalse(valid, "Validation should fail with mismatched names and values"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
     @Test
@@ -138,7 +133,8 @@ public class ConstantColumnsTest extends CommonMocks {
         when(targetTable.extendColumns(constantColumns)).thenReturn(bindClasses);
 
         feature.loadProperties(propertyHelper);
-        assertFalse(feature.initializeAndValidate(originTable, targetTable), "Validation should fail with a missing constant column in the target table");
+        assertFalse(feature.initializeAndValidate(originTable, targetTable),
+                "Validation should fail with a missing constant column in the target table");
     }
 
     @Test

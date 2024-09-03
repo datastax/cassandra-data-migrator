@@ -15,14 +15,15 @@
  */
 package com.datastax.cdm.properties;
 
-import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class PropertyHelperTest {
     PropertyHelper helper;
@@ -48,7 +49,7 @@ public class PropertyHelperTest {
 
     @Test
     public void setProperty_StringList() {
-        List<String> value = Arrays.asList("a","b", "c");
+        List<String> value = Arrays.asList("a", "b", "c");
         List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, value);
         assertEquals(value, setValue);
     }
@@ -63,14 +64,16 @@ public class PropertyHelperTest {
     @Test
     public void setProperty_StringList_splitString() {
         String list = "a,b,c";
-        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, list));
+        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, list));
         assertEquals(Arrays.asList(list.split(",")), setValue);
     }
 
     @Test
     public void setProperty_StringList_splitString_oneValue() {
         String list = "a";
-        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST, KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, list));
+        List<String> setValue = (List<String>) helper.setProperty(KnownProperties.TEST_STRING_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, list));
         assertEquals(Arrays.asList(list), setValue);
     }
 
@@ -90,7 +93,7 @@ public class PropertyHelperTest {
 
     @Test
     public void setProperty_NumberList() {
-        List<Integer> value = Arrays.asList(1,2,3,4);
+        List<Integer> value = Arrays.asList(1, 2, 3, 4);
         List<Integer> setValue = (List<Integer>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, value);
         assertEquals(value, setValue);
     }
@@ -98,28 +101,32 @@ public class PropertyHelperTest {
     @Test
     public void setProperty_NumberList_splitString() {
         String list = "1,2,3,4";
-        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
-        assertEquals(Arrays.asList(1L,2L,3L,4L), setValue);
+        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        assertEquals(Arrays.asList(1L, 2L, 3L, 4L), setValue);
     }
 
     @Test
     public void setProperty_NumberList_splitString_oneValue() {
         String list = "1";
-        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
         assertEquals(Arrays.asList(1L), setValue);
     }
 
     @Test
     public void setProperty_NumberList_splitString_LongValue() {
         String list = String.valueOf(Long.MAX_VALUE);
-        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        List<Long> setValue = (List<Long>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
         assertEquals(Arrays.asList(Long.MAX_VALUE), setValue);
     }
 
     @Test
     public void setProperty_NumberList_splitString_badNumber() {
         String list = "1,2,x,4";
-        List<Integer> setValue = (List<Integer>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
+        List<Integer> setValue = (List<Integer>) helper.setProperty(KnownProperties.TEST_NUMBER_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, list));
         assertNull(setValue);
     }
 
@@ -136,7 +143,6 @@ public class PropertyHelperTest {
         Boolean setValue = (Boolean) helper.setProperty(KnownProperties.TEST_BOOLEAN, value);
         assertEquals(value, setValue);
     }
-
 
     @Test
     public void setProperty_nullArguments() {
@@ -172,8 +178,8 @@ public class PropertyHelperTest {
 
     @Test
     public void getStringList() {
-        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a","b","c"));
-        assertEquals(Arrays.asList("a","b","c"), helper.getStringList(KnownProperties.TEST_STRING_LIST));
+        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a", "b", "c"));
+        assertEquals(Arrays.asList("a", "b", "c"), helper.getStringList(KnownProperties.TEST_STRING_LIST));
     }
 
     @Test
@@ -228,7 +234,7 @@ public class PropertyHelperTest {
 
     @Test
     public void getInteger_wrongType() {
-        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3));
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1, 2, 3));
         assertNull(helper.getInteger(KnownProperties.TEST_NUMBER_LIST));
     }
 
@@ -251,14 +257,14 @@ public class PropertyHelperTest {
 
     @Test
     public void getNumberList() {
-        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3));
-        assertEquals(Arrays.asList(1,2,3), helper.getNumberList(KnownProperties.TEST_NUMBER_LIST));
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1, 2, 3));
+        assertEquals(Arrays.asList(1, 2, 3), helper.getNumberList(KnownProperties.TEST_NUMBER_LIST));
     }
 
     @Test
     public void getIntegerList() {
-        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3));
-        assertEquals(Arrays.asList(1,2,3), helper.getIntegerList(KnownProperties.TEST_NUMBER_LIST));
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1, 2, 3));
+        assertEquals(Arrays.asList(1, 2, 3), helper.getIntegerList(KnownProperties.TEST_NUMBER_LIST));
     }
 
     @Test
@@ -268,13 +274,13 @@ public class PropertyHelperTest {
 
     @Test
     public void getIntegerList_nullValue() {
-        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,null,3));
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1, null, 3));
         assertNull(helper.getIntegerList(null));
     }
 
     @Test
     public void getIntegerList_wrongType() {
-        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("1","2","3"));
+        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("1", "2", "3"));
         assertNull(helper.getIntegerList(KnownProperties.TEST_STRING_LIST));
     }
 
@@ -334,7 +340,7 @@ public class PropertyHelperTest {
     public void get_invalidType_StringList() {
         // Any code that actually does this is broken, but we should handle it gracefully
         helper.setProperty(KnownProperties.TEST_STRING_LIST, "a,b,c,d");
-        helper.getPropertyMap().put(KnownProperties.TEST_STRING_LIST, Arrays.asList(1,2,3,4));
+        helper.getPropertyMap().put(KnownProperties.TEST_STRING_LIST, Arrays.asList(1, 2, 3, 4));
         assertNull(helper.get(KnownProperties.TEST_STRING_LIST, KnownProperties.PropertyType.STRING_LIST));
     }
 
@@ -350,7 +356,7 @@ public class PropertyHelperTest {
     public void get_invalidType_NumberList() {
         // Any code that actually does this is broken, but we should handle it gracefully
         helper.setProperty(KnownProperties.TEST_NUMBER_LIST, "1,2,3,4");
-        helper.getPropertyMap().put(KnownProperties.TEST_NUMBER_LIST, Arrays.asList("a","b","c","d"));
+        helper.getPropertyMap().put(KnownProperties.TEST_NUMBER_LIST, Arrays.asList("a", "b", "c", "d"));
         assertNull(helper.get(KnownProperties.TEST_NUMBER_LIST, KnownProperties.PropertyType.NUMBER_LIST));
     }
 
@@ -370,7 +376,7 @@ public class PropertyHelperTest {
 
     @Test
     public void getAsString_StringList() {
-        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a","b","c","d"));
+        helper.setProperty(KnownProperties.TEST_STRING_LIST, Arrays.asList("a", "b", "c", "d"));
         assertEquals("a,b,c,d", helper.getAsString(KnownProperties.TEST_STRING_LIST));
     }
 
@@ -382,7 +388,7 @@ public class PropertyHelperTest {
 
     @Test
     public void getAsString_NumberList() {
-        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1,2,3,4));
+        helper.setProperty(KnownProperties.TEST_NUMBER_LIST, Arrays.asList(1, 2, 3, 4));
         assertEquals("1,2,3,4", helper.getAsString(KnownProperties.TEST_NUMBER_LIST));
     }
 
@@ -394,7 +400,7 @@ public class PropertyHelperTest {
 
     @Test
     public void getAsString_valueNotSet_string() {
-        assertEquals("",helper.getAsString(KnownProperties.TEST_STRING_NO_DEFAULT));
+        assertEquals("", helper.getAsString(KnownProperties.TEST_STRING_NO_DEFAULT));
     }
 
     @Test
@@ -405,7 +411,7 @@ public class PropertyHelperTest {
     @Test
     public void getAsString_nullUnhanldedType() {
         helper.setProperty(KnownProperties.TEST_UNHANDLED_TYPE, "abcd");
-        assertEquals("",helper.getAsString(KnownProperties.TEST_UNHANDLED_TYPE));
+        assertEquals("", helper.getAsString(KnownProperties.TEST_UNHANDLED_TYPE));
     }
 
     @Test
@@ -417,7 +423,7 @@ public class PropertyHelperTest {
 
     @Test
     public void initializeSparkConf_null() {
-        Exception e = assertThrows(IllegalArgumentException.class,  () -> {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> {
             helper.initializeSparkConf(null);
         });
         assertTrue(e.getMessage().contains("SparkConf cannot be null"));
@@ -509,7 +515,6 @@ public class PropertyHelperTest {
         helper.initializeSparkConf(validSparkConf);
         assertTrue(helper.isValidConfig());
     }
-
 
     @Test
     public void meetsMinimum_true() {

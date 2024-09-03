@@ -15,17 +15,18 @@
  */
 package com.datastax.cdm.cql.statement;
 
-import com.datastax.cdm.data.EnhancedPK;
-import com.datastax.cdm.data.PKFactory;
-import com.datastax.oss.driver.api.core.cql.BoundStatement;
-import com.datastax.cdm.cql.CommonMocks;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.data.EnhancedPK;
+import com.datastax.cdm.data.PKFactory;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 
 public class TargetSelectByPKStatementTest extends CommonMocks {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -41,12 +42,8 @@ public class TargetSelectByPKStatementTest extends CommonMocks {
     @Test
     public void smoke_basicCQL() {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT ")
-                .append(String.join(",",targetColumnNames))
-                .append(" FROM ")
-                .append(targetKeyspaceTableName)
-                .append(" WHERE ")
-                .append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
+        sb.append("SELECT ").append(String.join(",", targetColumnNames)).append(" FROM ")
+                .append(targetKeyspaceTableName).append(" WHERE ").append(keyEqualsBindJoinedWithAND(targetPrimaryKey));
 
         assertEquals(sb.toString(), targetSelectByPKStatement.getCQL());
     }
@@ -57,18 +54,15 @@ public class TargetSelectByPKStatementTest extends CommonMocks {
         String constKeyVal = constantColumnValues.get(0);
         targetClusteringKey.add(constKeyCol);
         targetClusteringKeyTypes.add(constantColumnTypes.get(0));
-        commonSetup(false,true,false);
+        commonSetup(false, true, false);
         targetSelectByPKStatement = new TargetSelectByPKStatement(propertyHelper, targetSession);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT ")
-                .append(String.join(",",targetColumnNames))
-                .append(" FROM ")
-                .append(targetKeyspaceTableName)
-                .append(" WHERE ");
+        sb.append("SELECT ").append(String.join(",", targetColumnNames)).append(" FROM ")
+                .append(targetKeyspaceTableName).append(" WHERE ");
 
-        for (int i=0; i<targetPrimaryKey.size(); i++) {
-            if (i >0) {
+        for (int i = 0; i < targetPrimaryKey.size(); i++) {
+            if (i > 0) {
                 sb.append(" AND ");
             }
             String key = targetPrimaryKey.get(i);
@@ -86,11 +80,8 @@ public class TargetSelectByPKStatementTest extends CommonMocks {
     @Test
     public void getRecord() {
         targetSelectByPKStatement.getRecord(pk);
-        assertAll(
-                () -> verify(preparedStatement).bind(),
-                () -> verify(boundStatement).setConsistencyLevel(readCL),
-                () -> verify(pkFactory).bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, 0)
-        );
+        assertAll(() -> verify(preparedStatement).bind(), () -> verify(boundStatement).setConsistencyLevel(readCL),
+                () -> verify(pkFactory).bindWhereClause(PKFactory.Side.TARGET, pk, boundStatement, 0));
     }
 
     @Test

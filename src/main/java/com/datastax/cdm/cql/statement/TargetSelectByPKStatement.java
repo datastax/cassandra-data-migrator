@@ -15,6 +15,8 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import java.util.concurrent.CompletionStage;
+
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.PKFactory;
@@ -27,8 +29,6 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 
-import java.util.concurrent.CompletionStage;
-
 public class TargetSelectByPKStatement extends BaseCdmStatement {
     public TargetSelectByPKStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
@@ -37,15 +37,15 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
 
     public Record getRecord(EnhancedPK pk) {
         BoundStatement boundStatement = bind(pk);
-        if (null==boundStatement)
+        if (null == boundStatement)
             return null;
 
         ResultSet resultSet = session.getCqlSession().execute(boundStatement);
-        if (null==resultSet)
+        if (null == resultSet)
             return null;
 
         Row row = resultSet.one();
-        if (null==row)
+        if (null == row)
             return null;
 
         return new Record(pk, null, row);
@@ -53,7 +53,7 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
 
     public CompletionStage<AsyncResultSet> getAsyncResult(EnhancedPK pk) {
         BoundStatement boundStatement = bind(pk);
-        if (null==boundStatement)
+        if (null == boundStatement)
             return null;
         return session.getCqlSession().executeAsync(boundStatement);
     }
@@ -67,8 +67,9 @@ public class TargetSelectByPKStatement extends BaseCdmStatement {
     }
 
     private String buildStatement() {
-        return "SELECT " + PropertyHelper.asString(cqlTable.getColumnNames(true), KnownProperties.PropertyType.STRING_LIST)
-                + " FROM " + cqlTable.getKeyspaceTable()
-                + " WHERE " + session.getPKFactory().getWhereClause(PKFactory.Side.TARGET);
+        return "SELECT "
+                + PropertyHelper.asString(cqlTable.getColumnNames(true), KnownProperties.PropertyType.STRING_LIST)
+                + " FROM " + cqlTable.getKeyspaceTable() + " WHERE "
+                + session.getPKFactory().getWhereClause(PKFactory.Side.TARGET);
     }
 }

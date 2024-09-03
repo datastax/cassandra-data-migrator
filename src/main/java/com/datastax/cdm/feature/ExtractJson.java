@@ -31,130 +31,130 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ExtractJson extends AbstractFeature {
-	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-	private ObjectMapper mapper = new ObjectMapper();
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    private ObjectMapper mapper = new ObjectMapper();
 
-	private String originColumnName = "";
-	private String originJsonFieldName = "";
-	private Integer originColumnIndex = -1;
+    private String originColumnName = "";
+    private String originJsonFieldName = "";
+    private Integer originColumnIndex = -1;
 
-	private String targetColumnName = "";
-	private Integer targetColumnIndex = -1;
-	private boolean overwriteTarget = false;
+    private String targetColumnName = "";
+    private Integer targetColumnIndex = -1;
+    private boolean overwriteTarget = false;
 
-	@Override
-	public boolean loadProperties(IPropertyHelper helper) {
-		if (null == helper) {
-			throw new IllegalArgumentException("helper is null");
-		}
+    @Override
+    public boolean loadProperties(IPropertyHelper helper) {
+        if (null == helper) {
+            throw new IllegalArgumentException("helper is null");
+        }
 
-		originColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME);
-		targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING);
-		overwriteTarget = helper.getBoolean(KnownProperties.EXTRACT_JSON_TARGET_OVERWRITE);
-		
-		// Convert columnToFieldMapping to targetColumnName and originJsonFieldName
-		if (!targetColumnName.isBlank()) {
-			String[] parts = targetColumnName.split("\\:");
-			if (parts.length == 2) {
-				originJsonFieldName = parts[0];
-				targetColumnName = parts[1];
-			} else {
-				originJsonFieldName = targetColumnName;
-			}
-		}
+        originColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME);
+        targetColumnName = getColumnName(helper, KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING);
+        overwriteTarget = helper.getBoolean(KnownProperties.EXTRACT_JSON_TARGET_OVERWRITE);
 
-		isValid = validateProperties();
-		isEnabled = isValid && !originColumnName.isEmpty() && !targetColumnName.isEmpty();
-		isLoaded = true;
+        // Convert columnToFieldMapping to targetColumnName and originJsonFieldName
+        if (!targetColumnName.isBlank()) {
+            String[] parts = targetColumnName.split("\\:");
+            if (parts.length == 2) {
+                originJsonFieldName = parts[0];
+                targetColumnName = parts[1];
+            } else {
+                originJsonFieldName = targetColumnName;
+            }
+        }
 
-		return isLoaded && isValid;
-	}
+        isValid = validateProperties();
+        isEnabled = isValid && !originColumnName.isEmpty() && !targetColumnName.isEmpty();
+        isLoaded = true;
 
-	@Override
-	protected boolean validateProperties() {
-		if (StringUtils.isBlank(originColumnName) && StringUtils.isBlank(targetColumnName))
-			return true;
+        return isLoaded && isValid;
+    }
 
-		if (StringUtils.isBlank(originColumnName)) {
-			logger.error("Origin column name is not set when Target ({}) is set", targetColumnName);
-			return false;
-		}
+    @Override
+    protected boolean validateProperties() {
+        if (StringUtils.isBlank(originColumnName) && StringUtils.isBlank(targetColumnName))
+            return true;
 
-		if (StringUtils.isBlank(targetColumnName)) {
-			logger.error("Target column name is not set when Origin ({}) is set", originColumnName);
-			return false;
-		}
+        if (StringUtils.isBlank(originColumnName)) {
+            logger.error("Origin column name is not set when Target ({}) is set", targetColumnName);
+            return false;
+        }
 
-		return true;
-	}
+        if (StringUtils.isBlank(targetColumnName)) {
+            logger.error("Target column name is not set when Origin ({}) is set", originColumnName);
+            return false;
+        }
 
-	@Override
-	public boolean initializeAndValidate(CqlTable originTable, CqlTable targetTable) {
-		if (null == originTable || null == targetTable) {
-			throw new IllegalArgumentException("Origin table and/or Target table is null");
-		}
-		if (!originTable.isOrigin()) {
-			throw new IllegalArgumentException(originTable.getKeyspaceTable() + " is not an origin table");
-		}
-		if (targetTable.isOrigin()) {
-			throw new IllegalArgumentException(targetTable.getKeyspaceTable() + " is not a target table");
-		}
+        return true;
+    }
 
-		if (!validateProperties()) {
-			isEnabled = false;
-			return false;
-		}
-		if (!isEnabled)
-			return true;
+    @Override
+    public boolean initializeAndValidate(CqlTable originTable, CqlTable targetTable) {
+        if (null == originTable || null == targetTable) {
+            throw new IllegalArgumentException("Origin table and/or Target table is null");
+        }
+        if (!originTable.isOrigin()) {
+            throw new IllegalArgumentException(originTable.getKeyspaceTable() + " is not an origin table");
+        }
+        if (targetTable.isOrigin()) {
+            throw new IllegalArgumentException(targetTable.getKeyspaceTable() + " is not a target table");
+        }
 
-		// Initialize Origin variables
-		List<Class> originBindClasses = originTable.extendColumns(Collections.singletonList(originColumnName));
-		if (null == originBindClasses || originBindClasses.size() != 1 || null == originBindClasses.get(0)) {
-			throw new IllegalArgumentException("Origin column " + originColumnName
-					+ " is not found on the origin table " + originTable.getKeyspaceTable());
-		} else {
-			this.originColumnIndex = originTable.indexOf(originColumnName);
-		}
+        if (!validateProperties()) {
+            isEnabled = false;
+            return false;
+        }
+        if (!isEnabled)
+            return true;
 
-		// Initialize Target variables
-		List<Class> targetBindClasses = targetTable.extendColumns(Collections.singletonList(targetColumnName));
-		if (null == targetBindClasses || targetBindClasses.size() != 1 || null == targetBindClasses.get(0)) {
-			throw new IllegalArgumentException("Target column " + targetColumnName
-					+ " is not found on the target table " + targetTable.getKeyspaceTable());
-		} else {
-			this.targetColumnIndex = targetTable.indexOf(targetColumnName);
-		}
+        // Initialize Origin variables
+        List<Class> originBindClasses = originTable.extendColumns(Collections.singletonList(originColumnName));
+        if (null == originBindClasses || originBindClasses.size() != 1 || null == originBindClasses.get(0)) {
+            throw new IllegalArgumentException("Origin column " + originColumnName
+                    + " is not found on the origin table " + originTable.getKeyspaceTable());
+        } else {
+            this.originColumnIndex = originTable.indexOf(originColumnName);
+        }
 
-		logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled ? "enabled" : "disabled");
-		return true;
-	}
+        // Initialize Target variables
+        List<Class> targetBindClasses = targetTable.extendColumns(Collections.singletonList(targetColumnName));
+        if (null == targetBindClasses || targetBindClasses.size() != 1 || null == targetBindClasses.get(0)) {
+            throw new IllegalArgumentException("Target column " + targetColumnName
+                    + " is not found on the target table " + targetTable.getKeyspaceTable());
+        } else {
+            this.targetColumnIndex = targetTable.indexOf(targetColumnName);
+        }
 
-	public Object extract(String jsonString) throws JsonMappingException, JsonProcessingException {
-		if (StringUtils.isNotBlank(jsonString)) {
-			return mapper.readValue(jsonString, Map.class).get(originJsonFieldName);
-		}
+        logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled ? "enabled" : "disabled");
+        return true;
+    }
 
-		return null;
-	}
+    public Object extract(String jsonString) throws JsonMappingException, JsonProcessingException {
+        if (StringUtils.isNotBlank(jsonString)) {
+            return mapper.readValue(jsonString, Map.class).get(originJsonFieldName);
+        }
 
-	public Integer getOriginColumnIndex() {
-		return isEnabled ? originColumnIndex : -1;
-	}
+        return null;
+    }
 
-	public Integer getTargetColumnIndex() {
-		return isEnabled ? targetColumnIndex : -1;
-	}
+    public Integer getOriginColumnIndex() {
+        return isEnabled ? originColumnIndex : -1;
+    }
 
-	public String getTargetColumnName() {
-		return isEnabled ? targetColumnName : "";
-	}
+    public Integer getTargetColumnIndex() {
+        return isEnabled ? targetColumnIndex : -1;
+    }
 
-	public boolean overwriteTarget() {
-		return overwriteTarget;
-	}
-	
-	private String getColumnName(IPropertyHelper helper, String colName) {
-		String columnName = CqlTable.unFormatName(helper.getString(colName));
-		return (null == columnName) ? "" : columnName;
-	}
+    public String getTargetColumnName() {
+        return isEnabled ? targetColumnName : "";
+    }
+
+    public boolean overwriteTarget() {
+        return overwriteTarget;
+    }
+
+    private String getColumnName(IPropertyHelper helper, String colName) {
+        String columnName = CqlTable.unFormatName(helper.getString(colName));
+        return (null == columnName) ? "" : columnName;
+    }
 }

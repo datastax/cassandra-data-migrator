@@ -15,6 +15,16 @@
  */
 package com.datastax.cdm.cql.codec;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+
 import com.datastax.cdm.data.MockitoExtension;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.dse.driver.internal.core.type.codec.geometry.LineStringCodec;
@@ -22,15 +32,6 @@ import com.datastax.dse.driver.internal.core.type.codec.geometry.PointCodec;
 import com.datastax.dse.driver.internal.core.type.codec.geometry.PolygonCodec;
 import com.datastax.dse.driver.internal.core.type.codec.time.DateRangeCodec;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class CodecFactoryTest {
@@ -39,7 +40,7 @@ class CodecFactoryTest {
 
     @BeforeEach
     void setUp() {
-        //Mockito.when(propertyHelper.getString("timestamp.format")).thenReturn("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        // Mockito.when(propertyHelper.getString("timestamp.format")).thenReturn("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     }
 
     @Test
@@ -89,14 +90,14 @@ class CodecFactoryTest {
         assertTrue(codecs.get(1) instanceof TEXTMillis_InstantCodec);
     }
 
-//    @Test
-//    void getCodecPair_ShouldReturnCorrectCodecsForTimestampStringFormat() {
-//        Mockito.when(propertyHelper.getString("timestamp.format")).thenReturn("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-//        List<TypeCodec<?>> codecs = CodecFactory.getCodecPair(propertyHelper, Codecset.TIMESTAMP_STRING_FORMAT);
-//        assertFalse(codecs.isEmpty());
-//        assertTrue(codecs.get(0) instanceof TIMESTAMP_StringFormatCodec);
-//        assertTrue(codecs.get(1) instanceof TEXTFormat_InstantCodec);
-//    }
+    // @Test
+    // void getCodecPair_ShouldReturnCorrectCodecsForTimestampStringFormat() {
+    // Mockito.when(propertyHelper.getString("timestamp.format")).thenReturn("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    // List<TypeCodec<?>> codecs = CodecFactory.getCodecPair(propertyHelper, Codecset.TIMESTAMP_STRING_FORMAT);
+    // assertFalse(codecs.isEmpty());
+    // assertTrue(codecs.get(0) instanceof TIMESTAMP_StringFormatCodec);
+    // assertTrue(codecs.get(1) instanceof TEXTFormat_InstantCodec);
+    // }
 
     @Test
     void getCodecPair_ShouldReturnCorrectCodecsForPointType() {

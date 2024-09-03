@@ -15,8 +15,9 @@
  */
 package com.datastax.cdm.properties;
 
-import org.apache.spark.SparkConf;
 import java.util.List;
+
+import org.apache.spark.SparkConf;
 
 public interface IPropertyHelper {
 

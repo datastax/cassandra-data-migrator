@@ -15,16 +15,18 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Collections;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.datastax.cdm.cql.CommonMocks;
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.oss.driver.api.core.cql.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 public class TargetUpsertStatementTest extends CommonMocks {
 
@@ -39,10 +41,9 @@ public class TargetUpsertStatementTest extends CommonMocks {
     @Test
     public void smoke_basicCQL() {
         StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ")
-                .append(targetKeyspaceTableName)
-                .append(" (").append(String.join(",",targetColumnNames)).append(")")
-                .append(" VALUES (").append(String.join(",",Collections.nCopies(targetColumnNames.size(),"?"))).append(")");
+        sb.append("INSERT INTO ").append(targetKeyspaceTableName).append(" (")
+                .append(String.join(",", targetColumnNames)).append(")").append(" VALUES (")
+                .append(String.join(",", Collections.nCopies(targetColumnNames.size(), "?"))).append(")");
         String insertStatement = sb.toString();
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession, insertStatement);
 
@@ -77,42 +78,46 @@ public class TargetUpsertStatementTest extends CommonMocks {
 
     @Test
     public void checkBindInputs_ExplodeMap_nullKey_throwsRuntimeException() {
-        commonSetup(true,false,false);
+        commonSetup(true, false, false);
         Object mockValue = mock(Object.class);
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetUpsertStatement.checkBindInputs(null, null, null, mockValue));
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> targetUpsertStatement.checkBindInputs(null, null, null, mockValue));
         assertTrue(exception.getMessage().startsWith("ExplodeMap is enabled, but no map key"));
     }
 
     @Test
     public void checkBindInputs_ExplodeMap_nullValue_throwsRuntimeException() {
-        commonSetup(true,false,false);
+        commonSetup(true, false, false);
         String goodKey = "abc";
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetUpsertStatement.checkBindInputs(null, null, goodKey, null));
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> targetUpsertStatement.checkBindInputs(null, null, goodKey, null));
         assertTrue(exception.getMessage().startsWith("ExplodeMap is enabled, but no map value"));
     }
 
     @Test
     public void checkBindInputs_ExplodeMap_invalidKeyType_throwsRuntimeException() {
-        commonSetup(true,false,false);
+        commonSetup(true, false, false);
         Integer badKey = 1;
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetUpsertStatement.checkBindInputs(null, null, badKey, null));
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> targetUpsertStatement.checkBindInputs(null, null, badKey, null));
         assertTrue(exception.getMessage().startsWith("ExplodeMap is enabled, but the map key type provided"));
     }
 
     @Test
     public void checkBindInputs_ExplodeMap_invalidValueType_throwsRuntimeException() {
-        commonSetup(true,false,false);
+        commonSetup(true, false, false);
         String goodKey = "abc";
         Integer badValue = 1;
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetUpsertStatement.checkBindInputs(null, null, goodKey, badValue));
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> targetUpsertStatement.checkBindInputs(null, null, goodKey, badValue));
         assertTrue(exception.getMessage().startsWith("ExplodeMap is enabled, but the map value type provided"));
     }
 
@@ -131,14 +136,12 @@ public class TargetUpsertStatementTest extends CommonMocks {
 
     @Test
     public void constantColumns_goodConfig() {
-        commonSetup(false,true,false);
+        commonSetup(false, true, false);
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
 
-        assertAll(
-                () -> assertEquals(constantColumns,targetUpsertStatement.constantColumnNames),
-                () -> assertEquals(constantColumnValues,targetUpsertStatement.constantColumnValues)
-        );
+        assertAll(() -> assertEquals(constantColumns, targetUpsertStatement.constantColumnNames),
+                () -> assertEquals(constantColumnValues, targetUpsertStatement.constantColumnValues));
     }
 
     @Test
@@ -181,15 +184,19 @@ public class TargetUpsertStatementTest extends CommonMocks {
             super(h, s);
             this.statement = statement;
         }
+
         public TestTargetUpsertStatement(IPropertyHelper h, EnhancedSession s) {
-            this(h,s,"some arbitrary text");
+            this(h, s, "some arbitrary text");
         }
 
         @Override
-        protected String buildStatement() { return statement; };
+        protected String buildStatement() {
+            return statement;
+        };
 
         @Override
-        protected BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
+        protected BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey,
+                Object explodeMapValue) {
             checkBindInputs(ttl, writeTime, explodeMapKey, explodeMapValue);
             return boundStatement;
         }

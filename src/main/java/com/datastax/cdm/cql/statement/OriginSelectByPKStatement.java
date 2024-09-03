@@ -31,15 +31,15 @@ public class OriginSelectByPKStatement extends OriginSelectStatement {
 
     public Record getRecord(EnhancedPK pk) {
         BoundStatement boundStatement = bind(pk);
-        if (null==boundStatement)
+        if (null == boundStatement)
             return null;
 
         ResultSet resultSet = session.getCqlSession().execute(boundStatement);
-        if (null==resultSet)
+        if (null == resultSet)
             return null;
 
         Row row = resultSet.one();
-        if (null==row)
+        if (null == row)
             return null;
 
         return new Record(pk, row, null);
@@ -47,10 +47,7 @@ public class OriginSelectByPKStatement extends OriginSelectStatement {
 
     @Override
     public BoundStatement bind(Object... binds) {
-        if (null==binds
-                || binds.length != 1
-                || null==binds[0]
-                || !(binds[0] instanceof EnhancedPK))
+        if (null == binds || binds.length != 1 || null == binds[0] || !(binds[0] instanceof EnhancedPK))
             throw new RuntimeException("Expected 1 nullable bind of type EnhancedPK, got " + binds.length);
 
         EnhancedPK pk = (EnhancedPK) binds[0];
@@ -58,9 +55,8 @@ public class OriginSelectByPKStatement extends OriginSelectStatement {
         BoundStatement boundStatement = prepareStatement().bind();
         boundStatement = session.getPKFactory().bindWhereClause(PKFactory.Side.ORIGIN, pk, boundStatement, 0);
 
-        return boundStatement
-            .setConsistencyLevel(cqlTable.getReadConsistencyLevel())
-            .setPageSize(cqlTable.getFetchSizeInRows());
+        return boundStatement.setConsistencyLevel(cqlTable.getReadConsistencyLevel())
+                .setPageSize(cqlTable.getFetchSizeInRows());
     }
 
     @Override

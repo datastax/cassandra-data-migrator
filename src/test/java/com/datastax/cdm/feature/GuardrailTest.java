@@ -15,13 +15,14 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.cdm.properties.KnownProperties;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.properties.KnownProperties;
 
 public class GuardrailTest extends CommonMocks {
     Guardrail guardrail;
@@ -88,7 +89,8 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        when(targetTable.byteCount(eq(explodeMapFeature.getKeyColumnIndex()),any())).thenReturn(Guardrail.BASE_FACTOR+1);
+        when(targetTable.byteCount(eq(explodeMapFeature.getKeyColumnIndex()), any()))
+                .thenReturn(Guardrail.BASE_FACTOR + 1);
 
         String guardrailChecksResult = guardrail.guardrailChecks(record);
         assertTrue(guardrailChecksResult.startsWith("Large columns"), "guardrailChecks");
@@ -103,7 +105,8 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        when(targetTable.byteCount(eq(explodeMapFeature.getValueColumnIndex()),any())).thenReturn(Guardrail.BASE_FACTOR+1);
+        when(targetTable.byteCount(eq(explodeMapFeature.getValueColumnIndex()), any()))
+                .thenReturn(Guardrail.BASE_FACTOR + 1);
 
         String guardrailChecksResult = guardrail.guardrailChecks(record);
         assertTrue(guardrailChecksResult.startsWith("Large columns"), "guardrailChecks");
@@ -124,10 +127,8 @@ public class GuardrailTest extends CommonMocks {
     public void loadProperties_unconfigured() {
         boolean loadPropertiesResult = guardrail.loadProperties(propertyHelper);
 
-        assertAll(
-                () -> assertTrue(loadPropertiesResult, "loadProperties"),
-                () -> assertFalse(guardrail.isEnabled(), "enabled")
-        );
+        assertAll(() -> assertTrue(loadPropertiesResult, "loadProperties"),
+                () -> assertFalse(guardrail.isEnabled(), "enabled"));
     }
 
     @Test
@@ -214,6 +215,5 @@ public class GuardrailTest extends CommonMocks {
         String guardrailChecksResult = guardrail.guardrailChecks(record);
         assertEquals(Guardrail.CLEAN_CHECK, guardrailChecksResult, "guardrailChecks");
     }
-
 
 }

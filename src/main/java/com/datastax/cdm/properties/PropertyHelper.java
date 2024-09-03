@@ -15,19 +15,20 @@
  */
 package com.datastax.cdm.properties;
 
+import java.util.*;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.spark.SparkConf;
-import scala.Tuple2;
 
-import java.util.*;
+import scala.Tuple2;
 
 public final class PropertyHelper extends KnownProperties implements IPropertyHelper {
     private static PropertyHelper instance = null;
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    private final Map<String,Object> propertyMap;
+    private final Map<String, Object> propertyMap;
     private volatile SparkConf sparkConf;
     private boolean sparkConfFullyLoaded = false;
 
@@ -65,8 +66,7 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
     }
 
     /**
-     * Loads the SparkConf into the propertyMap, but only
-     * if the SparkConf has not already been loaded.
+     * Loads the SparkConf into the propertyMap, but only if the SparkConf has not already been loaded.
      *
      * @param sc
      */
@@ -85,16 +85,17 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
     }
 
     /**
-     * Sets a property value if it is of the correct and known type.
-     * For _LIST types, the property will only be set if the list is not empty.
+     * Sets a property value if it is of the correct and known type. For _LIST types, the property will only be set if
+     * the list is not empty.
+     *
      * @param propertyName
      * @param propertyValue
+     *
      * @return propertyValue if it is of the correct type, null otherwise
      */
     @Override
     public Object setProperty(String propertyName, Object propertyValue) {
-        if (null == propertyName ||
-                null == propertyValue)
+        if (null == propertyName || null == propertyValue)
             return null;
         PropertyType expectedType = getType(propertyName);
         if (null == expectedType) {
@@ -116,16 +117,14 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
             return null;
 
         Object currentProperty;
-        synchronized (PropertyHelper.class){
+        synchronized (PropertyHelper.class) {
             currentProperty = propertyMap.get(propertyName);
         }
         return currentProperty;
     }
 
     protected Object get(String propertyName, PropertyType expectedType) {
-        if (null == propertyName
-                || null == expectedType
-                || expectedType != getType(propertyName)) {
+        if (null == propertyName || null == expectedType || expectedType != getType(propertyName)) {
             return null;
         }
         Object currentProperty = get(propertyName);
@@ -155,16 +154,14 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
 
     @Override
     public Integer getInteger(String propertyName) {
-        if (null==getNumber(propertyName)
-                || PropertyType.NUMBER != getType(propertyName))
+        if (null == getNumber(propertyName) || PropertyType.NUMBER != getType(propertyName))
             return null;
         return toInteger(getNumber(propertyName));
     }
 
     @Override
     public Long getLong(String propertyName) {
-        if (null==getNumber(propertyName)
-                || PropertyType.NUMBER != getType(propertyName))
+        if (null == getNumber(propertyName) || PropertyType.NUMBER != getType(propertyName))
             return null;
         return getNumber(propertyName).longValue();
     }
@@ -178,9 +175,8 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
     public List<Integer> getIntegerList(String propertyName) {
         List<Integer> intList = new ArrayList<>();
         Integer i;
-        if (null==propertyName
-                || PropertyType.NUMBER_LIST != getType(propertyName)
-                || null==getNumberList(propertyName))
+        if (null == propertyName || PropertyType.NUMBER_LIST != getType(propertyName)
+                || null == getNumberList(propertyName))
             return null;
         return toIntegerList(getNumberList(propertyName));
     }
@@ -200,20 +196,21 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
     }
 
     public static String asString(Object o, PropertyType t) {
-        if (null==o || null==t) return "";
+        if (null == o || null == t)
+            return "";
         String rtn = "";
         switch (t) {
-            case STRING:
-                rtn = (String) o;
-                break;
-            case STRING_LIST:
-            case NUMBER_LIST:
-                rtn = StringUtils.join((List<?>) o, ",");
-                break;
-            case NUMBER:
-            case BOOLEAN:
-            default:
-                rtn = o.toString();
+        case STRING:
+            rtn = (String) o;
+            break;
+        case STRING_LIST:
+        case NUMBER_LIST:
+            rtn = StringUtils.join((List<?>) o, ",");
+            break;
+        case NUMBER:
+        case BOOLEAN:
+        default:
+            rtn = o.toString();
         }
         return (null == rtn) ? "" : rtn;
     }
@@ -223,19 +220,22 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         Object setValue;
 
         logger.info("Processing explicitly set and known sparkConf properties");
-        for (Tuple2<String,String> kvp : sparkConf.getAll()) {
+        for (Tuple2<String, String> kvp : sparkConf.getAll()) {
             String scKey = kvp._1();
             String scValue = kvp._2();
-;
+            ;
             if (isKnown(scKey)) {
                 PropertyType propertyType = getType(scKey);
-                setValue = setProperty(scKey, asType(propertyType,scValue));
+                setValue = setProperty(scKey, asType(propertyType, scValue));
                 if (null == setValue) {
-                    logger.error("Unable to set property: [" + scKey + "], value: [" + scValue + "] with type: [" + propertyType +"]");
+                    logger.error("Unable to set property: [" + scKey + "], value: [" + scValue + "] with type: ["
+                            + propertyType + "]");
                     fullyLoaded = false;
                 } else {
-                    if (scKey.contains("password")) scValue= "********";
-                    logger.info("Known property [" + scKey + "] is configured with value [" + scValue + "] and is type [" + propertyType + "]");
+                    if (scKey.contains("password"))
+                        scValue = "********";
+                    logger.info("Known property [" + scKey + "] is configured with value [" + scValue
+                            + "] and is type [" + propertyType + "]");
                 }
             }
         }
@@ -245,7 +245,8 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
             if (null == get(knownProperty)) {
                 Object defaultValue = getDefault(knownProperty);
                 if (null != defaultValue) {
-                    logger.debug("Setting known property [" + knownProperty + "] with default value [" + getDefaultAsString(knownProperty) + "]");
+                    logger.debug("Setting known property [" + knownProperty + "] with default value ["
+                            + getDefaultAsString(knownProperty) + "]");
                     setProperty(knownProperty, defaultValue);
                 }
             }
@@ -270,16 +271,16 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         }
 
         // Check we have a configured origin connection
-        if ( (null == get(CONNECT_ORIGIN_HOST) && null == get(CONNECT_ORIGIN_SCB)) ||
-                getAsString(CONNECT_ORIGIN_HOST).isEmpty() && getAsString(CONNECT_ORIGIN_SCB).isEmpty()) {
+        if ((null == get(CONNECT_ORIGIN_HOST) && null == get(CONNECT_ORIGIN_SCB))
+                || getAsString(CONNECT_ORIGIN_HOST).isEmpty() && getAsString(CONNECT_ORIGIN_SCB).isEmpty()) {
             logger.error("Missing required property: " + CONNECT_ORIGIN_HOST + " or " + CONNECT_ORIGIN_SCB);
             valid = false;
         } else {
             // Validate TLS configuration is set if so-enabled
             if (null == get(CONNECT_ORIGIN_SCB) && null != get(ORIGIN_TLS_ENABLED) && getBoolean(ORIGIN_TLS_ENABLED)) {
-                for (String expectedProperty : new String[]{ORIGIN_TLS_TRUSTSTORE_PATH, ORIGIN_TLS_TRUSTSTORE_PASSWORD,
-                        ORIGIN_TLS_TRUSTSTORE_TYPE, ORIGIN_TLS_KEYSTORE_PATH, ORIGIN_TLS_KEYSTORE_PASSWORD,
-                        ORIGIN_TLS_ALGORITHMS}) {
+                for (String expectedProperty : new String[] { ORIGIN_TLS_TRUSTSTORE_PATH,
+                        ORIGIN_TLS_TRUSTSTORE_PASSWORD, ORIGIN_TLS_TRUSTSTORE_TYPE, ORIGIN_TLS_KEYSTORE_PATH,
+                        ORIGIN_TLS_KEYSTORE_PASSWORD, ORIGIN_TLS_ALGORITHMS }) {
                     if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
                         logger.error("TLS is enabled, but required value is not set: " + expectedProperty);
                         valid = false;
@@ -289,16 +290,16 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         }
 
         // Check we have a configured target connection
-        if ( (null == get(CONNECT_TARGET_HOST) && null == get(CONNECT_TARGET_SCB)) ||
-                getAsString(CONNECT_TARGET_HOST).isEmpty() && getAsString(CONNECT_TARGET_SCB).isEmpty()) {
+        if ((null == get(CONNECT_TARGET_HOST) && null == get(CONNECT_TARGET_SCB))
+                || getAsString(CONNECT_TARGET_HOST).isEmpty() && getAsString(CONNECT_TARGET_SCB).isEmpty()) {
             logger.error("Missing required property: " + CONNECT_TARGET_HOST + " or " + CONNECT_TARGET_SCB);
             valid = false;
         } else {
             // Validate TLS configuration is set if so-enabled
             if (null == get(CONNECT_TARGET_SCB) && null != get(TARGET_TLS_ENABLED) && getBoolean(TARGET_TLS_ENABLED)) {
-                for (String expectedProperty : new String[]{TARGET_TLS_TRUSTSTORE_PATH, TARGET_TLS_TRUSTSTORE_PASSWORD,
-                        TARGET_TLS_TRUSTSTORE_TYPE, TARGET_TLS_KEYSTORE_PATH, TARGET_TLS_KEYSTORE_PASSWORD,
-                        TARGET_TLS_ALGORITHMS}) {
+                for (String expectedProperty : new String[] { TARGET_TLS_TRUSTSTORE_PATH,
+                        TARGET_TLS_TRUSTSTORE_PASSWORD, TARGET_TLS_TRUSTSTORE_TYPE, TARGET_TLS_KEYSTORE_PATH,
+                        TARGET_TLS_KEYSTORE_PASSWORD, TARGET_TLS_ALGORITHMS }) {
                     if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
                         logger.error("TLS is enabled, but required value is not set: " + expectedProperty);
                         valid = false;
@@ -306,9 +307,10 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
                 }
             }
         }
-        
+
         // Expecting these to normally be set, but it could be a valid configuration
-        for (String expectedProperty : new String[]{CONNECT_ORIGIN_USERNAME, CONNECT_ORIGIN_PASSWORD, CONNECT_TARGET_USERNAME, CONNECT_TARGET_PASSWORD}) {
+        for (String expectedProperty : new String[] { CONNECT_ORIGIN_USERNAME, CONNECT_ORIGIN_PASSWORD,
+                CONNECT_TARGET_USERNAME, CONNECT_TARGET_PASSWORD }) {
             if (null == get(expectedProperty) || getAsString(expectedProperty).isEmpty()) {
                 logger.warn("Unusual this is not set: " + expectedProperty);
             }
@@ -318,9 +320,7 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
     }
 
     public static Integer toInteger(Number n) {
-        if (n instanceof Integer
-                || n instanceof Short
-                || n instanceof Byte)
+        if (n instanceof Integer || n instanceof Short || n instanceof Byte)
             return n.intValue();
         else if (n instanceof Long) {
             if ((Long) n >= Integer.MIN_VALUE && (Long) n <= Integer.MAX_VALUE) {
@@ -332,7 +332,8 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
 
     public static List<Integer> toIntegerList(List<Number> numberList) {
         List<Integer> intList = new ArrayList<>();
-        if (null==numberList) return intList;
+        if (null == numberList)
+            return intList;
         Integer i;
         for (Number n : numberList) {
             i = toInteger(n);
@@ -343,7 +344,7 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
         return intList;
     }
 
-    protected Map<String,Object> getPropertyMap() {
+    protected Map<String, Object> getPropertyMap() {
         return propertyMap;
     }
 
@@ -355,7 +356,8 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
     public boolean meetsMinimum(String valueName, Long testValue, Long minimumValue) {
         if (null != minimumValue && null != testValue && testValue >= minimumValue)
             return true;
-        logger.warn(valueName + " must be greater than or equal to " + minimumValue + ".  Current value does not meet this requirement: " + testValue);
+        logger.warn(valueName + " must be greater than or equal to " + minimumValue
+                + ".  Current value does not meet this requirement: " + testValue);
         return false;
     }
 

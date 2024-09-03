@@ -26,39 +26,40 @@ import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public class TrackRun {
-	public enum RUN_TYPE {
-		MIGRATE, DIFF_DATA
-	}	
-	public enum RUN_STATUS {
-		NOT_STARTED, STARTED, PASS, FAIL, DIFF
-	}
+    public enum RUN_TYPE {
+        MIGRATE, DIFF_DATA
+    }
 
-	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-	private TargetUpsertRunDetailsStatement runStatement;
+    public enum RUN_STATUS {
+        NOT_STARTED, STARTED, PASS, FAIL, DIFF
+    }
 
-	public TrackRun(CqlSession session, String keyspaceTable) {
-		this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
-	}
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    private TargetUpsertRunDetailsStatement runStatement;
 
-	public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) {
-		Collection<SplitPartitions.Partition> pendingParts = runStatement.getPendingPartitions(prevRunId);
-		logger.info("###################### {} partitions pending from previous run id {} ######################",
-				pendingParts.size(), prevRunId);
-		return pendingParts;
-	}
+    public TrackRun(CqlSession session, String keyspaceTable) {
+        this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
+    }
 
-	public long initCdmRun(Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
-		long runId = runStatement.initCdmRun(parts, runType);
-		logger.info("###################### Run Id for this job is: {} ######################", runId);
+    public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) {
+        Collection<SplitPartitions.Partition> pendingParts = runStatement.getPendingPartitions(prevRunId);
+        logger.info("###################### {} partitions pending from previous run id {} ######################",
+                pendingParts.size(), prevRunId);
+        return pendingParts;
+    }
 
-		return runId;
-	}
+    public long initCdmRun(Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
+        long runId = runStatement.initCdmRun(parts, runType);
+        logger.info("###################### Run Id for this job is: {} ######################", runId);
 
-	public void updateCdmRun(BigInteger min, RUN_STATUS status) {
-		runStatement.updateCdmRun(min, status);
-	}
+        return runId;
+    }
 
-	public void endCdmRun(String runInfo) {
-		runStatement.updateCdmRunInfo(runInfo);
-	}
+    public void updateCdmRun(BigInteger min, RUN_STATUS status) {
+        runStatement.updateCdmRun(min, status);
+    }
+
+    public void endCdmRun(String runInfo) {
+        runStatement.updateCdmRunInfo(runInfo);
+    }
 }

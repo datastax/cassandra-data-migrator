@@ -15,16 +15,18 @@
  */
 package com.datastax.cdm.cql.codec;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.ByteBuffer;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.datastax.cdm.data.CqlConversion;
 import com.datastax.dse.driver.api.core.data.geometry.Point;
 import com.datastax.dse.driver.internal.core.data.geometry.DefaultPoint;
 import com.datastax.dse.driver.internal.core.type.codec.geometry.PointCodec;
 import com.esri.core.geometry.ogc.OGCPoint;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import java.nio.ByteBuffer;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class POINTTYPE_CodecTest {
 

@@ -23,17 +23,20 @@ public abstract class AbstractFeature implements Feature {
     protected boolean isValid = true;
     protected boolean isLoaded = false;
 
-    public AbstractFeature() { }
+    public AbstractFeature() {
+    }
 
     @Override
     public boolean isEnabled() {
-        if (!isLoaded) throw new RuntimeException("Feature not initialized");
+        if (!isLoaded)
+            throw new RuntimeException("Feature not initialized");
         return isEnabled;
     }
 
     @Override
     public boolean initializeAndValidate(CqlTable originTable, CqlTable targetTable) {
-        if (!isLoaded) throw new RuntimeException("Feature not initialized");
+        if (!isLoaded)
+            throw new RuntimeException("Feature not initialized");
         if (!validateProperties()) {
             isEnabled = false;
             return false;
@@ -42,9 +45,10 @@ public abstract class AbstractFeature implements Feature {
     }
 
     /**
-     * Validate the properties of the feature typically called by loadProperties as well as initializeAndValidate.
-     * It should set isValid to false if any properties are invalid, and ideally uses logger to inform the
-     * user of the problems found in property configuration.
+     * Validate the properties of the feature typically called by loadProperties as well as initializeAndValidate. It
+     * should set isValid to false if any properties are invalid, and ideally uses logger to inform the user of the
+     * problems found in property configuration.
+     *
      * @return true if the properties are valid, false otherwise
      */
     protected boolean validateProperties() {
@@ -53,7 +57,8 @@ public abstract class AbstractFeature implements Feature {
 
     @Override
     public String toString() {
-        return String.format("%s{loaded:%s/valid:%s/enabled:%s}", this.getClass().getSimpleName(), isLoaded, isValid, isEnabled);
+        return String.format("%s{loaded:%s/valid:%s/enabled:%s}", this.getClass().getSimpleName(), isLoaded, isValid,
+                isEnabled);
     }
 
 }

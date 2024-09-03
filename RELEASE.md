@@ -1,6 +1,7 @@
 # Release Notes
 ## [4.3.7] - 2024-09-03
 - Added property `spark.cdm.transform.custom.ttl` to allow a custom constant value to be set for TTL instead of using the values from `origin` rows.
+- Repo wide code formating & imports organization
 
 ## [4.3.6] - 2024-08-29
 - Added `overwrite` option to conditionally check or skip `Validation` when it has a non-null value in `target` for the `spark.cdm.feature.extractJson` feature.

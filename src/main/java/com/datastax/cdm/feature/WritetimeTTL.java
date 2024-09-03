@@ -15,20 +15,21 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.cdm.properties.IPropertyHelper;
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.schema.CqlTable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class WritetimeTTL extends AbstractFeature  {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datastax.cdm.properties.IPropertyHelper;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.schema.CqlTable;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+
+public class WritetimeTTL extends AbstractFeature {
     public final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final boolean logDebug = logger.isDebugEnabled();;
 
@@ -49,21 +50,22 @@ public class WritetimeTTL extends AbstractFeature  {
     public boolean loadProperties(IPropertyHelper propertyHelper) {
         this.autoTTLNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_TTL_AUTO);
         this.ttlNames = getTTLNames(propertyHelper);
-        if (null!=this.ttlNames && !this.ttlNames.isEmpty()) {
+        if (null != this.ttlNames && !this.ttlNames.isEmpty()) {
             logger.info("PARAM -- TTLCols: {}", ttlNames);
             this.autoTTLNames = false;
         }
 
         this.autoWritetimeNames = propertyHelper.getBoolean(KnownProperties.ORIGIN_WRITETIME_AUTO);
         this.writetimeNames = getWritetimeNames(propertyHelper);
-        if (null!=this.writetimeNames && !this.writetimeNames.isEmpty()) {
+        if (null != this.writetimeNames && !this.writetimeNames.isEmpty()) {
             logger.info("PARAM -- WriteTimestampCols: {}", writetimeNames);
             this.autoWritetimeNames = false;
         }
 
         this.customWritetime = getCustomWritetime(propertyHelper);
         if (this.customWritetime > 0) {
-            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime, Instant.ofEpochMilli(customWritetime / 1000));
+            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime,
+                    Instant.ofEpochMilli(customWritetime / 1000));
         }
 
         this.writetimeIncrement = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT);
@@ -75,19 +77,19 @@ public class WritetimeTTL extends AbstractFeature  {
 
         this.filterMin = getMinFilter(propertyHelper);
         this.filterMax = getMaxFilter(propertyHelper);
-        this.hasWriteTimestampFilter = (null != filterMin && null != filterMax && filterMin > 0 && filterMax > 0 && filterMax > filterMin);
+        this.hasWriteTimestampFilter = (null != filterMin && null != filterMax && filterMin > 0 && filterMax > 0
+                && filterMax > filterMin);
         if (this.hasWriteTimestampFilter) {
-            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.FILTER_WRITETS_MIN, filterMin, Instant.ofEpochMilli(filterMin / 1000));
-            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.FILTER_WRITETS_MAX, filterMax, Instant.ofEpochMilli(filterMax / 1000));
+            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.FILTER_WRITETS_MIN, filterMin,
+                    Instant.ofEpochMilli(filterMin / 1000));
+            logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.FILTER_WRITETS_MAX, filterMax,
+                    Instant.ofEpochMilli(filterMax / 1000));
         }
 
-
         isValid = validateProperties();
-        isEnabled = isValid &&
-                ((null != ttlNames && !ttlNames.isEmpty())
-                || (null != writetimeNames && !writetimeNames.isEmpty())
-                || autoTTLNames || autoWritetimeNames
-                || customWritetime > 0 || customTTL > 0);
+        isEnabled = isValid
+                && ((null != ttlNames && !ttlNames.isEmpty()) || (null != writetimeNames && !writetimeNames.isEmpty())
+                        || autoTTLNames || autoWritetimeNames || customWritetime > 0 || customTTL > 0);
 
         isLoaded = true;
         return isValid;
@@ -101,8 +103,9 @@ public class WritetimeTTL extends AbstractFeature  {
         validateTTLNames();
         validateWritetimeNames();
 
-        if (null==this.writetimeIncrement || this.writetimeIncrement < 0L) {
-            logger.error(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT + " must be set to a value greater than or equal to zero");
+        if (null == this.writetimeIncrement || this.writetimeIncrement < 0L) {
+            logger.error(KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT
+                    + " must be set to a value greater than or equal to zero");
             isValid = false;
         }
 
@@ -111,7 +114,7 @@ public class WritetimeTTL extends AbstractFeature  {
 
     @Override
     public boolean initializeAndValidate(CqlTable originTable, CqlTable targetTable) {
-        if (null==originTable) {
+        if (null == originTable) {
             throw new IllegalArgumentException("originTable is null");
         }
         if (!originTable.isOrigin()) {
@@ -125,7 +128,8 @@ public class WritetimeTTL extends AbstractFeature  {
                 isEnabled = false;
             }
 
-            logger.info("Counter table does not support TTL or WriteTimestamp columns as they cannot set on write, so feature is disabled");
+            logger.info(
+                    "Counter table does not support TTL or WriteTimestamp columns as they cannot set on write, so feature is disabled");
             return true;
         }
 
@@ -148,20 +152,21 @@ public class WritetimeTTL extends AbstractFeature  {
         validateTTLColumns(originTable);
         validateWritetimeColumns(originTable);
 
-        if (hasWriteTimestampFilter && (null==writetimeNames || writetimeNames.isEmpty())) {
+        if (hasWriteTimestampFilter && (null == writetimeNames || writetimeNames.isEmpty())) {
             logger.error("WriteTimestamp filter is configured but no WriteTimestamp columns are defined");
             isValid = false;
         }
 
-		if (this.writetimeIncrement == 0L && (null != writetimeNames && !writetimeNames.isEmpty())
-				&& originTable.hasUnfrozenList()) {
-			logger.warn("Origin table has at least one unfrozen List, and "
-					+ KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT
-					+ " is set to zero; this may result in duplicate list entries on reruns or validation with autocorrect.");
-		}
+        if (this.writetimeIncrement == 0L && (null != writetimeNames && !writetimeNames.isEmpty())
+                && originTable.hasUnfrozenList()) {
+            logger.warn("Origin table has at least one unfrozen List, and "
+                    + KnownProperties.TRANSFORM_CUSTOM_WRITETIME_INCREMENT
+                    + " is set to zero; this may result in duplicate list entries on reruns or validation with autocorrect.");
+        }
 
-        if (!isValid) isEnabled = false;
-        logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled?"enabled":"disabled");
+        if (!isValid)
+            isEnabled = false;
+        logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled ? "enabled" : "disabled");
         return isValid;
     }
 
@@ -175,13 +180,13 @@ public class WritetimeTTL extends AbstractFeature  {
 
     protected static Long getCustomWritetime(IPropertyHelper propertyHelper) {
         Long cwt = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME);
-        return null==cwt ? 0L : cwt;
+        return null == cwt ? 0L : cwt;
     }
 
     protected static Long getCustomTTL(IPropertyHelper propertyHelper) {
-		Long cttl = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL);
-		return null == cttl ? 0L : cttl;
-	}
+        Long cttl = propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL);
+        return null == cttl ? 0L : cttl;
+    }
 
     public static Long getMinFilter(IPropertyHelper propertyHelper) {
         return propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN);
@@ -191,37 +196,56 @@ public class WritetimeTTL extends AbstractFeature  {
         return propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MAX);
     }
 
-    public Long getCustomWritetime() { return customWritetime; }
-    public Long getCustomTTL() { return customTTL; }
-    public boolean hasWriteTimestampFilter() { return isEnabled && hasWriteTimestampFilter; }
-    public Long getMinWriteTimeStampFilter() { return (this.hasWriteTimestampFilter && null!=this.filterMin) ? this.filterMin : Long.MIN_VALUE; }
-    public Long getMaxWriteTimeStampFilter() { return (this.hasWriteTimestampFilter && null!=this.filterMax) ? this.filterMax : Long.MAX_VALUE; }
+    public Long getCustomWritetime() {
+        return customWritetime;
+    }
 
-	public boolean hasTTLColumns() {
-		return customTTL > 0 || null != this.ttlSelectColumnIndexes && !this.ttlSelectColumnIndexes.isEmpty();
-	}
+    public Long getCustomTTL() {
+        return customTTL;
+    }
 
-    public boolean hasWritetimeColumns() { return customWritetime>0 || null!=this.writetimeSelectColumnIndexes && !this.writetimeSelectColumnIndexes.isEmpty(); }
+    public boolean hasWriteTimestampFilter() {
+        return isEnabled && hasWriteTimestampFilter;
+    }
+
+    public Long getMinWriteTimeStampFilter() {
+        return (this.hasWriteTimestampFilter && null != this.filterMin) ? this.filterMin : Long.MIN_VALUE;
+    }
+
+    public Long getMaxWriteTimeStampFilter() {
+        return (this.hasWriteTimestampFilter && null != this.filterMax) ? this.filterMax : Long.MAX_VALUE;
+    }
+
+    public boolean hasTTLColumns() {
+        return customTTL > 0 || null != this.ttlSelectColumnIndexes && !this.ttlSelectColumnIndexes.isEmpty();
+    }
+
+    public boolean hasWritetimeColumns() {
+        return customWritetime > 0
+                || null != this.writetimeSelectColumnIndexes && !this.writetimeSelectColumnIndexes.isEmpty();
+    }
 
     public Long getLargestWriteTimeStamp(Row row) {
-        if (logDebug) logger.debug("getLargestWriteTimeStamp: customWritetime={}, writetimeSelectColumnIndexes={}", customWritetime,writetimeSelectColumnIndexes);
-        if (this.customWritetime > 0) return this.customWritetime;
-        if (null==this.writetimeSelectColumnIndexes || this.writetimeSelectColumnIndexes.isEmpty()) return null;
-        OptionalLong max = this.writetimeSelectColumnIndexes.stream()
-                .mapToLong(row::getLong)
-                .filter(Objects::nonNull)
+        if (logDebug)
+            logger.debug("getLargestWriteTimeStamp: customWritetime={}, writetimeSelectColumnIndexes={}",
+                    customWritetime, writetimeSelectColumnIndexes);
+        if (this.customWritetime > 0)
+            return this.customWritetime;
+        if (null == this.writetimeSelectColumnIndexes || this.writetimeSelectColumnIndexes.isEmpty())
+            return null;
+        OptionalLong max = this.writetimeSelectColumnIndexes.stream().mapToLong(row::getLong).filter(Objects::nonNull)
                 .max();
         return max.isPresent() ? max.getAsLong() + this.writetimeIncrement : null;
     }
 
     public Integer getLargestTTL(Row row) {
-        if (logDebug) logger.debug("getLargestTTL: customTTL={}, ttlSelectColumnIndexes={}", customTTL, ttlSelectColumnIndexes);
-        if (this.customTTL > 0) return this.customTTL.intValue();
-        if (null==this.ttlSelectColumnIndexes || this.ttlSelectColumnIndexes.isEmpty()) return null;
-        OptionalInt max = this.ttlSelectColumnIndexes.stream()
-                .mapToInt(row::getInt)
-                .filter(Objects::nonNull)
-                .max();
+        if (logDebug)
+            logger.debug("getLargestTTL: customTTL={}, ttlSelectColumnIndexes={}", customTTL, ttlSelectColumnIndexes);
+        if (this.customTTL > 0)
+            return this.customTTL.intValue();
+        if (null == this.ttlSelectColumnIndexes || this.ttlSelectColumnIndexes.isEmpty())
+            return null;
+        OptionalInt max = this.ttlSelectColumnIndexes.stream().mapToInt(row::getInt).filter(Objects::nonNull).max();
         return max.isPresent() ? max.getAsInt() : null;
     }
 
@@ -240,7 +264,8 @@ public class WritetimeTTL extends AbstractFeature  {
                 return;
             } else {
                 if (!originTable.isWritetimeTTLColumn(ttlName)) {
-                    logger.error("TTL column {} is not a column which can provide a TTL on origin table {}", ttlName, originTable.getKeyspaceName());
+                    logger.error("TTL column {} is not a column which can provide a TTL on origin table {}", ttlName,
+                            originTable.getKeyspaceName());
                     isValid = false;
                     return;
                 }
@@ -251,9 +276,7 @@ public class WritetimeTTL extends AbstractFeature  {
         }
 
         originTable.extendColumns(newColumnNames, newColumnDataTypes);
-        ttlSelectColumnIndexes = newColumnNames.stream()
-                .mapToInt(originTable::indexOf)
-                .boxed()
+        ttlSelectColumnIndexes = newColumnNames.stream().mapToInt(originTable::indexOf).boxed()
                 .collect(Collectors.toList());
     }
 
@@ -267,12 +290,14 @@ public class WritetimeTTL extends AbstractFeature  {
         for (String writetimeName : writetimeNames) {
             int index = originTable.indexOf(writetimeName);
             if (index < 0) {
-                logger.error("Writetime column {} is not configured for origin table {}", writetimeName, originTable.getKeyspaceName());
+                logger.error("Writetime column {} is not configured for origin table {}", writetimeName,
+                        originTable.getKeyspaceName());
                 isValid = false;
                 return;
             } else {
                 if (!originTable.isWritetimeTTLColumn(writetimeName)) {
-                    logger.error("Writetime column {} is not a column which can provide a WRITETIME on origin table {}", writetimeName, originTable.getKeyspaceName());
+                    logger.error("Writetime column {} is not a column which can provide a WRITETIME on origin table {}",
+                            writetimeName, originTable.getKeyspaceName());
                     isValid = false;
                     return;
                 }
@@ -284,21 +309,19 @@ public class WritetimeTTL extends AbstractFeature  {
 
         originTable.extendColumns(newColumnNames, newColumnDataTypes);
         writetimeSelectColumnIndexes = new ArrayList<>();
-        writetimeSelectColumnIndexes = newColumnNames.stream()
-                .mapToInt(originTable::indexOf)
-                .boxed()
+        writetimeSelectColumnIndexes = newColumnNames.stream().mapToInt(originTable::indexOf).boxed()
                 .collect(Collectors.toList());
     }
 
     private void validateTTLNames() {
-        if (null!=ttlNames && ttlNames.size()==0) {
+        if (null != ttlNames && ttlNames.size() == 0) {
             logger.error("must be null or not empty");
             isValid = false;
         }
     }
 
     private void validateWritetimeNames() {
-        if (null!=writetimeNames && writetimeNames.size()==0) {
+        if (null != writetimeNames && writetimeNames.size() == 0) {
             logger.error("must be null or not empty");
             isValid = false;
         }

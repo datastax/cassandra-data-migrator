@@ -15,15 +15,16 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import java.nio.ByteBuffer;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.ByteBuffer;
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 class TEXT_DoubleCodecTest {
 
@@ -32,7 +33,7 @@ class TEXT_DoubleCodecTest {
 
     @BeforeEach
     void setUp() {
-        codec = new TEXT_DoubleCodec( null);
+        codec = new TEXT_DoubleCodec(null);
     }
 
     @Test

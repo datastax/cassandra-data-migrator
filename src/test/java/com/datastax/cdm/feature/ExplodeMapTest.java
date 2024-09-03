@@ -15,25 +15,26 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.cdm.data.CqlData;
-import com.datastax.cdm.properties.IPropertyHelper;
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.schema.CqlTable;
-import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
+import static org.apache.hadoop.shaded.com.google.common.base.CharMatcher.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
+
+import java.util.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.*;
-
-import static org.apache.hadoop.shaded.com.google.common.base.CharMatcher.any;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.cdm.data.CqlData;
+import com.datastax.cdm.properties.IPropertyHelper;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.schema.CqlTable;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 
 public class ExplodeMapTest {
 
@@ -58,39 +59,45 @@ public class ExplodeMapTest {
     MutableCodecRegistry codecRegistry;
 
     String standardMapColumnName = "map_col";
-    List<String> standardOriginNames = Arrays.asList("key","val",standardMapColumnName);
-    List<DataType> standardOriginTypes = Arrays.asList(DataTypes.TIMESTAMP, DataTypes.INT, DataTypes.mapOf(DataTypes.TEXT, DataTypes.DOUBLE));
+    List<String> standardOriginNames = Arrays.asList("key", "val", standardMapColumnName);
+    List<DataType> standardOriginTypes = Arrays.asList(DataTypes.TIMESTAMP, DataTypes.INT,
+            DataTypes.mapOf(DataTypes.TEXT, DataTypes.DOUBLE));
 
     String standardKeyColumnName = "map_key";
     String standardValueColumnName = "map_val";
-    List<String> standardTargetNames = Arrays.asList("key","val",standardKeyColumnName,standardValueColumnName);
-    List<DataType> standardTargetTypes = Arrays.asList(DataTypes.TIMESTAMP, DataTypes.INT, DataTypes.TEXT, DataTypes.DOUBLE);
+    List<String> standardTargetNames = Arrays.asList("key", "val", standardKeyColumnName, standardValueColumnName);
+    List<DataType> standardTargetTypes = Arrays.asList(DataTypes.TIMESTAMP, DataTypes.INT, DataTypes.TEXT,
+            DataTypes.DOUBLE);
 
     @BeforeEach
     public void setup() {
         feature = new ExplodeMap();
         MockitoAnnotations.openMocks(this);
 
-        when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME)).thenReturn(standardMapColumnName);
-        when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_KEY_COLUMN_NAME)).thenReturn(standardKeyColumnName);
-        when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME)).thenReturn(standardValueColumnName);
+        when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME))
+                .thenReturn(standardMapColumnName);
+        when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_KEY_COLUMN_NAME))
+                .thenReturn(standardKeyColumnName);
+        when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME))
+                .thenReturn(standardValueColumnName);
 
         when(originTable.isOrigin()).thenReturn(true);
-        when(originTable.extendColumns(Collections.singletonList(standardMapColumnName))).
-                thenReturn(Collections.singletonList(CqlData.getBindClass(standardOriginTypes.get(2))));
+        when(originTable.extendColumns(Collections.singletonList(standardMapColumnName)))
+                .thenReturn(Collections.singletonList(CqlData.getBindClass(standardOriginTypes.get(2))));
 
         when(targetTable.isOrigin()).thenReturn(false);
-        when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName,standardValueColumnName)))
-                .thenReturn(Arrays.asList(CqlData.getBindClass(standardTargetTypes.get(2)), CqlData.getBindClass(standardTargetTypes.get(3))));
+        when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName, standardValueColumnName)))
+                .thenReturn(Arrays.asList(CqlData.getBindClass(standardTargetTypes.get(2)),
+                        CqlData.getBindClass(standardTargetTypes.get(3))));
 
-        for (int i = 0; i< standardOriginNames.size(); i++) {
+        for (int i = 0; i < standardOriginNames.size(); i++) {
             when(originTable.getColumnNames(false)).thenReturn(standardOriginNames);
             when(originTable.indexOf(standardOriginNames.get(i))).thenReturn(i);
             when(originTable.getDataType(standardOriginNames.get(i))).thenReturn(standardOriginTypes.get(i));
             when(originTable.getBindClass(i)).thenReturn(CqlData.getBindClass(standardOriginTypes.get(i)));
         }
 
-        for (int i = 0; i< standardTargetNames.size(); i++) {
+        for (int i = 0; i < standardTargetNames.size(); i++) {
             when(targetTable.getColumnNames(false)).thenReturn(standardTargetNames);
             when(targetTable.indexOf(standardTargetNames.get(i))).thenReturn(i);
             when(targetTable.getDataType(standardTargetNames.get(i))).thenReturn(standardTargetTypes.get(i));
@@ -107,15 +114,11 @@ public class ExplodeMapTest {
     public void smokeTest_loadProperties() {
         boolean loaded = feature.loadProperties(propertyHelper);
 
-        assertAll(
-                () -> assertTrue(loaded, "properties are loaded and valid"),
-                () -> assertTrue(feature.isEnabled()),
+        assertAll(() -> assertTrue(loaded, "properties are loaded and valid"), () -> assertTrue(feature.isEnabled()),
                 () -> assertEquals(standardMapColumnName, feature.getOriginColumnName(), "origin name"),
                 () -> assertEquals(standardKeyColumnName, feature.getKeyColumnName(), "key name"),
-                () -> assertEquals(standardValueColumnName, feature.getValueColumnName(), "value name")
-        );
+                () -> assertEquals(standardValueColumnName, feature.getValueColumnName(), "value name"));
     }
-
 
     @Test
     public void smokeTest_initializeAndValidate() {
@@ -123,12 +126,13 @@ public class ExplodeMapTest {
 
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
 
-        assertAll(
-                () -> assertTrue(valid, "configuration is valid"),
-                () -> assertEquals(standardOriginNames.indexOf(standardMapColumnName), feature.getOriginColumnIndex(), "origin index"),
-                () -> assertEquals(standardTargetNames.indexOf(standardKeyColumnName), feature.getKeyColumnIndex(), "key index"),
-                () -> assertEquals(standardTargetNames.indexOf(standardValueColumnName), feature.getValueColumnIndex(), "value index")
-        );
+        assertAll(() -> assertTrue(valid, "configuration is valid"),
+                () -> assertEquals(standardOriginNames.indexOf(standardMapColumnName), feature.getOriginColumnIndex(),
+                        "origin index"),
+                () -> assertEquals(standardTargetNames.indexOf(standardKeyColumnName), feature.getKeyColumnIndex(),
+                        "key index"),
+                () -> assertEquals(standardTargetNames.indexOf(standardValueColumnName), feature.getValueColumnIndex(),
+                        "value index"));
     }
 
     @Test
@@ -241,7 +245,6 @@ public class ExplodeMapTest {
         );
     }
 
-
     @Test
     public void testOriginIsNull() {
         feature.loadProperties(propertyHelper);
@@ -273,7 +276,7 @@ public class ExplodeMapTest {
         feature.loadProperties(propertyHelper);
         feature.initializeAndValidate(originTable, targetTable);
 
-        Map<Object,Object> testMap = new HashMap<>();
+        Map<Object, Object> testMap = new HashMap<>();
         testMap.put("key1", 10);
         testMap.put("key2", 20);
         Set<Map.Entry<Object, Object>> testEntries = testMap.entrySet();
@@ -333,4 +336,3 @@ public class ExplodeMapTest {
         assertEquals(convertedMap.entrySet(), feature.explode(testMap));
     }
 }
-

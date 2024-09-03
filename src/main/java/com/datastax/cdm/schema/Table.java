@@ -15,9 +15,9 @@
  */
 package com.datastax.cdm.schema;
 
-import com.datastax.oss.driver.api.core.type.DataType;
-
 import java.util.List;
+
+import com.datastax.oss.driver.api.core.type.DataType;
 
 public interface Table {
     String getKeyspaceName();

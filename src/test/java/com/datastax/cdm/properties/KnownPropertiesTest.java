@@ -15,19 +15,19 @@
  */
 package com.datastax.cdm.properties;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class KnownPropertiesTest {
 
     @Test
     public void getDefault_knownDefault() {
-        assertEquals("text",KnownProperties.getDefaultAsString(KnownProperties.TEST_STRING));
+        assertEquals("text", KnownProperties.getDefaultAsString(KnownProperties.TEST_STRING));
     }
 
     @Test
@@ -79,7 +79,8 @@ public class KnownPropertiesTest {
     @Test
     public void asType_StringList() {
         String value = "a,b,c";
-        assertEquals(Arrays.asList(value.split(",")), KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, value));
+        assertEquals(Arrays.asList(value.split(",")),
+                KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, value));
     }
 
     @Test
@@ -95,7 +96,8 @@ public class KnownPropertiesTest {
 
     @Test
     public void asType_NumberList() {
-        assertEquals(Arrays.asList(1L,2L,3L), KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, "1,2,3"));
+        assertEquals(Arrays.asList(1L, 2L, 3L),
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, "1,2,3"));
     }
 
     @Test
@@ -118,12 +120,13 @@ public class KnownPropertiesTest {
 
     @Test
     public void getDefaultAsString_NumberList() {
-        Assertions.assertEquals(KnownProperties.TEST_NUMBER_LIST_DEFAULT, KnownProperties.getDefaultAsString(KnownProperties.TEST_NUMBER_LIST));
+        Assertions.assertEquals(KnownProperties.TEST_NUMBER_LIST_DEFAULT,
+                KnownProperties.getDefaultAsString(KnownProperties.TEST_NUMBER_LIST));
     }
 
     @Test
     public void getDefault_NumberList() {
-        assertEquals(Arrays.asList(1L,2L), KnownProperties.getDefault(KnownProperties.TEST_NUMBER_LIST));
+        assertEquals(Arrays.asList(1L, 2L), KnownProperties.getDefault(KnownProperties.TEST_NUMBER_LIST));
     }
 
     @Test
@@ -139,7 +142,8 @@ public class KnownPropertiesTest {
     @Test
     public void getTypeMap() {
         assertNotNull(KnownProperties.getTypeMap());
-        assertEquals(KnownProperties.PropertyType.STRING, KnownProperties.getTypeMap().get(KnownProperties.TEST_STRING));
+        assertEquals(KnownProperties.PropertyType.STRING,
+                KnownProperties.getTypeMap().get(KnownProperties.TEST_STRING));
     }
 
     @Test
@@ -160,7 +164,8 @@ public class KnownPropertiesTest {
 
     @Test
     public void validateType_StringList() {
-        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.STRING_LIST, KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST,"a,b,c")));
+        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.STRING_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.STRING_LIST, "a,b,c")));
     }
 
     @Test
@@ -178,12 +183,14 @@ public class KnownPropertiesTest {
 
     @Test
     public void validateType_Number() {
-        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.NUMBER, KnownProperties.asType(KnownProperties.PropertyType.NUMBER,"1")));
+        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.NUMBER,
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER, "1")));
     }
 
     @Test
     public void validateType_NumberList() {
-        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.NUMBER_LIST, KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST,"1,2,3")));
+        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.NUMBER_LIST,
+                KnownProperties.asType(KnownProperties.PropertyType.NUMBER_LIST, "1,2,3")));
     }
 
     @Test
@@ -201,7 +208,8 @@ public class KnownPropertiesTest {
 
     @Test
     public void validateType_Boolean() {
-        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.BOOLEAN, KnownProperties.asType(KnownProperties.PropertyType.BOOLEAN,"false")));
+        assertTrue(KnownProperties.validateType(KnownProperties.PropertyType.BOOLEAN,
+                KnownProperties.asType(KnownProperties.PropertyType.BOOLEAN, "false")));
     }
 
 }

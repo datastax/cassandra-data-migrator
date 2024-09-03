@@ -15,19 +15,20 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.oss.driver.api.core.ProtocolVersion;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.datastax.cdm.properties.PropertyHelper;
-import org.jetbrains.annotations.NotNull;
+import static com.datastax.cdm.cql.codec.DOUBLE_StringCodec.DOUBLE_FORMAT;
 
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 
-import static com.datastax.cdm.cql.codec.DOUBLE_StringCodec.DOUBLE_FORMAT;
+import org.jetbrains.annotations.NotNull;
+
+import com.datastax.cdm.properties.PropertyHelper;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 // This works with decimal-formatted doubles in strings, but not
 // with the default scientific notation. A separate codec is needed
@@ -36,10 +37,10 @@ public class TEXT_DoubleCodec extends AbstractBaseCodec<Double> {
     private final DecimalFormat decimalFormat;
 
     public TEXT_DoubleCodec(PropertyHelper propertyHelper) {
-            super(propertyHelper);
-            decimalFormat = new DecimalFormat(DOUBLE_FORMAT);
-            decimalFormat.setGroupingUsed(false);
-            decimalFormat.setRoundingMode(RoundingMode.FLOOR);
+        super(propertyHelper);
+        decimalFormat = new DecimalFormat(DOUBLE_FORMAT);
+        decimalFormat.setGroupingUsed(false);
+        decimalFormat.setRoundingMode(RoundingMode.FLOOR);
     }
 
     @Override

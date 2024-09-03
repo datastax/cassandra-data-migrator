@@ -15,6 +15,11 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import java.time.Instant;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.Featureset;
@@ -25,10 +30,6 @@ import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
 
 public abstract class OriginSelectStatement extends BaseCdmStatement {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -45,12 +46,13 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
         super(propertyHelper, session);
 
         resultColumns.addAll(cqlTable.getColumnNames(false));
-        if (null==resultColumns || resultColumns.isEmpty()) {
+        if (null == resultColumns || resultColumns.isEmpty()) {
             throw new RuntimeException("No columns found in table " + cqlTable.getTableName());
         }
 
         WritetimeTTL writetimeTTLFeature = (WritetimeTTL) cqlTable.getFeature(Featureset.WRITETIME_TTL);
-        if (null!= writetimeTTLFeature && writetimeTTLFeature.isEnabled() && writetimeTTLFeature.hasWriteTimestampFilter()) {
+        if (null != writetimeTTLFeature && writetimeTTLFeature.isEnabled()
+                && writetimeTTLFeature.hasWriteTimestampFilter()) {
             writeTimestampFilterEnabled = true;
             minWriteTimeStampFilter = writetimeTTLFeature.getMinWriteTimeStampFilter();
             maxWriteTimeStampFilter = writetimeTTLFeature.getMaxWriteTimeStampFilter();
@@ -66,7 +68,8 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
 
         filterColumnString = getFilterColumnString();
         filterColumnIndex = getFilterColumnIndex();
-        filterColumnEnabled = (null != filterColumnIndex && filterColumnIndex >= 0 && null != filterColumnString && !filterColumnString.isEmpty());
+        filterColumnEnabled = (null != filterColumnIndex && filterColumnIndex >= 0 && null != filterColumnString
+                && !filterColumnString.isEmpty());
         if (filterColumnEnabled) {
             logger.info("PARAM -- {}: {} ", KnownProperties.FILTER_COLUMN_NAME, filterColumnString);
             logger.info("PARAM -- {}: {} ", KnownProperties.FILTER_COLUMN_VALUE, filterColumnString);
@@ -94,16 +97,18 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
     }
 
     public abstract BoundStatement bind(Object... binds);
+
     protected abstract String whereBinds();
 
     public boolean shouldFilterRecord(Record record) {
-        if (null==record || !isRecordValid(record))
+        if (null == record || !isRecordValid(record))
             return true;
 
         if (this.filterColumnEnabled) {
             String col = (String) cqlTable.getData(this.filterColumnIndex, record.getOriginRow());
-            if (null!=col && this.filterColumnString.equalsIgnoreCase(col.trim())) {
-                if (logger.isInfoEnabled()) logger.info("Filter Column removing: {}", record.getPk());
+            if (null != col && this.filterColumnString.equalsIgnoreCase(col.trim())) {
+                if (logger.isInfoEnabled())
+                    logger.info("Filter Column removing: {}", record.getPk());
                 return true;
             }
         }
@@ -111,12 +116,12 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
         if (this.writeTimestampFilterEnabled) {
             // only process rows greater than writeTimeStampFilter
             Long originWriteTimeStamp = record.getPk().getWriteTimestamp();
-            if (null==originWriteTimeStamp) {
+            if (null == originWriteTimeStamp) {
                 return false;
             }
-            if (originWriteTimeStamp < minWriteTimeStampFilter
-                    || originWriteTimeStamp > maxWriteTimeStampFilter) {
-                if (logger.isInfoEnabled()) logger.info("Timestamp filter removing: {}", record.getPk());
+            if (originWriteTimeStamp < minWriteTimeStampFilter || originWriteTimeStamp > maxWriteTimeStampFilter) {
+                if (logger.isInfoEnabled())
+                    logger.info("Timestamp filter removing: {}", record.getPk());
                 return true;
             }
         }
@@ -133,7 +138,7 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
 
     private String getFilterColumnString() {
         String rtn = propertyHelper.getString(KnownProperties.FILTER_COLUMN_VALUE);
-        if (null!=rtn)
+        if (null != rtn)
             return rtn.trim();
         return null;
     }

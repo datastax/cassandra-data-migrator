@@ -15,17 +15,6 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.ProtocolVersion;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -33,6 +22,18 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.zone.ZoneRulesProvider;
+
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.properties.PropertyHelper;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 /**
  * This codec converts a TIMESTAMP to a Java String with format specified at
@@ -50,13 +51,16 @@ public class TIMESTAMP_StringFormatCodec extends AbstractBaseCodec<String> {
 
         String formatString = propertyHelper.getString(KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT);
         if (formatString == null || formatString.isEmpty()) {
-            throw new IllegalArgumentException("Property " + KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT + " is required and cannot be empty.");
+            throw new IllegalArgumentException("Property " + KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT
+                    + " is required and cannot be empty.");
         }
         this.formatter = DateTimeFormatter.ofPattern(formatString);
 
         String zone = propertyHelper.getString(KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE);
         if (zone == null || !ZoneRulesProvider.getAvailableZoneIds().contains(zone)) {
-            throw new IllegalArgumentException("Property " + KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE + " is required and must be a valid ZoneOffset.");
+            throw new IllegalArgumentException(
+                    "Property " + KnownProperties.TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE
+                            + " is required and must be a valid ZoneOffset.");
         }
         this.zoneOffset = ZoneId.of(zone).getRules().getOffset(Instant.now());
     }
@@ -101,4 +105,3 @@ public class TIMESTAMP_StringFormatCodec extends AbstractBaseCodec<String> {
         return formatter.format(instantValue.atOffset(zoneOffset));
     }
 }
-

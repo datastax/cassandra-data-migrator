@@ -15,18 +15,19 @@
  */
 package com.datastax.cdm.cql.statement;
 
-import com.datastax.cdm.cql.EnhancedSession;
-import com.datastax.cdm.properties.IPropertyHelper;
-import com.datastax.cdm.schema.CqlTable;
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.properties.IPropertyHelper;
+import com.datastax.cdm.schema.CqlTable;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 
 public class BaseCdmStatementTest {
 
