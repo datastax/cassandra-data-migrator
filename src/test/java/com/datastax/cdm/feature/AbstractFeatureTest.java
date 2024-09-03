@@ -15,13 +15,14 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.cdm.properties.IPropertyHelper;
-import com.datastax.cdm.schema.CqlTable;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.datastax.cdm.properties.IPropertyHelper;
+import com.datastax.cdm.schema.CqlTable;
 
 class AbstractFeatureTest {
 
@@ -54,10 +55,8 @@ class AbstractFeatureTest {
     @Test
     void initialize_setsInitializedToTrueAndReturnsTrue() {
         boolean result = testFeature.loadProperties(propertyHelper);
-        assertAll(
-                () -> assertTrue(result, "Expected initialize() to return true"),
-                () -> assertTrue(testFeature.isLoaded, "Expected isInitialized to be set to true")
-        );
+        assertAll(() -> assertTrue(result, "Expected initialize() to return true"),
+                () -> assertTrue(testFeature.isLoaded, "Expected isInitialized to be set to true"));
     }
 
     @Test

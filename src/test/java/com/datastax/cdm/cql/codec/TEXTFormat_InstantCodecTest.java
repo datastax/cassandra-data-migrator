@@ -15,12 +15,13 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+
 import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -28,12 +29,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import java.nio.ByteBuffer;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.properties.PropertyHelper;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 class TEXTFormat_InstantCodecTest {
 
@@ -111,7 +112,7 @@ class TEXTFormat_InstantCodecTest {
         String valueAsString = "220412215715";
         Instant value = LocalDateTime.parse(valueAsString, formatter).toInstant(zoneOffset);
         Instant result = codec.parse(valueAsString);
-        Assertions.assertEquals(value,result);
+        Assertions.assertEquals(value, result);
     }
 
     @Test
@@ -146,7 +147,6 @@ class TEXTFormat_InstantCodecTest {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TEXTFormat_InstantCodec(propertyHelper));
     }
-
 
     @Test
     void constructor_ShouldThrowIllegalArgumentException_WhenEmptyTimeZone() {

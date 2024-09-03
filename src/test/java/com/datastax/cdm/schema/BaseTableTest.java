@@ -15,15 +15,16 @@
  */
 package com.datastax.cdm.schema;
 
-import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.cdm.properties.KnownProperties;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.properties.KnownProperties;
 
 public class BaseTableTest extends CommonMocks {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -73,6 +74,7 @@ public class BaseTableTest extends CommonMocks {
     @Test
     public void failWhenKsTableAbsent() {
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> new BaseTable(propertyHelper, false));
-        assertTrue(thrown.getMessage().contentEquals("Value for required property " + KnownProperties.ORIGIN_KEYSPACE_TABLE + " not provided!!"));
+        assertTrue(thrown.getMessage().contentEquals(
+                "Value for required property " + KnownProperties.ORIGIN_KEYSPACE_TABLE + " not provided!!"));
     }
 }

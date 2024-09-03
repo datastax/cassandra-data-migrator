@@ -25,26 +25,26 @@ import org.junit.jupiter.api.Test;
 import com.datastax.cdm.properties.PropertyHelper;
 
 public class SplitPartitionsTest {
-	@AfterEach
-	void tearDown() {
-		PropertyHelper.destroyInstance();
-	}
+    @AfterEach
+    void tearDown() {
+        PropertyHelper.destroyInstance();
+    }
 
-	@Test
-	void getRandomSubPartitionsTest() {
-		List<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(10, BigInteger.ONE,
-				BigInteger.valueOf(100), 100);
-		assertEquals(10, partitions.size());
-		partitions.forEach(p -> {
-			assertEquals(9, p.getMax().longValue() - p.getMin().longValue());
-		});
-	}
+    @Test
+    void getRandomSubPartitionsTest() {
+        List<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(10, BigInteger.ONE,
+                BigInteger.valueOf(100), 100);
+        assertEquals(10, partitions.size());
+        partitions.forEach(p -> {
+            assertEquals(9, p.getMax().longValue() - p.getMin().longValue());
+        });
+    }
 
-	@Test
-	void getRandomSubPartitionsTestOver100() {
-		List<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(8, BigInteger.ONE,
-				BigInteger.valueOf(44), 200);
-		assertEquals(8, partitions.size());
-	}
+    @Test
+    void getRandomSubPartitionsTestOver100() {
+        List<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(8, BigInteger.ONE,
+                BigInteger.valueOf(44), 200);
+        assertEquals(8, partitions.size());
+    }
 
 }

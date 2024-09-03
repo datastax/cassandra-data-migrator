@@ -15,6 +15,10 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletionStage;
+
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.Record;
@@ -27,10 +31,6 @@ import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.api.core.type.DataType;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletionStage;
 
 public abstract class TargetUpsertStatement extends BaseCdmStatement {
     protected final List<String> targetColumnNames = new ArrayList<>();
@@ -57,7 +57,9 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     protected ExtractJson extractJsonFeature;
 
     protected abstract String buildStatement();
-    protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue);
+
+    protected abstract BoundStatement bind(Row originRow, Row targetRow, Integer ttl, Long writeTime,
+            Object explodeMapKey, Object explodeMapValue);
 
     public TargetUpsertStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
@@ -72,7 +74,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
         originColumnNames.addAll(cqlTable.getOtherCqlTable().getColumnNames(true));
         originColumnTypes.addAll(cqlTable.getOtherCqlTable().getColumnCqlTypes());
         setConstantColumns();
-        if (null!=explodeMapFeature && explodeMapFeature.isEnabled()) {
+        if (null != explodeMapFeature && explodeMapFeature.isEnabled()) {
             this.explodeMapKeyIndex = explodeMapFeature.getKeyColumnIndex();
             this.explodeMapValueIndex = explodeMapFeature.getValueColumnIndex();
         }
@@ -83,14 +85,15 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     }
 
     public BoundStatement bindRecord(Record record) {
-        if (null==record)
+        if (null == record)
             throw new RuntimeException("record is null");
 
         EnhancedPK pk = record.getPk();
         Row originRow = record.getOriginRow();
         Row targetRow = record.getTargetRow();
 
-        return bind(originRow, targetRow, pk.getTTL(), pk.getWriteTimestamp(), pk.getExplodeMapKey(), pk.getExplodeMapValue());
+        return bind(originRow, targetRow, pk.getTTL(), pk.getWriteTimestamp(), pk.getExplodeMapKey(),
+                pk.getExplodeMapValue());
     }
 
     public CompletionStage<AsyncResultSet> executeAsync(Statement<?> statement) {
@@ -122,7 +125,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     }
 
     private void setConstantColumns() {
-        if (null!=constantColumnFeature && constantColumnFeature.isEnabled()) {
+        if (null != constantColumnFeature && constantColumnFeature.isEnabled()) {
             constantColumnNames.addAll(constantColumnFeature.getNames());
             constantColumnValues.addAll(constantColumnFeature.getValues());
         }
@@ -133,7 +136,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
         usingWriteTime = false;
         WritetimeTTL wtFeature = (WritetimeTTL) cqlTable.getFeature(Featureset.WRITETIME_TTL);
 
-        if (null!=wtFeature && wtFeature.isEnabled()) {
+        if (null != wtFeature && wtFeature.isEnabled()) {
             usingTTL = wtFeature.hasTTLColumns();
             usingWriteTime = wtFeature.hasWritetimeColumns();
         }
@@ -143,26 +146,31 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
         if (haveCheckedBindInputsOnce)
             return;
 
-        if (usingTTL && null==ttl)
-            throw new RuntimeException(KnownProperties.ORIGIN_TTL_NAMES +" specified, but no TTL value was provided");
+        if (usingTTL && null == ttl)
+            throw new RuntimeException(KnownProperties.ORIGIN_TTL_NAMES + " specified, but no TTL value was provided");
 
-        if (usingWriteTime && null==writeTime)
-            throw new RuntimeException(KnownProperties.ORIGIN_WRITETIME_NAMES + " specified, but no WriteTime value was provided");
+        if (usingWriteTime && null == writeTime)
+            throw new RuntimeException(
+                    KnownProperties.ORIGIN_WRITETIME_NAMES + " specified, but no WriteTime value was provided");
 
-        if (null!=explodeMapFeature && explodeMapFeature.isEnabled()) {
-            if (null==explodeMapKey)
+        if (null != explodeMapFeature && explodeMapFeature.isEnabled()) {
+            if (null == explodeMapKey)
                 throw new RuntimeException("ExplodeMap is enabled, but no map key was provided");
             else if (!cqlTable.getBindClass(explodeMapKeyIndex).isAssignableFrom(explodeMapKey.getClass()))
-                throw new RuntimeException("ExplodeMap is enabled, but the map key type provided "+explodeMapKey.getClass().getName()+" is not compatible with "+cqlTable.getBindClass(explodeMapKeyIndex).getName());
+                throw new RuntimeException(
+                        "ExplodeMap is enabled, but the map key type provided " + explodeMapKey.getClass().getName()
+                                + " is not compatible with " + cqlTable.getBindClass(explodeMapKeyIndex).getName());
 
-            if (null==explodeMapValue)
+            if (null == explodeMapValue)
                 throw new RuntimeException("ExplodeMap is enabled, but no map value was provided");
             else if (!cqlTable.getBindClass(explodeMapValueIndex).isAssignableFrom(explodeMapValue.getClass()))
-                throw new RuntimeException("ExplodeMap is enabled, but the map value type provided "+explodeMapValue.getClass().getName()+" is not compatible with "+cqlTable.getBindClass(explodeMapValueIndex).getName());
+                throw new RuntimeException(
+                        "ExplodeMap is enabled, but the map value type provided " + explodeMapValue.getClass().getName()
+                                + " is not compatible with " + cqlTable.getBindClass(explodeMapValueIndex).getName());
         }
 
         // this is the only place this variable is modified, so suppress the warning
-        //noinspection SynchronizeOnNonFinalField
+        // noinspection SynchronizeOnNonFinalField
         synchronized (this.haveCheckedBindInputsOnce) {
             this.haveCheckedBindInputsOnce = true;
         }

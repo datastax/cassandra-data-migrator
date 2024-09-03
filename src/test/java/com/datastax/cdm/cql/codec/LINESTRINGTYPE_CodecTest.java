@@ -15,16 +15,18 @@
  */
 package com.datastax.cdm.cql.codec;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.ByteBuffer;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.datastax.cdm.data.CqlConversion;
 import com.datastax.dse.driver.api.core.data.geometry.LineString;
 import com.datastax.dse.driver.internal.core.data.geometry.DefaultLineString;
 import com.datastax.dse.driver.internal.core.type.codec.geometry.LineStringCodec;
 import com.esri.core.geometry.ogc.OGCLineString;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import java.nio.ByteBuffer;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class LINESTRINGTYPE_CodecTest {
 
@@ -37,7 +39,8 @@ class LINESTRINGTYPE_CodecTest {
 
     @Test
     void encode_ShouldEncodeLineStringToByteBuffer() {
-        LineString lineString = new DefaultLineString((OGCLineString) OGCLineString.fromText("LINESTRING (30 10, 10 30, 40 40)"));
+        LineString lineString = new DefaultLineString(
+                (OGCLineString) OGCLineString.fromText("LINESTRING (30 10, 10 30, 40 40)"));
         ByteBuffer encoded = codec.encode(lineString, CqlConversion.PROTOCOL_VERSION);
 
         assertNotNull(encoded);

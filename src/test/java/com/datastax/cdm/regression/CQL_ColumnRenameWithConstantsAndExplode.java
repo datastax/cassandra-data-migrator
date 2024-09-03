@@ -15,17 +15,18 @@
  */
 package com.datastax.cdm.regression;
 
-import com.datastax.cdm.cql.statement.*;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.cdm.cql.CommonMocks;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.cql.statement.*;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 
 /*
    This test addresses CDM-34 which needs to migrate from:
@@ -53,7 +54,7 @@ public class CQL_ColumnRenameWithConstantsAndExplode extends CommonMocks {
     public void setup() {
         defaultClassVariables();
         setTestVariables();
-        commonSetupWithoutDefaultClassVariables(true,true,false);
+        commonSetupWithoutDefaultClassVariables(true, true, false);
     }
 
     // Set up table as it would be in Cassandra
@@ -95,19 +96,19 @@ public class CQL_ColumnRenameWithConstantsAndExplode extends CommonMocks {
         String targetUpdateString = "UPDATE astra.indextable SET value=? WHERE customer='CUSTOMER' AND parameter_name=? AND id=?";
         String targetSelectString = "SELECT customer,parameter_name,id,value FROM astra.indextable WHERE customer='CUSTOMER' AND parameter_name=? AND id=?";
 
-        OriginSelectByPartitionRangeStatement originSelect = new OriginSelectByPartitionRangeStatement(propertyHelper, originSession);
+        OriginSelectByPartitionRangeStatement originSelect = new OriginSelectByPartitionRangeStatement(propertyHelper,
+                originSession);
         OriginSelectByPKStatement originSelectByPK = new OriginSelectByPKStatement(propertyHelper, originSession);
         TargetInsertStatement targetInsert = new TargetInsertStatement(propertyHelper, targetSession);
         TargetUpdateStatement targetUpdate = new TargetUpdateStatement(propertyHelper, targetSession);
         TargetSelectByPKStatement targetSelect = new TargetSelectByPKStatement(propertyHelper, targetSession);
 
-        assertAll(
-                () -> assertEquals(originSelectString, originSelect.getCQL().replaceAll("\\s+"," "), "originSelect"),
-                () -> assertEquals(originSelectByPKString, originSelectByPK.getCQL().replaceAll("\\s+"," "), "originSelectByPK"),
-                () -> assertEquals(targetInsertString, targetInsert.getCQL().replaceAll("\\s+"," "), "targetInsert"),
-                () -> assertEquals(targetUpdateString, targetUpdate.getCQL().replaceAll("\\s+"," "), "targetUpdate"),
-                () -> assertEquals(targetSelectString, targetSelect.getCQL().replaceAll("\\s+"," "), "targetSelect")
-        );
+        assertAll(() -> assertEquals(originSelectString, originSelect.getCQL().replaceAll("\\s+", " "), "originSelect"),
+                () -> assertEquals(originSelectByPKString, originSelectByPK.getCQL().replaceAll("\\s+", " "),
+                        "originSelectByPK"),
+                () -> assertEquals(targetInsertString, targetInsert.getCQL().replaceAll("\\s+", " "), "targetInsert"),
+                () -> assertEquals(targetUpdateString, targetUpdate.getCQL().replaceAll("\\s+", " "), "targetUpdate"),
+                () -> assertEquals(targetSelectString, targetSelect.getCQL().replaceAll("\\s+", " "), "targetSelect"));
     }
 
 }

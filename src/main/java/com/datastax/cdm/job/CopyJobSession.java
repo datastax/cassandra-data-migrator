@@ -42,151 +42,151 @@ import com.datastax.oss.driver.api.core.cql.Row;
 
 public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
-	private final PKFactory pkFactory;
-	private final boolean isCounterTable;
-	private final Integer fetchSize;
-	private final Integer batchSize;
-	public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-	private TargetUpsertStatement targetUpsertStatement;
-	private TargetSelectByPKStatement targetSelectByPKStatement;
+    private final PKFactory pkFactory;
+    private final boolean isCounterTable;
+    private final Integer fetchSize;
+    private final Integer batchSize;
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    private TargetUpsertStatement targetUpsertStatement;
+    private TargetSelectByPKStatement targetSelectByPKStatement;
 
-	protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-		super(originSession, targetSession, sc);
-		this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE,
-				JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR, JobCounter.CounterType.UNFLUSHED);
+    protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
+        super(originSession, targetSession, sc);
+        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE,
+                JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR, JobCounter.CounterType.UNFLUSHED);
 
-		pkFactory = this.originSession.getPKFactory();
-		isCounterTable = this.originSession.getCqlTable().isCounterTable();
-		fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
-		batchSize = this.originSession.getCqlTable().getBatchSize();
+        pkFactory = this.originSession.getPKFactory();
+        isCounterTable = this.originSession.getCqlTable().isCounterTable();
+        fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
+        batchSize = this.originSession.getCqlTable().getBatchSize();
 
-		logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
-		logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
-		logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
-	}
+        logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
+        logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
+        logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
+    }
 
-	@Override
-	public void processSlice(SplitPartitions.Partition slice) {
-		this.getDataAndInsert(slice.getMin(), slice.getMax());
-	}
+    @Override
+    public void processSlice(SplitPartitions.Partition slice) {
+        this.getDataAndInsert(slice.getMin(), slice.getMax());
+    }
 
-	public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
-		this.trackRunFeature = trackRunFeature;
-		if (null != trackRunFeature)
-			trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.MIGRATE);
-	}
+    public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
+        this.trackRunFeature = trackRunFeature;
+        if (null != trackRunFeature)
+            trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.MIGRATE);
+    }
 
-	private void getDataAndInsert(BigInteger min, BigInteger max) {
-		ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
-		logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
-		if (null != trackRunFeature)
-			trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
+    private void getDataAndInsert(BigInteger min, BigInteger max) {
+        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
+        logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
+        if (null != trackRunFeature)
+            trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
 
-		BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
-		String guardrailCheck;
-		jobCounter.threadReset();
+        BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+        String guardrailCheck;
+        jobCounter.threadReset();
 
-		try {
-			OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession
-					.getOriginSelectByPartitionRangeStatement();
-			targetUpsertStatement = this.targetSession.getTargetUpsertStatement();
-			targetSelectByPKStatement = this.targetSession.getTargetSelectByPKStatement();
-			ResultSet resultSet = originSelectByPartitionRangeStatement
-					.execute(originSelectByPartitionRangeStatement.bind(min, max));
-			Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<>();
+        try {
+            OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession
+                    .getOriginSelectByPartitionRangeStatement();
+            targetUpsertStatement = this.targetSession.getTargetUpsertStatement();
+            targetSelectByPKStatement = this.targetSession.getTargetSelectByPKStatement();
+            ResultSet resultSet = originSelectByPartitionRangeStatement
+                    .execute(originSelectByPartitionRangeStatement.bind(min, max));
+            Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<>();
 
-			for (Row originRow : resultSet) {
-				rateLimiterOrigin.acquire(1);
-				jobCounter.threadIncrement(JobCounter.CounterType.READ);
+            for (Row originRow : resultSet) {
+                rateLimiterOrigin.acquire(1);
+                jobCounter.threadIncrement(JobCounter.CounterType.READ);
 
-				Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
-				if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-					jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-					continue;
-				}
+                Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
+                if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
+                    jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                    continue;
+                }
 
-				for (Record r : pkFactory.toValidRecordList(record)) {
-					if (guardrailEnabled) {
-						guardrailCheck = guardrailFeature.guardrailChecks(r);
-						if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
-							logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
-							jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-							continue;
-						}
-					}
+                for (Record r : pkFactory.toValidRecordList(record)) {
+                    if (guardrailEnabled) {
+                        guardrailCheck = guardrailFeature.guardrailChecks(r);
+                        if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
+                            logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
+                            jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                            continue;
+                        }
+                    }
 
-					BoundStatement boundUpsert = bind(r);
-					if (null == boundUpsert) {
-						jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-						continue;
-					}
+                    BoundStatement boundUpsert = bind(r);
+                    if (null == boundUpsert) {
+                        jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                        continue;
+                    }
 
-					rateLimiterTarget.acquire(1);
-					batch = writeAsync(batch, writeResults, boundUpsert);
-					jobCounter.threadIncrement(JobCounter.CounterType.UNFLUSHED);
+                    rateLimiterTarget.acquire(1);
+                    batch = writeAsync(batch, writeResults, boundUpsert);
+                    jobCounter.threadIncrement(JobCounter.CounterType.UNFLUSHED);
 
-					if (jobCounter.getCount(JobCounter.CounterType.UNFLUSHED) > fetchSize) {
-						flushAndClearWrites(batch, writeResults);
-						jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
-								jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
-						jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
-					}
-				}
-			}
+                    if (jobCounter.getCount(JobCounter.CounterType.UNFLUSHED) > fetchSize) {
+                        flushAndClearWrites(batch, writeResults);
+                        jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
+                                jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
+                        jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
+                    }
+                }
+            }
 
-			flushAndClearWrites(batch, writeResults);
-			jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
-					jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
-			jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
-			if (null != trackRunFeature)
-				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
-		} catch (Exception e) {
-			jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
-					jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
-							- jobCounter.getCount(JobCounter.CounterType.SKIPPED));
-			if (null != trackRunFeature)
-				trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
-			logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
-					Thread.currentThread().getId(), min, max, e);
-			logger.error("Error stats " + jobCounter.getThreadCounters(false));
-		} finally {
-			jobCounter.globalIncrement();
-			printCounts(false);
-		}
-	}
+            flushAndClearWrites(batch, writeResults);
+            jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
+                    jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
+            jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
+            if (null != trackRunFeature)
+                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
+        } catch (Exception e) {
+            jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
+                    jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
+                            - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
+            if (null != trackRunFeature)
+                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
+            logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
+                    Thread.currentThread().getId(), min, max, e);
+            logger.error("Error stats " + jobCounter.getThreadCounters(false));
+        } finally {
+            jobCounter.globalIncrement();
+            printCounts(false);
+        }
+    }
 
-	private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) {
-		if (batch.size() > 0) {
-			writeResults.add(targetUpsertStatement.executeAsync(batch));
-		}
-		writeResults.stream().forEach(writeResult -> writeResult.toCompletableFuture().join().one());
-		writeResults.clear();
-	}
+    private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) {
+        if (batch.size() > 0) {
+            writeResults.add(targetUpsertStatement.executeAsync(batch));
+        }
+        writeResults.stream().forEach(writeResult -> writeResult.toCompletableFuture().join().one());
+        writeResults.clear();
+    }
 
-	private BoundStatement bind(Record r) {
-		if (isCounterTable) {
-			rateLimiterTarget.acquire(1);
-			Record targetRecord = targetSelectByPKStatement.getRecord(r.getPk());
-			if (null != targetRecord) {
-				r.setTargetRow(targetRecord.getTargetRow());
-			}
-		}
-		return targetUpsertStatement.bindRecord(r);
-	}
+    private BoundStatement bind(Record r) {
+        if (isCounterTable) {
+            rateLimiterTarget.acquire(1);
+            Record targetRecord = targetSelectByPKStatement.getRecord(r.getPk());
+            if (null != targetRecord) {
+                r.setTargetRow(targetRecord.getTargetRow());
+            }
+        }
+        return targetUpsertStatement.bindRecord(r);
+    }
 
-	private BatchStatement writeAsync(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults,
-			BoundStatement boundUpsert) {
-		if (batchSize > 1) {
-			batch = batch.add(boundUpsert);
-			if (batch.size() >= batchSize) {
-				writeResults.add(targetUpsertStatement.executeAsync(batch));
-				return BatchStatement.newInstance(BatchType.UNLOGGED);
-			}
-			return batch;
-		} else {
-			writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
-			return batch;
-		}
-	}
+    private BatchStatement writeAsync(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults,
+            BoundStatement boundUpsert) {
+        if (batchSize > 1) {
+            batch = batch.add(boundUpsert);
+            if (batch.size() >= batchSize) {
+                writeResults.add(targetUpsertStatement.executeAsync(batch));
+                return BatchStatement.newInstance(BatchType.UNLOGGED);
+            }
+            return batch;
+        } else {
+            writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
+            return batch;
+        }
+    }
 
 }

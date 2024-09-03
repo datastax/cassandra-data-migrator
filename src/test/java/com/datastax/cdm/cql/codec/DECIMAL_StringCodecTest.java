@@ -15,16 +15,17 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 class DECIMAL_StringCodecTest {
 
@@ -82,9 +83,9 @@ class DECIMAL_StringCodecTest {
     }
 
     @Test
-        // The test seems trivial because we are basically sending in a
-        // number converted to a string, expecting it to convert that to a number
-        // and return us the number as a string
+    // The test seems trivial because we are basically sending in a
+    // number converted to a string, expecting it to convert that to a number
+    // and return us the number as a string
     void parse_ShouldParseStringToValueAndReturnAsString() {
         String valueAsString = "123.456";
         String result = codec.parse(valueAsString);
@@ -92,8 +93,8 @@ class DECIMAL_StringCodecTest {
     }
 
     @Test
-        // Slightly more interesting test, we are sending in a string that is not
-        // a number, expecting it throw a IllegalArgumentException
+    // Slightly more interesting test, we are sending in a string that is not
+    // a number, expecting it throw a IllegalArgumentException
     void parse_ShouldThrowIllegalArgumentException_WhenValueIsNotANumber() {
         String valueAsString = "not a number";
         Assertions.assertThrows(IllegalArgumentException.class, () -> codec.parse(valueAsString));

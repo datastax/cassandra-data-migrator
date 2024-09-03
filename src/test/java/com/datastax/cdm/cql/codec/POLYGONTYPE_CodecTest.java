@@ -15,16 +15,18 @@
  */
 package com.datastax.cdm.cql.codec;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.ByteBuffer;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.datastax.cdm.data.CqlConversion;
 import com.datastax.dse.driver.api.core.data.geometry.Polygon;
 import com.datastax.dse.driver.internal.core.data.geometry.DefaultPolygon;
 import com.datastax.dse.driver.internal.core.type.codec.geometry.PolygonCodec;
 import com.esri.core.geometry.ogc.OGCPolygon;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import java.nio.ByteBuffer;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class POLYGONTYPE_CodecTest {
 
@@ -37,8 +39,11 @@ class POLYGONTYPE_CodecTest {
 
     @Test
     void encode_ShouldEncodePolygonToByteBuffer() {
-        Polygon polygon = new DefaultPolygon((OGCPolygon) OGCPolygon.fromText("POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))"));
-        ByteBuffer encoded = codec.encode(polygon, CqlConversion.PROTOCOL_VERSION); // Assuming protocol version is not needed or a mock version is provided
+        Polygon polygon = new DefaultPolygon(
+                (OGCPolygon) OGCPolygon.fromText("POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))"));
+        ByteBuffer encoded = codec.encode(polygon, CqlConversion.PROTOCOL_VERSION); // Assuming protocol version is not
+                                                                                    // needed or a mock version is
+                                                                                    // provided
 
         // Assert that the result is not null
         assertNotNull(encoded);
@@ -67,6 +72,7 @@ class POLYGONTYPE_CodecTest {
         String actualWkt = actualPolygon.asWellKnownText();
         assertEquals(wkt, actualWkt);
     }
+
     @Test
     void format_ShouldFormatPolygonToWktString() {
         String wkt = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))";

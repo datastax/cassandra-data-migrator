@@ -15,16 +15,17 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.cdm.data.CqlConversion;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
+import com.datastax.cdm.data.CqlConversion;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 class TEXT_BigDecimalCodecTest {
 
@@ -32,7 +33,7 @@ class TEXT_BigDecimalCodecTest {
 
     @BeforeEach
     void setUp() {
-        codec = new TEXT_BigDecimalCodec( null);
+        codec = new TEXT_BigDecimalCodec(null);
     }
 
     @Test
@@ -81,7 +82,8 @@ class TEXT_BigDecimalCodecTest {
 
     @Test
     void format_ShouldFormatNumberValueAsText() {
-        BigDecimal value = new BigDecimal("12345.6789");;
+        BigDecimal value = new BigDecimal("12345.6789");
+        ;
         String expectedValue = TypeCodecs.DECIMAL.format(value);
         String result = codec.format(value);
         Assertions.assertEquals(expectedValue, result);

@@ -15,16 +15,17 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import com.datastax.oss.driver.api.core.ProtocolVersion;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.datastax.cdm.properties.PropertyHelper;
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.ByteBuffer;
 import java.time.Instant;
+
+import org.jetbrains.annotations.NotNull;
+
+import com.datastax.cdm.properties.PropertyHelper;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 public class TIMESTAMP_StringMillisCodec extends AbstractBaseCodec<String> {
 

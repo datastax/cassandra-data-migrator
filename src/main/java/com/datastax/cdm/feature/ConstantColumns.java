@@ -43,19 +43,17 @@ public class ConstantColumns extends AbstractFeature {
 
         isLoaded = true;
         isValid = validateProperties();
-        isEnabled = (null!=names && names.size() > 0);
+        isEnabled = (null != names && names.size() > 0);
         return isLoaded && isValid;
     }
 
     @Override
     protected boolean validateProperties() {
-        if ((null == names  || names.isEmpty()) &&
-            (null == values || values.isEmpty())) {
+        if ((null == names || names.isEmpty()) && (null == values || values.isEmpty())) {
             return true; // feature is disabled, which is valid
         }
         // both names and values must be set, not empty, and of the same size
-        if (null == names || null == values || names.size() == 0 ||
-                names.size() != values.size()) {
+        if (null == names || null == values || names.size() == 0 || names.size() != values.size()) {
             logger.error("Constant column names ({}) and values ({}) are of different sizes", names, values);
             return false;
         }
@@ -65,7 +63,7 @@ public class ConstantColumns extends AbstractFeature {
 
     @Override
     public boolean initializeAndValidate(CqlTable originTable, CqlTable targetTable) {
-        if (null==targetTable) {
+        if (null == targetTable) {
             throw new IllegalArgumentException("targetTable is null");
         }
         if (targetTable.isOrigin()) {
@@ -77,12 +75,14 @@ public class ConstantColumns extends AbstractFeature {
             isEnabled = false;
             return false;
         }
-        if (!isEnabled) return true;
+        if (!isEnabled)
+            return true;
 
         this.bindClasses = targetTable.extendColumns(this.names);
-        for (int i=0; i<bindClasses.size(); i++) {
+        for (int i = 0; i < bindClasses.size(); i++) {
             if (null == bindClasses.get(i)) {
-                logger.error("Constant column {} is not found on the target table {}", names.get(i), targetTable.getKeyspaceTable());
+                logger.error("Constant column {} is not found on the target table {}", names.get(i),
+                        targetTable.getKeyspaceTable());
                 isValid = false;
             }
         }
@@ -90,9 +90,9 @@ public class ConstantColumns extends AbstractFeature {
         // Now we know all columns are valid, we can verify that the configured value is not empty and can be parsed
         if (isValid) {
             CodecRegistry codecRegistry = targetTable.getCodecRegistry();
-            for (int i=0; i<values.size(); i++) {
+            for (int i = 0; i < values.size(); i++) {
                 String value = values.get(i);
-                if (null==value || value.isEmpty()) {
+                if (null == value || value.isEmpty()) {
                     logger.error("Constant column value {} is null or empty", value);
                     isValid = false;
                 } else {
@@ -101,21 +101,31 @@ public class ConstantColumns extends AbstractFeature {
                     try {
                         codec.parse(value);
                     } catch (Exception e) {
-                        logger.error("Constant column value {} cannot be parsed as type {}", value, dataType.asCql(true, true));
+                        logger.error("Constant column value {} cannot be parsed as type {}", value,
+                                dataType.asCql(true, true));
                         isValid = false;
                     }
                 }
             }
         }
 
-        if (!isValid) isEnabled = false;
-        logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled?"enabled":"disabled");
+        if (!isValid)
+            isEnabled = false;
+        logger.info("Feature {} is {}", this.getClass().getSimpleName(), isEnabled ? "enabled" : "disabled");
         return isValid;
     }
 
-    public List<String> getNames() { return isEnabled ? names : Collections.emptyList(); }
-    public List<Class> getBindClasses() { return isEnabled ? bindClasses : Collections.emptyList(); }
-    public List<String> getValues() { return isEnabled ? values : Collections.emptyList(); }
+    public List<String> getNames() {
+        return isEnabled ? names : Collections.emptyList();
+    }
+
+    public List<Class> getBindClasses() {
+        return isEnabled ? bindClasses : Collections.emptyList();
+    }
+
+    public List<String> getValues() {
+        return isEnabled ? values : Collections.emptyList();
+    }
 
     private static List<String> getConstantColumnNames(IPropertyHelper propertyHelper) {
         return CqlTable.unFormatNames(propertyHelper.getStringList(KnownProperties.CONSTANT_COLUMN_NAMES));
@@ -125,9 +135,11 @@ public class ConstantColumns extends AbstractFeature {
         String columnValueString = propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES);
         String regexString = propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
 
-        if (null!=columnValueString && !columnValueString.isEmpty()) {
-            if (null==regexString || regexString.isEmpty()) {
-                throw new RuntimeException("Constant column values are specified [" + columnValueString + "], but no split regex is provided in property " + KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
+        if (null != columnValueString && !columnValueString.isEmpty()) {
+            if (null == regexString || regexString.isEmpty()) {
+                throw new RuntimeException("Constant column values are specified [" + columnValueString
+                        + "], but no split regex is provided in property "
+                        + KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX);
             } else {
                 return Arrays.asList(columnValueString.split(regexString));
             }

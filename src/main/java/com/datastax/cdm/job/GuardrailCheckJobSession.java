@@ -15,17 +15,18 @@
  */
 package com.datastax.cdm.job;
 
-import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
-import com.datastax.cdm.data.PKFactory;
-import com.datastax.cdm.data.Record;
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.*;
+import java.math.BigInteger;
+
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
+import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
+import com.datastax.cdm.data.PKFactory;
+import com.datastax.cdm.data.Record;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.*;
 
 public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 
@@ -35,7 +36,8 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
 
     protected GuardrailCheckJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         super(originSession, targetSession, sc);
-        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID, JobCounter.CounterType.SKIPPED, JobCounter.CounterType.LARGE);
+        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID,
+                JobCounter.CounterType.SKIPPED, JobCounter.CounterType.LARGE);
 
         pkFactory = this.originSession.getPKFactory();
 
@@ -44,7 +46,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
             return;
         }
 
-        logger.info("CQL -- origin select: {}",this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
+        logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
     }
 
     @Override
@@ -53,13 +55,15 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
     }
 
     public void guardrailCheck(BigInteger min, BigInteger max) {
-        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min,max));
+        ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         try {
             logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
-            OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession.getOriginSelectByPartitionRangeStatement();
-            ResultSet resultSet = originSelectByPartitionRangeStatement.execute(originSelectByPartitionRangeStatement.bind(min, max));
+            OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession
+                    .getOriginSelectByPartitionRangeStatement();
+            ResultSet resultSet = originSelectByPartitionRangeStatement
+                    .execute(originSelectByPartitionRangeStatement.bind(min, max));
             String checkString;
-			jobCounter.threadReset();
+            jobCounter.threadReset();
             for (Row originRow : resultSet) {
                 rateLimiterOrigin.acquire(1);
                 jobCounter.threadIncrement(JobCounter.CounterType.READ);
@@ -75,8 +79,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
                     if (checkString != null && !checkString.isEmpty()) {
                         jobCounter.threadIncrement(JobCounter.CounterType.LARGE);
                         logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), checkString);
-                    }
-                    else {
+                    } else {
                         jobCounter.threadIncrement(JobCounter.CounterType.VALID);
                     }
                 }

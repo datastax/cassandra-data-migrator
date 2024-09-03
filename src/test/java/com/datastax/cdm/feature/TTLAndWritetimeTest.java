@@ -15,20 +15,21 @@
  */
 package com.datastax.cdm.feature;
 
-import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.cdm.properties.KnownProperties;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 
 public class TTLAndWritetimeTest extends CommonMocks {
 
@@ -45,16 +46,16 @@ public class TTLAndWritetimeTest extends CommonMocks {
     public void setup() {
         defaultClassVariables();
         setTestVariables();
-        commonSetupWithoutDefaultClassVariables(false,false,false);
+        commonSetupWithoutDefaultClassVariables(false, false, false);
         setTestWhens();
         feature = new WritetimeTTL();
     }
 
     private void setTestVariables() {
         originValueColumns = new ArrayList<>();
-        originValueColumns.addAll(Arrays.asList(writetimeColumnName,ttlColumnName,writetimeTTLColumnName));
+        originValueColumns.addAll(Arrays.asList(writetimeColumnName, ttlColumnName, writetimeTTLColumnName));
         originValueColumnTypes = new ArrayList<>(originValueColumnTypes);
-        originValueColumnTypes.addAll(Arrays.asList(DataTypes.TEXT,DataTypes.TEXT,DataTypes.TEXT));
+        originValueColumnTypes.addAll(Arrays.asList(DataTypes.TEXT, DataTypes.TEXT, DataTypes.TEXT));
     }
 
     private void setTestWhens(){
@@ -72,7 +73,6 @@ public class TTLAndWritetimeTest extends CommonMocks {
         });
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(customTTL);
     }
-
 
     @Test
     public void smoke_loadProperties() {
@@ -131,7 +131,6 @@ public class TTLAndWritetimeTest extends CommonMocks {
                 () -> assertFalse(feature.hasTTLColumns(), "hasTTLColumns")
         );
     }
-
 
     @Test
     public void smokeTest_enabledFeature_withOnlyWritetimeAuto() {
@@ -319,7 +318,6 @@ public class TTLAndWritetimeTest extends CommonMocks {
                 () -> assertFalse(feature.isValid, "isValid")
         );
     }
-
 
     @Test
     public void test_ttl_noValidColumns() {

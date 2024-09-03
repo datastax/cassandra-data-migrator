@@ -15,19 +15,20 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.cdm.cql.CommonMocks;
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.datastax.cdm.cql.CommonMocks;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 public class OriginSelectStatementTest extends CommonMocks {
 
@@ -44,15 +45,11 @@ public class OriginSelectStatementTest extends CommonMocks {
     @Test
     public void smoke_basicCQL() {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT ")
-                .append(String.join(",", originColumnNames))
-                .append(" FROM ")
-                .append(originKeyspaceTableName)
-                .append(" WHERE ")
-                .append(bindClause);
+        sb.append("SELECT ").append(String.join(",", originColumnNames)).append(" FROM ")
+                .append(originKeyspaceTableName).append(" WHERE ").append(bindClause);
 
         String cql = originSelectStatement.getCQL();
-        assertEquals(sb.toString(),cql);
+        assertEquals(sb.toString(), cql);
     }
 
     @Test
@@ -122,24 +119,19 @@ public class OriginSelectStatementTest extends CommonMocks {
 
     @Test
     public void isRecordValid() {
-        assertAll(
-                () -> {
-                    assertFalse(originSelectStatement.isRecordValid(null), "null record");
-                },
-                () -> {
-                    assertTrue(originSelectStatement.isRecordValid(record), "valid row");
-                },
-                () -> {
-                    when(record.getPk().isError()).thenReturn(true);
-                    when(record.getPk().isWarning()).thenReturn(false);
-                    assertFalse(originSelectStatement.isRecordValid(record), "error PK");
-                },
-                () -> {
-                    when(record.getPk().isError()).thenReturn(false);
-                    when(record.getPk().isWarning()).thenReturn(true);
-                    assertTrue(originSelectStatement.isRecordValid(record), "warning PK");
-                }
-        );
+        assertAll(() -> {
+            assertFalse(originSelectStatement.isRecordValid(null), "null record");
+        }, () -> {
+            assertTrue(originSelectStatement.isRecordValid(record), "valid row");
+        }, () -> {
+            when(record.getPk().isError()).thenReturn(true);
+            when(record.getPk().isWarning()).thenReturn(false);
+            assertFalse(originSelectStatement.isRecordValid(record), "error PK");
+        }, () -> {
+            when(record.getPk().isError()).thenReturn(false);
+            when(record.getPk().isWarning()).thenReturn(true);
+            assertTrue(originSelectStatement.isRecordValid(record), "warning PK");
+        });
     }
 
     @Test

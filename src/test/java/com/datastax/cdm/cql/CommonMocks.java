@@ -15,6 +15,24 @@
  */
 package com.datastax.cdm.cql;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import com.datastax.cdm.data.*;
 import com.datastax.cdm.data.Record;
 import com.datastax.cdm.feature.*;
@@ -29,69 +47,82 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.*;
-import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
 
 /**
- * This class is a bit bonkers, to be honest. It is basically trying to provide a simulation of
- * Cassandra plus some of the other classes in the CDM codebase. It is used by the unit tests,
- * and originally designed for statements but it could well be useful in other contexts as well.
+ * This class is a bit bonkers, to be honest. It is basically trying to provide a simulation of Cassandra plus some of
+ * the other classes in the CDM codebase. It is used by the unit tests, and originally designed for statements but it
+ * could well be useful in other contexts as well.
  */
 public class CommonMocks {
     private boolean hasExplodeMap;
     private boolean hasConstantColumns;
     private boolean hasCounters;
 
-    @Mock public IPropertyHelper propertyHelper;
+    @Mock
+    public IPropertyHelper propertyHelper;
 
-    @Mock public EnhancedSession originSession;
-    @Mock public CqlSession originCqlSession;
-    @Mock public CqlTable originTable;
-    @Mock public ResultSet originResultSet;
-    @Mock public MutableCodecRegistry originCodecRegistry;
-    @Mock public TypeCodec originCodec;
-    @Mock public List<CqlConversion> originConversionList;
-    @Mock public CqlConversion originCqlConversion;
+    @Mock
+    public EnhancedSession originSession;
+    @Mock
+    public CqlSession originCqlSession;
+    @Mock
+    public CqlTable originTable;
+    @Mock
+    public ResultSet originResultSet;
+    @Mock
+    public MutableCodecRegistry originCodecRegistry;
+    @Mock
+    public TypeCodec originCodec;
+    @Mock
+    public List<CqlConversion> originConversionList;
+    @Mock
+    public CqlConversion originCqlConversion;
 
-    @Mock public EnhancedSession targetSession;
-    @Mock public CqlSession targetCqlSession;
-    @Mock public CqlTable targetTable;
-    @Mock public ResultSet targetResultSet;
-    @Mock public MutableCodecRegistry targetCodecRegistry;
-    @Mock public TypeCodec targetCodec;
-    @Mock public List<CqlConversion> targetConversionList;
-    @Mock public CqlConversion targetCqlConversion;
+    @Mock
+    public EnhancedSession targetSession;
+    @Mock
+    public CqlSession targetCqlSession;
+    @Mock
+    public CqlTable targetTable;
+    @Mock
+    public ResultSet targetResultSet;
+    @Mock
+    public MutableCodecRegistry targetCodecRegistry;
+    @Mock
+    public TypeCodec targetCodec;
+    @Mock
+    public List<CqlConversion> targetConversionList;
+    @Mock
+    public CqlConversion targetCqlConversion;
 
-    @Mock public ConstantColumns constantColumnsFeature;
-    @Mock public ExplodeMap explodeMapFeature;
-    @Mock public ExtractJson extractJsonFeature;
-    @Mock public WritetimeTTL writetimeTTLFeature;
-    @Mock public OriginFilterCondition originFilterConditionFeature;
+    @Mock
+    public ConstantColumns constantColumnsFeature;
+    @Mock
+    public ExplodeMap explodeMapFeature;
+    @Mock
+    public ExtractJson extractJsonFeature;
+    @Mock
+    public WritetimeTTL writetimeTTLFeature;
+    @Mock
+    public OriginFilterCondition originFilterConditionFeature;
 
-    @Mock public PreparedStatement preparedStatement;
-    @Mock public BoundStatement boundStatement;
-    @Mock public CompletionStage<AsyncResultSet> completionStage;
+    @Mock
+    public PreparedStatement preparedStatement;
+    @Mock
+    public BoundStatement boundStatement;
+    @Mock
+    public CompletionStage<AsyncResultSet> completionStage;
 
-    @Mock public EnhancedPK pk;
-    @Mock public PKFactory pkFactory;
-    @Mock public Record record;
-    @Mock public Row originRow;
-    @Mock public Row targetRow;
+    @Mock
+    public EnhancedPK pk;
+    @Mock
+    public PKFactory pkFactory;
+    @Mock
+    public Record record;
+    @Mock
+    public Row originRow;
+    @Mock
+    public Row targetRow;
 
     public String originKeyspaceName;
     public String originTableName;
@@ -146,7 +177,7 @@ public class CommonMocks {
     public List<DataType> constantColumnTypes;
 
     public void commonSetup() {
-        commonSetup(false,false, false);
+        commonSetup(false, false, false);
     }
 
     public void commonSetup(boolean hasExplodeMap, boolean hasConstantColumns, boolean hasCounters) {
@@ -154,7 +185,8 @@ public class CommonMocks {
         commonSetupWithoutDefaultClassVariables(hasExplodeMap, hasConstantColumns, hasCounters);
     }
 
-    public void commonSetupWithoutDefaultClassVariables(boolean hasExplodeMap, boolean hasConstantColumns, boolean hasCounters) {
+    public void commonSetupWithoutDefaultClassVariables(boolean hasExplodeMap, boolean hasConstantColumns,
+            boolean hasCounters) {
         if (hasCounters && (hasExplodeMap || hasConstantColumns)) {
             throw new IllegalArgumentException("Counters cannot be used with ExplodeMap or ConstantColumns");
         }
@@ -180,23 +212,23 @@ public class CommonMocks {
     }
 
     public void commonSetupWithoutDefaultClassVariables() {
-        commonSetupWithoutDefaultClassVariables(false,false,false);
+        commonSetupWithoutDefaultClassVariables(false, false, false);
     }
 
     public void defaultClassVariables() {
         originKeyspaceName = "origin_ks";
         originTableName = "table_name";
-        originPartitionKey = Arrays.asList("part_key1","part_key2");
-        originPartitionKeyTypes = Arrays.asList(DataTypes.TEXT,DataTypes.TEXT);
+        originPartitionKey = Arrays.asList("part_key1", "part_key2");
+        originPartitionKeyTypes = Arrays.asList(DataTypes.TEXT, DataTypes.TEXT);
         originClusteringKey = Collections.singletonList("cluster_key");
         originClusteringKeyTypes = Collections.singletonList(DataTypes.TEXT);
         filterCol = "filter_col";
         filterColType = DataTypes.TEXT;
         vectorCol = "vector_col";
-        vectorColType = DataTypes.vectorOf(DataTypes.FLOAT,3);
+        vectorColType = DataTypes.vectorOf(DataTypes.FLOAT, 3);
         originValueColumns = Arrays.asList("value1", filterCol, vectorCol);
         originValueColumnTypes = Arrays.asList(DataTypes.TEXT, filterColType, vectorColType);
-        originCounterColumns = Arrays.asList("counter1","counter2");
+        originCounterColumns = Arrays.asList("counter1", "counter2");
         originToTargetNameList = Collections.emptyList();
 
         targetKeyspaceName = "target_ks";
@@ -213,8 +245,8 @@ public class CommonMocks {
         explodeMapValue = "map_value";
         explodeMapValueType = DataTypes.TEXT;
 
-        constantColumns = Arrays.asList("const1","const2","const3");
-        constantColumnValues = Arrays.asList("'abcd'","1234","543");
+        constantColumns = Arrays.asList("const1", "const2", "const3");
+        constantColumnValues = Arrays.asList("'abcd'", "1234", "543");
         constantColumnTypes = Arrays.asList(DataTypes.TEXT, DataTypes.INT, DataTypes.BIGINT);
     }
 
@@ -222,7 +254,7 @@ public class CommonMocks {
     public void setCompoundClassVariables() {
         originKeyspaceTableName = originKeyspaceName + "." + originTableName;
         targetKeyspaceTableName = targetKeyspaceName + "." + targetTableName;
-        explodeMapType = DataTypes.mapOf(explodeMapKeyType,explodeMapValueType);
+        explodeMapType = DataTypes.mapOf(explodeMapKeyType, explodeMapValueType);
     }
 
     public void setOriginVariables() {
@@ -232,8 +264,7 @@ public class CommonMocks {
         originColumnNames = new ArrayList<>(originPrimaryKey);
         if (hasCounters) {
             originColumnNames.addAll(originCounterColumns);
-            originCounterIndexes = originCounterColumns.stream()
-                    .map(originColumnNames::indexOf)
+            originCounterIndexes = originCounterColumns.stream().map(originColumnNames::indexOf)
                     .collect(Collectors.toList());
 
         } else {
@@ -244,7 +275,7 @@ public class CommonMocks {
         originColumnTypes = new ArrayList<>(originPartitionKeyTypes);
         originColumnTypes.addAll(originClusteringKeyTypes);
         if (hasCounters) {
-            originColumnTypes.addAll(Collections.nCopies(originCounterColumns.size(),DataTypes.COUNTER));
+            originColumnTypes.addAll(Collections.nCopies(originCounterColumns.size(), DataTypes.COUNTER));
         } else {
             originColumnTypes.addAll(originValueColumnTypes);
         }
@@ -316,13 +347,20 @@ public class CommonMocks {
     }
 
     public void setTargetVariables() {
-        if (null==targetPartitionKey || targetPartitionKey.isEmpty()) targetPartitionKey = new ArrayList<>(originPartitionKey);
-        if (null==targetClusteringKey || targetClusteringKey.isEmpty()) targetClusteringKey = new ArrayList<>(originClusteringKey);
-        if (null==targetValueColumns || targetValueColumns.isEmpty()) targetValueColumns = new ArrayList<>(originValueColumns);
-        if (null==targetPartitionKeyTypes || targetPartitionKeyTypes.isEmpty()) targetPartitionKeyTypes = new ArrayList<>(originPartitionKeyTypes);
-        if (null==targetClusteringKeyTypes || targetClusteringKeyTypes.isEmpty()) targetClusteringKeyTypes = new ArrayList<>(originClusteringKeyTypes);
-        if (null==targetValueColumnTypes || targetValueColumnTypes.isEmpty()) targetValueColumnTypes = new ArrayList<>(originValueColumnTypes);
-        if (null==targetCounterColumns || targetCounterColumns.isEmpty()) targetCounterColumns = new ArrayList<>(originCounterColumns);
+        if (null == targetPartitionKey || targetPartitionKey.isEmpty())
+            targetPartitionKey = new ArrayList<>(originPartitionKey);
+        if (null == targetClusteringKey || targetClusteringKey.isEmpty())
+            targetClusteringKey = new ArrayList<>(originClusteringKey);
+        if (null == targetValueColumns || targetValueColumns.isEmpty())
+            targetValueColumns = new ArrayList<>(originValueColumns);
+        if (null == targetPartitionKeyTypes || targetPartitionKeyTypes.isEmpty())
+            targetPartitionKeyTypes = new ArrayList<>(originPartitionKeyTypes);
+        if (null == targetClusteringKeyTypes || targetClusteringKeyTypes.isEmpty())
+            targetClusteringKeyTypes = new ArrayList<>(originClusteringKeyTypes);
+        if (null == targetValueColumnTypes || targetValueColumnTypes.isEmpty())
+            targetValueColumnTypes = new ArrayList<>(originValueColumnTypes);
+        if (null == targetCounterColumns || targetCounterColumns.isEmpty())
+            targetCounterColumns = new ArrayList<>(originCounterColumns);
 
         targetPrimaryKey = new ArrayList<>(targetPartitionKey);
         targetPrimaryKey.addAll(targetClusteringKey);
@@ -330,8 +368,7 @@ public class CommonMocks {
         targetColumnNames = new ArrayList<>(targetPrimaryKey);
         if (hasCounters) {
             targetColumnNames.addAll(targetCounterColumns);
-            targetCounterIndexes = targetCounterColumns.stream()
-                    .map(targetColumnNames::indexOf)
+            targetCounterIndexes = targetCounterColumns.stream().map(targetColumnNames::indexOf)
                     .collect(Collectors.toList());
         } else {
             targetColumnNames.addAll(targetValueColumns);
@@ -341,7 +378,7 @@ public class CommonMocks {
         targetColumnTypes = new ArrayList<>(targetPartitionKeyTypes);
         targetColumnTypes.addAll(targetClusteringKeyTypes);
         if (hasCounters) {
-            targetColumnTypes.addAll(Collections.nCopies(targetCounterColumns.size(),DataTypes.COUNTER));
+            targetColumnTypes.addAll(Collections.nCopies(targetCounterColumns.size(), DataTypes.COUNTER));
         } else {
             targetColumnTypes.addAll(targetValueColumnTypes);
         }
@@ -495,40 +532,70 @@ public class CommonMocks {
     public static Object getSampleData(DataType type) {
         CqlData.Type cqlDataType = CqlData.toType(type);
         switch (cqlDataType) {
-            case PRIMITIVE:
-                if (type.equals(DataTypes.BOOLEAN)) return true;
-                if (type.equals(DataTypes.TINYINT)) return (byte)1;
-                if (type.equals(DataTypes.SMALLINT)) return (short)1;
-                if (type.equals(DataTypes.INT)) return 1;
-                if (type.equals(DataTypes.BIGINT)) return 1L;
-                if (type.equals(DataTypes.FLOAT)) return 1.0f;
-                if (type.equals(DataTypes.DOUBLE)) return 1.0d;
-                if (type.equals(DataTypes.DECIMAL)) return new BigDecimal(1);
-                if (type.equals(DataTypes.UUID)) return UUID.randomUUID();
-                if (type.equals(DataTypes.INET)) return InetAddress.getLoopbackAddress();
-                if (type.equals(DataTypes.TIMESTAMP)) return Instant.now();
-                if (type.equals(DataTypes.TIME)) return LocalTime.now();
-                if (type.equals(DataTypes.DATE)) return LocalDate.now();
-                if (type.equals(DataTypes.DURATION)) return Duration.ofSeconds(1);
-                if (type.equals(DataTypes.BLOB)) return ByteBuffer.wrap("sample_data".getBytes());
-                if (type.equals(DataTypes.ASCII)) return "sample_data";
-                if (type.equals(DataTypes.TEXT)) return "sample_data";
-                if (type.equals(DataTypes.VARINT)) return BigInteger.ONE;
-                if (type.equals(DataTypes.COUNTER)) return 1L;
-                if (type.equals(DataTypes.TIMEUUID)) return UUID.randomUUID();
-                break;
-            case LIST: return Arrays.asList("1","2","3");
-            case SET: return new HashSet(Arrays.asList("1","2","3"));
-            case MAP: return new HashMap<String,String>() {{put("1","one");put("2","two");put("3","three");}};
-            case VECTOR: return CqlVector.newInstance(1.1,2.2,3.3);
+        case PRIMITIVE:
+            if (type.equals(DataTypes.BOOLEAN))
+                return true;
+            if (type.equals(DataTypes.TINYINT))
+                return (byte) 1;
+            if (type.equals(DataTypes.SMALLINT))
+                return (short) 1;
+            if (type.equals(DataTypes.INT))
+                return 1;
+            if (type.equals(DataTypes.BIGINT))
+                return 1L;
+            if (type.equals(DataTypes.FLOAT))
+                return 1.0f;
+            if (type.equals(DataTypes.DOUBLE))
+                return 1.0d;
+            if (type.equals(DataTypes.DECIMAL))
+                return new BigDecimal(1);
+            if (type.equals(DataTypes.UUID))
+                return UUID.randomUUID();
+            if (type.equals(DataTypes.INET))
+                return InetAddress.getLoopbackAddress();
+            if (type.equals(DataTypes.TIMESTAMP))
+                return Instant.now();
+            if (type.equals(DataTypes.TIME))
+                return LocalTime.now();
+            if (type.equals(DataTypes.DATE))
+                return LocalDate.now();
+            if (type.equals(DataTypes.DURATION))
+                return Duration.ofSeconds(1);
+            if (type.equals(DataTypes.BLOB))
+                return ByteBuffer.wrap("sample_data".getBytes());
+            if (type.equals(DataTypes.ASCII))
+                return "sample_data";
+            if (type.equals(DataTypes.TEXT))
+                return "sample_data";
+            if (type.equals(DataTypes.VARINT))
+                return BigInteger.ONE;
+            if (type.equals(DataTypes.COUNTER))
+                return 1L;
+            if (type.equals(DataTypes.TIMEUUID))
+                return UUID.randomUUID();
+            break;
+        case LIST:
+            return Arrays.asList("1", "2", "3");
+        case SET:
+            return new HashSet(Arrays.asList("1", "2", "3"));
+        case MAP:
+            return new HashMap<String, String>() {
+                {
+                    put("1", "one");
+                    put("2", "two");
+                    put("3", "three");
+                }
+            };
+        case VECTOR:
+            return CqlVector.newInstance(1.1, 2.2, 3.3);
         }
-        return "DataType "+type+" is not supported, so returning a String";
+        return "DataType " + type + " is not supported, so returning a String";
     }
 
     public String keyEqualsBindJoinedWithAND(List<String> bindList) {
         StringBuilder sb = new StringBuilder();
-        for (int i=0; i<bindList.size(); i++) {
-            if (i >0) {
+        for (int i = 0; i < bindList.size(); i++) {
+            if (i > 0) {
                 sb.append(" AND ");
             }
             String key = bindList.get(i);

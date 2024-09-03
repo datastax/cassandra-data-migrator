@@ -15,17 +15,18 @@
  */
 package com.datastax.cdm.cql.statement;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.datastax.cdm.cql.CommonMocks;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
-import com.datastax.cdm.cql.CommonMocks;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 public class OriginSelectByPKStatementTest extends CommonMocks {
 
@@ -40,15 +41,11 @@ public class OriginSelectByPKStatementTest extends CommonMocks {
     @Test
     public void smoke_basicCQL() {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT ")
-                .append(String.join(",", originColumnNames))
-                .append(" FROM ")
-                .append(originKeyspaceTableName)
-                .append(" WHERE ")
-                .append(keyEqualsBindJoinedWithAND(originPrimaryKey));
+        sb.append("SELECT ").append(String.join(",", originColumnNames)).append(" FROM ")
+                .append(originKeyspaceTableName).append(" WHERE ").append(keyEqualsBindJoinedWithAND(originPrimaryKey));
 
         String cql = originSelectByPKStatement.getCQL();
-        assertEquals(sb.toString(),cql);
+        assertEquals(sb.toString(), cql);
     }
 
     @Test
@@ -80,12 +77,9 @@ public class OriginSelectByPKStatementTest extends CommonMocks {
     public void testBind_success() {
         originSelectByPKStatement.bind(pk);
 
-        assertAll(
-                () -> verify(preparedStatement).bind(),
-                () -> verify(boundStatement).setConsistencyLevel(readCL),
+        assertAll(() -> verify(preparedStatement).bind(), () -> verify(boundStatement).setConsistencyLevel(readCL),
                 () -> verify(boundStatement).setPageSize(fetchSizeInRows),
-                () -> verify(pkFactory).bindWhereClause(PKFactory.Side.ORIGIN, pk, boundStatement, 0)
-        );
+                () -> verify(pkFactory).bindWhereClause(PKFactory.Side.ORIGIN, pk, boundStatement, 0));
     }
 
     @Test
