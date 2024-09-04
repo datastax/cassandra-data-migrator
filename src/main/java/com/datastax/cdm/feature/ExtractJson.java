@@ -28,6 +28,7 @@ import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ExtractJson extends AbstractFeature {
@@ -129,9 +130,20 @@ public class ExtractJson extends AbstractFeature {
         return true;
     }
 
-    public Object extract(String jsonString) throws JsonMappingException, JsonProcessingException {
+    public String extract(String jsonString) throws JsonMappingException, JsonProcessingException {
         if (StringUtils.isNotBlank(jsonString)) {
-            return mapper.readValue(jsonString, Map.class).get(originJsonFieldName);
+            JsonNode ordersObj = mapper.readTree(jsonString);
+            JsonNode orders = ordersObj.get("orders");
+            if (null != orders && orders.isArray() && orders.size() > 0) {
+                JsonNode order = orders.get(0);
+                if (null != order) {
+                    JsonNode bookingReferences = order.get("bookingReference");
+                    if (null != bookingReferences && bookingReferences.isArray() && bookingReferences.size() > 0) {
+                        JsonNode booking = bookingReferences.get(0);
+                        return booking.get("recordLocatorId").asText();
+                    }
+                }
+            }
         }
 
         return null;
