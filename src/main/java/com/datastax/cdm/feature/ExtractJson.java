@@ -130,7 +130,7 @@ public class ExtractJson extends AbstractFeature {
         return true;
     }
 
-    public Object extract(String jsonString) throws JsonMappingException, JsonProcessingException {
+    public String extract(String jsonString) throws JsonMappingException, JsonProcessingException {
         if (StringUtils.isNotBlank(jsonString)) {
             JsonNode ordersObj = mapper.readTree(jsonString);
             if (null == ordersObj) {
@@ -144,7 +144,10 @@ public class ExtractJson extends AbstractFeature {
                     if (null != bookingReferences && bookingReferences.isArray() && bookingReferences.size() > 0) {
                         JsonNode booking = bookingReferences.get(0);
                         if (null != booking) {
-                            return booking.get("recordLocatorId");
+                            JsonNode val = booking.get("recordLocatorId");
+                            if (null != val) {
+                                return val.asText();
+                            }
                         }
                     }
                 }
