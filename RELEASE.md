@@ -1,4 +1,7 @@
 # Release Notes
+## [4.3.8] - 2024-09-09
+- Upgraded `spark.cdm.trackRun` feature to include `status` on `cdm_run_info` table. Also improved the code to handle rerun of previous run which may have exited before being correctly initialized. 
+
 ## [4.3.7] - 2024-09-03
 - Added property `spark.cdm.transform.custom.ttl` to allow a custom constant value to be set for TTL instead of using the values from `origin` rows.
 - Repo wide code formating & imports organization
