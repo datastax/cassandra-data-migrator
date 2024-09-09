@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.statement.TargetUpsertRunDetailsStatement;
+import com.datastax.cdm.job.RunNotStartedException;
 import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 
@@ -31,7 +32,7 @@ public class TrackRun {
     }
 
     public enum RUN_STATUS {
-        NOT_STARTED, STARTED, PASS, FAIL, DIFF
+        NOT_STARTED, STARTED, PASS, FAIL, DIFF, ENDED
     }
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -41,7 +42,7 @@ public class TrackRun {
         this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
     }
 
-    public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) {
+    public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
         Collection<SplitPartitions.Partition> pendingParts = runStatement.getPendingPartitions(prevRunId);
         logger.info("###################### {} partitions pending from previous run id {} ######################",
                 pendingParts.size(), prevRunId);
@@ -60,6 +61,6 @@ public class TrackRun {
     }
 
     public void endCdmRun(String runInfo) {
-        runStatement.updateCdmRunInfo(runInfo);
+        runStatement.endCdmRun(runInfo);
     }
 }
