@@ -137,11 +137,26 @@ public class DataUtilityTest extends CommonMocks {
     }
 
     @Test
-    public void getMyClassMethodLineTest() {
+    public void getMyClassMethodLineTestCDMClass() {
         Exception ex = new Exception();
         ex.setStackTrace(new StackTraceElement[] { new StackTraceElement("com.datastax.cdm.data.DataUtilityTest",
                 "getMyClassMethodLineTest", "DataUtilityTest.java", 0) });
         assertEquals("com.datastax.cdm.data.DataUtilityTest.getMyClassMethodLineTest:0",
                 DataUtility.getMyClassMethodLine(ex));
+    }
+
+    @Test
+    public void getMyClassMethodLineTestOtherClass() {
+        Exception ex = new Exception();
+        ex.setStackTrace(new StackTraceElement[] { new StackTraceElement("com.datastax.other.SomeClass",
+                "getMyClassMethodLineTest", "SomeClass.java", 0) });
+        assertEquals("com.datastax.other.SomeClass.getMyClassMethodLineTest:0", DataUtility.getMyClassMethodLine(ex));
+    }
+
+    @Test
+    public void getMyClassMethodLineTestUnknown() {
+        Exception ex = new Exception();
+        ex.setStackTrace(new StackTraceElement[] {});
+        assertEquals("Unknown", DataUtility.getMyClassMethodLine(ex));
     }
 }
