@@ -131,10 +131,16 @@ public class DataUtility {
                 break;
             }
         }
-        String className = targetStackTraceElement.getClassName();
-        String methodName = targetStackTraceElement.getMethodName();
-        int lineNumber = targetStackTraceElement.getLineNumber();
+        if (null == targetStackTraceElement && null != stackTraceElements && stackTraceElements.length > 0) {
+            targetStackTraceElement = stackTraceElements[0];
+        }
+        if (null != targetStackTraceElement) {
+            String className = targetStackTraceElement.getClassName();
+            String methodName = targetStackTraceElement.getMethodName();
+            int lineNumber = targetStackTraceElement.getLineNumber();
+            return className + "." + methodName + ":" + lineNumber;
+        }
 
-        return className + "." + methodName + ":" + lineNumber;
+        return "Unknown";
     }
 }
