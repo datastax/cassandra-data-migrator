@@ -20,6 +20,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.feature.TrackRun.RUN_TYPE;
 import com.datastax.cdm.job.RunNotStartedException;
@@ -44,6 +47,8 @@ public class TargetUpsertRunDetailsStatement {
     private BoundStatement boundSelectInfoStatement;
     private BoundStatement boundSelectStatement;
 
+    public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+
     public TargetUpsertRunDetailsStatement(CqlSession session, String keyspaceTable) {
         this.session = session;
         String[] ksTab = keyspaceTable.split("\\.");
@@ -56,11 +61,14 @@ public class TargetUpsertRunDetailsStatement {
         String cdmKsTabDetails = this.keyspaceName + ".cdm_run_details";
 
         this.session.execute("create table if not exists " + cdmKsTabInfo
-                + " (table_name text, run_id bigint, run_type text, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, primary key (table_name, run_id))");
+                + " (table_name text, run_id bigint, run_type text, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, status text, primary key (table_name, run_id))");
+        
+        // TODO: Remove this code block after a few releases, its only added for backward compatibility
         try {
             this.session.execute("alter table " + cdmKsTabInfo + " add status text");
         } catch (Exception e) {
             // ignore if column already exists
+            logger.trace("Column 'status' already exists in table {}", cdmKsTabInfo);
         }
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
