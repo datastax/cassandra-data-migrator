@@ -16,18 +16,53 @@
 package com.datastax.cdm.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
+import java.util.Collection;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
-class TrackRunTest {
+import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.job.RunNotStartedException;
+import com.datastax.cdm.job.SplitPartitions;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+
+class TrackRunTest extends CommonMocks {
+
+    @Mock
+    CqlSession cqlSession;
+
+    @Mock
+    BoundStatement bStatement;
+
+    @BeforeEach
+    public void setup() {
+        // UPDATE is needed by counters, though the class should handle non-counter updates
+        commonSetup(false, false, true);
+        when(cqlSession.prepare(anyString())).thenReturn(preparedStatement);
+        when(preparedStatement.bind(any())).thenReturn(bStatement);
+    }
 
     @Test
-    void test() {
+    void countTypesAndStatus() {
         assertEquals("MIGRATE", TrackRun.RUN_TYPE.MIGRATE.name());
         assertEquals("DIFF_DATA", TrackRun.RUN_TYPE.DIFF_DATA.name());
 
         assertEquals(2, TrackRun.RUN_TYPE.values().length);
-        assertEquals(6, TrackRun.RUN_STATUS.values().length);
+        assertEquals(7, TrackRun.RUN_STATUS.values().length);
+    }
+
+    @Test
+    void init() throws RunNotStartedException {
+        TrackRun trackRun = new TrackRun(cqlSession, "keyspace.table");
+        Collection<SplitPartitions.Partition> parts = trackRun.getPendingPartitions(0);
+
+        assertEquals(0, parts.size());
     }
 
 }

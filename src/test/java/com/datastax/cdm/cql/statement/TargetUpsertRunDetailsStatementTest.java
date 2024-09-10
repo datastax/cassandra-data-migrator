@@ -62,7 +62,6 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         when(preparedStatement.bind(any())).thenReturn(bStatement);
         when(cqlSession.execute(bStatement)).thenReturn(rs);
         when(rs.all()).thenReturn(List.of(row));
-
     }
 
     @Test
