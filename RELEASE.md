@@ -1,4 +1,8 @@
 # Release Notes
+## [4.3.9] - 2024-09-11
+- Added new `status` value of `DIFF_CORRECTED` on `cdm_run_details` table to specifically mark partitions that were corrected during the CDM validation run.
+- Upgraded Validation job skip partitions with `DIFF_CORRECTED` status on rerun with a previous `runId`. 
+
 ## [4.3.8] - 2024-09-09
 - Upgraded `spark.cdm.trackRun` feature to include `status` on `cdm_run_info` table. Also improved the code to handle rerun of previous run which may have exited before being correctly initialized. 
 
