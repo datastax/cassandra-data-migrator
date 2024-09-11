@@ -32,7 +32,7 @@ public class TrackRun {
     }
 
     public enum RUN_STATUS {
-        NOT_STARTED, STARTED, PASS, FAIL, DIFF, ENDED
+        NOT_STARTED, STARTED, PASS, FAIL, DIFF, DIFF_CORRECTED, ENDED
     }
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());

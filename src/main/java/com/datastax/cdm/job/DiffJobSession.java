@@ -73,7 +73,7 @@ public class DiffJobSession extends CopyJobSession {
         this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID,
                 JobCounter.CounterType.MISMATCH, JobCounter.CounterType.CORRECTED_MISMATCH,
                 JobCounter.CounterType.MISSING, JobCounter.CounterType.CORRECTED_MISSING,
-                JobCounter.CounterType.SKIPPED);
+                JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR);
 
         autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING);
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
@@ -192,11 +192,23 @@ public class DiffJobSession extends CopyJobSession {
             }
 
             if (hasDiff.get() && null != trackRunFeature) {
-                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
+                if (jobCounter.getCount(JobCounter.CounterType.MISSING) == jobCounter
+                        .getCount(JobCounter.CounterType.CORRECTED_MISSING)
+                        && jobCounter.getCount(JobCounter.CounterType.MISMATCH) == jobCounter
+                                .getCount(JobCounter.CounterType.CORRECTED_MISMATCH)) {
+                    trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF_CORRECTED);
+                } else {
+                    trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
+                }
             } else if (null != trackRunFeature) {
                 trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
             }
         } catch (Exception e) {
+            jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
+                    jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.VALID)
+                            - jobCounter.getCount(JobCounter.CounterType.MISSING)
+                            - jobCounter.getCount(JobCounter.CounterType.MISMATCH)
+                            - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
             if (null != trackRunFeature)

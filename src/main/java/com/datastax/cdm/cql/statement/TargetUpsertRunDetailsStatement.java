@@ -62,7 +62,7 @@ public class TargetUpsertRunDetailsStatement {
 
         this.session.execute("create table if not exists " + cdmKsTabInfo
                 + " (table_name text, run_id bigint, run_type text, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, status text, primary key (table_name, run_id))");
-        
+
         // TODO: Remove this code block after a few releases, its only added for backward compatibility
         try {
             this.session.execute("alter table " + cdmKsTabInfo + " add status text");
