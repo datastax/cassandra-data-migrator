@@ -15,6 +15,8 @@
  */
 package com.datastax.cdm.job
 
+import com.datastax.cdm.feature.TrackRun
+
 object DiffData extends BasePartitionJob {
   setup("Data Validation Job", new DiffJobSessionFactory())
   execute()
@@ -24,7 +26,7 @@ object DiffData extends BasePartitionJob {
     if (!parts.isEmpty()) {
       originConnection.withSessionDo(originSession =>
         targetConnection.withSessionDo(targetSession =>
-          jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(parts, trackRunFeature)));
+          jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(runId, prevRunId, parts, trackRunFeature, TrackRun.RUN_TYPE.DIFF_DATA)));
 
       slices.foreach(slice => {
         originConnection.withSessionDo(originSession =>

@@ -70,17 +70,11 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         this.getDataAndInsert(slice.getMin(), slice.getMax());
     }
 
-    public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
-        this.trackRunFeature = trackRunFeature;
-        if (null != trackRunFeature)
-            trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.MIGRATE);
-    }
-
     private void getDataAndInsert(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
-            trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
+            trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED);
 
         BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
         String guardrailCheck;
@@ -139,13 +133,13 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                     jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
             jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
             if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS);
         } catch (Exception e) {
             jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
                     jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
                             - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
             if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL);
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
             logger.error("Error stats " + jobCounter.getThreadCounters(false));

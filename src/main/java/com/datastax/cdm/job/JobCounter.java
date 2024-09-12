@@ -178,7 +178,7 @@ public class JobCounter {
         logger.info(fullMessage);
     }
 
-    public void printFinal(TrackRun trackRunFeature) {
+    public void printFinal(long runId, TrackRun trackRunFeature) {
         if (null != trackRunFeature) {
             StringBuilder sb = new StringBuilder();
             if (counterMap.containsKey(CounterType.READ))
@@ -202,7 +202,7 @@ public class JobCounter {
             if (counterMap.containsKey(CounterType.LARGE))
                 sb.append("; Large: " + counterMap.get(CounterType.LARGE).getGlobalCounter());
 
-            trackRunFeature.endCdmRun(sb.toString());
+            trackRunFeature.endCdmRun(runId, sb.toString());
         }
         logger.info("################################################################################################");
         if (counterMap.containsKey(CounterType.READ))
