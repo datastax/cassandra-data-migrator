@@ -1,4 +1,8 @@
 # Release Notes
+## [4.3.11] - 2024-TBD
+- Switched to using Apache Cassandra® `5.0` docker image for testing
+- Introduces smoke testing of `vector` CQL data type
+
 ## [4.3.10] - 2024-09-12
 - Added property `spark.cdm.trackRun.runId` to support a custom unique identifier for the current run. This can be used by wrapper scripts to pass a known `runId` and then use it to query the `cdm_run_info` and `cdm_run_details` tables.
 
