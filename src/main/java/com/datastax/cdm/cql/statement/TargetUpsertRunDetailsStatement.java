@@ -58,12 +58,12 @@ public class TargetUpsertRunDetailsStatement {
         String cdmKsTabInfo = this.keyspaceName + ".cdm_run_info";
         String cdmKsTabDetails = this.keyspaceName + ".cdm_run_details";
 
-        this.session.execute("create table if not exists " + cdmKsTabInfo
-                + " (table_name text, run_id bigint, run_type text, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, status text, primary key (table_name, run_id))");
+        this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabInfo
+                + " (table_name TEXT, run_id BIGINT, run_type TEXT, prev_run_id BIGINT, start_time TIMESTAMP, end_time TIMESTAMP, run_info TEXT, status TEXT, PRIMARY KEY (table_name, run_id))");
 
         // TODO: Remove this code block after a few releases, its only added for backward compatibility
         try {
-            this.session.execute("alter table " + cdmKsTabInfo + " add status text");
+            this.session.execute("ALTER TABLE " + cdmKsTabInfo + " ADD status TEXT");
         } catch (Exception e) {
             // ignore if column already exists
             logger.trace("Column 'status' already exists in table {}", cdmKsTabInfo);
