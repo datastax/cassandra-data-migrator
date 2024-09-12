@@ -68,8 +68,8 @@ public class TargetUpsertRunDetailsStatement {
             // ignore if column already exists
             logger.trace("Column 'status' already exists in table {}", cdmKsTabInfo);
         }
-        this.session.execute("create table if not exists " + cdmKsTabDetails
-                + " (table_name text, run_id bigint, start_time timestamp, token_min bigint, token_max bigint, status text, primary key ((table_name, run_id), token_min))");
+        this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabDetails
+                + " (table_name TEXT, run_id BIGINT, start_time TIMESTAMP, token_min BIGINT, token_max BIGINT, status TEXT, PRIMARY KEY ((table_name, run_id), token_min))");
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
                 + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, dateof(now()), ?)");
