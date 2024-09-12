@@ -6,6 +6,7 @@ dependency-reduced-pom.xml
 .idea/*
 cassandra-data-migrator.iml
 SIT/local
+SIT/**/output/*
 *.DS_Store
 .classpath
 .project
