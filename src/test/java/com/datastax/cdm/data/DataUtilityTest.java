@@ -166,9 +166,9 @@ public class DataUtilityTest extends CommonMocks {
     @Test
     public void generateSCBOrigin() throws IOException {
         File scb = DataUtility.generateSCB("localhost", "9042", "trust123", "./pom.xml", "key123", "./pom.xml",
-                "ORIGIN");
+                PKFactory.Side.ORIGIN);
         assertNotNull(scb);
-        File file = new File("ORIGIN" + DataUtility.SCB_FILE_NAME);
+        File file = new File(PKFactory.Side.ORIGIN + DataUtility.SCB_FILE_NAME);
         assertTrue(file.exists());
 
         DataUtility.deleteGeneratedSCB();
@@ -178,9 +178,9 @@ public class DataUtilityTest extends CommonMocks {
     @Test
     public void generateSCBTarget() throws IOException {
         File scb = DataUtility.generateSCB("localhost", "9042", "trust123", "./pom.xml", "key123", "./pom.xml",
-                "TARGET");
+                PKFactory.Side.TARGET);
         assertNotNull(scb);
-        File file = new File("TARGET" + DataUtility.SCB_FILE_NAME);
+        File file = new File(PKFactory.Side.TARGET + DataUtility.SCB_FILE_NAME);
         assertTrue(file.exists());
 
         DataUtility.deleteGeneratedSCB();

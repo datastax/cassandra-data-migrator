@@ -152,18 +152,18 @@ public class DataUtility {
     }
 
     public static void deleteGeneratedSCB() {
-        File file = new File("ORIGIN" + SCB_FILE_NAME);
+        File file = new File(PKFactory.Side.ORIGIN + SCB_FILE_NAME);
         if (file.exists()) {
             file.delete();
         }
-        file = new File("TARGET" + SCB_FILE_NAME);
+        file = new File(PKFactory.Side.TARGET + SCB_FILE_NAME);
         if (file.exists()) {
             file.delete();
         }
     }
 
     public static File generateSCB(String host, String port, String trustStorePassword, String trustStorePath,
-            String keyStorePassword, String keyStorePath, String side) throws IOException {
+            String keyStorePassword, String keyStorePath, PKFactory.Side side) throws IOException {
         FileOutputStream fileOutputStream = new FileOutputStream("config.json");
         String scbJson = new StringBuilder("{\"host\": \"").append(host).append("\", \"port\": ").append(port)
                 .append(", \"keyStoreLocation\": \"./identity.jks\", \"keyStorePassword\": \"").append(keyStorePassword)

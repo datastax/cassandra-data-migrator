@@ -20,13 +20,14 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 import com.datastax.cdm.data.DataUtility.generateSCB
+import com.datastax.cdm.data.PKFactory.Side
 
 // TODO: CDM-31 - add localDC configuration support
 class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHelper) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  def getConnectionDetails(side: String): ConnectionDetails = {
-    if ("ORIGIN".equals(side.toUpperCase)) {
+  def getConnectionDetails(side: Side): ConnectionDetails = {
+    if (Side.ORIGIN.equals(side)) {
       ConnectionDetails(
         propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_SCB),
         propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_HOST),
@@ -62,7 +63,7 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHel
     }
   }
 
-  def getConnection(side: String, consistencyLevel: String): CassandraConnector = {
+  def getConnection(side: Side, consistencyLevel: String): CassandraConnector = {
     val connectionDetails = getConnectionDetails(side)
     val config: SparkConf = sparkContext.getConf
 
