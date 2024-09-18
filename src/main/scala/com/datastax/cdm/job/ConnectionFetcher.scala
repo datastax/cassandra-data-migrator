@@ -15,13 +15,14 @@
  */
 package com.datastax.cdm.job
 
-import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+import com.datastax.cdm.properties.{KnownProperties, IPropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
+import com.datastax.cdm.data.DataUtility.generateSCB
 
 // TODO: CDM-31 - add localDC configuration support
-class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelper) {
+class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHelper) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def getConnectionDetails(side: String): ConnectionDetails = {
@@ -35,10 +36,11 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ENABLED),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_PASSWORD),
-        propertyHelper.getString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_TYPE),
+        propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_TRUSTSTORE_TYPE),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_KEYSTORE_PASSWORD),
-        propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ALGORITHMS)
+        propertyHelper.getAsString(KnownProperties.ORIGIN_TLS_ALGORITHMS),
+        propertyHelper.getBoolean(KnownProperties.ORIGIN_TLS_IS_ASTRA)
       )
     }
     else {
@@ -51,10 +53,11 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_ENABLED),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_PASSWORD),
-        propertyHelper.getString(KnownProperties.TARGET_TLS_TRUSTSTORE_TYPE),
+        propertyHelper.getAsString(KnownProperties.TARGET_TLS_TRUSTSTORE_TYPE),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PATH),
         propertyHelper.getAsString(KnownProperties.TARGET_TLS_KEYSTORE_PASSWORD),
-        propertyHelper.getAsString(KnownProperties.TARGET_TLS_ALGORITHMS)
+        propertyHelper.getAsString(KnownProperties.TARGET_TLS_ALGORITHMS),
+        propertyHelper.getBoolean(KnownProperties.TARGET_TLS_IS_ASTRA)
       )
     }
   }
@@ -72,6 +75,17 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: PropertyHelp
         .set("spark.cassandra.auth.password", connectionDetails.password)
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
         .set("spark.cassandra.connection.config.cloud.path", connectionDetails.scbPath))
+    } else if (connectionDetails.trustStorePath.nonEmpty && connectionDetails.isAstra) {
+      logger.info("Connecting to Astra "+side+" (with truststore) using host metadata at "+connectionDetails.host+":"+connectionDetails.port);
+
+      val scbBundle = generateSCB(connectionDetails.host, connectionDetails.port, 
+      	connectionDetails.trustStorePassword, connectionDetails.trustStorePath, 
+      	connectionDetails.keyStorePassword, connectionDetails.keyStorePath, side)
+      return CassandraConnector(config
+        .set("spark.cassandra.auth.username", connectionDetails.username)
+        .set("spark.cassandra.auth.password", connectionDetails.password)
+        .set("spark.cassandra.input.consistency.level", consistencyLevel)
+        .set("spark.cassandra.connection.config.cloud.path", "file://" + scbBundle.getAbsolutePath()))
     } else if (connectionDetails.trustStorePath.nonEmpty) {
       logger.info("Connecting to "+side+" (with truststore) at "+connectionDetails.host+":"+connectionDetails.port);
 

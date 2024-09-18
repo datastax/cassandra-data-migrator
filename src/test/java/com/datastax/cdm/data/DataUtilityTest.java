@@ -19,9 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -158,5 +161,29 @@ public class DataUtilityTest extends CommonMocks {
         Exception ex = new Exception();
         ex.setStackTrace(new StackTraceElement[] {});
         assertEquals("Unknown", DataUtility.getMyClassMethodLine(ex));
+    }
+
+    @Test
+    public void generateSCBOrigin() throws IOException {
+        File scb = DataUtility.generateSCB("localhost", "9042", "trust123", "./pom.xml", "key123", "./pom.xml",
+                "ORIGIN");
+        assertNotNull(scb);
+        File file = new File("ORIGIN" + DataUtility.SCB_FILE_NAME);
+        assertTrue(file.exists());
+
+        DataUtility.deleteGeneratedSCB();
+        assertFalse(file.exists());
+    }
+
+    @Test
+    public void generateSCBTarget() throws IOException {
+        File scb = DataUtility.generateSCB("localhost", "9042", "trust123", "./pom.xml", "key123", "./pom.xml",
+                "TARGET");
+        assertNotNull(scb);
+        File file = new File("TARGET" + DataUtility.SCB_FILE_NAME);
+        assertTrue(file.exists());
+
+        DataUtility.deleteGeneratedSCB();
+        assertFalse(file.exists());
     }
 }
