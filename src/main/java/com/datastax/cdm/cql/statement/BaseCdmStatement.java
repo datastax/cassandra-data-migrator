@@ -21,7 +21,7 @@ import java.util.List;
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
-import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 
 public class BaseCdmStatement {
 
