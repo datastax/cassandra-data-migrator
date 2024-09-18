@@ -6,7 +6,7 @@ _usage() {
 usage: $0 -p phase 
 
 Required
-  -p phase: one of {$PHASES}
+  -p phase: one of ${PHASES}
 
 EOF
 exit 1
