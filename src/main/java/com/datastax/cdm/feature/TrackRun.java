@@ -49,18 +49,16 @@ public class TrackRun {
         return pendingParts;
     }
 
-    public long initCdmRun(Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
-        long runId = runStatement.initCdmRun(parts, runType);
+    public void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
+        runStatement.initCdmRun(runId, prevRunId, parts, runType);
         logger.info("###################### Run Id for this job is: {} ######################", runId);
-
-        return runId;
     }
 
-    public void updateCdmRun(BigInteger min, RUN_STATUS status) {
-        runStatement.updateCdmRun(min, status);
+    public void updateCdmRun(long runId, BigInteger min, RUN_STATUS status) {
+        runStatement.updateCdmRun(runId, min, status);
     }
 
-    public void endCdmRun(String runInfo) {
-        runStatement.endCdmRun(runInfo);
+    public void endCdmRun(long runId, String runInfo) {
+        runStatement.endCdmRun(runId, runInfo);
     }
 }

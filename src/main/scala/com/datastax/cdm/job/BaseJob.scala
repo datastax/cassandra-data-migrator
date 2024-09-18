@@ -21,6 +21,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+import com.datastax.cdm.data.PKFactory.Side
 
 import java.math.BigInteger
 import java.util
@@ -47,6 +48,7 @@ abstract class BaseJob[T: ClassTag] extends App {
   var coveragePercent: Int = _
   var numSplits: Int = _
   var trackRun: Boolean = _
+  var runId: Long = _
   var prevRunId: Long = _
 
   var parts: util.Collection[T] = _
@@ -69,8 +71,8 @@ abstract class BaseJob[T: ClassTag] extends App {
 
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
-    originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)
-    targetConnection = connectionFetcher.getConnection("TARGET", consistencyLevel)
+    originConnection = connectionFetcher.getConnection(Side.ORIGIN, consistencyLevel)
+    targetConnection = connectionFetcher.getConnection(Side.TARGET, consistencyLevel)
 
     val hasRandomPartitioner: Boolean = {
       val partitionerName = originConnection.withSessionDo(_.getMetadata.getTokenMap.get().getPartitionerName)
@@ -80,14 +82,21 @@ abstract class BaseJob[T: ClassTag] extends App {
     maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
+    runId = propertyHelper.getLong(KnownProperties.RUN_ID)
     prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
-    trackRun = if (0 != prevRunId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
+    trackRun = if (0 != prevRunId || 0 != runId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
+    if (trackRun == true && runId == 0) {
+      runId = System.nanoTime();
+    }
 
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
     abstractLogger.info("PARAM -- Number of Splits : " + numSplits)
     abstractLogger.info("PARAM -- Track Run : " + trackRun)
-    abstractLogger.info("PARAM -- Previous RunId : " + prevRunId)
+    if (trackRun == true) {
+      abstractLogger.info("PARAM -- RunId : " + runId)
+      abstractLogger.info("PARAM -- Previous RunId : " + prevRunId)
+    }
     abstractLogger.info("PARAM -- Coverage Percent: " + coveragePercent)
     this.parts = getParts(numSplits)
     abstractLogger.info("PARAM Calculated -- Total Partitions: " + parts.size())

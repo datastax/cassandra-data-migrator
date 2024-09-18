@@ -27,5 +27,6 @@ case class ConnectionDetails(
                               trustStoreType: String,
                               keyStorePath: String,
                               keyStorePassword: String,
-                              enabledAlgorithms: String
+                              enabledAlgorithms: String,
+                              isAstra: Boolean
                             )

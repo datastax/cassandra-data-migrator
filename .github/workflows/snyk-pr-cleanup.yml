@@ -1,6 +1,8 @@
 # GitHub Action CI
 # Snyk clean-up when PR is merged/closed
 
+name: 🗑️ Snyk PR cleanup - merged/closed
+
 on:
   pull_request:
     types:
@@ -14,3 +16,13 @@ concurrency:
   #group: ${{ github.workflow }}-${{ github.ref }}-${{ github.job || github.run_id }}
   cancel-in-progress: true
 
+jobs:
+  # this is a workaround for the issue that github actions does not support status check on workflow level
+  skip-means-success:
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: an always fail step
+        run: |
+          echo "if it reaches here, it means that some previous job(s) failed!"
+          exit 123

@@ -1,7 +1,15 @@
 # Release Notes
+## [4.4.0] - 2024-09-19
+- Added property `spark.cdm.connect.origin.tls.isAstra` and `spark.cdm.connect.target.tls.isAstra` to allow connecting to Astra DB without using [SCB](https://docs.datastax.com/en/astra-db-serverless/drivers/secure-connect-bundle.html). This may be needed for enterprises that may find credentials packaged within SCB as a security risk. TLS properties can now be passed as params OR wrapper scripts (not included) could be used to pull sensitive credentials from a vault service in real-time & pass them to CDM.
+- Switched to using Apache Cassandra® `5.0` docker image for testing
+- Introduces smoke testing of `vector` CQL data type
+
+## [4.3.10] - 2024-09-12
+- Added property `spark.cdm.trackRun.runId` to support a custom unique identifier for the current run. This can be used by wrapper scripts to pass a known `runId` and then use it to query the `cdm_run_info` and `cdm_run_details` tables.
+
 ## [4.3.9] - 2024-09-11
 - Added new `status` value of `DIFF_CORRECTED` on `cdm_run_details` table to specifically mark partitions that were corrected during the CDM validation run.
-- Upgraded Validation job skip partitions with `DIFF_CORRECTED` status on rerun with a previous `runId`. 
+- Upgraded Validation job to skip partitions with `DIFF_CORRECTED` status on rerun with a previous `runId`. 
 
 ## [4.3.8] - 2024-09-09
 - Upgraded `spark.cdm.trackRun` feature to include `status` on `cdm_run_info` table. Also improved the code to handle rerun of previous run which may have exited before being correctly initialized. 

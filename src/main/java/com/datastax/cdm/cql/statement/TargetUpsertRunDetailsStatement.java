@@ -37,8 +37,6 @@ public class TargetUpsertRunDetailsStatement {
     private CqlSession session;
     private String keyspaceName;
     private String tableName;
-    private long runId;
-    private long prevRunId;
     private BoundStatement boundInitInfoStatement;
     private BoundStatement boundInitStatement;
     private BoundStatement boundEndInfoStatement;
@@ -60,16 +58,18 @@ public class TargetUpsertRunDetailsStatement {
         String cdmKsTabInfo = this.keyspaceName + ".cdm_run_info";
         String cdmKsTabDetails = this.keyspaceName + ".cdm_run_details";
 
-        this.session.execute("create table if not exists " + cdmKsTabInfo
-                + " (table_name text, run_id bigint, run_type text, prev_run_id bigint, start_time timestamp, end_time timestamp, run_info text, status text, primary key (table_name, run_id))");
+        this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabInfo
+                + " (table_name TEXT, run_id BIGINT, run_type TEXT, prev_run_id BIGINT, start_time TIMESTAMP, end_time TIMESTAMP, run_info TEXT, status TEXT, PRIMARY KEY (table_name, run_id))");
 
         // TODO: Remove this code block after a few releases, its only added for backward compatibility
         try {
-            this.session.execute("alter table " + cdmKsTabInfo + " add status text");
+            this.session.execute("ALTER TABLE " + cdmKsTabInfo + " ADD status TEXT");
         } catch (Exception e) {
             // ignore if column already exists
             logger.trace("Column 'status' already exists in table {}", cdmKsTabInfo);
         }
+        this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabDetails
+                + " (table_name TEXT, run_id BIGINT, start_time TIMESTAMP, token_min BIGINT, token_max BIGINT, status TEXT, PRIMARY KEY ((table_name, run_id), token_min))");
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
                 + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, dateof(now()), ?)");
@@ -88,7 +88,6 @@ public class TargetUpsertRunDetailsStatement {
     }
 
     public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
-        this.prevRunId = prevRunId;
         final Collection<SplitPartitions.Partition> pendingParts = new ArrayList<SplitPartitions.Partition>();
         if (prevRunId == 0) {
             return pendingParts;
@@ -117,31 +116,34 @@ public class TargetUpsertRunDetailsStatement {
         return pendingParts;
     }
 
-    public long initCdmRun(Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
-        runId = System.currentTimeMillis();
+    public void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
+        ResultSet rsInfo = session
+                .execute(boundSelectInfoStatement.setString("table_name", tableName).setLong("run_id", runId));
+        if (null != rsInfo.one()) {
+            throw new RuntimeException("Run id " + runId + " already exists for table " + tableName);
+        }
         session.execute(boundInitInfoStatement.setString("table_name", tableName).setLong("run_id", runId)
                 .setString("run_type", runType.toString()).setLong("prev_run_id", prevRunId)
                 .setString("status", TrackRun.RUN_STATUS.NOT_STARTED.toString()));
-        parts.forEach(part -> initCdmRun(part));
+        parts.forEach(part -> initCdmRun(runId, part));
         session.execute(boundInitInfoStatement.setString("table_name", tableName).setLong("run_id", runId)
                 .setString("run_type", runType.toString()).setLong("prev_run_id", prevRunId)
                 .setString("status", TrackRun.RUN_STATUS.STARTED.toString()));
-        return runId;
     }
 
-    private void initCdmRun(Partition partition) {
+    private void initCdmRun(long runId, Partition partition) {
         session.execute(boundInitStatement.setString("table_name", tableName).setLong("run_id", runId)
                 .setLong("token_min", partition.getMin().longValue())
                 .setLong("token_max", partition.getMax().longValue())
                 .setString("status", TrackRun.RUN_STATUS.NOT_STARTED.toString()));
     }
 
-    public void endCdmRun(String runInfo) {
+    public void endCdmRun(long runId, String runInfo) {
         session.execute(boundEndInfoStatement.setString("table_name", tableName).setLong("run_id", runId)
                 .setString("run_info", runInfo).setString("status", TrackRun.RUN_STATUS.ENDED.toString()));
     }
 
-    public void updateCdmRun(BigInteger min, TrackRun.RUN_STATUS status) {
+    public void updateCdmRun(long runId, BigInteger min, TrackRun.RUN_STATUS status) {
         if (TrackRun.RUN_STATUS.STARTED.equals(status)) {
             session.execute(boundUpdateStartStatement.setString("table_name", tableName).setLong("run_id", runId)
                     .setLong("token_min", min.longValue()).setString("status", status.toString()));

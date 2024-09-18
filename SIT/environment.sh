@@ -68,7 +68,7 @@ fi
 ###
 # These variables are hard-coded for now
 SUBNET=$(echo ${CIDR} | cut -d. -f1-3)
-CASS_VERSION=4
+CASS_VERSION=5.0
 CDM_VERSION=latest
 #==============================================================================================================================
 # Helper Functions

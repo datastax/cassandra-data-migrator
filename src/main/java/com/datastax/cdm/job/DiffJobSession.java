@@ -17,7 +17,6 @@ package com.datastax.cdm.job;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -124,18 +123,11 @@ public class DiffJobSession extends CopyJobSession {
         this.getDataAndDiff(slice.getMin(), slice.getMax());
     }
 
-    @Override
-    public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
-        this.trackRunFeature = trackRunFeature;
-        if (null != trackRunFeature)
-            trackRunFeature.initCdmRun(parts, TrackRun.RUN_TYPE.DIFF_DATA);
-    }
-
     private void getDataAndDiff(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
-            trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.STARTED);
+            trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED);
 
         AtomicBoolean hasDiff = new AtomicBoolean(false);
         try {
@@ -196,12 +188,12 @@ public class DiffJobSession extends CopyJobSession {
                         .getCount(JobCounter.CounterType.CORRECTED_MISSING)
                         && jobCounter.getCount(JobCounter.CounterType.MISMATCH) == jobCounter
                                 .getCount(JobCounter.CounterType.CORRECTED_MISMATCH)) {
-                    trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF_CORRECTED);
+                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF_CORRECTED);
                 } else {
-                    trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.DIFF);
+                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF);
                 }
             } else if (null != trackRunFeature) {
-                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.PASS);
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS);
             }
         } catch (Exception e) {
             jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
@@ -212,7 +204,7 @@ public class DiffJobSession extends CopyJobSession {
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
             if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(min, TrackRun.RUN_STATUS.FAIL);
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL);
         } finally {
             jobCounter.globalIncrement();
             printCounts(false);

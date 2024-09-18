@@ -109,6 +109,7 @@ public class KnownProperties {
     public static final String AUTOCORRECT_MISMATCH = "spark.cdm.autocorrect.mismatch"; // false
     public static final String AUTOCORRECT_MISSING_COUNTER = "spark.cdm.autocorrect.missing.counter"; // false
     public static final String TRACK_RUN = "spark.cdm.trackRun";
+    public static final String RUN_ID = "spark.cdm.trackRun.runId";
     public static final String PREV_RUN_ID = "spark.cdm.trackRun.previousRunId";
 
     public static final String PERF_NUM_PARTS = "spark.cdm.perfops.numParts"; // 5000, was spark.splitSize
@@ -131,6 +132,8 @@ public class KnownProperties {
         defaults.put(AUTOCORRECT_MISSING_COUNTER, "false");
         types.put(TRACK_RUN, PropertyType.BOOLEAN);
         defaults.put(TRACK_RUN, "false");
+        types.put(RUN_ID, PropertyType.NUMBER);
+        defaults.put(RUN_ID, "0");
         types.put(PREV_RUN_ID, PropertyType.NUMBER);
         defaults.put(PREV_RUN_ID, "0");
 
@@ -276,6 +279,7 @@ public class KnownProperties {
     public static final String ORIGIN_TLS_KEYSTORE_PATH = "spark.cdm.connect.origin.tls.keyStore.path";
     public static final String ORIGIN_TLS_KEYSTORE_PASSWORD = "spark.cdm.connect.origin.tls.keyStore.password";
     public static final String ORIGIN_TLS_ALGORITHMS = "spark.cdm.connect.origin.tls.enabledAlgorithms"; // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
+    public static final String ORIGIN_TLS_IS_ASTRA = "spark.cdm.connect.origin.tls.isAstra";
     static {
         types.put(ORIGIN_TLS_ENABLED, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_TLS_ENABLED, "false");
@@ -287,6 +291,8 @@ public class KnownProperties {
         types.put(ORIGIN_TLS_KEYSTORE_PASSWORD, PropertyType.STRING);
         types.put(ORIGIN_TLS_ALGORITHMS, PropertyType.STRING); // This is a list but it is handled by Spark
         defaults.put(ORIGIN_TLS_ALGORITHMS, "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA");
+        types.put(ORIGIN_TLS_IS_ASTRA, PropertyType.BOOLEAN);
+        defaults.put(ORIGIN_TLS_IS_ASTRA, "false");
     }
 
     // ==========================================================================
@@ -299,6 +305,7 @@ public class KnownProperties {
     public static final String TARGET_TLS_KEYSTORE_PATH = "spark.cdm.connect.target.tls.keyStore.path";
     public static final String TARGET_TLS_KEYSTORE_PASSWORD = "spark.cdm.connect.target.tls.keyStore.password";
     public static final String TARGET_TLS_ALGORITHMS = "spark.cdm.connect.target.tls.enabledAlgorithms"; // TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
+    public static final String TARGET_TLS_IS_ASTRA = "spark.cdm.connect.target.tls.isAstra";
     static {
         types.put(TARGET_TLS_ENABLED, PropertyType.BOOLEAN);
         defaults.put(TARGET_TLS_ENABLED, "false");
@@ -310,6 +317,8 @@ public class KnownProperties {
         types.put(TARGET_TLS_KEYSTORE_PASSWORD, PropertyType.STRING);
         types.put(TARGET_TLS_ALGORITHMS, PropertyType.STRING); // This is a list but it is handled by Spark
         defaults.put(TARGET_TLS_ALGORITHMS, "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA");
+        types.put(TARGET_TLS_IS_ASTRA, PropertyType.BOOLEAN);
+        defaults.put(TARGET_TLS_IS_ASTRA, "false");
     }
 
     // ==========================================================================

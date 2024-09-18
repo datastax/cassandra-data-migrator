@@ -29,6 +29,7 @@ Missing Record Count: 0
 Corrected Missing Record Count: 0
 Valid Record Count: 3
 Skipped Record Count: 0
+Error Record Count: 0
 ---------------
 
 EOF

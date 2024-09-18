@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.data.DataUtility;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.Featureset;
@@ -41,6 +42,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected JobCounter jobCounter;
     protected Long printStatsAfter;
     protected TrackRun trackRunFeature;
+    protected long runId;
 
     protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
         this(originSession, targetSession, sc, false);
@@ -102,12 +104,18 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
     public abstract void processSlice(T slice);
 
-    public synchronized void initCdmRun(Collection<SplitPartitions.Partition> parts, TrackRun trackRunFeature) {
+    public synchronized void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts,
+            TrackRun trackRunFeature, TrackRun.RUN_TYPE runType) {
+        this.runId = runId;
+        this.trackRunFeature = trackRunFeature;
+        if (null != trackRunFeature)
+            trackRunFeature.initCdmRun(runId, prevRunId, parts, runType);
     }
 
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {
-            jobCounter.printFinal(trackRunFeature);
+            jobCounter.printFinal(runId, trackRunFeature);
+            DataUtility.deleteGeneratedSCB();
         } else {
             jobCounter.printProgress();
         }

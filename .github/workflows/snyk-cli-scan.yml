@@ -3,6 +3,8 @@
 #  any push on any protected branch: main, v6.8, releases/**
 #  any PR crteated against any protected branch: main, v6.8, releases/**
 
+name: 🔬 Snyk CLI scan
+
 on: 
   push:
     branches: [ main ]
@@ -18,3 +20,13 @@ concurrency:
 env:
   SNYK_SEVERITY_THRESHOLD_LEVEL: critical
 
+jobs:
+  # this is a workaround for the issue that github actions does not support status check on workflow level 
+  skip-means-success:
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: an always fail step
+        run: |
+          echo "if it reaches here, it means that some previous job(s) failed!"
+          exit 123
