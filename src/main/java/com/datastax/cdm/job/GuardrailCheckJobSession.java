@@ -26,7 +26,8 @@ import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 
 public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions.Partition> {
 

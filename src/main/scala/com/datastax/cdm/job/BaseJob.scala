@@ -21,6 +21,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+import com.datastax.cdm.data.PKFactory.Side
 
 import java.math.BigInteger
 import java.util
@@ -70,8 +71,8 @@ abstract class BaseJob[T: ClassTag] extends App {
 
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
-    originConnection = connectionFetcher.getConnection("ORIGIN", consistencyLevel)
-    targetConnection = connectionFetcher.getConnection("TARGET", consistencyLevel)
+    originConnection = connectionFetcher.getConnection(Side.ORIGIN, consistencyLevel)
+    targetConnection = connectionFetcher.getConnection(Side.TARGET, consistencyLevel)
 
     val hasRandomPartitioner: Boolean = {
       val partitionerName = originConnection.withSessionDo(_.getMetadata.getTokenMap.get().getPartitionerName)

@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.data.DataUtility;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.Featureset;
@@ -114,6 +115,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {
             jobCounter.printFinal(runId, trackRunFeature);
+            DataUtility.deleteGeneratedSCB();
         } else {
             jobCounter.printProgress();
         }
