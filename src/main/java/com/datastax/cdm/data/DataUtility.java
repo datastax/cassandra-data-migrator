@@ -15,7 +15,13 @@
  */
 package com.datastax.cdm.data;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +32,7 @@ import com.datastax.cdm.schema.CqlTable;
 
 public class DataUtility {
     public static final Logger logger = LoggerFactory.getLogger(CqlConversion.class);
+    protected static final String SCB_FILE_NAME = "_temp_cdm_scb_do_not_touch.zip";
 
     public static boolean diff(Object obj1, Object obj2) {
         if (obj1 == null && obj2 == null) {
@@ -142,5 +149,69 @@ public class DataUtility {
         }
 
         return "Unknown";
+    }
+
+    public static void deleteGeneratedSCB() {
+        File file = new File(PKFactory.Side.ORIGIN + SCB_FILE_NAME);
+        if (file.exists()) {
+            file.delete();
+        }
+        file = new File(PKFactory.Side.TARGET + SCB_FILE_NAME);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    public static File generateSCB(String host, String port, String trustStorePassword, String trustStorePath,
+            String keyStorePassword, String keyStorePath, PKFactory.Side side) throws IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream("config.json");
+        String scbJson = new StringBuilder("{\"host\": \"").append(host).append("\", \"port\": ").append(port)
+                .append(", \"keyStoreLocation\": \"./identity.jks\", \"keyStorePassword\": \"").append(keyStorePassword)
+                .append("\", \"trustStoreLocation\": \"./trustStore.jks\", \"trustStorePassword\": \"")
+                .append(trustStorePassword).append("\"}").toString();
+        fileOutputStream.write(scbJson.getBytes());
+        fileOutputStream.close();
+        File configFile = new File("config.json");
+        FilePathAndNewName configFileWithName = new FilePathAndNewName(configFile, "config.json");
+        FilePathAndNewName keyFileWithName = new FilePathAndNewName(new File(keyStorePath), "identity.jks");
+        FilePathAndNewName trustFileWithName = new FilePathAndNewName(new File(trustStorePath), "trustStore.jks");
+        File zipFile = zip(Arrays.asList(configFileWithName, keyFileWithName, trustFileWithName), side + SCB_FILE_NAME);
+        configFile.delete();
+
+        return zipFile;
+    }
+
+    private static File zip(List<FilePathAndNewName> files, String filename) {
+        File zipfile = new File(filename);
+        byte[] buf = new byte[1024];
+        try {
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipfile));
+            for (int i = 0; i < files.size(); i++) {
+                out.putNextEntry(new ZipEntry(files.get(i).name));
+                FileInputStream in = new FileInputStream(files.get(i).file.getCanonicalPath());
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                out.closeEntry();
+                in.close();
+            }
+            out.close();
+
+            return zipfile;
+        } catch (IOException ex) {
+            logger.error("Unable to write out zip file: {}. Got exception: {}", filename, ex.getMessage());
+        }
+        return null;
+    }
+
+    static class FilePathAndNewName {
+        File file;
+        String name;
+
+        public FilePathAndNewName(File file, String name) {
+            this.file = file;
+            this.name = name;
+        }
     }
 }
