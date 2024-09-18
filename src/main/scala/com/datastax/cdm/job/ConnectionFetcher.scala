@@ -79,14 +79,14 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHel
     } else if (connectionDetails.trustStorePath.nonEmpty && connectionDetails.isAstra) {
       logger.info("Connecting to Astra "+side+" (with truststore) using host metadata at "+connectionDetails.host+":"+connectionDetails.port);
 
-      val scbBundle = generateSCB(connectionDetails.host, connectionDetails.port, 
+      val scbFile = generateSCB(connectionDetails.host, connectionDetails.port, 
       	connectionDetails.trustStorePassword, connectionDetails.trustStorePath, 
       	connectionDetails.keyStorePassword, connectionDetails.keyStorePath, side)
       return CassandraConnector(config
         .set("spark.cassandra.auth.username", connectionDetails.username)
         .set("spark.cassandra.auth.password", connectionDetails.password)
         .set("spark.cassandra.input.consistency.level", consistencyLevel)
-        .set("spark.cassandra.connection.config.cloud.path", "file://" + scbBundle.getAbsolutePath()))
+        .set("spark.cassandra.connection.config.cloud.path", "file://" + scbFile.getAbsolutePath()))
     } else if (connectionDetails.trustStorePath.nonEmpty) {
       logger.info("Connecting to "+side+" (with truststore) at "+connectionDetails.host+":"+connectionDetails.port);
 

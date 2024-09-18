@@ -200,7 +200,7 @@ public class DataUtility {
 
             return zipfile;
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
+            logger.error("Unable to write out zip file: {}. Got exception: {}", filename, ex.getMessage());
         }
         return null;
     }

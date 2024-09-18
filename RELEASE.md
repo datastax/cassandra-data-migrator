@@ -1,6 +1,6 @@
 # Release Notes
 ## [4.4.0] - 2024-09-19
-- Added property `spark.cdm.connect.origin.tls.isAstra` and `spark.cdm.connect.target.tls.isAstra` to allow connecting to AstraDB without using SCB. This may be needed for enterprises that may find credentials packaged within SCB as a security risk. TLS properties can now be passed as params OR wrapper scripts (not included) could be used to pull sensitive credentials from a vault service in real-time & pass them to CDM.
+- Added property `spark.cdm.connect.origin.tls.isAstra` and `spark.cdm.connect.target.tls.isAstra` to allow connecting to Astra DB without using [SCB](https://docs.datastax.com/en/astra-db-serverless/drivers/secure-connect-bundle.html). This may be needed for enterprises that may find credentials packaged within SCB as a security risk. TLS properties can now be passed as params OR wrapper scripts (not included) could be used to pull sensitive credentials from a vault service in real-time & pass them to CDM.
 
 ## [4.3.10] - 2024-09-12
 - Added property `spark.cdm.trackRun.runId` to support a custom unique identifier for the current run. This can be used by wrapper scripts to pass a known `runId` and then use it to query the `cdm_run_info` and `cdm_run_details` tables.
