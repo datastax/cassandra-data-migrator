@@ -1,4 +1,7 @@
 # Release Notes
+## [4.4.1] - 2024-09-20
+- Added two new codecs `STRING_BLOB` and `ASCII_BLOB` to allow migration from `TEXT` and `ASCII` fields to `BLOB` fields. These codecs can also be used to convert `BLOB` to `TEXT` or `ASCII`, but in such cases the `BLOB` value must be TEXT based in nature & fit within the applicable limits.
+
 ## [4.4.0] - 2024-09-19
 - Added property `spark.cdm.connect.origin.tls.isAstra` and `spark.cdm.connect.target.tls.isAstra` to allow connecting to Astra DB without using [SCB](https://docs.datastax.com/en/astra-db-serverless/drivers/secure-connect-bundle.html). This may be needed for enterprises that may find credentials packaged within SCB as a security risk. TLS properties can now be passed as params OR wrapper scripts (not included) could be used to pull sensitive credentials from a vault service in real-time & pass them to CDM.
 - Switched to using Apache Cassandra® `5.0` docker image for testing
