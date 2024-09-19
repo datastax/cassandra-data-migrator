@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import static com.datastax.oss.protocol.internal.ProtocolConstants.Version.V4;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.ByteBuffer;
@@ -26,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 
 public class BLOB_ASCIICodecTest {
+    private final String INPUT = "Encode this Text string to Blob";
 
     private BLOB_ASCIICodec codec;
 
@@ -36,9 +36,9 @@ public class BLOB_ASCIICodecTest {
 
     @Test
     public void testEncode() {
-        ByteBuffer buffer = codec.encode("Encode this Text string to Blob", ProtocolVersion.V4);
+        ByteBuffer buffer = codec.encode(INPUT, ProtocolVersion.V4);
         String retBuffer = codec.decode(buffer, ProtocolVersion.V4);
-        assertEquals("Encode this Text string to Blob", retBuffer);
+        assertEquals(INPUT, retBuffer);
     }
 
 }

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 
 public class ASCII_BLOBCodecTest {
+    private final String INPUT = "Encode this Text string to Blob";
 
     private ASCII_BLOBCodec codec;
 
@@ -35,11 +36,10 @@ public class ASCII_BLOBCodecTest {
 
     @Test
     public void encodeDecode() {
-        ByteBuffer buffer = codec.encode(ByteBuffer.wrap("Encode this Text string to Blob".getBytes()),
-                ProtocolVersion.V4);
+        ByteBuffer buffer = codec.encode(ByteBuffer.wrap(INPUT.getBytes()), ProtocolVersion.V4);
         ByteBuffer retBuffer = codec.decode(buffer, ProtocolVersion.V4);
-        assertEquals("'Encode this Text string to Blob'", codec.format(retBuffer));
-        assertEquals(retBuffer, codec.parse("Encode this Text string to Blob"));
+        assertEquals("'" + INPUT + "'", codec.format(retBuffer));
+        assertEquals(retBuffer, codec.parse(INPUT));
     }
 
 }
