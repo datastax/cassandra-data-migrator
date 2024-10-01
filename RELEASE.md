@@ -1,4 +1,7 @@
 # Release Notes
+## [4.4.2] - 2024-10-TBD
+- Upgraded to use Spark `3.5.3`.
+
 ## [4.4.1] - 2024-09-20
 - Added two new codecs `STRING_BLOB` and `ASCII_BLOB` to allow migration from `TEXT` and `ASCII` fields to `BLOB` fields. These codecs can also be used to convert `BLOB` to `TEXT` or `ASCII`, but in such cases the `BLOB` value must be TEXT based in nature & fit within the applicable limits.
 
