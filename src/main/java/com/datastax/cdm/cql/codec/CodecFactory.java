@@ -34,6 +34,10 @@ public class CodecFactory {
             return Arrays.asList(new DOUBLE_StringCodec(propertyHelper), new TEXT_DoubleCodec(propertyHelper));
         case BIGINT_STRING:
             return Arrays.asList(new BIGINT_StringCodec(propertyHelper), new TEXT_LongCodec(propertyHelper));
+        case STRING_BLOB:
+            return Arrays.asList(new TEXT_BLOBCodec(propertyHelper), new BLOB_TEXTCodec(propertyHelper));
+        case ASCII_BLOB:
+            return Arrays.asList(new ASCII_BLOBCodec(propertyHelper), new BLOB_ASCIICodec(propertyHelper));
         case DECIMAL_STRING:
             return Arrays.asList(new DECIMAL_StringCodec(propertyHelper), new TEXT_BigDecimalCodec(propertyHelper));
         case TIMESTAMP_STRING_MILLIS:
