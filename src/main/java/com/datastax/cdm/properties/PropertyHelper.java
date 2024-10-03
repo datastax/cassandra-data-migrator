@@ -173,8 +173,6 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
 
     @Override
     public List<Integer> getIntegerList(String propertyName) {
-        List<Integer> intList = new ArrayList<>();
-        Integer i;
         if (null == propertyName || PropertyType.NUMBER_LIST != getType(propertyName)
                 || null == getNumberList(propertyName))
             return null;
@@ -188,7 +186,6 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
 
     @Override
     public String getAsString(String propertyName) {
-        String rtn;
         if (null == propertyName)
             return null;
         PropertyType t = getType(propertyName);

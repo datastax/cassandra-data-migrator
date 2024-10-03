@@ -68,7 +68,7 @@ Note:
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
-- Validation job will report differences as “ERRORS” in the log file as shown below
+- Validation job will report differences as “ERRORS” in the log file as shown below. 
 
 ```
 23/04/06 08:43:06 ERROR DiffJobSession: Mismatch row found for key: [key3] Mismatch: Target Index: 1 Origin: valueC Target: value999) 
@@ -79,6 +79,17 @@ Note:
 
 - Please grep for all `ERROR` from the output log files to get the list of missing and mismatched records.
     - Note that it lists differences by primary-key values.
+- If you would like to redirect such logs into a separate file, you could use the `log4j2.properties` file [provided here](./src/resources/log4j2.properties) as shown below
+
+```
+./spark-submit --properties-file cdm.properties \
+--conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
+--conf "spark.executor.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties'" \ 
+--conf "spark.driver.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties'" \ 
+--master "local[*]" --driver-memory 25G --executor-memory 25G \
+--class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+```
+
 - The Validation job can also be run in an AutoCorrect mode. This mode can
     - Add any missing records from origin to target
     - Update any mismatched records between origin and target (makes target same as origin).
@@ -102,7 +113,7 @@ Note:
 ```
 
 # Perform large-field Guardrail violation checks
-- The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field)  `--class com.datastax.cdm.job.GuardrailCheck` as shown below
+- The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field), use class option `--class com.datastax.cdm.job.GuardrailCheck` as shown below
 
 ```
 ./spark-submit --properties-file cdm.properties \
