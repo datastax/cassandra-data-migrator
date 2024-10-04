@@ -91,14 +91,14 @@ if [ $argErrors -ne 0 ]; then
   _usage
 fi
 
-if [ ! -f /local/log4j.xml ]; then
-  cd /local && jar xvf /local/cassandra-data-migrator.jar log4j.xml && cd -
+if [ ! -f /local/log4j2_docker.properties ]; then
+  cd /local && jar xvf /local/cassandra-data-migrator.jar log4j2_docker.properties && cd -
 fi
 
 spark-submit --properties-file "${PROPERTIES}" \
   --master "local[*]" \
-  --conf "spark.driver.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j.xml -Dcom.datastax.cdm.log.level=DEBUG" \
-  --conf "spark.executor.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j.xml -Dcom.datastax.cdm.log.level=DEBUG" \
+  --conf "spark.driver.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \
+  --conf "spark.executor.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \
   --class ${CLASS} \
   /local/cassandra-data-migrator.jar
 
