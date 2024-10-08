@@ -40,7 +40,7 @@ Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.re
 3. Run the below job using `spark-submit` command as shown below:
 
 ```
-./spark-submit --properties-file cdm.properties \
+spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
@@ -62,7 +62,7 @@ Note:
 - To run the job in Data validation mode, use class option `--class com.datastax.cdm.job.DiffData` as shown below
 
 ```
-./spark-submit --properties-file cdm.properties \
+spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
@@ -79,13 +79,13 @@ Note:
 
 - Please grep for all `ERROR` from the output log files to get the list of missing and mismatched records.
     - Note that it lists differences by primary-key values.
-- If you would like to redirect such logs into a separate file, you could use the `log4j2.properties` file [provided here](./src/resources/log4j2.properties) as shown below
+- If you would like to redirect such logs (rows with details of `missing` and `mismatched` rows) into a separate file, you could use the `log4j2.properties` file [provided here](./src/resources/log4j2.properties) as shown below
 
 ```
-./spark-submit --properties-file cdm.properties \
+spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
---conf "spark.executor.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties'" \ 
---conf "spark.driver.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties'" \ 
+--conf spark.executor.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
+--conf spark.driver.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
@@ -105,7 +105,7 @@ Note:
 - You can rerun/resume a Migration or Validation job to complete a previous run that could have stopped (or completed with some errors) for any reasons. This mode will skip any token-ranges from the previous run that were migrated (or validated) successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
 
 ```
-./spark-submit --properties-file cdm.properties \
+spark-submit --properties-file cdm.properties \
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
  --conf spark.cdm.trackRun.previousRunId=<prev_run_id> \
  --master "local[*]" --driver-memory 25G --executor-memory 25G \
@@ -116,7 +116,7 @@ Note:
 - The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field), use class option `--class com.datastax.cdm.job.GuardrailCheck` as shown below
 
 ```
-./spark-submit --properties-file cdm.properties \
+spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
 --conf spark.cdm.feature.guardrail.colSizeInKB=10000 \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
