@@ -1,4 +1,7 @@
 # Release Notes
+## [4.5.1] - 2024-10-11
+- Made CDM generated SCB much short-lived when using the TLS option to connect to Astra more securely.
+
 ## [4.5.0] - 2024-10-03
 - Upgraded to use log4j 2.x and included a template properties file that will help separate general logs from CDM class specific logs including a separate log for rows identified by `DiffData` (Validation) errors.
 - Upgraded to use Spark `3.5.3`.

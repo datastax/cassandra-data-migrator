@@ -31,7 +31,8 @@ import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
 
 public class DataUtility {
-    public static final Logger logger = LoggerFactory.getLogger(CqlConversion.class);
+    public static final Logger logger = LoggerFactory.getLogger(DataUtility.class.getName());
+
     protected static final String SCB_FILE_NAME = "_temp_cdm_scb_do_not_touch.zip";
 
     public static boolean diff(Object obj1, Object obj2) {

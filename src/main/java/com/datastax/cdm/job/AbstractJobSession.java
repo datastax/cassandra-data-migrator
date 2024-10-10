@@ -110,12 +110,12 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         this.trackRunFeature = trackRunFeature;
         if (null != trackRunFeature)
             trackRunFeature.initCdmRun(runId, prevRunId, parts, runType);
+        DataUtility.deleteGeneratedSCB();
     }
 
     public synchronized void printCounts(boolean isFinal) {
         if (isFinal) {
             jobCounter.printFinal(runId, trackRunFeature);
-            DataUtility.deleteGeneratedSCB();
         } else {
             jobCounter.printProgress();
         }
