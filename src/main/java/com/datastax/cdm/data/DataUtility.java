@@ -31,7 +31,8 @@ import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
 
 public class DataUtility {
-    public static final Logger logger = LoggerFactory.getLogger(CqlConversion.class);
+    public static final Logger logger = LoggerFactory.getLogger(DataUtility.class.getName());
+
     protected static final String SCB_FILE_NAME = "_temp_cdm_scb_do_not_touch.zip";
 
     public static boolean diff(Object obj1, Object obj2) {
@@ -151,19 +152,19 @@ public class DataUtility {
         return "Unknown";
     }
 
-    public static void deleteGeneratedSCB() {
-        File file = new File(PKFactory.Side.ORIGIN + SCB_FILE_NAME);
+    public static void deleteGeneratedSCB(long runId) {
+        File file = new File(PKFactory.Side.ORIGIN + "_" + Long.toString(runId) + SCB_FILE_NAME);
         if (file.exists()) {
             file.delete();
         }
-        file = new File(PKFactory.Side.TARGET + SCB_FILE_NAME);
+        file = new File(PKFactory.Side.TARGET + "_" + Long.toString(runId) + SCB_FILE_NAME);
         if (file.exists()) {
             file.delete();
         }
     }
 
     public static File generateSCB(String host, String port, String trustStorePassword, String trustStorePath,
-            String keyStorePassword, String keyStorePath, PKFactory.Side side) throws IOException {
+            String keyStorePassword, String keyStorePath, PKFactory.Side side, long runId) throws IOException {
         FileOutputStream fileOutputStream = new FileOutputStream("config.json");
         String scbJson = new StringBuilder("{\"host\": \"").append(host).append("\", \"port\": ").append(port)
                 .append(", \"keyStoreLocation\": \"./identity.jks\", \"keyStorePassword\": \"").append(keyStorePassword)
@@ -175,7 +176,8 @@ public class DataUtility {
         FilePathAndNewName configFileWithName = new FilePathAndNewName(configFile, "config.json");
         FilePathAndNewName keyFileWithName = new FilePathAndNewName(new File(keyStorePath), "identity.jks");
         FilePathAndNewName trustFileWithName = new FilePathAndNewName(new File(trustStorePath), "trustStore.jks");
-        File zipFile = zip(Arrays.asList(configFileWithName, keyFileWithName, trustFileWithName), side + SCB_FILE_NAME);
+        File zipFile = zip(Arrays.asList(configFileWithName, keyFileWithName, trustFileWithName),
+                side + "_" + Long.toString(runId) + SCB_FILE_NAME);
         configFile.delete();
 
         return zipFile;
