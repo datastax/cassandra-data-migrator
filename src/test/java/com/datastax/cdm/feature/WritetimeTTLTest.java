@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +32,7 @@ import com.datastax.cdm.cql.CommonMocks;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 
-public class TTLAndWritetimeTest extends CommonMocks {
+public class WritetimeTTLTest extends CommonMocks {
 
     WritetimeTTL feature;
     Long customWritetime = 123456789L;
@@ -362,6 +363,24 @@ public class TTLAndWritetimeTest extends CommonMocks {
 
         Long largestWritetime = feature.getLargestWriteTimeStamp(originRow);
         assertEquals(3000L, largestWritetime);
+    }
+
+    @Test
+    public void getLargestWriteTimeStampWithListTest() {
+        when(propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
+        when(originTable.indexOf("WRITETIME("+writetimeColumnName+")")).thenReturn(100);
+        when(originRow.getType(eq(100))).thenReturn(DataTypes.listOf(DataTypes.BIGINT));
+        when(originRow.getList(eq(100), eq(BigInteger.class))).thenReturn(Arrays.asList(BigInteger.valueOf(4001), BigInteger.valueOf(2001)));
+        when(originTable.indexOf("WRITETIME("+writetimeTTLColumnName+")")).thenReturn(101);
+        when(originRow.getType(eq(101))).thenReturn(DataTypes.BIGINT);
+        when(originRow.getLong(eq(101))).thenReturn(1000l);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+
+        Long largestWritetime = feature.getLargestWriteTimeStamp(originRow);
+        assertEquals(4001L, largestWritetime);
     }
 
     @Test

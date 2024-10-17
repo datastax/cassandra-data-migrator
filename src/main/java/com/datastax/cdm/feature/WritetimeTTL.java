@@ -15,6 +15,7 @@
  */
 package com.datastax.cdm.feature;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,6 +46,7 @@ public class WritetimeTTL extends AbstractFeature {
     private Long filterMax;
     private boolean hasWriteTimestampFilter;
     private Long writetimeIncrement;
+    private boolean allowCollectionsForWritetimeTTL;
 
     @Override
     public boolean loadProperties(IPropertyHelper propertyHelper) {
@@ -61,7 +63,7 @@ public class WritetimeTTL extends AbstractFeature {
             logger.info("PARAM -- WriteTimestampCols: {}", writetimeNames);
             this.autoWritetimeNames = false;
         }
-
+        allowCollectionsForWritetimeTTL = propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS);
         this.customWritetime = getCustomWritetime(propertyHelper);
         if (this.customWritetime > 0) {
             logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime,
@@ -233,9 +235,23 @@ public class WritetimeTTL extends AbstractFeature {
             return this.customWritetime;
         if (null == this.writetimeSelectColumnIndexes || this.writetimeSelectColumnIndexes.isEmpty())
             return null;
-        OptionalLong max = this.writetimeSelectColumnIndexes.stream().mapToLong(row::getLong).filter(Objects::nonNull)
-                .max();
+
+        OptionalLong max = (allowCollectionsForWritetimeTTL) ? getMaxWriteTimeStampForCollections(row)
+                : getMaxWriteTimeStamp(row);
+
         return max.isPresent() ? max.getAsLong() + this.writetimeIncrement : null;
+    }
+
+    private OptionalLong getMaxWriteTimeStampForCollections(Row row) {
+        return this.writetimeSelectColumnIndexes.stream().map(col -> {
+            if (row.getType(col).equals(DataTypes.BIGINT))
+                return Arrays.asList(row.getLong(col));
+            return row.getList(col, BigInteger.class).stream().map(BigInteger::longValue).collect(Collectors.toList());
+        }).flatMap(List::stream).mapToLong(Long::longValue).max();
+    }
+
+    private OptionalLong getMaxWriteTimeStamp(Row row) {
+        return this.writetimeSelectColumnIndexes.stream().mapToLong(row::getLong).filter(Objects::nonNull).max();
     }
 
     public Integer getLargestTTL(Row row) {
@@ -245,8 +261,22 @@ public class WritetimeTTL extends AbstractFeature {
             return this.customTTL.intValue();
         if (null == this.ttlSelectColumnIndexes || this.ttlSelectColumnIndexes.isEmpty())
             return null;
-        OptionalInt max = this.ttlSelectColumnIndexes.stream().mapToInt(row::getInt).filter(Objects::nonNull).max();
-        return max.isPresent() ? max.getAsInt() : null;
+
+        OptionalInt max = (allowCollectionsForWritetimeTTL) ? getMaxTTLForCollections(row) : getMaxTTL(row);
+
+        return max.isPresent() ? max.getAsInt() : 0;
+    }
+
+    private OptionalInt getMaxTTLForCollections(Row row) {
+        return this.ttlSelectColumnIndexes.stream().map(col -> {
+            if (row.getType(col).equals(DataTypes.INT))
+                return Arrays.asList(row.getInt(col));
+            return row.getList(col, Integer.class).stream().collect(Collectors.toList());
+        }).flatMap(List::stream).filter(Objects::nonNull).mapToInt(Integer::intValue).max();
+    }
+
+    private OptionalInt getMaxTTL(Row row) {
+        return this.ttlSelectColumnIndexes.stream().mapToInt(row::getInt).filter(Objects::nonNull).max();
     }
 
     private void validateTTLColumns(CqlTable originTable) {

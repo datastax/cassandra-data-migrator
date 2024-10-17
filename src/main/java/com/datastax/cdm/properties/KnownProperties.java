@@ -78,6 +78,7 @@ public class KnownProperties {
     public static final String ORIGIN_TTL_NAMES = "spark.cdm.schema.origin.column.ttl.names";
     public static final String ORIGIN_WRITETIME_AUTO = "spark.cdm.schema.origin.column.writetime.automatic";
     public static final String ORIGIN_WRITETIME_NAMES = "spark.cdm.schema.origin.column.writetime.names";
+    public static final String ALLOW_COLL_FOR_WRITETIME_TTL_COLS = "spark.cdm.schema.origin.column.ttlwritetime.allow.collections";
 
     public static final String ORIGIN_COLUMN_NAMES_TO_TARGET = "spark.cdm.schema.origin.column.names.to.target";
 
@@ -90,6 +91,8 @@ public class KnownProperties {
         types.put(ORIGIN_WRITETIME_NAMES, PropertyType.STRING_LIST);
         types.put(ORIGIN_WRITETIME_AUTO, PropertyType.BOOLEAN);
         defaults.put(ORIGIN_WRITETIME_AUTO, "true");
+        types.put(ALLOW_COLL_FOR_WRITETIME_TTL_COLS, PropertyType.BOOLEAN);
+        defaults.put(ALLOW_COLL_FOR_WRITETIME_TTL_COLS, "false");
         types.put(ORIGIN_COLUMN_NAMES_TO_TARGET, PropertyType.STRING_LIST);
     }
 
