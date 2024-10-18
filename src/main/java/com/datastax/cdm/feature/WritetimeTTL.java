@@ -63,7 +63,7 @@ public class WritetimeTTL extends AbstractFeature {
             logger.info("PARAM -- WriteTimestampCols: {}", writetimeNames);
             this.autoWritetimeNames = false;
         }
-        allowCollectionsForWritetimeTTL = propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS);
+        allowCollectionsForWritetimeTTL = propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_CALC);
         this.customWritetime = getCustomWritetime(propertyHelper);
         if (this.customWritetime > 0) {
             logger.info("PARAM -- {}: {} datetime is {} ", KnownProperties.TRANSFORM_CUSTOM_WRITETIME, customWritetime,

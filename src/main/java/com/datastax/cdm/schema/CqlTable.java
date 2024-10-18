@@ -471,7 +471,7 @@ public class CqlTable extends BaseTable {
                 .collect(Collectors.toCollection(() -> this.cqlAllColumns));
 
         boolean allowCollectionsForWritetimeTTL = propertyHelper
-                .getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS);
+                .getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_CALC);
         this.writetimeTTLColumns = tableMetadata.getColumns().values().stream()
                 .filter(columnMetadata -> canColumnHaveTTLorWritetime(tableMetadata, columnMetadata,
                         allowCollectionsForWritetimeTTL))

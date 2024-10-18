@@ -367,7 +367,7 @@ public class WritetimeTTLTest extends CommonMocks {
 
     @Test
     public void getLargestWriteTimeStampWithListTest() {
-        when(propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS)).thenReturn(true);
+        when(propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_CALC)).thenReturn(true);
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_WRITETIME)).thenReturn(0L);
         when(originTable.indexOf("WRITETIME("+writetimeColumnName+")")).thenReturn(100);
         when(originRow.getType(eq(100))).thenReturn(DataTypes.listOf(DataTypes.BIGINT));
@@ -412,7 +412,7 @@ public class WritetimeTTLTest extends CommonMocks {
 
     @Test
     public void getLargestTTLWithListTest() {
-        when(propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS)).thenReturn(true);
+        when(propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_CALC)).thenReturn(true);
         when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
         when(originTable.indexOf("TTL("+ttlColumnName+")")).thenReturn(100);
         when(originRow.getType(eq(100))).thenReturn(DataTypes.listOf(DataTypes.INT));
