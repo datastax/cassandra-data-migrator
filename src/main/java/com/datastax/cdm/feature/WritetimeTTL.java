@@ -246,12 +246,13 @@ public class WritetimeTTL extends AbstractFeature {
         return this.writetimeSelectColumnIndexes.stream().map(col -> {
             if (row.getType(col).equals(DataTypes.BIGINT))
                 return Arrays.asList(row.getLong(col));
-            return row.getList(col, BigInteger.class).stream().map(BigInteger::longValue).collect(Collectors.toList());
-        }).flatMap(List::stream).mapToLong(Long::longValue).max();
+            return row.getList(col, BigInteger.class).stream().filter(Objects::nonNull).map(BigInteger::longValue)
+                    .collect(Collectors.toList());
+        }).flatMap(List::stream).filter(Objects::nonNull).mapToLong(Long::longValue).max();
     }
 
     private OptionalLong getMaxWriteTimeStamp(Row row) {
-        return this.writetimeSelectColumnIndexes.stream().mapToLong(row::getLong).filter(Objects::nonNull).max();
+        return this.writetimeSelectColumnIndexes.stream().filter(Objects::nonNull).mapToLong(row::getLong).max();
     }
 
     public Integer getLargestTTL(Row row) {
@@ -271,12 +272,12 @@ public class WritetimeTTL extends AbstractFeature {
         return this.ttlSelectColumnIndexes.stream().map(col -> {
             if (row.getType(col).equals(DataTypes.INT))
                 return Arrays.asList(row.getInt(col));
-            return row.getList(col, Integer.class).stream().collect(Collectors.toList());
+            return row.getList(col, Integer.class).stream().filter(Objects::nonNull).collect(Collectors.toList());
         }).flatMap(List::stream).filter(Objects::nonNull).mapToInt(Integer::intValue).max();
     }
 
     private OptionalInt getMaxTTL(Row row) {
-        return this.ttlSelectColumnIndexes.stream().mapToInt(row::getInt).filter(Objects::nonNull).max();
+        return this.ttlSelectColumnIndexes.stream().filter(Objects::nonNull).mapToInt(row::getInt).max();
     }
 
     private void validateTTLColumns(CqlTable originTable) {

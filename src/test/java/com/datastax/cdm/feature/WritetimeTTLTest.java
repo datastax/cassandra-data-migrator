@@ -411,6 +411,23 @@ public class WritetimeTTLTest extends CommonMocks {
     }
 
     @Test
+    public void getLargestTTLWithListTest() {
+        when(propertyHelper.getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_COLS)).thenReturn(true);
+        when(propertyHelper.getLong(KnownProperties.TRANSFORM_CUSTOM_TTL)).thenReturn(null);
+        when(originTable.indexOf("TTL("+ttlColumnName+")")).thenReturn(100);
+        when(originRow.getType(eq(100))).thenReturn(DataTypes.listOf(DataTypes.INT));
+        when(originRow.getList(eq(100), eq(Integer.class))).thenReturn(Arrays.asList(Integer.valueOf(40), Integer.valueOf(10)));
+        when(originTable.indexOf("TTL("+writetimeTTLColumnName+")")).thenReturn(101);
+        when(originRow.getType(eq(101))).thenReturn(DataTypes.INT);
+        when(originRow.getInt(eq(101))).thenReturn(20);
+
+        feature.loadProperties(propertyHelper);
+        feature.initializeAndValidate(originTable, targetTable);
+        Integer largestTTL = feature.getLargestTTL(originRow);
+        assertEquals(40, largestTTL);
+    }
+
+    @Test
     public void validateInvalidFilterMin() {
         when(propertyHelper.getLong(KnownProperties.FILTER_WRITETS_MIN)).thenReturn(-1L);
         assertAll(
