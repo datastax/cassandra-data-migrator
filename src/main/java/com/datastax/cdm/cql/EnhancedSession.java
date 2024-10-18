@@ -15,6 +15,8 @@
  */
 package com.datastax.cdm.cql;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -22,17 +24,18 @@ import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.codec.CodecFactory;
 import com.datastax.cdm.cql.codec.Codecset;
-import com.datastax.cdm.cql.statement.*;
+import com.datastax.cdm.cql.statement.OriginSelectByPKStatement;
+import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
+import com.datastax.cdm.cql.statement.TargetInsertStatement;
+import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
+import com.datastax.cdm.cql.statement.TargetUpdateStatement;
+import com.datastax.cdm.cql.statement.TargetUpsertStatement;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.type.DataType;
-import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
-import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 
 public class EnhancedSession {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -96,26 +99,16 @@ public class EnhancedSession {
     }
 
     private CqlSession initSession(PropertyHelper propertyHelper, CqlSession session) {
-        List<String> codecList = propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS);
-        if (null != codecList && !codecList.isEmpty()) {
-            MutableCodecRegistry registry = (MutableCodecRegistry) session.getContext().getCodecRegistry();
+        // BIGINT_BIGINTEGER codec is always needed to compare C* writetimes in collection columns
+        List<String> codecList = new ArrayList<>(Arrays.asList("BIGINT_BIGINTEGER"));
 
-            for (String codecString : codecList) {
-                Codecset codecEnum = Codecset.valueOf(codecString);
-                for (TypeCodec<?> codec : CodecFactory.getCodecPair(propertyHelper, codecEnum)) {
-                    DataType dataType = codec.getCqlType();
-                    GenericType<?> javaType = codec.getJavaType();
-                    if (logDebug)
-                        logger.debug("Registering Codec {} for CQL type {} and Java type {}",
-                                codec.getClass().getSimpleName(), dataType, javaType);
-                    try {
-                        registry.codecFor(dataType, javaType);
-                    } catch (CodecNotFoundException e) {
-                        registry.register(codec);
-                    }
-                }
-            }
-        }
+        if (null != propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS))
+            codecList.addAll(propertyHelper.getStringList(KnownProperties.TRANSFORM_CODECS));
+        MutableCodecRegistry registry = (MutableCodecRegistry) session.getContext().getCodecRegistry();
+
+        codecList.stream().map(Codecset::valueOf).map(codec -> CodecFactory.getCodecPair(propertyHelper, codec))
+                .flatMap(List::stream).forEach(registry::register);
+
         return session;
     }
 

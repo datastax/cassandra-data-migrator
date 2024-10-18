@@ -19,10 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.ByteBuffer;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 
 public class ASCII_BLOBCodecTest {
     private final String INPUT = "Encode this Text string to Blob";
@@ -42,4 +44,11 @@ public class ASCII_BLOBCodecTest {
         assertEquals(retBuffer, codec.parse(INPUT));
     }
 
+    @Test
+    void testFormat() {
+        String expected = TypeCodecs.ASCII.format(INPUT);
+
+        String result = codec.format(ByteBuffer.wrap(INPUT.getBytes()));
+        Assertions.assertEquals(expected, result);
+    }
 }
