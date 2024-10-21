@@ -1,4 +1,7 @@
 # Release Notes
+## [4.6.0] - 2024-10-18
+- Allow using Collections and/or UDTs for `ttl` & `writetime` calculations. This is specifically helpful in scenarios where the only non-key columns are Collections and/or UDTs.
+
 ## [4.5.1] - 2024-10-11
 - Made CDM generated SCB unique & much short-lived when using the TLS option to connect to Astra more securely.
 

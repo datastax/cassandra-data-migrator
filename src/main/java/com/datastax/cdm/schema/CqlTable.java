@@ -470,15 +470,19 @@ public class CqlTable extends BaseTable {
                 .filter(md -> !extractJsonExclusive || md.getName().asCql(true).endsWith(columnName))
                 .collect(Collectors.toCollection(() -> this.cqlAllColumns));
 
+        boolean allowCollectionsForWritetimeTTL = propertyHelper
+                .getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_CALC);
         this.writetimeTTLColumns = tableMetadata.getColumns().values().stream()
-                .filter(columnMetadata -> canColumnHaveTTLorWritetime(tableMetadata, columnMetadata))
+                .filter(columnMetadata -> canColumnHaveTTLorWritetime(tableMetadata, columnMetadata,
+                        allowCollectionsForWritetimeTTL))
                 .map(ColumnMetadata::getName).map(CqlIdentifier::asInternal).collect(Collectors.toList());
 
         this.columnNameToCqlTypeMap = this.cqlAllColumns.stream().collect(
                 Collectors.toMap(columnMetadata -> columnMetadata.getName().asInternal(), ColumnMetadata::getType));
     }
 
-    private boolean canColumnHaveTTLorWritetime(TableMetadata tableMetadata, ColumnMetadata columnMetadata) {
+    private boolean canColumnHaveTTLorWritetime(TableMetadata tableMetadata, ColumnMetadata columnMetadata,
+            boolean allowCollectionsForWritetimeTTL) {
         DataType dataType = columnMetadata.getType();
         boolean isKeyColumn = tableMetadata.getPartitionKey().contains(columnMetadata)
                 || tableMetadata.getClusteringColumns().containsKey(columnMetadata);
@@ -491,6 +495,8 @@ public class CqlTable extends BaseTable {
             return true; // TODO: WRITETIME and TTL functions are very slow on Tuples in cqlsh...should they be
                          // supported here?
         if (CqlData.isFrozen(dataType))
+            return true;
+        if (allowCollectionsForWritetimeTTL && CqlData.isCollection(dataType))
             return true;
         return false;
     }
