@@ -63,7 +63,7 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHel
     }
   }
 
-  def getConnection(side: Side, consistencyLevel: String): CassandraConnector = {
+  def getConnection(side: Side, consistencyLevel: String, runId: Long): CassandraConnector = {
     val connectionDetails = getConnectionDetails(side)
     val config: SparkConf = sparkContext.getConf
 
@@ -81,7 +81,7 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHel
 
       val scbFile = generateSCB(connectionDetails.host, connectionDetails.port, 
       	connectionDetails.trustStorePassword, connectionDetails.trustStorePath, 
-      	connectionDetails.keyStorePassword, connectionDetails.keyStorePath, side)
+      	connectionDetails.keyStorePassword, connectionDetails.keyStorePath, side, runId)
       return CassandraConnector(config
         .set("spark.cassandra.auth.username", connectionDetails.username)
         .set("spark.cassandra.auth.password", connectionDetails.password)

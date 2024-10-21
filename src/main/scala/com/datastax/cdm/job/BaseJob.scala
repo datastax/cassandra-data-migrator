@@ -69,10 +69,16 @@ abstract class BaseJob[T: ClassTag] extends App {
     sc = sContext.getConf
     propertyHelper = PropertyHelper.getInstance(sc);
 
+    runId = propertyHelper.getLong(KnownProperties.RUN_ID)
+    prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
+    trackRun = if (0 != prevRunId || 0 != runId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
+    if (trackRun == true && runId == 0) {
+      runId = System.nanoTime();
+    }
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
     val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
-    originConnection = connectionFetcher.getConnection(Side.ORIGIN, consistencyLevel)
-    targetConnection = connectionFetcher.getConnection(Side.TARGET, consistencyLevel)
+    originConnection = connectionFetcher.getConnection(Side.ORIGIN, consistencyLevel, runId)
+    targetConnection = connectionFetcher.getConnection(Side.TARGET, consistencyLevel, runId)
 
     val hasRandomPartitioner: Boolean = {
       val partitionerName = originConnection.withSessionDo(_.getMetadata.getTokenMap.get().getPartitionerName)
@@ -82,12 +88,6 @@ abstract class BaseJob[T: ClassTag] extends App {
     maxPartition = getMaxPartition(propertyHelper.getString(KnownProperties.PARTITION_MAX), hasRandomPartitioner)
     coveragePercent = propertyHelper.getInteger(KnownProperties.TOKEN_COVERAGE_PERCENT)
     numSplits = propertyHelper.getInteger(KnownProperties.PERF_NUM_PARTS)
-    runId = propertyHelper.getLong(KnownProperties.RUN_ID)
-    prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
-    trackRun = if (0 != prevRunId || 0 != runId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
-    if (trackRun == true && runId == 0) {
-      runId = System.nanoTime();
-    }
 
     abstractLogger.info("PARAM -- Min Partition: " + minPartition)
     abstractLogger.info("PARAM -- Max Partition: " + maxPartition)
