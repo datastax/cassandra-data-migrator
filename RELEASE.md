@@ -1,4 +1,8 @@
 # Release Notes
+## [4.6.1] - 2024-10-22
+- Make `trackRun` feature work on all versions of Cassandra/DSE by replacing the `IN` clause on `cdm_run_details` table.
+- Updated `README` docs.
+
 ## [4.6.0] - 2024-10-18
 - Allow using Collections and/or UDTs for `ttl` & `writetime` calculations. This is specifically helpful in scenarios where the only non-key columns are Collections and/or UDTs.
 
