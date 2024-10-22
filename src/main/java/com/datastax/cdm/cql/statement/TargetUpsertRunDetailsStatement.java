@@ -19,6 +19,7 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,20 +85,19 @@ public class TargetUpsertRunDetailsStatement {
         boundSelectInfoStatement = bindStatement(
                 "SELECT status FROM " + cdmKsTabInfo + " WHERE table_name = ? AND run_id = ?");
         boundSelectStatement = bindStatement("SELECT token_min, token_max FROM " + cdmKsTabDetails
-                + " WHERE table_name = ? AND run_id = ? and status in ('NOT_STARTED', 'STARTED', 'FAIL', 'DIFF') ALLOW FILTERING");
+                + " WHERE table_name = ? AND run_id = ? AND status = ? ALLOW FILTERING");
     }
 
     public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
-        final Collection<SplitPartitions.Partition> pendingParts = new ArrayList<SplitPartitions.Partition>();
         if (prevRunId == 0) {
-            return pendingParts;
+            return Collections.emptyList();
         }
 
         ResultSet rsInfo = session
                 .execute(boundSelectInfoStatement.setString("table_name", tableName).setLong("run_id", prevRunId));
         Row cdmRunStatus = rsInfo.one();
         if (cdmRunStatus == null) {
-            return pendingParts;
+            return Collections.emptyList();
         } else {
             String status = cdmRunStatus.getString("status");
             if (TrackRun.RUN_STATUS.NOT_STARTED.toString().equals(status)) {
@@ -105,14 +105,25 @@ public class TargetUpsertRunDetailsStatement {
             }
         }
 
-        ResultSet rs = session
-                .execute(boundSelectStatement.setString("table_name", tableName).setLong("run_id", prevRunId));
+        final Collection<SplitPartitions.Partition> pendingParts = new ArrayList<SplitPartitions.Partition>();
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString()));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString()));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString()));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.DIFF.toString()));
+
+        return pendingParts;
+    }
+
+    protected Collection<SplitPartitions.Partition> getPartitionsByStatus(long prevRunId, String status) {
+        ResultSet rs = session.execute(boundSelectStatement.setString("table_name", tableName)
+                .setLong("run_id", prevRunId).setString("status", status));
+
+        final Collection<SplitPartitions.Partition> pendingParts = new ArrayList<SplitPartitions.Partition>();
         rs.forEach(row -> {
             Partition part = new Partition(BigInteger.valueOf(row.getLong("token_min")),
                     BigInteger.valueOf(row.getLong("token_max")));
             pendingParts.add(part);
         });
-
         return pendingParts;
     }
 

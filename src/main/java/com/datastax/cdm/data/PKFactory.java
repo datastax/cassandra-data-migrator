@@ -15,13 +15,20 @@
  */
 package com.datastax.cdm.data;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.cdm.feature.*;
+import com.datastax.cdm.feature.ConstantColumns;
+import com.datastax.cdm.feature.ExplodeMap;
+import com.datastax.cdm.feature.FeatureFactory;
+import com.datastax.cdm.feature.Featureset;
+import com.datastax.cdm.feature.WritetimeTTL;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
