@@ -157,7 +157,7 @@ spark-submit --properties-file cdm.properties \
 - Performance bottleneck are usually the result of
     - Low resource availability on `Origin` OR `Target` cluster
     - Low resource availability on CDM VMs, [see recommendations here](https://docs.datastax.com/en/data-migration/deployment-infrastructure.html#_machines)
-    - Bad schema design which could be cause by Out of balance `Origin` cluster, large partitions (> 100 MB), large rows (> 10MB) and/or high column count
+    - Bad schema design which could be caused by out of balance `Origin` cluster, large partitions (> 100 MB), large rows (> 10MB) and/or high column count.
 - Incorrect configuration of below properties
     - `numParts`: Default is 5K, but ideal value is usually around table-size/10MB. 
     - `batchSize`: Default is 5, but this should be set to 1 for tables where primary-key=partition-key OR where average row-size is > 20 KB. Similarly, this should be set to a value > 5, if row-size is small (< 1KB) and most partitions have several rows (100+).
