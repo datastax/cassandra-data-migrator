@@ -86,9 +86,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
             cqlTableOrigin.setOtherCqlTable(cqlTableTarget);
             cqlTableTarget.setOtherCqlTable(cqlTableOrigin);
             cqlTableTarget.setFeatureMap(featureMap);
-            PKFactory pkFactory = new PKFactory(propertyHelper, cqlTableOrigin, cqlTableTarget);
-            this.originSession.setPKFactory(pkFactory);
-            this.targetSession.setPKFactory(pkFactory);
             for (Feature f : featureMap.values()) {
                 if (!f.initializeAndValidate(cqlTableOrigin, cqlTableTarget)) {
                     allFeaturesValid = false;
@@ -101,6 +98,9 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
             throw new RuntimeException("One or more features are not valid.  Please check the configuration.");
         }
 
+        PKFactory pkFactory = new PKFactory(propertyHelper, cqlTableOrigin, cqlTableTarget);
+        this.originSession.setPKFactory(pkFactory);
+        this.targetSession.setPKFactory(pkFactory);
         this.guardrailFeature = (Guardrail) cqlTableOrigin.getFeature(Featureset.GUARDRAIL_CHECK);
     }
 
