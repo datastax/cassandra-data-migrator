@@ -15,19 +15,21 @@
  */
 package com.datastax.cdm.job;
 
-import org.apache.spark.SparkConf;
+import java.io.Serializable;
 
+import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
-public class DiffJobSessionFactory implements IJobSessionFactory<SplitPartitions.Partition> {
+public class DiffJobSessionFactory implements IJobSessionFactory<SplitPartitions.Partition>, Serializable {
+    private static final long serialVersionUID = -3543616512495020278L;
     private static DiffJobSession jobSession = null;
 
     public AbstractJobSession<SplitPartitions.Partition> getInstance(CqlSession originSession, CqlSession targetSession,
-            SparkConf sc) {
+            PropertyHelper propHelper) {
         if (jobSession == null) {
             synchronized (DiffJobSession.class) {
                 if (jobSession == null) {
-                    jobSession = new DiffJobSession(originSession, targetSession, sc);
+                    jobSession = new DiffJobSession(originSession, targetSession, propHelper);
                 }
             }
         }

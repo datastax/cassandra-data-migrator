@@ -15,6 +15,9 @@
  */
 package com.datastax.cdm.job
 
+import com.datastax.cdm.data.PKFactory.Side
+import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+
 object GuardrailCheck extends BasePartitionJob {
   setup("Guardrail Check Job", new GuardrailCheckJobSessionFactory())
   execute()
@@ -22,12 +25,21 @@ object GuardrailCheck extends BasePartitionJob {
 
   protected def execute(): Unit = {
     if (!parts.isEmpty()) {
+      originConnection.withSessionDo(originSession =>
+          jobFactory.getInstance(originSession, null, propertyHelper));
+      val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
+      val bcPropHelper = sContext.broadcast(propertyHelper)
+      val bcJobFactory = sContext.broadcast(jobFactory)
+
       slices.foreach(slice => {
+        if (null == originConnection) {
+    		originConnection = bcConnectionFetcher.value.getConnection(Side.ORIGIN, bcPropHelper.value.getString(KnownProperties.READ_CL), 0)
+        }
         originConnection.withSessionDo(originSession =>
-          targetConnection.withSessionDo(targetSession =>
-            jobFactory.getInstance(originSession, targetSession, sc)
-              .processSlice(slice)))
+            bcJobFactory.value.getInstance(originSession, null, bcPropHelper.value)
+              .processSlice(slice, null, 0))
       })
     }
   }
+
 }

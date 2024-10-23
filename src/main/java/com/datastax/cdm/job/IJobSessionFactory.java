@@ -15,10 +15,9 @@
  */
 package com.datastax.cdm.job;
 
-import org.apache.spark.SparkConf;
-
+import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public interface IJobSessionFactory<T> {
-    AbstractJobSession<T> getInstance(CqlSession originSession, CqlSession targetSession, SparkConf sc);
+    AbstractJobSession<T> getInstance(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper);
 }

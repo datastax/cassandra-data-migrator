@@ -43,6 +43,7 @@ abstract class BaseJob[T: ClassTag] extends App {
   var propertyHelper: PropertyHelper = _
 
   var consistencyLevel: String = _
+  var connectionFetcher: ConnectionFetcher = _
   var minPartition: BigInteger = _
   var maxPartition: BigInteger = _
   var coveragePercent: Int = _
@@ -76,7 +77,7 @@ abstract class BaseJob[T: ClassTag] extends App {
       runId = System.nanoTime();
     }
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
-    val connectionFetcher = new ConnectionFetcher(sContext, propertyHelper)
+    connectionFetcher = new ConnectionFetcher(sc, propertyHelper)
     originConnection = connectionFetcher.getConnection(Side.ORIGIN, consistencyLevel, runId)
     targetConnection = connectionFetcher.getConnection(Side.TARGET, consistencyLevel, runId)
 
@@ -109,7 +110,7 @@ abstract class BaseJob[T: ClassTag] extends App {
   def getParts(pieces: Int): util.Collection[T]
   def printSummary(): Unit = {
     if (parts.size() > 0) {
-      jobFactory.getInstance(null, null, sc).printCounts(true);
+      jobFactory.getInstance(null, null, propertyHelper).printCounts(true);
     }
   }
 
