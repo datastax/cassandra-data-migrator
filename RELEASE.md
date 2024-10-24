@@ -1,7 +1,10 @@
 # Release Notes
-## [4.6.1] - 2024-10-22
-- Make `trackRun` feature work on all versions of Cassandra/DSE by replacing the `IN` clause on `cdm_run_details` table.
-- Updated `README` docs.
+## [4.7.0] - 2024-10-25
+- CDM refractored to work when deployed on a Spark Cluster
+- More performant for large migration efforts (multi-terabytes clusters with several billions of rows) using Spark Cluster (instead of individual VMs)
+- No functional changes and fully backward compatible, just refactor to support Spark cluster deployment
+
+Note: The Spark Cluster based deployment in this release currently has a bug. It reports '0' for all count metrics, while doing underlying tasks (Migration, Validation, etc.). We are working to address this in the upcoming releases. Also note that this issue is only with the Spark cluster deployment and not with the single VM run (i.e. no impact to current users).
 
 ## [4.6.0] - 2024-10-18
 - Allow using Collections and/or UDTs for `ttl` & `writetime` calculations. This is specifically helpful in scenarios where the only non-key columns are Collections and/or UDTs.
