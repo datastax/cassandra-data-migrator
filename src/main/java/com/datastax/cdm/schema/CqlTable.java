@@ -347,16 +347,20 @@ public class CqlTable extends BaseTable {
             return removeNullValuesFromMap(thisObject);
         }
 
-        CqlConversion cqlConversion = this.cqlConversions.get(index);
-        if (null == cqlConversion) {
-            if (logTrace)
-                logger.trace("{} Index:{} not converting:{}", isOrigin ? "origin" : "target", index, thisObject);
-            return thisObject;
+        if (null != this.cqlConversions) {
+            CqlConversion cqlConversion = this.cqlConversions.get(index);
+            if (null == cqlConversion) {
+                if (logTrace)
+                    logger.trace("{} Index:{} not converting:{}", isOrigin ? "origin" : "target", index, thisObject);
+                return thisObject;
+            } else {
+                if (logTrace)
+                    logger.trace("{} Index:{} converting:{} via CqlConversion:{}", isOrigin ? "origin" : "target",
+                            index, thisObject, cqlConversion);
+                return cqlConversion.convert(thisObject);
+            }
         } else {
-            if (logTrace)
-                logger.trace("{} Index:{} converting:{} via CqlConversion:{}", isOrigin ? "origin" : "target", index,
-                        thisObject, cqlConversion);
-            return cqlConversion.convert(thisObject);
+            return thisObject;
         }
     }
 

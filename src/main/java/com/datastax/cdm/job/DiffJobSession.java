@@ -26,7 +26,6 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +40,9 @@ import com.datastax.cdm.feature.ConstantColumns;
 import com.datastax.cdm.feature.ExplodeMap;
 import com.datastax.cdm.feature.ExtractJson;
 import com.datastax.cdm.feature.Featureset;
-import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -67,8 +66,8 @@ public class DiffJobSession extends CopyJobSession {
     private ExtractJson extractJsonFeature;
     private boolean overwriteTarget;
 
-    public DiffJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        super(originSession, targetSession, sc);
+    public DiffJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
+        super(originSession, targetSession, propHelper);
         this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID,
                 JobCounter.CounterType.MISMATCH, JobCounter.CounterType.CORRECTED_MISMATCH,
                 JobCounter.CounterType.MISSING, JobCounter.CounterType.CORRECTED_MISSING,
@@ -118,12 +117,7 @@ public class DiffJobSession extends CopyJobSession {
         logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    @Override
-    public void processSlice(SplitPartitions.Partition slice) {
-        this.getDataAndDiff(slice.getMin(), slice.getMax());
-    }
-
-    private void getDataAndDiff(BigInteger min, BigInteger max) {
+    protected void processSlice(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
@@ -151,16 +145,6 @@ public class DiffJobSession extends CopyJobSession {
                     jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
                 } else {
                     for (Record r : pkFactory.toValidRecordList(record)) {
-
-                        if (guardrailEnabled) {
-                            String guardrailCheck = guardrailFeature.guardrailChecks(r);
-                            if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
-                                logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
-                                jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-                                continue;
-                            }
-                        }
-
                         rateLimiterTarget.acquire(1);
                         CompletionStage<AsyncResultSet> targetResult = targetSelectByPKStatement
                                 .getAsyncResult(r.getPk());

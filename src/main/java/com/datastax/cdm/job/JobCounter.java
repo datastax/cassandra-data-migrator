@@ -67,7 +67,6 @@ public class JobCounter {
     private final HashMap<CounterType, CounterUnit> counterMap = new HashMap<>();
 
     // Variables to hold lock objects and registered types
-    private final Object globalLock = new Object();
     private final boolean printPerThread;
     private final long printStatsAfter;
     private final CounterUnit printCounter = new CounterUnit();
@@ -128,7 +127,7 @@ public class JobCounter {
 
     // Method to increment global counters based on thread-specific counters
     public void globalIncrement() {
-        synchronized (globalLock) {
+        synchronized (this) {
             for (CounterType type : counterMap.keySet()) {
                 getCounterUnit(type).addThreadToGlobalCounter();
             }
