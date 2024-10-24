@@ -92,16 +92,22 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
                     logger.error("Feature {} is not valid.  Please check the configuration.", f.getClass().getName());
                 }
             }
+
+            PKFactory pkFactory = new PKFactory(propertyHelper, cqlTableOrigin, cqlTableTarget);
+            this.originSession.setPKFactory(pkFactory);
+            this.targetSession.setPKFactory(pkFactory);
         }
 
         if (!allFeaturesValid) {
             throw new RuntimeException("One or more features are not valid.  Please check the configuration.");
         }
 
-        PKFactory pkFactory = new PKFactory(propertyHelper, cqlTableOrigin, cqlTableTarget);
-        this.originSession.setPKFactory(pkFactory);
-        this.targetSession.setPKFactory(pkFactory);
         this.guardrailFeature = (Guardrail) cqlTableOrigin.getFeature(Featureset.GUARDRAIL_CHECK);
+        if (!guardrailFeature.initializeAndValidate(cqlTableOrigin, null)) {
+            allFeaturesValid = false;
+            logger.error("Feature {} is not valid.  Please check the configuration.",
+                    guardrailFeature.getClass().getName());
+        }
     }
 
     public void processSlice(SplitPartitions.Partition slice, TrackRun trackRunFeature, long runId) {

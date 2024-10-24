@@ -12,4 +12,4 @@
  limitations under the License.
 */
 
-SELECT * FROM target.feature_guardrail;
+SELECT count(*) FROM origin.feature_guardrail;

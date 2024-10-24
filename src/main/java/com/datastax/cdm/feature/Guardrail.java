@@ -104,11 +104,8 @@ public class Guardrail extends AbstractFeature {
 
         Map<String, Integer> largeColumns = null;
         for (int i = 0; i < originTable.getColumnNames(false).size(); i++) {
-            int targetIndex = originTable.getCorrespondingIndex(i);
-            if (targetIndex < 0)
-                continue; // TTL and WRITETIME columns for example
             Object targetObject = originTable.getAndConvertData(i, row);
-            largeColumns = check(largeColumns, targetIndex, targetObject);
+            largeColumns = check(largeColumns, i, targetObject);
         }
 
         if (null == largeColumns || largeColumns.isEmpty())

@@ -22,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.statement.OriginSelectByPartitionRangeStatement;
-import com.datastax.cdm.data.PKFactory;
-import com.datastax.cdm.data.Record;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -33,15 +31,10 @@ public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
-    private final PKFactory pkFactory;
-
     protected GuardrailCheckJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
         super(originSession, targetSession, propHelper);
         this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID,
                 JobCounter.CounterType.SKIPPED, JobCounter.CounterType.LARGE);
-
-        pkFactory = this.originSession.getPKFactory();
-
         if (!guardrailFeature.isEnabled()) {
             logger.error("GuardrailCheckJobSession is disabled - is it configured correctly?");
             return;
