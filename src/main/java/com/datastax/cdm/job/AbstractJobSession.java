@@ -15,9 +15,9 @@
  */
 package com.datastax.cdm.job;
 
+import java.math.BigInteger;
 import java.util.Collection;
 
-import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +29,8 @@ import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.properties.KnownProperties;
+import com.datastax.cdm.properties.PropertyHelper;
+import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 
@@ -38,19 +40,18 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected EnhancedSession originSession;
     protected EnhancedSession targetSession;
     protected Guardrail guardrailFeature;
-    protected boolean guardrailEnabled;
     protected JobCounter jobCounter;
     protected Long printStatsAfter;
     protected TrackRun trackRunFeature;
     protected long runId;
 
-    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        this(originSession, targetSession, sc, false);
+    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
+        this(originSession, targetSession, propHelper, false);
     }
 
-    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc,
+    protected AbstractJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper,
             boolean isJobMigrateRowsFromFile) {
-        super(sc);
+        super(propHelper);
 
         if (originSession == null) {
             return;
@@ -73,36 +74,49 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         logger.info("PARAM -- Origin Rate Limit: {}", rateLimiterOrigin.getRate());
         logger.info("PARAM -- Target Rate Limit: {}", rateLimiterTarget.getRate());
 
+        CqlTable cqlTableOrigin, cqlTableTarget = null;
         this.originSession = new EnhancedSession(propertyHelper, originSession, true);
-        this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);
-        this.originSession.getCqlTable().setOtherCqlTable(this.targetSession.getCqlTable());
-        this.targetSession.getCqlTable().setOtherCqlTable(this.originSession.getCqlTable());
-        this.originSession.getCqlTable().setFeatureMap(featureMap);
-        this.targetSession.getCqlTable().setFeatureMap(featureMap);
+        cqlTableOrigin = this.originSession.getCqlTable();
+        cqlTableOrigin.setFeatureMap(featureMap);
 
         boolean allFeaturesValid = true;
-        for (Feature f : featureMap.values()) {
-            if (!f.initializeAndValidate(this.originSession.getCqlTable(), this.targetSession.getCqlTable())) {
-                allFeaturesValid = false;
-                logger.error("Feature {} is not valid.  Please check the configuration.", f.getClass().getName());
+        if (targetSession != null) {
+            this.targetSession = new EnhancedSession(propertyHelper, targetSession, false);
+            cqlTableTarget = this.targetSession.getCqlTable();
+            cqlTableOrigin.setOtherCqlTable(cqlTableTarget);
+            cqlTableTarget.setOtherCqlTable(cqlTableOrigin);
+            cqlTableTarget.setFeatureMap(featureMap);
+            for (Feature f : featureMap.values()) {
+                if (!f.initializeAndValidate(cqlTableOrigin, cqlTableTarget)) {
+                    allFeaturesValid = false;
+                    logger.error("Feature {} is not valid.  Please check the configuration.", f.getClass().getName());
+                }
             }
+
+            PKFactory pkFactory = new PKFactory(propertyHelper, cqlTableOrigin, cqlTableTarget);
+            this.originSession.setPKFactory(pkFactory);
+            this.targetSession.setPKFactory(pkFactory);
         }
+
         if (!allFeaturesValid) {
             throw new RuntimeException("One or more features are not valid.  Please check the configuration.");
         }
 
-        PKFactory pkFactory = new PKFactory(propertyHelper, this.originSession.getCqlTable(),
-                this.targetSession.getCqlTable());
-        this.originSession.setPKFactory(pkFactory);
-        this.targetSession.setPKFactory(pkFactory);
-
-        // Guardrail is referenced by many jobs, and is evaluated against the target
-        // table
-        this.guardrailFeature = (Guardrail) this.targetSession.getCqlTable().getFeature(Featureset.GUARDRAIL_CHECK);
-        this.guardrailEnabled = this.guardrailFeature.isEnabled();
+        this.guardrailFeature = (Guardrail) cqlTableOrigin.getFeature(Featureset.GUARDRAIL_CHECK);
+        if (!guardrailFeature.initializeAndValidate(cqlTableOrigin, null)) {
+            allFeaturesValid = false;
+            logger.error("Feature {} is not valid.  Please check the configuration.",
+                    guardrailFeature.getClass().getName());
+        }
     }
 
-    public abstract void processSlice(T slice);
+    public void processSlice(SplitPartitions.Partition slice, TrackRun trackRunFeature, long runId) {
+        this.trackRunFeature = trackRunFeature;
+        this.runId = runId;
+        this.processSlice(slice.getMin(), slice.getMax());
+    }
+
+    protected abstract void processSlice(BigInteger min, BigInteger max);
 
     public synchronized void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts,
             TrackRun trackRunFeature, TrackRun.RUN_TYPE runType) {

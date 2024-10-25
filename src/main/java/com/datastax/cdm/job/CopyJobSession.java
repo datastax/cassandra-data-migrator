@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +29,8 @@ import com.datastax.cdm.cql.statement.TargetSelectByPKStatement;
 import com.datastax.cdm.cql.statement.TargetUpsertStatement;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.data.Record;
-import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
+import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BatchStatement;
@@ -50,8 +49,8 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
 
-    protected CopyJobSession(CqlSession originSession, CqlSession targetSession, SparkConf sc) {
-        super(originSession, targetSession, sc);
+    protected CopyJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
+        super(originSession, targetSession, propHelper);
         this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE,
                 JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR, JobCounter.CounterType.UNFLUSHED);
 
@@ -65,19 +64,13 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
         logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    @Override
-    public void processSlice(SplitPartitions.Partition slice) {
-        this.getDataAndInsert(slice.getMin(), slice.getMax());
-    }
-
-    private void getDataAndInsert(BigInteger min, BigInteger max) {
+    protected void processSlice(BigInteger min, BigInteger max) {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
             trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED);
 
         BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
-        String guardrailCheck;
         jobCounter.threadReset();
 
         try {
@@ -100,15 +93,6 @@ public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition
                 }
 
                 for (Record r : pkFactory.toValidRecordList(record)) {
-                    if (guardrailEnabled) {
-                        guardrailCheck = guardrailFeature.guardrailChecks(r);
-                        if (guardrailCheck != null && guardrailCheck != Guardrail.CLEAN_CHECK) {
-                            logger.error("Guardrails failed for PrimaryKey {}; {}", r.getPk(), guardrailCheck);
-                            jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
-                            continue;
-                        }
-                    }
-
                     BoundStatement boundUpsert = bind(r);
                     if (null == boundUpsert) {
                         jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);

@@ -22,7 +22,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.cdm.data.Record;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.schema.CqlTable;
@@ -38,14 +37,7 @@ public class Guardrail extends AbstractFeature {
     private DecimalFormat decimalFormat = new DecimalFormat("0.###");
 
     private Double colSizeInKB;
-
     private CqlTable originTable;
-    private CqlTable targetTable;
-
-    private ExplodeMap explodeMap = null;
-    private int explodeMapIndex = -1;
-    private int explodeMapKeyIndex = -1;
-    private int explodeMapValueIndex = -1;
 
     @Override
     public boolean loadProperties(IPropertyHelper propertyHelper) {
@@ -79,13 +71,7 @@ public class Guardrail extends AbstractFeature {
             logger.error("originTable is null, or is not an origin table");
             return false;
         }
-        if (null == targetTable || targetTable.isOrigin()) {
-            logger.error("targetTable is null, or is an origin table");
-            return false;
-        }
-
         this.originTable = originTable;
-        this.targetTable = targetTable;
 
         isValid = true;
         if (!validateProperties()) {
@@ -100,45 +86,26 @@ public class Guardrail extends AbstractFeature {
     }
 
     private Map<String, Integer> check(Map<String, Integer> currentChecks, int targetIndex, Object targetValue) {
-        int colSize = targetTable.byteCount(targetIndex, targetValue);
+        int colSize = originTable.byteCount(targetIndex, targetValue);
         if (logTrace)
             logger.trace("Column {} at targetIndex {} has size {} bytes",
-                    targetTable.getColumnNames(false).get(targetIndex), targetIndex, colSize);
+                    originTable.getColumnNames(false).get(targetIndex), targetIndex, colSize);
         if (colSize > colSizeInKB * BASE_FACTOR) {
             if (null == currentChecks)
                 currentChecks = new HashMap<String, Integer>();
-            currentChecks.put(targetTable.getColumnNames(false).get(targetIndex), colSize);
+            currentChecks.put(originTable.getColumnNames(false).get(targetIndex), colSize);
         }
         return currentChecks;
     }
 
-    public String guardrailChecks(Record record) {
+    public String guardrailChecks(Row row) {
         if (!isEnabled)
             return null;
-        if (null == record)
-            return CLEAN_CHECK;
-        if (null == record.getOriginRow())
-            return CLEAN_CHECK;
+
         Map<String, Integer> largeColumns = null;
-
-        // As the order of feature loading is not guaranteed, we wait until the first record to figure out the
-        // explodeMap
-        if (null == explodeMap)
-            calcExplodeMap();
-
-        Row row = record.getOriginRow();
         for (int i = 0; i < originTable.getColumnNames(false).size(); i++) {
-            if (i == explodeMapIndex) {
-                // Exploded columns are already converted to target type
-                largeColumns = check(largeColumns, explodeMapKeyIndex, record.getPk().getExplodeMapKey());
-                largeColumns = check(largeColumns, explodeMapValueIndex, record.getPk().getExplodeMapValue());
-            } else {
-                int targetIndex = originTable.getCorrespondingIndex(i);
-                if (targetIndex < 0)
-                    continue; // TTL and WRITETIME columns for example
-                Object targetObject = originTable.getAndConvertData(i, row);
-                largeColumns = check(largeColumns, targetIndex, targetObject);
-            }
+            Object targetObject = originTable.getAndConvertData(i, row);
+            largeColumns = check(largeColumns, i, targetObject);
         }
 
         if (null == largeColumns || largeColumns.isEmpty())
@@ -157,16 +124,4 @@ public class Guardrail extends AbstractFeature {
         return sb.toString();
     }
 
-    private void calcExplodeMap() {
-        this.explodeMap = (ExplodeMap) originTable.getFeature(Featureset.EXPLODE_MAP);
-        if (null != explodeMap && explodeMap.isEnabled()) {
-            explodeMapIndex = explodeMap.getOriginColumnIndex();
-            explodeMapKeyIndex = explodeMap.getKeyColumnIndex();
-            explodeMapValueIndex = explodeMap.getValueColumnIndex();
-            if (logDebug)
-                logger.debug(
-                        "ExplodeMap is enabled. explodeMapIndex={}, explodeMapKeyIndex={}, explodeMapValueIndex={}",
-                        explodeMapIndex, explodeMapKeyIndex, explodeMapValueIndex);
-        }
-    }
 }

@@ -18,7 +18,7 @@ package com.datastax.cdm.job;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import org.apache.spark.SparkContext;
+import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -35,7 +35,7 @@ public class ConnectionFetcherTest extends CommonMocks {
     IPropertyHelper propertyHelper;
 
     @Mock
-    private SparkContext context;
+    private SparkConf conf;
 
     private ConnectionFetcher cf;
 
@@ -45,7 +45,7 @@ public class ConnectionFetcherTest extends CommonMocks {
         commonSetupWithoutDefaultClassVariables();
         MockitoAnnotations.openMocks(this);
 
-        cf = new ConnectionFetcher(context, propertyHelper);
+        cf = new ConnectionFetcher(conf, propertyHelper);
     }
 
     @Test

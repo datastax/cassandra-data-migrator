@@ -43,7 +43,7 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
+        String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertEquals(Guardrail.CLEAN_CHECK, guardrailChecksResult, "guardrailChecks");
     }
 
@@ -52,7 +52,7 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
+        String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertNull(guardrailChecksResult, "guardrailChecks");
     }
 
@@ -62,9 +62,9 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        when(targetTable.byteCount(anyInt(),any())).thenReturn(Guardrail.BASE_FACTOR+1);
+        when(originTable.byteCount(anyInt(),any())).thenReturn(Guardrail.BASE_FACTOR+1);
 
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
+        String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertTrue(guardrailChecksResult.startsWith("Large columns"), "guardrailChecks");
     }
 
@@ -76,40 +76,8 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
+        String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertEquals(Guardrail.CLEAN_CHECK, guardrailChecksResult, "guardrailChecks");
-    }
-
-    @Test
-    public void explodeMap_KeyExceeds() {
-        defaultClassVariables();
-        commonSetupWithoutDefaultClassVariables(true, false, false);
-        when(propertyHelper.getNumber(KnownProperties.GUARDRAIL_COLSIZE_KB)).thenReturn(1);
-
-        guardrail.loadProperties(propertyHelper);
-        guardrail.initializeAndValidate(originTable, targetTable);
-
-        when(targetTable.byteCount(eq(explodeMapFeature.getKeyColumnIndex()), any()))
-                .thenReturn(Guardrail.BASE_FACTOR + 1);
-
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
-        assertTrue(guardrailChecksResult.startsWith("Large columns"), "guardrailChecks");
-    }
-
-    @Test
-    public void explodeMap_ValueExceeds() {
-        defaultClassVariables();
-        commonSetupWithoutDefaultClassVariables(true, false, false);
-        when(propertyHelper.getNumber(KnownProperties.GUARDRAIL_COLSIZE_KB)).thenReturn(1);
-
-        guardrail.loadProperties(propertyHelper);
-        guardrail.initializeAndValidate(originTable, targetTable);
-
-        when(targetTable.byteCount(eq(explodeMapFeature.getValueColumnIndex()), any()))
-                .thenReturn(Guardrail.BASE_FACTOR + 1);
-
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
-        assertTrue(guardrailChecksResult.startsWith("Large columns"), "guardrailChecks");
     }
 
     @Test
@@ -166,8 +134,7 @@ public class GuardrailTest extends CommonMocks {
 
     @Test
     public void initializeAndValidate_invalidTarget() {
-        when(originTable.isOrigin()).thenReturn(true);
-        when(targetTable.isOrigin()).thenReturn(true);
+        when(originTable.isOrigin()).thenReturn(false);
 
         guardrail.loadProperties(propertyHelper);
         boolean initializeAndValidateResult = guardrail.initializeAndValidate(originTable, targetTable);
@@ -190,7 +157,7 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
+        String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertNull(guardrailChecksResult, "guardrailChecks");
     }
 
@@ -212,7 +179,7 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        String guardrailChecksResult = guardrail.guardrailChecks(record);
+        String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertEquals(Guardrail.CLEAN_CHECK, guardrailChecksResult, "guardrailChecks");
     }
 

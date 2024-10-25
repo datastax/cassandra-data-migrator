@@ -17,13 +17,13 @@ package com.datastax.cdm.job
 
 import com.datastax.cdm.properties.{KnownProperties, IPropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkConf
 import org.slf4j.{Logger, LoggerFactory}
 import com.datastax.cdm.data.DataUtility.generateSCB
 import com.datastax.cdm.data.PKFactory.Side
 
 // TODO: CDM-31 - add localDC configuration support
-class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHelper) {
+class ConnectionFetcher(config: SparkConf, propertyHelper: IPropertyHelper) extends Serializable {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def getConnectionDetails(side: Side): ConnectionDetails = {
@@ -65,7 +65,6 @@ class ConnectionFetcher(sparkContext: SparkContext, propertyHelper: IPropertyHel
 
   def getConnection(side: Side, consistencyLevel: String, runId: Long): CassandraConnector = {
     val connectionDetails = getConnectionDetails(side)
-    val config: SparkConf = sparkContext.getConf
 
     logger.info("PARAM --  SSL Enabled: "+connectionDetails.sslEnabled);
 
