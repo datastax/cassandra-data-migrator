@@ -21,7 +21,7 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 - **Java11** (minimum) as Spark binaries are compiled with it.
 - **Spark `3.5.x` with Scala `2.13` and Hadoop `3.3`**
     - Typically installed using [this binary](https://archive.apache.org/dist/spark/spark-3.5.3/spark-3.5.3-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. This simple setup is recommended for most one-time migrations.
-    - However we recommend a Spark Cluster or a Spark Serverless platform like `DataBricks` or `DataProc` (that supports the above mentioned versions) for large (several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
+    - However we recommend a Spark Cluster or a Spark Serverless platform like `Databricks` or `Google Dataproc` (that supports the above mentioned versions) for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
     
 Spark can be installed by running the following: -
 
@@ -172,13 +172,13 @@ Below recommendations may only be useful when migrating large tables where the d
     - `numParts`: Default is 5K, but ideal value is usually around table-size/10MB. 
     - `batchSize`: Default is 5, but this should be set to 1 for tables where primary-key=partition-key OR where average row-size is > 20 KB. Similarly, this should be set to a value > 5, if row-size is small (< 1KB) and most partitions have several rows (100+).
     - `fetchSizeInRows`: Default is 1K and this usually works fine. However you can reduce this as needed if your table has many large rows (over 100KB).
-    - `ratelimit`: Default is 20K, but this property should usually be updated (after updating other properties) to the highest possible value that your `origin` and `target` clusters can efficiently handle.
+    - `ratelimit`: Default is `20000`, but this property should usually be updated (after updating other properties) to the highest possible value that your `origin` and `target` clusters can efficiently handle.
 - Using schema manipulation features (like `constantColumns`, `explodeMap`, `extractJson`), transformation functions and/or where-filter-conditions (except partition min/max) may negatively impact performance
 - We typically recommend [this infrastructure](https://docs.datastax.com/en/data-migration/deployment-infrastructure.html#_machines) for CDM VMs and [this starter conf](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm.properties). You can then optimize the job further based on CDM params info provided above and the observed load and throughput on `Origin` and `Target` clusters
-- Use a Spark Cluster or a Spark Serverless platform like `DataBricks` or `DataProc` for large (several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
+- Use a Spark Cluster or a Spark Serverless platform like `Databricks` or `Google Dataproc` for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
 
 > [!NOTE]
-> For additional performance tuning, refer to details mentioned in the [cdm-detailed.properties file here](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm-detailed.properties)
+> For additional performance tuning, refer to details mentioned in the [`cdm-detailed.properties` file here](./src/resources/cdm-detailed.properties)
 
 # Building Jar for local development
 1. Clone this repo
