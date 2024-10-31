@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.job.Partition;
 import com.datastax.cdm.job.RunNotStartedException;
-import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 
@@ -60,7 +60,7 @@ class TrackRunTest extends CommonMocks {
     @Test
     void init() throws RunNotStartedException {
         TrackRun trackRun = new TrackRun(cqlSession, "keyspace.table");
-        Collection<SplitPartitions.Partition> parts = trackRun.getPendingPartitions(0);
+        Collection<Partition> parts = trackRun.getPendingPartitions(0);
 
         assertEquals(0, parts.size());
     }

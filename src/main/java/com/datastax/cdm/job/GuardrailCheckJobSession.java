@@ -27,7 +27,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 
-public class GuardrailCheckJobSession extends AbstractJobSession<SplitPartitions.Partition> {
+public class GuardrailCheckJobSession extends AbstractJobSession<Partition> {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 

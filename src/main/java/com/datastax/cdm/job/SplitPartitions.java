@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.job;
 
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,27 +75,4 @@ public class SplitPartitions {
         return partitions;
     }
 
-    public static class Partition implements Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private final BigInteger min;
-        private final BigInteger max;
-
-        public Partition(BigInteger min, BigInteger max) {
-            this.min = min;
-            this.max = max;
-        }
-
-        public BigInteger getMin() {
-            return min;
-        }
-
-        public BigInteger getMax() {
-            return max;
-        }
-
-        public String toString() {
-            return "Processing partition for token range " + min + " to " + max;
-        }
-    }
 }

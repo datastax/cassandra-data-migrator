@@ -26,9 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.feature.TrackRun.RUN_TYPE;
+import com.datastax.cdm.job.Partition;
 import com.datastax.cdm.job.RunNotStartedException;
-import com.datastax.cdm.job.SplitPartitions;
-import com.datastax.cdm.job.SplitPartitions.Partition;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -88,7 +87,7 @@ public class TargetUpsertRunDetailsStatement {
                 + " WHERE table_name = ? AND run_id = ? AND status = ? ALLOW FILTERING");
     }
 
-    public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
+    public Collection<Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
         if (prevRunId == 0) {
             return Collections.emptyList();
         }
@@ -105,7 +104,7 @@ public class TargetUpsertRunDetailsStatement {
             }
         }
 
-        final Collection<SplitPartitions.Partition> pendingParts = new ArrayList<SplitPartitions.Partition>();
+        final Collection<Partition> pendingParts = new ArrayList<Partition>();
         pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString()));
         pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString()));
         pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString()));
@@ -114,11 +113,11 @@ public class TargetUpsertRunDetailsStatement {
         return pendingParts;
     }
 
-    protected Collection<SplitPartitions.Partition> getPartitionsByStatus(long prevRunId, String status) {
+    protected Collection<Partition> getPartitionsByStatus(long prevRunId, String status) {
         ResultSet rs = session.execute(boundSelectStatement.setString("table_name", tableName)
                 .setLong("run_id", prevRunId).setString("status", status));
 
-        final Collection<SplitPartitions.Partition> pendingParts = new ArrayList<SplitPartitions.Partition>();
+        final Collection<Partition> pendingParts = new ArrayList<Partition>();
         rs.forEach(row -> {
             Partition part = new Partition(BigInteger.valueOf(row.getLong("token_min")),
                     BigInteger.valueOf(row.getLong("token_max")));
@@ -127,7 +126,7 @@ public class TargetUpsertRunDetailsStatement {
         return pendingParts;
     }
 
-    public void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
+    public void initCdmRun(long runId, long prevRunId, Collection<Partition> parts, RUN_TYPE runType) {
         ResultSet rsInfo = session
                 .execute(boundSelectInfoStatement.setString("table_name", tableName).setLong("run_id", runId));
         if (null != rsInfo.one()) {

@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.statement.TargetUpsertRunDetailsStatement;
+import com.datastax.cdm.job.Partition;
 import com.datastax.cdm.job.RunNotStartedException;
-import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public class TrackRun {
@@ -42,14 +42,14 @@ public class TrackRun {
         this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
     }
 
-    public Collection<SplitPartitions.Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
-        Collection<SplitPartitions.Partition> pendingParts = runStatement.getPendingPartitions(prevRunId);
+    public Collection<Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
+        Collection<Partition> pendingParts = runStatement.getPendingPartitions(prevRunId);
         logger.info("###################### {} partitions pending from previous run id {} ######################",
                 pendingParts.size(), prevRunId);
         return pendingParts;
     }
 
-    public void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts, RUN_TYPE runType) {
+    public void initCdmRun(long runId, long prevRunId, Collection<Partition> parts, RUN_TYPE runType) {
         runStatement.initCdmRun(runId, prevRunId, parts, runType);
         logger.info("###################### Run Id for this job is: {} ######################", runId);
     }
