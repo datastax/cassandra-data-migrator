@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.spark.SparkConf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.FeatureFactory;
@@ -34,14 +31,13 @@ public abstract class BaseJobSession {
 
     public static final String THREAD_CONTEXT_LABEL = "ThreadLabel";
     protected static final String NEW_LINE = System.lineSeparator();
-    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-    protected PropertyHelper propertyHelper = PropertyHelper.getInstance();
+    protected PropertyHelper propertyHelper;
     protected Map<Featureset, Feature> featureMap;
     protected RateLimiter rateLimiterOrigin;
     protected RateLimiter rateLimiterTarget;
 
-    protected BaseJobSession(SparkConf sc) {
-        propertyHelper.initializeSparkConf(sc);
+    protected BaseJobSession(PropertyHelper propHelper) {
+        propertyHelper = propHelper;
         this.featureMap = calcFeatureMap(propertyHelper);
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel());
     }

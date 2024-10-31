@@ -118,10 +118,6 @@ public class PKFactory {
         }
     }
 
-    public EnhancedPK toEnhancedPK(List<Object> pkValues, List<Class> pkClasses) {
-        return new EnhancedPK(this, pkValues, pkClasses, null, null, null);
-    }
-
     public String getWhereClause(Side side) {
         StringBuilder sb;
         List<String> pkNames;

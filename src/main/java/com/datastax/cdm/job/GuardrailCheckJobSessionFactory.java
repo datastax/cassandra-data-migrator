@@ -15,19 +15,21 @@
  */
 package com.datastax.cdm.job;
 
-import org.apache.spark.SparkConf;
+import java.io.Serializable;
 
+import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
-public class GuardrailCheckJobSessionFactory implements IJobSessionFactory<SplitPartitions.Partition> {
+public class GuardrailCheckJobSessionFactory implements IJobSessionFactory<SplitPartitions.Partition>, Serializable {
+    private static final long serialVersionUID = -4673384128807660843L;
     private static GuardrailCheckJobSession jobSession = null;
 
     public AbstractJobSession<SplitPartitions.Partition> getInstance(CqlSession originSession, CqlSession targetSession,
-            SparkConf sc) {
+            PropertyHelper propHelper) {
         if (jobSession == null) {
             synchronized (GuardrailCheckJobSession.class) {
                 if (jobSession == null) {
-                    jobSession = new GuardrailCheckJobSession(originSession, targetSession, sc);
+                    jobSession = new GuardrailCheckJobSession(originSession, targetSession, propHelper);
                 }
             }
         }

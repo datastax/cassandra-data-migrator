@@ -16,24 +16,37 @@
 package com.datastax.cdm.job
 
 import com.datastax.cdm.feature.TrackRun
+import com.datastax.cdm.data.PKFactory.Side
+import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 
 object DiffData extends BasePartitionJob {
   setup("Data Validation Job", new DiffJobSessionFactory())
   execute()
   finish()
-  
+    
   protected def execute(): Unit = {
     if (!parts.isEmpty()) {
       originConnection.withSessionDo(originSession =>
         targetConnection.withSessionDo(targetSession =>
-          jobFactory.getInstance(originSession, targetSession, sc).initCdmRun(runId, prevRunId, parts, trackRunFeature, TrackRun.RUN_TYPE.DIFF_DATA)));
+          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, TrackRun.RUN_TYPE.DIFF_DATA)));
+      val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
+      val bcPropHelper = sContext.broadcast(propertyHelper)
+      val bcJobFactory = sContext.broadcast(jobFactory)
+      val bcKeyspaceTableValue = sContext.broadcast(keyspaceTableValue)
+      val bcRunId = sContext.broadcast(runId)
 
       slices.foreach(slice => {
+        if (null == originConnection) {
+    		originConnection = bcConnectionFetcher.value.getConnection(Side.ORIGIN, bcPropHelper.value.getString(KnownProperties.READ_CL), bcRunId.value)
+    		targetConnection = bcConnectionFetcher.value.getConnection(Side.TARGET, bcPropHelper.value.getString(KnownProperties.READ_CL), bcRunId.value)
+            trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, bcKeyspaceTableValue.value))
+        }
         originConnection.withSessionDo(originSession =>
           targetConnection.withSessionDo(targetSession =>
-            jobFactory.getInstance(originSession, targetSession, sc)
-              .processSlice(slice)))
+            bcJobFactory.value.getInstance(originSession, targetSession, bcPropHelper.value)
+              .processSlice(slice, trackRunFeature, bcRunId.value)))
       })
     }
   }
+  
 }

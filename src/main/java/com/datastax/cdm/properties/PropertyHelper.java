@@ -15,6 +15,7 @@
  */
 package com.datastax.cdm.properties;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import scala.Tuple2;
 
-public final class PropertyHelper extends KnownProperties implements IPropertyHelper {
+public final class PropertyHelper extends KnownProperties implements IPropertyHelper, Serializable {
     private static PropertyHelper instance = null;
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
