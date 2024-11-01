@@ -22,15 +22,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.statement.TargetUpsertRunDetailsStatement;
-import com.datastax.cdm.job.Partition;
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
+import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public class TrackRun {
-    public enum RUN_TYPE {
-        MIGRATE, DIFF_DATA
-    }
-
     public enum RUN_STATUS {
         NOT_STARTED, STARTED, PASS, FAIL, DIFF, DIFF_CORRECTED, ENDED
     }
@@ -42,15 +39,15 @@ public class TrackRun {
         this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
     }
 
-    public Collection<Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
-        Collection<Partition> pendingParts = runStatement.getPendingPartitions(prevRunId);
+    public Collection<PartitionRange> getPendingPartitions(long prevRunId) throws RunNotStartedException {
+        Collection<PartitionRange> pendingParts = runStatement.getPendingPartitions(prevRunId);
         logger.info("###################### {} partitions pending from previous run id {} ######################",
                 pendingParts.size(), prevRunId);
         return pendingParts;
     }
 
-    public void initCdmRun(long runId, long prevRunId, Collection<Partition> parts, RUN_TYPE runType) {
-        runStatement.initCdmRun(runId, prevRunId, parts, runType);
+    public void initCdmRun(long runId, long prevRunId, Collection<PartitionRange> parts, JobType jobType) {
+        runStatement.initCdmRun(runId, prevRunId, parts, jobType);
         logger.info("###################### Run Id for this job is: {} ######################", runId);
     }
 

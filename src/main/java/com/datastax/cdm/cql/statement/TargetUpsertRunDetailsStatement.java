@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.feature.TrackRun;
-import com.datastax.cdm.feature.TrackRun.RUN_TYPE;
-import com.datastax.cdm.job.Partition;
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
+import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -87,7 +87,7 @@ public class TargetUpsertRunDetailsStatement {
                 + " WHERE table_name = ? AND run_id = ? AND status = ? ALLOW FILTERING");
     }
 
-    public Collection<Partition> getPendingPartitions(long prevRunId) throws RunNotStartedException {
+    public Collection<PartitionRange> getPendingPartitions(long prevRunId) throws RunNotStartedException {
         if (prevRunId == 0) {
             return Collections.emptyList();
         }
@@ -104,7 +104,7 @@ public class TargetUpsertRunDetailsStatement {
             }
         }
 
-        final Collection<Partition> pendingParts = new ArrayList<Partition>();
+        final Collection<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
         pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString()));
         pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString()));
         pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString()));
@@ -113,35 +113,35 @@ public class TargetUpsertRunDetailsStatement {
         return pendingParts;
     }
 
-    protected Collection<Partition> getPartitionsByStatus(long prevRunId, String status) {
+    protected Collection<PartitionRange> getPartitionsByStatus(long prevRunId, String status) {
         ResultSet rs = session.execute(boundSelectStatement.setString("table_name", tableName)
                 .setLong("run_id", prevRunId).setString("status", status));
 
-        final Collection<Partition> pendingParts = new ArrayList<Partition>();
+        final Collection<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
         rs.forEach(row -> {
-            Partition part = new Partition(BigInteger.valueOf(row.getLong("token_min")),
+            PartitionRange part = new PartitionRange(BigInteger.valueOf(row.getLong("token_min")),
                     BigInteger.valueOf(row.getLong("token_max")));
             pendingParts.add(part);
         });
         return pendingParts;
     }
 
-    public void initCdmRun(long runId, long prevRunId, Collection<Partition> parts, RUN_TYPE runType) {
+    public void initCdmRun(long runId, long prevRunId, Collection<PartitionRange> parts, JobType jobType) {
         ResultSet rsInfo = session
                 .execute(boundSelectInfoStatement.setString("table_name", tableName).setLong("run_id", runId));
         if (null != rsInfo.one()) {
             throw new RuntimeException("Run id " + runId + " already exists for table " + tableName);
         }
         session.execute(boundInitInfoStatement.setString("table_name", tableName).setLong("run_id", runId)
-                .setString("run_type", runType.toString()).setLong("prev_run_id", prevRunId)
+                .setString("run_type", jobType.toString()).setLong("prev_run_id", prevRunId)
                 .setString("status", TrackRun.RUN_STATUS.NOT_STARTED.toString()));
         parts.forEach(part -> initCdmRun(runId, part));
         session.execute(boundInitInfoStatement.setString("table_name", tableName).setLong("run_id", runId)
-                .setString("run_type", runType.toString()).setLong("prev_run_id", prevRunId)
+                .setString("run_type", jobType.toString()).setLong("prev_run_id", prevRunId)
                 .setString("status", TrackRun.RUN_STATUS.STARTED.toString()));
     }
 
-    private void initCdmRun(long runId, Partition partition) {
+    private void initCdmRun(long runId, PartitionRange partition) {
         session.execute(boundInitStatement.setString("table_name", tableName).setLong("run_id", runId)
                 .setLong("token_min", partition.getMin().longValue())
                 .setLong("token_max", partition.getMax().longValue())

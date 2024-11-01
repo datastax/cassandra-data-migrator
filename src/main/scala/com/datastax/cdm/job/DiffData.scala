@@ -18,6 +18,7 @@ package com.datastax.cdm.job
 import com.datastax.cdm.feature.TrackRun
 import com.datastax.cdm.data.PKFactory.Side
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+import com.datastax.cdm.job.IJobSessionFactory.JobType
 
 object DiffData extends BasePartitionJob {
   setup("Data Validation Job", new DiffJobSessionFactory())
@@ -28,7 +29,7 @@ object DiffData extends BasePartitionJob {
     if (!parts.isEmpty()) {
       originConnection.withSessionDo(originSession =>
         targetConnection.withSessionDo(targetSession =>
-          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, TrackRun.RUN_TYPE.DIFF_DATA)));
+          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, JobType.VALIDATE)));
       val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
       val bcPropHelper = sContext.broadcast(propertyHelper)
       val bcJobFactory = sContext.broadcast(jobFactory)
@@ -44,7 +45,7 @@ object DiffData extends BasePartitionJob {
         originConnection.withSessionDo(originSession =>
           targetConnection.withSessionDo(targetSession =>
             bcJobFactory.value.getInstance(originSession, targetSession, bcPropHelper.value)
-              .processSlice(slice, trackRunFeature, bcRunId.value)))
+              .processPartitionRange(slice, trackRunFeature, bcRunId.value)))
       })
     }
   }

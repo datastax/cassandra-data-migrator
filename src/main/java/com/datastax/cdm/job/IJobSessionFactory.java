@@ -19,5 +19,11 @@ import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public interface IJobSessionFactory<T> {
+    public enum JobType {
+        MIGRATE, VALIDATE, GUARDRAIL
+    }
+
     AbstractJobSession<T> getInstance(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper);
+
+    public JobType getJobType();
 }

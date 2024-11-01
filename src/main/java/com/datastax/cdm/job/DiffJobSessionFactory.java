@@ -20,11 +20,11 @@ import java.io.Serializable;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
-public class DiffJobSessionFactory implements IJobSessionFactory<Partition>, Serializable {
+public class DiffJobSessionFactory implements IJobSessionFactory<PartitionRange>, Serializable {
     private static final long serialVersionUID = -3543616512495020278L;
     private static DiffJobSession jobSession = null;
 
-    public AbstractJobSession<Partition> getInstance(CqlSession originSession, CqlSession targetSession,
+    public AbstractJobSession<PartitionRange> getInstance(CqlSession originSession, CqlSession targetSession,
             PropertyHelper propHelper) {
         if (jobSession == null) {
             synchronized (DiffJobSession.class) {
@@ -34,5 +34,9 @@ public class DiffJobSessionFactory implements IJobSessionFactory<Partition>, Ser
             }
         }
         return jobSession;
+    }
+
+    public JobType getJobType() {
+        return JobType.VALIDATE;
     }
 }

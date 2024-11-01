@@ -39,7 +39,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 
-public class CopyJobSession extends AbstractJobSession<Partition> {
+public class CopyJobSession extends AbstractJobSession<PartitionRange> {
 
     private final PKFactory pkFactory;
     private final boolean isCounterTable;
@@ -64,7 +64,8 @@ public class CopyJobSession extends AbstractJobSession<Partition> {
         logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    protected void processSlice(BigInteger min, BigInteger max) {
+    protected void processPartitionRange(PartitionRange range) {
+        BigInteger min = range.getMin(), max = range.getMax();
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)

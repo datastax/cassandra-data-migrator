@@ -27,10 +27,10 @@ public class SplitPartitions {
 
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
 
-    public static List<Partition> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max,
+    public static List<PartitionRange> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max,
             int coveragePercent) {
         logger.info("ThreadID: {} Splitting min: {} max: {}", Thread.currentThread().getId(), min, max);
-        List<Partition> partitions = getSubPartitions(numSplits, min, max, coveragePercent);
+        List<PartitionRange> partitions = getSubPartitions(numSplits, min, max, coveragePercent);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
@@ -38,14 +38,14 @@ public class SplitPartitions {
         return partitions;
     }
 
-    private static List<Partition> getSubPartitions(int numSplits, BigInteger min, BigInteger max,
+    private static List<PartitionRange> getSubPartitions(int numSplits, BigInteger min, BigInteger max,
             int coveragePercent) {
         if (coveragePercent < 1 || coveragePercent > 100) {
             coveragePercent = 100;
         }
         BigInteger curMax = new BigInteger(min.toString());
         BigInteger partitionSize = max.subtract(min).divide(BigInteger.valueOf(numSplits));
-        List<Partition> partitions = new ArrayList<Partition>();
+        List<PartitionRange> partitions = new ArrayList<PartitionRange>();
         if (partitionSize.compareTo(new BigInteger("0")) == 0) {
             partitionSize = new BigInteger("100000");
         }
@@ -65,7 +65,7 @@ public class SplitPartitions {
 
             BigInteger range = curMax.subtract(curMin);
             BigInteger curRange = range.multiply(BigInteger.valueOf(coveragePercent)).divide(BigInteger.valueOf(100));
-            partitions.add(new Partition(curMin, curMin.add(curRange)));
+            partitions.add(new PartitionRange(curMin, curMin.add(curRange)));
             if (exausted) {
                 break;
             }
