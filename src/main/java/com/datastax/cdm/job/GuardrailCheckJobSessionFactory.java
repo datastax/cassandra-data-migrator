@@ -20,11 +20,11 @@ import java.io.Serializable;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
-public class GuardrailCheckJobSessionFactory implements IJobSessionFactory<SplitPartitions.Partition>, Serializable {
+public class GuardrailCheckJobSessionFactory implements IJobSessionFactory<Partition>, Serializable {
     private static final long serialVersionUID = -4673384128807660843L;
     private static GuardrailCheckJobSession jobSession = null;
 
-    public AbstractJobSession<SplitPartitions.Partition> getInstance(CqlSession originSession, CqlSession targetSession,
+    public AbstractJobSession<Partition> getInstance(CqlSession originSession, CqlSession targetSession,
             PropertyHelper propHelper) {
         if (jobSession == null) {
             synchronized (GuardrailCheckJobSession.class) {

@@ -39,7 +39,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 
-public class CopyJobSession extends AbstractJobSession<SplitPartitions.Partition> {
+public class CopyJobSession extends AbstractJobSession<Partition> {
 
     private final PKFactory pkFactory;
     private final boolean isCounterTable;

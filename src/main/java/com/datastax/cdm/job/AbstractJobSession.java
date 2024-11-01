@@ -110,7 +110,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         }
     }
 
-    public void processSlice(SplitPartitions.Partition slice, TrackRun trackRunFeature, long runId) {
+    public void processSlice(Partition slice, TrackRun trackRunFeature, long runId) {
         this.trackRunFeature = trackRunFeature;
         this.runId = runId;
         this.processSlice(slice.getMin(), slice.getMax());
@@ -118,7 +118,7 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
     protected abstract void processSlice(BigInteger min, BigInteger max);
 
-    public synchronized void initCdmRun(long runId, long prevRunId, Collection<SplitPartitions.Partition> parts,
+    public synchronized void initCdmRun(long runId, long prevRunId, Collection<Partition> parts,
             TrackRun trackRunFeature, TrackRun.RUN_TYPE runType) {
         this.runId = runId;
         this.trackRunFeature = trackRunFeature;
