@@ -37,7 +37,7 @@ object GuardrailCheck extends BasePartitionJob {
         }
         originConnection.withSessionDo(originSession =>
             bcJobFactory.value.getInstance(originSession, null, bcPropHelper.value)
-              .processSlice(slice, null, 0))
+              .processPartitionRange(slice, null, 0))
       })
     }
   }

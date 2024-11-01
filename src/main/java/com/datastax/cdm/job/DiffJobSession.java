@@ -117,7 +117,8 @@ public class DiffJobSession extends CopyJobSession {
         logger.info("CQL -- target upsert: {}", this.targetSession.getTargetUpsertStatement().getCQL());
     }
 
-    protected void processSlice(BigInteger min, BigInteger max) {
+    protected void processPartitionRange(PartitionRange range) {
+        BigInteger min = range.getMin(), max = range.getMax();
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)

@@ -15,15 +15,17 @@
  */
 package com.datastax.cdm.job;
 
+import java.io.Serializable;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.feature.TrackRun;
 
-public class JobCounter {
+public class JobCounter implements Serializable {
+
+    private static final long serialVersionUID = 7016816604237020549L;
 
     // Enumeration for counter types
     public enum CounterType {
@@ -32,36 +34,6 @@ public class JobCounter {
 
     // Logger instance
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
-    // Internal class to handle atomic counting operations
-    private static class CounterUnit {
-        private final AtomicLong globalCounter = new AtomicLong(0);
-        private final ThreadLocal<Long> threadLocalCounter = ThreadLocal.withInitial(() -> 0L);
-
-        public void incrementThreadCounter(long incrementBy) {
-            threadLocalCounter.set(threadLocalCounter.get() + incrementBy);
-        }
-
-        public long getThreadCounter() {
-            return threadLocalCounter.get();
-        }
-
-        public void resetThreadCounter() {
-            threadLocalCounter.set(0L);
-        }
-
-        public void setGlobalCounter(long value) {
-            globalCounter.set(value);
-        }
-
-        public void addThreadToGlobalCounter() {
-            globalCounter.addAndGet(threadLocalCounter.get());
-        }
-
-        public long getGlobalCounter() {
-            return globalCounter.get();
-        }
-    }
 
     // Declare individual counters for different operations
     private final HashMap<CounterType, CounterUnit> counterMap = new HashMap<>();

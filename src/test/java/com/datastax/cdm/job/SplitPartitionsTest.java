@@ -32,7 +32,7 @@ public class SplitPartitionsTest {
 
     @Test
     void getRandomSubPartitionsTest() {
-        List<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(10, BigInteger.ONE,
+        List<PartitionRange> partitions = SplitPartitions.getRandomSubPartitions(10, BigInteger.ONE,
                 BigInteger.valueOf(100), 100);
         assertEquals(10, partitions.size());
         partitions.forEach(p -> {
@@ -42,7 +42,7 @@ public class SplitPartitionsTest {
 
     @Test
     void getRandomSubPartitionsTestOver100() {
-        List<SplitPartitions.Partition> partitions = SplitPartitions.getRandomSubPartitions(8, BigInteger.ONE,
+        List<PartitionRange> partitions = SplitPartitions.getRandomSubPartitions(8, BigInteger.ONE,
                 BigInteger.valueOf(44), 200);
         assertEquals(8, partitions.size());
     }

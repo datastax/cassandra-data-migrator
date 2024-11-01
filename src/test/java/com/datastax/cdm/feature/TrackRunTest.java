@@ -27,8 +27,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
+import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
-import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 
@@ -50,17 +51,17 @@ class TrackRunTest extends CommonMocks {
 
     @Test
     void countTypesAndStatus() {
-        assertEquals("MIGRATE", TrackRun.RUN_TYPE.MIGRATE.name());
-        assertEquals("DIFF_DATA", TrackRun.RUN_TYPE.DIFF_DATA.name());
+        assertEquals("MIGRATE", JobType.MIGRATE.name());
+        assertEquals("VALIDATE", JobType.VALIDATE.name());
 
-        assertEquals(2, TrackRun.RUN_TYPE.values().length);
+        assertEquals(3, JobType.values().length);
         assertEquals(7, TrackRun.RUN_STATUS.values().length);
     }
 
     @Test
     void init() throws RunNotStartedException {
         TrackRun trackRun = new TrackRun(cqlSession, "keyspace.table");
-        Collection<SplitPartitions.Partition> parts = trackRun.getPendingPartitions(0);
+        Collection<PartitionRange> parts = trackRun.getPendingPartitions(0);
 
         assertEquals(0, parts.size());
     }

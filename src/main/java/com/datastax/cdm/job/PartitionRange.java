@@ -15,15 +15,29 @@
  */
 package com.datastax.cdm.job;
 
-import com.datastax.cdm.properties.PropertyHelper;
-import com.datastax.oss.driver.api.core.CqlSession;
+import java.io.Serializable;
+import java.math.BigInteger;
 
-public interface IJobSessionFactory<T> {
-    public enum JobType {
-        MIGRATE, VALIDATE, GUARDRAIL
+public class PartitionRange implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final BigInteger min;
+    private final BigInteger max;
+
+    public PartitionRange(BigInteger min, BigInteger max) {
+        this.min = min;
+        this.max = max;
     }
 
-    AbstractJobSession<T> getInstance(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper);
+    public BigInteger getMin() {
+        return min;
+    }
 
-    public JobType getJobType();
+    public BigInteger getMax() {
+        return max;
+    }
+
+    public String toString() {
+        return "Processing partition for token range " + min + " to " + max;
+    }
 }

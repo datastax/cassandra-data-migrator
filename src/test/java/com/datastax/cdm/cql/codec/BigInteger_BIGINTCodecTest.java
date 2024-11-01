@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.cql.codec;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 import org.junit.jupiter.api.AfterEach;
