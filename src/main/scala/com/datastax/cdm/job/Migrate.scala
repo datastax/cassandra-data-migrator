@@ -18,6 +18,7 @@ package com.datastax.cdm.job
 import com.datastax.cdm.feature.TrackRun
 import com.datastax.cdm.data.PKFactory.Side
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+import com.datastax.cdm.job.IJobSessionFactory.JobType
 
 object Migrate extends BasePartitionJob {
   setup("Migrate Job", new CopyJobSessionFactory())
@@ -28,7 +29,7 @@ object Migrate extends BasePartitionJob {
     if (!parts.isEmpty()) {
       originConnection.withSessionDo(originSession =>
         targetConnection.withSessionDo(targetSession =>
-          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, TrackRun.RUN_TYPE.MIGRATE)));
+          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, JobType.MIGRATE)));
       val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
       val bcPropHelper = sContext.broadcast(propertyHelper)
       val bcJobFactory = sContext.broadcast(jobFactory)
@@ -44,7 +45,7 @@ object Migrate extends BasePartitionJob {
         originConnection.withSessionDo(originSession =>
           targetConnection.withSessionDo(targetSession =>
             bcJobFactory.value.getInstance(originSession, targetSession, bcPropHelper.value)
-              .processSlice(slice, trackRunFeature, bcRunId.value)))
+              .processPartitionRange(slice, trackRunFeature, bcRunId.value)))
       })
     }
   }

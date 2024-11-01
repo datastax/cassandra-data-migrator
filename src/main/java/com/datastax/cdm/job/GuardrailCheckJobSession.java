@@ -27,7 +27,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 
-public class GuardrailCheckJobSession extends AbstractJobSession<Partition> {
+public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange> {
 
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
@@ -43,7 +43,8 @@ public class GuardrailCheckJobSession extends AbstractJobSession<Partition> {
         logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
     }
 
-    protected void processSlice(BigInteger min, BigInteger max) {
+    protected void processPartitionRange(PartitionRange range) {
+        BigInteger min = range.getMin(), max = range.getMax();
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         try {
             logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);

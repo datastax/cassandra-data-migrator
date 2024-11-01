@@ -20,11 +20,11 @@ import scala.reflect.io.File
 import com.datastax.cdm.feature.TrackRun
 import com.datastax.cdm.properties.KnownProperties
 
-abstract class BasePartitionJob extends BaseJob[Partition] {
+abstract class BasePartitionJob extends BaseJob[PartitionRange] {
   var trackRunFeature: TrackRun = _
   var keyspaceTableValue: String = _
 
-  override def getParts(pieces: Int): util.Collection[Partition] = {
+  override def getParts(pieces: Int): util.Collection[PartitionRange] = {
     var keyspaceTable: Option[String] = Option(propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE))
       .filter(_.nonEmpty)
       .orElse(Option(propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE)))

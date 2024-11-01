@@ -18,13 +18,13 @@ package com.datastax.cdm.job;
 import java.io.Serializable;
 import java.math.BigInteger;
 
-public class Partition implements Serializable {
+public class PartitionRange implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final BigInteger min;
     private final BigInteger max;
 
-    public Partition(BigInteger min, BigInteger max) {
+    public PartitionRange(BigInteger min, BigInteger max) {
         this.min = min;
         this.max = max;
     }

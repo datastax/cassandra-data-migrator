@@ -20,11 +20,11 @@ import java.io.Serializable;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.CqlSession;
 
-public class CopyJobSessionFactory implements IJobSessionFactory<Partition>, Serializable {
+public class CopyJobSessionFactory implements IJobSessionFactory<PartitionRange>, Serializable {
     private static final long serialVersionUID = 5255029377029801421L;
     private static CopyJobSession jobSession = null;
 
-    public AbstractJobSession<Partition> getInstance(CqlSession originSession, CqlSession targetSession,
+    public AbstractJobSession<PartitionRange> getInstance(CqlSession originSession, CqlSession targetSession,
             PropertyHelper propHelper) {
         if (jobSession == null) {
             synchronized (CopyJobSession.class) {
@@ -34,5 +34,9 @@ public class CopyJobSessionFactory implements IJobSessionFactory<Partition>, Ser
             }
         }
         return jobSession;
+    }
+
+    public JobType getJobType() {
+        return JobType.MIGRATE;
     }
 }

@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.job;
 
-import java.math.BigInteger;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -28,6 +27,7 @@ import com.datastax.cdm.feature.Feature;
 import com.datastax.cdm.feature.Featureset;
 import com.datastax.cdm.feature.Guardrail;
 import com.datastax.cdm.feature.TrackRun;
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
@@ -110,20 +110,20 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         }
     }
 
-    public void processSlice(Partition slice, TrackRun trackRunFeature, long runId) {
+    public void processPartitionRange(PartitionRange range, TrackRun trackRunFeature, long runId) {
         this.trackRunFeature = trackRunFeature;
         this.runId = runId;
-        this.processSlice(slice.getMin(), slice.getMax());
+        this.processPartitionRange(range);
     }
 
-    protected abstract void processSlice(BigInteger min, BigInteger max);
+    protected abstract void processPartitionRange(PartitionRange range);
 
-    public synchronized void initCdmRun(long runId, long prevRunId, Collection<Partition> parts,
-            TrackRun trackRunFeature, TrackRun.RUN_TYPE runType) {
+    public synchronized void initCdmRun(long runId, long prevRunId, Collection<PartitionRange> parts,
+            TrackRun trackRunFeature, JobType jobType) {
         this.runId = runId;
         this.trackRunFeature = trackRunFeature;
         if (null != trackRunFeature)
-            trackRunFeature.initCdmRun(runId, prevRunId, parts, runType);
+            trackRunFeature.initCdmRun(runId, prevRunId, parts, jobType);
         DataUtility.deleteGeneratedSCB(runId);
     }
 

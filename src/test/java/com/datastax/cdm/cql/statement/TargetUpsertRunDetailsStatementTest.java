@@ -23,16 +23,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.cdm.job.Partition;
+import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -98,7 +98,7 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         when(mockIterator.next()).thenReturn(row3);
 
         targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
-        Collection<Partition> parts = targetUpsertRunDetailsStatement.getPartitionsByStatus(123l, "RUNNING");
+        Collection<PartitionRange> parts = targetUpsertRunDetailsStatement.getPartitionsByStatus(123l, "RUNNING");
 
         // This test is incorrect, but needs to be troubleshot & fixed. The actual code works, but the test does not
         assertEquals(0, parts.size());
