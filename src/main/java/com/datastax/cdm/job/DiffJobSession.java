@@ -179,6 +179,8 @@ public class DiffJobSession extends CopyJobSession {
             } else if (null != trackRunFeature) {
                 jobCounter.globalIncrement();
                 trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getThreadCounters(true));
+            } else {
+                jobCounter.globalIncrement();
             }
         } catch (Exception e) {
             jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
