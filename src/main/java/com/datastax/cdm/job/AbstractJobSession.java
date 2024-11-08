@@ -40,7 +40,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected EnhancedSession originSession;
     protected EnhancedSession targetSession;
     protected Guardrail guardrailFeature;
-    protected JobCounter jobCounter;
     protected Long printStatsAfter;
     protected TrackRun trackRunFeature;
     protected long runId;
@@ -65,8 +64,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
                     KnownProperties.getDefault(KnownProperties.PRINT_STATS_AFTER));
             printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
         }
-        this.jobCounter = new JobCounter(printStatsAfter,
-                propertyHelper.getBoolean(KnownProperties.PRINT_STATS_PER_PART));
 
         rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));
         rateLimiterTarget = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_TARGET));
@@ -127,11 +124,4 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
         DataUtility.deleteGeneratedSCB(runId);
     }
 
-    public synchronized void printCounts(boolean isFinal) {
-        if (isFinal) {
-            jobCounter.printFinal(runId, trackRunFeature);
-        } else {
-            jobCounter.printProgress();
-        }
-    }
 }

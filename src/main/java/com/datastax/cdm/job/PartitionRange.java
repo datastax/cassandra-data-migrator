@@ -18,15 +18,19 @@ package com.datastax.cdm.job;
 import java.io.Serializable;
 import java.math.BigInteger;
 
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
+
 public class PartitionRange implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final BigInteger min;
     private final BigInteger max;
+    protected JobCounter jobCounter;
 
-    public PartitionRange(BigInteger min, BigInteger max) {
+    public PartitionRange(BigInteger min, BigInteger max, JobType jobType) {
         this.min = min;
         this.max = max;
+        jobCounter = new JobCounter(jobType);
     }
 
     public BigInteger getMin() {
@@ -35,6 +39,10 @@ public class PartitionRange implements Serializable {
 
     public BigInteger getMax() {
         return max;
+    }
+
+    public JobCounter getJobCounter() {
+        return jobCounter;
     }
 
     public String toString() {

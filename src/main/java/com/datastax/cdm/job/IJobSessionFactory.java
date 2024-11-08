@@ -24,6 +24,4 @@ public interface IJobSessionFactory<T> {
     }
 
     AbstractJobSession<T> getInstance(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper);
-
-    public JobType getJobType();
 }

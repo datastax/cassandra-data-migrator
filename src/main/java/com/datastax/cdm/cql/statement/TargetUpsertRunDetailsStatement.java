@@ -60,16 +60,17 @@ public class TargetUpsertRunDetailsStatement {
 
         this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabInfo
                 + " (table_name TEXT, run_id BIGINT, run_type TEXT, prev_run_id BIGINT, start_time TIMESTAMP, end_time TIMESTAMP, run_info TEXT, status TEXT, PRIMARY KEY (table_name, run_id))");
+        this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabDetails
+                + " (table_name TEXT, run_id BIGINT, start_time TIMESTAMP, token_min BIGINT, token_max BIGINT, status TEXT, run_info TEXT, PRIMARY KEY ((table_name, run_id), token_min))");
 
         // TODO: Remove this code block after a few releases, its only added for backward compatibility
         try {
             this.session.execute("ALTER TABLE " + cdmKsTabInfo + " ADD status TEXT");
+            this.session.execute("ALTER TABLE " + cdmKsTabDetails + " ADD run_info TEXT");
         } catch (Exception e) {
             // ignore if column already exists
             logger.trace("Column 'status' already exists in table {}", cdmKsTabInfo);
         }
-        this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabDetails
-                + " (table_name TEXT, run_id BIGINT, start_time TIMESTAMP, token_min BIGINT, token_max BIGINT, status TEXT, PRIMARY KEY ((table_name, run_id), token_min))");
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
                 + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, dateof(now()), ?)");
@@ -77,8 +78,8 @@ public class TargetUpsertRunDetailsStatement {
                 + " (table_name, run_id, token_min, token_max, status) VALUES (?, ?, ?, ?, ?)");
         boundEndInfoStatement = bindStatement("UPDATE " + cdmKsTabInfo
                 + " SET end_time = dateof(now()), run_info = ?, status = ? WHERE table_name = ? AND run_id = ?");
-        boundUpdateStatement = bindStatement(
-                "UPDATE " + cdmKsTabDetails + " SET status = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
+        boundUpdateStatement = bindStatement("UPDATE " + cdmKsTabDetails
+                + " SET status = ?, run_info = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
         boundUpdateStartStatement = bindStatement("UPDATE " + cdmKsTabDetails
                 + " SET start_time = dateof(now()), status = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
         boundSelectInfoStatement = bindStatement(
@@ -87,7 +88,8 @@ public class TargetUpsertRunDetailsStatement {
                 + " WHERE table_name = ? AND run_id = ? AND status = ? ALLOW FILTERING");
     }
 
-    public Collection<PartitionRange> getPendingPartitions(long prevRunId) throws RunNotStartedException {
+    public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType)
+            throws RunNotStartedException {
         if (prevRunId == 0) {
             return Collections.emptyList();
         }
@@ -105,25 +107,27 @@ public class TargetUpsertRunDetailsStatement {
         }
 
         final Collection<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString()));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString()));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString()));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.DIFF.toString()));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString(), jobType));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString(), jobType));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString(), jobType));
+        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.DIFF.toString(), jobType));
 
         return pendingParts;
     }
 
-    protected Collection<PartitionRange> getPartitionsByStatus(long prevRunId, String status) {
-        ResultSet rs = session.execute(boundSelectStatement.setString("table_name", tableName)
-                .setLong("run_id", prevRunId).setString("status", status));
-
+    protected Collection<PartitionRange> getPartitionsByStatus(long runId, String status, JobType jobType) {
         final Collection<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
-        rs.forEach(row -> {
+        getResultSetByStatus(runId, status).forEach(row -> {
             PartitionRange part = new PartitionRange(BigInteger.valueOf(row.getLong("token_min")),
-                    BigInteger.valueOf(row.getLong("token_max")));
+                    BigInteger.valueOf(row.getLong("token_max")), jobType);
             pendingParts.add(part);
         });
         return pendingParts;
+    }
+
+    protected ResultSet getResultSetByStatus(long runId, String status) {
+        return session.execute(boundSelectStatement.setString("table_name", tableName).setLong("run_id", runId)
+                .setString("status", status));
     }
 
     public void initCdmRun(long runId, long prevRunId, Collection<PartitionRange> parts, JobType jobType) {
@@ -153,13 +157,14 @@ public class TargetUpsertRunDetailsStatement {
                 .setString("run_info", runInfo).setString("status", TrackRun.RUN_STATUS.ENDED.toString()));
     }
 
-    public void updateCdmRun(long runId, BigInteger min, TrackRun.RUN_STATUS status) {
+    public void updateCdmRun(long runId, BigInteger min, TrackRun.RUN_STATUS status, String runInfo) {
         if (TrackRun.RUN_STATUS.STARTED.equals(status)) {
             session.execute(boundUpdateStartStatement.setString("table_name", tableName).setLong("run_id", runId)
                     .setLong("token_min", min.longValue()).setString("status", status.toString()));
         } else {
             session.execute(boundUpdateStatement.setString("table_name", tableName).setLong("run_id", runId)
-                    .setLong("token_min", min.longValue()).setString("status", status.toString()));
+                    .setLong("token_min", min.longValue()).setString("status", status.toString())
+                    .setString("run_info", runInfo));
         }
     }
 

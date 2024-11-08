@@ -40,12 +40,12 @@ abstract class BasePartitionJob extends BaseJob[PartitionRange] {
     
     if (prevRunId != 0) {
       try {
-        trackRunFeature.getPendingPartitions(prevRunId)
+        trackRunFeature.getPendingPartitions(prevRunId, jobType)
       } catch {
-        case e: RunNotStartedException => SplitPartitions.getRandomSubPartitions(pieces, minPartition, maxPartition, coveragePercent)
+        case e: RunNotStartedException => SplitPartitions.getRandomSubPartitions(pieces, minPartition, maxPartition, coveragePercent, jobType)
       }
     } else {
-      SplitPartitions.getRandomSubPartitions(pieces, minPartition, maxPartition, coveragePercent)
+      SplitPartitions.getRandomSubPartitions(pieces, minPartition, maxPartition, coveragePercent, jobType)
     }
   }
 

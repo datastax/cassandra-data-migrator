@@ -16,35 +16,34 @@
 package com.datastax.cdm.job;
 
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class CounterUnit implements Serializable {
 
     private static final long serialVersionUID = 2194336948011681878L;
-    private final AtomicLong globalCounter = new AtomicLong(0);
-    private final transient ThreadLocal<Long> threadLocalCounter = ThreadLocal.withInitial(() -> 0L);
+    private long globalCounter = 0;
+    private long threadLocalCounter = 0;
 
     public void incrementThreadCounter(long incrementBy) {
-        threadLocalCounter.set(threadLocalCounter.get() + incrementBy);
+        threadLocalCounter += incrementBy;
     }
 
     public long getThreadCounter() {
-        return threadLocalCounter.get();
+        return threadLocalCounter;
     }
 
     public void resetThreadCounter() {
-        threadLocalCounter.set(0L);
+        threadLocalCounter = 0;
     }
 
     public void setGlobalCounter(long value) {
-        globalCounter.set(value);
+        globalCounter = value;
     }
 
     public void addThreadToGlobalCounter() {
-        globalCounter.addAndGet(threadLocalCounter.get());
+        globalCounter += threadLocalCounter;
     }
 
     public long getGlobalCounter() {
-        return globalCounter.get();
+        return globalCounter;
     }
 }

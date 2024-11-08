@@ -16,11 +16,13 @@
 package com.datastax.cdm.job
 
 import com.datastax.cdm.feature.TrackRun
+import com.datastax.cdm.job.CDMMetricsAccumulator
 import com.datastax.cdm.data.PKFactory.Side
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 import com.datastax.cdm.job.IJobSessionFactory.JobType
 
 object Migrate extends BasePartitionJob {
+  jobType = JobType.MIGRATE
   setup("Migrate Job", new CopyJobSessionFactory())
   execute()
   finish()
@@ -28,8 +30,11 @@ object Migrate extends BasePartitionJob {
   protected def execute(): Unit = {
     if (!parts.isEmpty()) {
       originConnection.withSessionDo(originSession =>
-        targetConnection.withSessionDo(targetSession =>
-          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, JobType.MIGRATE)));
+        targetConnection.withSessionDo(targetSession => 
+          jobFactory.getInstance(originSession, targetSession, propertyHelper).initCdmRun(runId, prevRunId, parts, trackRunFeature, jobType)))
+      var ma = new CDMMetricsAccumulator(jobType)
+      sContext.register(ma, "CDMMetricsAccumulator")
+
       val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
       val bcPropHelper = sContext.broadcast(propertyHelper)
       val bcJobFactory = sContext.broadcast(jobFactory)
@@ -43,10 +48,14 @@ object Migrate extends BasePartitionJob {
             trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, bcKeyspaceTableValue.value))
         }
         originConnection.withSessionDo(originSession =>
-          targetConnection.withSessionDo(targetSession =>
+          targetConnection.withSessionDo(targetSession => {
             bcJobFactory.value.getInstance(originSession, targetSession, bcPropHelper.value)
-              .processPartitionRange(slice, trackRunFeature, bcRunId.value)))
+              .processPartitionRange(slice, trackRunFeature, bcRunId.value)
+              ma.add(slice.getJobCounter())
+        }))
       })
+      
+      ma.value.printMetrics(runId, trackRunFeature);
     }
   }
 }
