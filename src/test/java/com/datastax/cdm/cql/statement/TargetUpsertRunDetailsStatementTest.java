@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -73,8 +74,8 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
     @Test
     public void getPendingPartitions_nothingPending() throws RunNotStartedException {
         targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
-        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(0));
-        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(1));
+        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(0, JobType.MIGRATE));
+        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(1, JobType.MIGRATE));
     }
 
     @Test
@@ -98,7 +99,8 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         when(mockIterator.next()).thenReturn(row3);
 
         targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
-        Collection<PartitionRange> parts = targetUpsertRunDetailsStatement.getPartitionsByStatus(123l, "RUNNING");
+        Collection<PartitionRange> parts = targetUpsertRunDetailsStatement.getPartitionsByStatus(123l, "RUNNING",
+                JobType.MIGRATE);
 
         // This test is incorrect, but needs to be troubleshot & fixed. The actual code works, but the test does not
         assertEquals(0, parts.size());

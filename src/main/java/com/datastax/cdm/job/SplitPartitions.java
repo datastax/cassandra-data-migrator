@@ -23,14 +23,16 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
+
 public class SplitPartitions {
 
     public static Logger logger = LoggerFactory.getLogger(SplitPartitions.class.getName());
 
     public static List<PartitionRange> getRandomSubPartitions(int numSplits, BigInteger min, BigInteger max,
-            int coveragePercent) {
+            int coveragePercent, JobType jobType) {
         logger.info("ThreadID: {} Splitting min: {} max: {}", Thread.currentThread().getId(), min, max);
-        List<PartitionRange> partitions = getSubPartitions(numSplits, min, max, coveragePercent);
+        List<PartitionRange> partitions = getSubPartitions(numSplits, min, max, coveragePercent, jobType);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
@@ -39,7 +41,7 @@ public class SplitPartitions {
     }
 
     private static List<PartitionRange> getSubPartitions(int numSplits, BigInteger min, BigInteger max,
-            int coveragePercent) {
+            int coveragePercent, JobType jobType) {
         if (coveragePercent < 1 || coveragePercent > 100) {
             coveragePercent = 100;
         }
@@ -65,7 +67,7 @@ public class SplitPartitions {
 
             BigInteger range = curMax.subtract(curMin);
             BigInteger curRange = range.multiply(BigInteger.valueOf(coveragePercent)).divide(BigInteger.valueOf(100));
-            partitions.add(new PartitionRange(curMin, curMin.add(curRange)));
+            partitions.add(new PartitionRange(curMin, curMin.add(curRange), jobType));
             if (exausted) {
                 break;
             }

@@ -22,6 +22,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.properties.PropertyHelper;
 
 public class SplitPartitionsTest {
@@ -33,7 +34,7 @@ public class SplitPartitionsTest {
     @Test
     void getRandomSubPartitionsTest() {
         List<PartitionRange> partitions = SplitPartitions.getRandomSubPartitions(10, BigInteger.ONE,
-                BigInteger.valueOf(100), 100);
+                BigInteger.valueOf(100), 100, JobType.MIGRATE);
         assertEquals(10, partitions.size());
         partitions.forEach(p -> {
             assertEquals(9, p.getMax().longValue() - p.getMin().longValue());
@@ -43,7 +44,7 @@ public class SplitPartitionsTest {
     @Test
     void getRandomSubPartitionsTestOver100() {
         List<PartitionRange> partitions = SplitPartitions.getRandomSubPartitions(8, BigInteger.ONE,
-                BigInteger.valueOf(44), 200);
+                BigInteger.valueOf(44), 200, JobType.MIGRATE);
         assertEquals(8, partitions.size());
     }
 
