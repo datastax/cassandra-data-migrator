@@ -33,8 +33,6 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
 
     protected GuardrailCheckJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
         super(originSession, targetSession, propHelper);
-        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID,
-                JobCounter.CounterType.SKIPPED, JobCounter.CounterType.LARGE);
         if (!guardrailFeature.isEnabled()) {
             logger.error("GuardrailCheckJobSession is disabled - is it configured correctly?");
             return;
@@ -46,6 +44,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
     protected void processPartitionRange(PartitionRange range) {
         BigInteger min = range.getMin(), max = range.getMax();
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
+        JobCounter jobCounter = range.getJobCounter();
         try {
             logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
             OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession
@@ -53,7 +52,6 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
             ResultSet resultSet = originSelectByPartitionRangeStatement
                     .execute(originSelectByPartitionRangeStatement.bind(min, max));
             String checkString;
-            jobCounter.threadReset();
             for (Row originRow : resultSet) {
                 rateLimiterOrigin.acquire(1);
                 jobCounter.threadIncrement(JobCounter.CounterType.READ);
@@ -72,7 +70,6 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
                     Thread.currentThread().getId(), min, max);
         } finally {
             jobCounter.globalIncrement();
-            printCounts(false);
         }
 
         ThreadContext.remove(THREAD_CONTEXT_LABEL);

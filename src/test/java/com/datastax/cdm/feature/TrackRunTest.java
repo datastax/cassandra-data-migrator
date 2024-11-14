@@ -61,8 +61,7 @@ class TrackRunTest extends CommonMocks {
     @Test
     void init() throws RunNotStartedException {
         TrackRun trackRun = new TrackRun(cqlSession, "keyspace.table");
-        Collection<PartitionRange> parts = trackRun.getPendingPartitions(0);
-
+        Collection<PartitionRange> parts = trackRun.getPendingPartitions(0, JobType.MIGRATE);
         assertEquals(0, parts.size());
     }
 

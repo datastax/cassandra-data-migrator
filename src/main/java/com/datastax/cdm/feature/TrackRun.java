@@ -39,8 +39,9 @@ public class TrackRun {
         this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
     }
 
-    public Collection<PartitionRange> getPendingPartitions(long prevRunId) throws RunNotStartedException {
-        Collection<PartitionRange> pendingParts = runStatement.getPendingPartitions(prevRunId);
+    public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType)
+            throws RunNotStartedException {
+        Collection<PartitionRange> pendingParts = runStatement.getPendingPartitions(prevRunId, jobType);
         logger.info("###################### {} partitions pending from previous run id {} ######################",
                 pendingParts.size(), prevRunId);
         return pendingParts;
@@ -51,8 +52,8 @@ public class TrackRun {
         logger.info("###################### Run Id for this job is: {} ######################", runId);
     }
 
-    public void updateCdmRun(long runId, BigInteger min, RUN_STATUS status) {
-        runStatement.updateCdmRun(runId, min, status);
+    public void updateCdmRun(long runId, BigInteger min, RUN_STATUS status, String runInfo) {
+        runStatement.updateCdmRun(runId, min, status, runInfo);
     }
 
     public void endCdmRun(long runId, String runInfo) {

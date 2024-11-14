@@ -22,42 +22,45 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.feature.TrackRun;
+import com.datastax.cdm.job.IJobSessionFactory.JobType;
 
 public class JobCounter implements Serializable {
 
     private static final long serialVersionUID = 7016816604237020549L;
 
-    // Enumeration for counter types
     public enum CounterType {
         READ, WRITE, VALID, ERROR, MISMATCH, MISSING, CORRECTED_MISSING, CORRECTED_MISMATCH, SKIPPED, UNFLUSHED, LARGE
     }
 
-    // Logger instance
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
-
-    // Declare individual counters for different operations
     private final HashMap<CounterType, CounterUnit> counterMap = new HashMap<>();
 
-    // Variables to hold lock objects and registered types
-    private final boolean printPerThread;
-    private final long printStatsAfter;
-    private final CounterUnit printCounter = new CounterUnit();
-
-    // Constructor
-    public JobCounter(long printStatsAfter, boolean printStatsPerPart) {
-        this.printStatsAfter = printStatsAfter;
-        this.printPerThread = printStatsPerPart;
+    public JobCounter(JobType jobType) {
+        switch (jobType) {
+        case MIGRATE:
+            setRegisteredTypes(CounterType.READ, CounterType.WRITE, CounterType.SKIPPED, CounterType.ERROR,
+                    CounterType.UNFLUSHED);
+            break;
+        case VALIDATE:
+            setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.MISMATCH,
+                    CounterType.CORRECTED_MISMATCH, CounterType.MISSING, CounterType.CORRECTED_MISSING,
+                    CounterType.SKIPPED, CounterType.ERROR);
+            break;
+        case GUARDRAIL:
+            setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.SKIPPED, CounterType.LARGE);
+            break;
+        default:
+            throw new IllegalArgumentException("JobType " + jobType + " is not registered");
+        }
     }
 
-    // Allows setting the registered counter types.
-    public void setRegisteredTypes(CounterType... registeredTypes) {
+    private void setRegisteredTypes(CounterType... registeredTypes) {
         counterMap.clear();
         for (CounterType type : registeredTypes) {
             counterMap.put(type, new CounterUnit());
         }
     }
 
-    // Utility method to fetch the appropriate counter unit based on type
     private CounterUnit getCounterUnit(CounterType counterType) {
         if (!counterMap.containsKey(counterType)) {
             throw new IllegalArgumentException("CounterType " + counterType + " is not registered");
@@ -65,12 +68,10 @@ public class JobCounter implements Serializable {
         return (counterMap.get(counterType));
     }
 
-    // Method to get a counter's value
     public long getCount(CounterType counterType, boolean global) {
         return global ? getCounterUnit(counterType).getGlobalCounter() : getCounterUnit(counterType).getThreadCounter();
     }
 
-    // Method to get a thread counter's value
     public long getCount(CounterType counterType) {
         return getCount(counterType, false);
     }
@@ -78,13 +79,6 @@ public class JobCounter implements Serializable {
     // Method to reset thread-specific counters for given type
     public void threadReset(CounterType counterType) {
         getCounterUnit(counterType).resetThreadCounter();
-    }
-
-    // Method to reset thread-specific counters for all registered types
-    public void threadReset() {
-        for (CounterType type : counterMap.keySet()) {
-            threadReset(type);
-        }
     }
 
     // Method to increment thread-specific counters by a given value
@@ -99,10 +93,8 @@ public class JobCounter implements Serializable {
 
     // Method to increment global counters based on thread-specific counters
     public void globalIncrement() {
-        synchronized (this) {
-            for (CounterType type : counterMap.keySet()) {
-                getCounterUnit(type).addThreadToGlobalCounter();
-            }
+        for (CounterType type : counterMap.keySet()) {
+            getCounterUnit(type).addThreadToGlobalCounter();
         }
     }
 
@@ -112,7 +104,7 @@ public class JobCounter implements Serializable {
         StringBuilder sb = new StringBuilder();
         for (CounterType type : counterMap.keySet()) {
             long value = global ? getCounterUnit(type).getGlobalCounter() : getCounterUnit(type).getThreadCounter();
-            sb.append(type.name()).append("=").append(value).append(", ");
+            sb.append(type.name()).append(": ").append(value).append("; ");
         }
         // Remove the trailing comma and space
         if (sb.length() > 2) {
@@ -121,59 +113,30 @@ public class JobCounter implements Serializable {
         return sb.toString();
     }
 
-    public void printProgress() {
-        if (printPerThread) {
-            printAndLogProgress("Thread Counts: ", false);
-        } else if (shouldPrintGlobalProgress()) {
-            printAndLogProgress("Progress Counts: ", true);
+    public void add(JobCounter v) {
+        for (CounterType type : counterMap.keySet()) {
+            getCounterUnit(type).setGlobalCounter(getCounterUnit(type).getGlobalCounter() + v.getCount(type, true));
         }
     }
 
-    // Determines if it's the right time to print global progress
-    protected boolean shouldPrintGlobalProgress() {
-        if (!counterMap.containsKey(CounterType.READ)) {
-            return false;
+    public void reset() {
+        for (CounterType type : counterMap.keySet()) {
+            getCounterUnit(type).setGlobalCounter(0);
         }
-        long globalReads = counterMap.get(CounterType.READ).getGlobalCounter();
-        long expectedPrintCount = globalReads - globalReads % printStatsAfter;
-        if (expectedPrintCount > printCounter.getGlobalCounter()) {
-            printCounter.setGlobalCounter(expectedPrintCount);
-            return true;
-        }
-        return false;
     }
 
-    // Prints and logs the progress
-    protected void printAndLogProgress(String message, boolean global) {
-        String fullMessage = message + getThreadCounters(global);
-        logger.info(fullMessage);
+    public boolean isZero() {
+        for (CounterType type : counterMap.keySet()) {
+            if (getCounterUnit(type).getGlobalCounter() > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    public void printFinal(long runId, TrackRun trackRunFeature) {
+    public void printMetrics(long runId, TrackRun trackRunFeature) {
         if (null != trackRunFeature) {
-            StringBuilder sb = new StringBuilder();
-            if (counterMap.containsKey(CounterType.READ))
-                sb.append("Read: " + counterMap.get(CounterType.READ).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.MISMATCH))
-                sb.append("; Mismatch: " + counterMap.get(CounterType.MISMATCH).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.CORRECTED_MISMATCH))
-                sb.append("; Corrected Mismatch: " + counterMap.get(CounterType.CORRECTED_MISMATCH).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.MISSING))
-                sb.append("; Missing: " + counterMap.get(CounterType.MISSING).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.CORRECTED_MISSING))
-                sb.append("; Corrected Missing: " + counterMap.get(CounterType.CORRECTED_MISSING).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.VALID))
-                sb.append("; Valid: " + counterMap.get(CounterType.VALID).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.SKIPPED))
-                sb.append("; Skipped: " + counterMap.get(CounterType.SKIPPED).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.WRITE))
-                sb.append("; Write: " + counterMap.get(CounterType.WRITE).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.ERROR))
-                sb.append("; Error: " + counterMap.get(CounterType.ERROR).getGlobalCounter());
-            if (counterMap.containsKey(CounterType.LARGE))
-                sb.append("; Large: " + counterMap.get(CounterType.LARGE).getGlobalCounter());
-
-            trackRunFeature.endCdmRun(runId, sb.toString());
+            trackRunFeature.endCdmRun(runId, getThreadCounters(true));
         }
         logger.info("################################################################################################");
         if (counterMap.containsKey(CounterType.READ))

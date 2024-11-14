@@ -22,6 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import com.datastax.cdm.data.PKFactory.Side
+import com.datastax.cdm.job.IJobSessionFactory.JobType
 
 import java.math.BigInteger
 import java.util
@@ -51,6 +52,7 @@ abstract class BaseJob[T: ClassTag] extends App {
   var trackRun: Boolean = _
   var runId: Long = _
   var prevRunId: Long = _
+  var jobType: JobType = _
 
   var parts: util.Collection[T] = _
   var slices: RDD[T] = _
@@ -108,14 +110,8 @@ abstract class BaseJob[T: ClassTag] extends App {
   }
 
   def getParts(pieces: Int): util.Collection[T]
-  def printSummary(): Unit = {
-    if (parts.size() > 0) {
-      jobFactory.getInstance(null, null, propertyHelper).printCounts(true);
-    }
-  }
 
   protected def finish() = {
-    printSummary()
     spark.stop()
     logBanner(jobName + " - Stopped")
   }

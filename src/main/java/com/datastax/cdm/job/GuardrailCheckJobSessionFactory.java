@@ -36,7 +36,4 @@ public class GuardrailCheckJobSessionFactory implements IJobSessionFactory<Parti
         return jobSession;
     }
 
-    public JobType getJobType() {
-        return JobType.MIGRATE;
-    }
 }

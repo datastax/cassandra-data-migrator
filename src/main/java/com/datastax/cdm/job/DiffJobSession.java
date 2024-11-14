@@ -68,11 +68,6 @@ public class DiffJobSession extends CopyJobSession {
 
     public DiffJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
         super(originSession, targetSession, propHelper);
-        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.VALID,
-                JobCounter.CounterType.MISMATCH, JobCounter.CounterType.CORRECTED_MISMATCH,
-                JobCounter.CounterType.MISSING, JobCounter.CounterType.CORRECTED_MISSING,
-                JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR);
-
         autoCorrectMissing = propertyHelper.getBoolean(KnownProperties.AUTOCORRECT_MISSING);
         logger.info("PARAM -- Autocorrect Missing: {}", autoCorrectMissing);
 
@@ -122,11 +117,11 @@ public class DiffJobSession extends CopyJobSession {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
-            trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED);
+            trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED, "");
 
         AtomicBoolean hasDiff = new AtomicBoolean(false);
+        JobCounter jobCounter = range.getJobCounter();
         try {
-            jobCounter.threadReset();
 
             PKFactory pkFactory = originSession.getPKFactory();
             OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = originSession
@@ -156,7 +151,7 @@ public class DiffJobSession extends CopyJobSession {
                             r.setAsyncTargetRow(targetResult);
                             recordsToDiff.add(r);
                             if (recordsToDiff.size() > fetchSizeInRows) {
-                                if (diffAndClear(recordsToDiff)) {
+                                if (diffAndClear(recordsToDiff, jobCounter)) {
                                     hasDiff.set(true);
                                 }
                             }
@@ -164,7 +159,7 @@ public class DiffJobSession extends CopyJobSession {
                     } // recordSet iterator
                 } // shouldFilterRecord
             });
-            if (diffAndClear(recordsToDiff)) {
+            if (diffAndClear(recordsToDiff, jobCounter)) {
                 hasDiff.set(true);
             }
 
@@ -173,12 +168,19 @@ public class DiffJobSession extends CopyJobSession {
                         .getCount(JobCounter.CounterType.CORRECTED_MISSING)
                         && jobCounter.getCount(JobCounter.CounterType.MISMATCH) == jobCounter
                                 .getCount(JobCounter.CounterType.CORRECTED_MISMATCH)) {
-                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF_CORRECTED);
+                    jobCounter.globalIncrement();
+                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF_CORRECTED,
+                            jobCounter.getThreadCounters(true));
                 } else {
-                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF);
+                    jobCounter.globalIncrement();
+                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF,
+                            jobCounter.getThreadCounters(true));
                 }
             } else if (null != trackRunFeature) {
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS);
+                jobCounter.globalIncrement();
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getThreadCounters(true));
+            } else {
+                jobCounter.globalIncrement();
             }
         } catch (Exception e) {
             jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
@@ -188,21 +190,20 @@ public class DiffJobSession extends CopyJobSession {
                             - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
-            if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL);
-        } finally {
+            logger.error("Error stats " + jobCounter.getThreadCounters(false));
             jobCounter.globalIncrement();
-            printCounts(false);
+            if (null != trackRunFeature)
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getThreadCounters(true));
         }
     }
 
-    private boolean diffAndClear(List<Record> recordsToDiff) {
-        boolean isDiff = recordsToDiff.stream().map(r -> diff(r)).filter(b -> b == true).count() > 0;
+    private boolean diffAndClear(List<Record> recordsToDiff, JobCounter jobCounter) {
+        boolean isDiff = recordsToDiff.stream().map(r -> diff(r, jobCounter)).filter(b -> b == true).count() > 0;
         recordsToDiff.clear();
         return isDiff;
     }
 
-    private boolean diff(Record record) {
+    private boolean diff(Record record, JobCounter jobCounter) {
         if (record.getTargetRow() == null) {
             jobCounter.threadIncrement(JobCounter.CounterType.MISSING);
             logger.error("Missing target row found for key: {}", record.getPk());

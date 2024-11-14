@@ -36,7 +36,4 @@ public class DiffJobSessionFactory implements IJobSessionFactory<PartitionRange>
         return jobSession;
     }
 
-    public JobType getJobType() {
-        return JobType.VALIDATE;
-    }
 }

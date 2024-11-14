@@ -1,6 +1,11 @@
 # Release Notes
+## [5.0.0] - 2024-11-08
+- CDM refactored to be fully Spark Native and more performant when deployed on a multi-node Spark Cluster
+- `trackRun` feature has been expanded to record `run-info` for each part in the `CDM_RUN_DETAILS` table. Along with granular metrics, this information can be used to troubleshoot any unbalanced problematic partitions.
+- This release has feature parity with 4.x release and is also backword compatible while adding the above mentioned improvements. However, we are upgrading it to 5.x as its a major rewrite of the code to make it Spark native.
+
 ## [4.7.0] - 2024-10-25
-- CDM refractored to work when deployed on a Spark Cluster
+- CDM refactored to work when deployed on a Spark Cluster
 - More performant for large migration efforts (multi-terabytes clusters with several billions of rows) using Spark Cluster (instead of individual VMs)
 - No functional changes and fully backward compatible, just refactor to support Spark cluster deployment
 

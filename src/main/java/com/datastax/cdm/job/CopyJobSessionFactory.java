@@ -36,7 +36,4 @@ public class CopyJobSessionFactory implements IJobSessionFactory<PartitionRange>
         return jobSession;
     }
 
-    public JobType getJobType() {
-        return JobType.MIGRATE;
-    }
 }

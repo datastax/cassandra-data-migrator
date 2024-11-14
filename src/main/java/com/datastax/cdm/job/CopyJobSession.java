@@ -51,9 +51,6 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
         super(originSession, targetSession, propHelper);
-        this.jobCounter.setRegisteredTypes(JobCounter.CounterType.READ, JobCounter.CounterType.WRITE,
-                JobCounter.CounterType.SKIPPED, JobCounter.CounterType.ERROR, JobCounter.CounterType.UNFLUSHED);
-
         pkFactory = this.originSession.getPKFactory();
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
@@ -69,10 +66,10 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
-            trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED);
+            trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED, "");
 
         BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
-        jobCounter.threadReset();
+        JobCounter jobCounter = range.getJobCounter();
 
         try {
             OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession
@@ -117,20 +114,21 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
             jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
                     jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
             jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
-            if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS);
+            jobCounter.globalIncrement();
+            if (null != trackRunFeature) {
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getThreadCounters(true));
+            }
         } catch (Exception e) {
             jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
                     jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
                             - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
-            if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL);
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
             logger.error("Error stats " + jobCounter.getThreadCounters(false));
-        } finally {
             jobCounter.globalIncrement();
-            printCounts(false);
+            if (null != trackRunFeature) {
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getThreadCounters(true));
+            }
         }
     }
 
