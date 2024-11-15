@@ -20,30 +20,31 @@ import java.io.Serializable;
 public class CounterUnit implements Serializable {
 
     private static final long serialVersionUID = 2194336948011681878L;
-    private long globalCounter = 0;
-    private long threadLocalCounter = 0;
+    private long count = 0;
+    private long interimCount = 0;
 
-    public void incrementThreadCounter(long incrementBy) {
-        threadLocalCounter += incrementBy;
+    public void increment(long incrementBy) {
+        interimCount += incrementBy;
     }
 
-    public long getThreadCounter() {
-        return threadLocalCounter;
+    public long getInterimCount() {
+        return interimCount;
     }
 
-    public void resetThreadCounter() {
-        threadLocalCounter = 0;
+    public void reset() {
+        interimCount = 0;
     }
 
-    public void setGlobalCounter(long value) {
-        globalCounter = value;
+    public void setCount(long value) {
+        count = value;
     }
 
-    public void addThreadToGlobalCounter() {
-        globalCounter += threadLocalCounter;
+    public void addToCount() {
+        count += interimCount;
+        reset();
     }
 
-    public long getGlobalCounter() {
-        return globalCounter;
+    public long getCount() {
+        return count;
     }
 }

@@ -135,10 +135,10 @@ public class DiffJobSession extends CopyJobSession {
             StreamSupport.stream(resultSet.spliterator(), false).forEach(originRow -> {
                 rateLimiterOrigin.acquire(1);
                 Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
-                jobCounter.threadIncrement(JobCounter.CounterType.READ);
+                jobCounter.increment(JobCounter.CounterType.READ);
 
                 if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-                    jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                    jobCounter.increment(JobCounter.CounterType.SKIPPED);
                 } else {
                     for (Record r : pkFactory.toValidRecordList(record)) {
                         rateLimiterTarget.acquire(1);
@@ -146,7 +146,7 @@ public class DiffJobSession extends CopyJobSession {
                                 .getAsyncResult(r.getPk());
 
                         if (null == targetResult) {
-                            jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                            jobCounter.increment(JobCounter.CounterType.SKIPPED);
                         } else {
                             r.setAsyncTargetRow(targetResult);
                             recordsToDiff.add(r);
@@ -168,32 +168,31 @@ public class DiffJobSession extends CopyJobSession {
                         .getCount(JobCounter.CounterType.CORRECTED_MISSING)
                         && jobCounter.getCount(JobCounter.CounterType.MISMATCH) == jobCounter
                                 .getCount(JobCounter.CounterType.CORRECTED_MISMATCH)) {
-                    jobCounter.globalIncrement();
+                    jobCounter.flush();
                     trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF_CORRECTED,
-                            jobCounter.getThreadCounters(true));
+                            jobCounter.getMetrics());
                 } else {
-                    jobCounter.globalIncrement();
-                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF,
-                            jobCounter.getThreadCounters(true));
+                    jobCounter.flush();
+                    trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF, jobCounter.getMetrics());
                 }
             } else if (null != trackRunFeature) {
-                jobCounter.globalIncrement();
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getThreadCounters(true));
+                jobCounter.flush();
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getMetrics());
             } else {
-                jobCounter.globalIncrement();
+                jobCounter.flush();
             }
         } catch (Exception e) {
-            jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
+            jobCounter.increment(JobCounter.CounterType.ERROR,
                     jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.VALID)
                             - jobCounter.getCount(JobCounter.CounterType.MISSING)
                             - jobCounter.getCount(JobCounter.CounterType.MISMATCH)
                             - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
-            logger.error("Error stats " + jobCounter.getThreadCounters(false));
-            jobCounter.globalIncrement();
+            logger.error("Error stats " + jobCounter.getMetrics(true));
+            jobCounter.flush();
             if (null != trackRunFeature)
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getThreadCounters(true));
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getMetrics());
         }
     }
 
@@ -205,7 +204,7 @@ public class DiffJobSession extends CopyJobSession {
 
     private boolean diff(Record record, JobCounter jobCounter) {
         if (record.getTargetRow() == null) {
-            jobCounter.threadIncrement(JobCounter.CounterType.MISSING);
+            jobCounter.increment(JobCounter.CounterType.MISSING);
             logger.error("Missing target row found for key: {}", record.getPk());
             if (autoCorrectMissing && isCounterTable && !forceCounterWhenMissing) {
                 logger.error("{} is true, but not Inserting as {} is not enabled; key : {}",
@@ -218,7 +217,7 @@ public class DiffJobSession extends CopyJobSession {
             if (autoCorrectMissing) {
                 rateLimiterTarget.acquire(1);
                 targetSession.getTargetUpsertStatement().putRecord(record);
-                jobCounter.threadIncrement(JobCounter.CounterType.CORRECTED_MISSING);
+                jobCounter.increment(JobCounter.CounterType.CORRECTED_MISSING);
                 logger.error("Inserted missing row in target: {}", record.getPk());
             }
             return true;
@@ -226,19 +225,19 @@ public class DiffJobSession extends CopyJobSession {
 
         String diffData = isDifferent(record);
         if (!diffData.isEmpty()) {
-            jobCounter.threadIncrement(JobCounter.CounterType.MISMATCH);
+            jobCounter.increment(JobCounter.CounterType.MISMATCH);
             logger.error("Mismatch row found for key: {} Mismatch: {}", record.getPk(), diffData);
 
             if (autoCorrectMismatch) {
                 rateLimiterTarget.acquire(1);
                 targetSession.getTargetUpsertStatement().putRecord(record);
-                jobCounter.threadIncrement(JobCounter.CounterType.CORRECTED_MISMATCH);
+                jobCounter.increment(JobCounter.CounterType.CORRECTED_MISMATCH);
                 logger.error("Corrected mismatch row in target: {}", record.getPk());
             }
 
             return true;
         } else {
-            jobCounter.threadIncrement(JobCounter.CounterType.VALID);
+            jobCounter.increment(JobCounter.CounterType.VALID);
             return false;
         }
     }

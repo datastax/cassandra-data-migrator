@@ -82,52 +82,53 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
 
             for (Row originRow : resultSet) {
                 rateLimiterOrigin.acquire(1);
-                jobCounter.threadIncrement(JobCounter.CounterType.READ);
+                jobCounter.increment(JobCounter.CounterType.READ);
 
                 Record record = new Record(pkFactory.getTargetPK(originRow), originRow, null);
                 if (originSelectByPartitionRangeStatement.shouldFilterRecord(record)) {
-                    jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                    jobCounter.increment(JobCounter.CounterType.SKIPPED);
                     continue;
                 }
 
                 for (Record r : pkFactory.toValidRecordList(record)) {
                     BoundStatement boundUpsert = bind(r);
                     if (null == boundUpsert) {
-                        jobCounter.threadIncrement(JobCounter.CounterType.SKIPPED);
+                        jobCounter.increment(JobCounter.CounterType.SKIPPED);
                         continue;
                     }
 
                     rateLimiterTarget.acquire(1);
                     batch = writeAsync(batch, writeResults, boundUpsert);
-                    jobCounter.threadIncrement(JobCounter.CounterType.UNFLUSHED);
+                    jobCounter.increment(JobCounter.CounterType.UNFLUSHED);
 
                     if (jobCounter.getCount(JobCounter.CounterType.UNFLUSHED) > fetchSize) {
                         flushAndClearWrites(batch, writeResults);
-                        jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
-                                jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
-                        jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
+                        jobCounter.increment(JobCounter.CounterType.WRITE,
+                                jobCounter.getCount(JobCounter.CounterType.UNFLUSHED, true));
+                        jobCounter.reset(JobCounter.CounterType.UNFLUSHED);
                     }
                 }
             }
 
             flushAndClearWrites(batch, writeResults);
-            jobCounter.threadIncrement(JobCounter.CounterType.WRITE,
-                    jobCounter.getCount(JobCounter.CounterType.UNFLUSHED));
-            jobCounter.threadReset(JobCounter.CounterType.UNFLUSHED);
-            jobCounter.globalIncrement();
+            jobCounter.increment(JobCounter.CounterType.WRITE,
+                    jobCounter.getCount(JobCounter.CounterType.UNFLUSHED, true));
+            jobCounter.reset(JobCounter.CounterType.UNFLUSHED);
+            jobCounter.flush();
             if (null != trackRunFeature) {
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getThreadCounters(true));
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getMetrics());
             }
         } catch (Exception e) {
-            jobCounter.threadIncrement(JobCounter.CounterType.ERROR,
-                    jobCounter.getCount(JobCounter.CounterType.READ) - jobCounter.getCount(JobCounter.CounterType.WRITE)
-                            - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
+            jobCounter.increment(JobCounter.CounterType.ERROR,
+                    jobCounter.getCount(JobCounter.CounterType.READ, true)
+                            - jobCounter.getCount(JobCounter.CounterType.WRITE, true)
+                            - jobCounter.getCount(JobCounter.CounterType.SKIPPED, true));
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
-            logger.error("Error stats " + jobCounter.getThreadCounters(false));
-            jobCounter.globalIncrement();
+            logger.error("Error stats " + jobCounter.getMetrics(true));
+            jobCounter.flush();
             if (null != trackRunFeature) {
-                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getThreadCounters(true));
+                trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getMetrics());
             }
         }
     }
