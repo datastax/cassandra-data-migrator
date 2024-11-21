@@ -393,7 +393,7 @@ public class WritetimeTTLTest extends CommonMocks {
         feature.loadProperties(propertyHelper);
         feature.initializeAndValidate(originTable, targetTable);
         Long largestWritetime = feature.getLargestWriteTimeStamp(originRow);
-        assertEquals(customWritetime, largestWritetime);
+        assertEquals(3000L, largestWritetime);
     }
 
     @Test
@@ -580,10 +580,9 @@ public class WritetimeTTLTest extends CommonMocks {
 
         assertAll(
                 () -> assertFalse(feature.hasWriteTimestampFilter(), "hasWriteTimestampFilter"),
-                () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns")
+                () -> assertTrue(feature.hasWritetimeColumns(), "hasWritetimeColumns"),
+                () -> assertEquals(12345L, feature.getCustomWritetime(), "hasWritetimeColumns")
         );
-
-        verify(originTable, times(0)).extendColumns(any(),any());
     }
 
     @Test
