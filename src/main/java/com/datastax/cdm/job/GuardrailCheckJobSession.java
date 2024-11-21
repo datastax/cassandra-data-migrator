@@ -54,14 +54,14 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
             String checkString;
             for (Row originRow : resultSet) {
                 rateLimiterOrigin.acquire(1);
-                jobCounter.threadIncrement(JobCounter.CounterType.READ);
+                jobCounter.increment(JobCounter.CounterType.READ);
 
                 checkString = guardrailFeature.guardrailChecks(originRow);
                 if (checkString != null && !checkString.isEmpty()) {
-                    jobCounter.threadIncrement(JobCounter.CounterType.LARGE);
+                    jobCounter.increment(JobCounter.CounterType.LARGE);
                     logger.error("Guardrails failed for row {}", checkString);
                 } else {
-                    jobCounter.threadIncrement(JobCounter.CounterType.VALID);
+                    jobCounter.increment(JobCounter.CounterType.VALID);
                 }
             }
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max);
         } finally {
-            jobCounter.globalIncrement();
+            jobCounter.flush();
         }
 
         ThreadContext.remove(THREAD_CONTEXT_LABEL);

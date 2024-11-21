@@ -1,4 +1,8 @@
 # Release Notes
+## [5.1.0] - 2024-11-15
+- Improves metrics output by producing stats labels in an intuitive and consistent order
+- Refactored JobCounter by removing any references to `thread` or `global` as CDM operations are now isolated within partition-ranges (`parts`). Each such `part` is then parallelly processed and aggregated by Spark.
+
 ## [5.0.0] - 2024-11-08
 - CDM refactored to be fully Spark Native and more performant when deployed on a multi-node Spark Cluster
 - `trackRun` feature has been expanded to record `run-info` for each part in the `CDM_RUN_DETAILS` table. Along with granular metrics, this information can be used to troubleshoot any unbalanced problematic partitions.
