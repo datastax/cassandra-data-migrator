@@ -40,7 +40,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
     protected EnhancedSession originSession;
     protected EnhancedSession targetSession;
     protected Guardrail guardrailFeature;
-    protected Long printStatsAfter;
     protected TrackRun trackRunFeature;
     protected long runId;
 
@@ -54,15 +53,6 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
 
         if (originSession == null) {
             return;
-        }
-
-        this.printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
-        if (!propertyHelper.meetsMinimum(KnownProperties.PRINT_STATS_AFTER, printStatsAfter, 1L)) {
-            logger.warn(KnownProperties.PRINT_STATS_AFTER + " must be greater than 0.  Setting to default value of "
-                    + KnownProperties.getDefaultAsString(KnownProperties.PRINT_STATS_AFTER));
-            propertyHelper.setProperty(KnownProperties.PRINT_STATS_AFTER,
-                    KnownProperties.getDefault(KnownProperties.PRINT_STATS_AFTER));
-            printStatsAfter = propertyHelper.getLong(KnownProperties.PRINT_STATS_AFTER);
         }
 
         rateLimiterOrigin = RateLimiter.create(propertyHelper.getInteger(KnownProperties.PERF_RATELIMIT_ORIGIN));

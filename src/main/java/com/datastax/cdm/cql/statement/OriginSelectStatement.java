@@ -41,6 +41,7 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
     private final Boolean filterColumnEnabled;
     private final Integer filterColumnIndex;
     private final String filterColumnString;
+    private final WritetimeTTL writetimeTTLFeature;
 
     public OriginSelectStatement(IPropertyHelper propertyHelper, EnhancedSession session) {
         super(propertyHelper, session);
@@ -50,7 +51,7 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
             throw new RuntimeException("No columns found in table " + cqlTable.getTableName());
         }
 
-        WritetimeTTL writetimeTTLFeature = (WritetimeTTL) cqlTable.getFeature(Featureset.WRITETIME_TTL);
+        this.writetimeTTLFeature = (WritetimeTTL) cqlTable.getFeature(Featureset.WRITETIME_TTL);
         if (null != writetimeTTLFeature && writetimeTTLFeature.isEnabled()
                 && writetimeTTLFeature.hasWriteTimestampFilter()) {
             writeTimestampFilterEnabled = true;
@@ -114,14 +115,15 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
         }
 
         if (this.writeTimestampFilterEnabled) {
-            // only process rows greater than writeTimeStampFilter
-            Long originWriteTimeStamp = record.getPk().getWriteTimestamp();
+            // only process rows within the writeTimeStampFilter
+            Long originWriteTimeStamp = writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow());
             if (null == originWriteTimeStamp) {
                 return false;
             }
             if (originWriteTimeStamp < minWriteTimeStampFilter || originWriteTimeStamp > maxWriteTimeStampFilter) {
                 if (logger.isInfoEnabled())
-                    logger.info("Timestamp filter removing: {}", record.getPk());
+                    logger.info("Timestamp filter removing record with primary key: {} with write timestamp: {}", record.getPk(),
+                            originWriteTimeStamp);
                 return true;
             }
         }
