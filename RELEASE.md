@@ -1,4 +1,8 @@
 # Release Notes
+## [5.1.1] - 2024-11-22
+- Bug fix: Writetime filter does not work as expected when custom writetimestamp is also used (issue #327).
+- Removed deprecated properties `printStatsAfter` and `printStatsPerPart`. Run metrics should now be tracked using the `trackRun` feature instead.
+
 ## [5.1.0] - 2024-11-15
 - Improves metrics output by producing stats labels in an intuitive and consistent order
 - Refactored JobCounter by removing any references to `thread` or `global` as CDM operations are now isolated within partition-ranges (`parts`). Each such `part` is then parallelly processed and aggregated by Spark.
