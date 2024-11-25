@@ -31,7 +31,7 @@ tar -xvzf spark-3.5.3-bin-hadoop3-scala2.13.tgz
 ```
 
 > [!CAUTION]
-> If the above Spark and Scala version does not match, you may see an exception similar like below when running the CDM jobs,
+> If the above Spark and Scala version does not match, you may see an exception like below when running the CDM jobs,
 ```
 Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.releaseFence()V
 ```
@@ -41,24 +41,24 @@ Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.re
 
 # Steps for Data-Migration:
 
-1. `cdm.properties` file needs to be configured as applicable for the environment. Parameter descriptions and defaults are described in the file. The file can have any name, it does not need to be `cdm.properties`.
-   > * A simplified sample properties file configuration can be found here as [cdm.properties](./src/resources/cdm.properties)
-   > * A complete sample properties file configuration can be found here as [cdm-detailed.properties](./src/resources/cdm-detailed.properties)
+1. `cdm.properties` file needs to be configured as applicable for the environment. The file can have any name, it does not need to be `cdm.properties`.
+   > * A sample properties file with default values can be found here as [cdm.properties](./src/resources/cdm.properties)
+   > * A complete reference properties file with default values can be found here as [cdm-detailed.properties](./src/resources/cdm-detailed.properties)
 2. Place the properties file where it can be accessed while running the job via spark-submit.
-3. Run the below job using `spark-submit` command as shown below:
+3. Run the job using `spark-submit` command as shown below:
 
 ```
 spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
---class com.datastax.cdm.job.Migrate cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.Migrate cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 **Note:**
 - Above command generates a log file `logfile_name_*.txt` to avoid log output on the console.
 - Update the memory options (driver & executor memory) based on your use-case
-- To track details of a run in the `target` keyspace, pass param `--conf spark.cdm.trackRun=true`
-- To filter and migrate data only in a specific token range, you can pass the below two additional params to the `Migration` or `Validation` jobs 
+- To track details of a run (recorded on the `target` keyspace), pass param `--conf spark.cdm.trackRun=true`
+- To filter records only for a specific token range, pass the below two additional params to the `Migration` OR `Validation` job 
 
 ```
 --conf spark.cdm.filter.cassandra.partition.min=<token-range-min>
@@ -73,7 +73,7 @@ spark-submit --properties-file cdm.properties \
 spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
---class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.DiffData cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 - Validation job will report differences as “ERRORS” in the log file as shown below. 
@@ -95,13 +95,13 @@ spark-submit --properties-file cdm.properties \
 --conf spark.executor.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
 --conf spark.driver.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
---class com.datastax.cdm.job.DiffData cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.DiffData cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 - The Validation job can also be run in an AutoCorrect mode. This mode can
-    - Add any missing records from origin to target
-    - Update any mismatched records between origin and target (makes target same as origin).
-- Enable/disable this feature using one or both of the below setting in the config file
+    - Add any missing records from `origin` to `target`
+    - Update any mismatched records between `origin` and `target`
+- Enable/disable this feature using one or both of the below params in the properties file
 ```
 spark.cdm.autocorrect.missing                     false|true
 spark.cdm.autocorrect.mismatch                    false|true
@@ -117,24 +117,27 @@ spark-submit --properties-file cdm.properties \
  --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
  --conf spark.cdm.trackRun.previousRunId=<prev_run_id> \
  --master "local[*]" --driver-memory 25G --executor-memory 25G \
- --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+ --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
 
 # Perform large-field Guardrail violation checks
-- The tool can be used to identify large fields from a table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field), use class option `--class com.datastax.cdm.job.GuardrailCheck` as shown below
+- This mode can help identify large fields on an `origin` table that may break you cluster guardrails (e.g. AstraDB has a 10MB limit for a single large field), use class option `--class com.datastax.cdm.job.GuardrailCheck` as shown below
 
 ```
 spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
 --conf spark.cdm.feature.guardrail.colSizeInKB=10000 \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
---class com.datastax.cdm.job.GuardrailCheck cassandra-data-migrator-4.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+--class com.datastax.cdm.job.GuardrailCheck cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
+
+> [!NOTE]
+> This mode only operates on one database i.e. `origin`, there is no `target` in this mode
 
 # Features
 - Auto-detects table schema (column names, types, keys, collections, UDTs, etc.)
     - Including counter table [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
-- Rerun job from where the previous job had stopped for any reason (killed, had exceptions, etc.)
+- Rerun/Resume a previous job that may have stopped for any reason (killed, had exceptions, etc.)
     - If you rerun a `validation` job, it will include any token-ranges that had differences in the previous run 
 - Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTLs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)
 - Supports migration/validation of advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
@@ -184,7 +187,7 @@ Below recommendations may only be useful when migrating large tables where the d
 1. Clone this repo
 2. Move to the repo folder `cd cassandra-data-migrator`
 3. Run the build `mvn clean package` (Needs Maven 3.9.x)
-4. The fat jar (`cassandra-data-migrator-4.x.x.jar`) file should now be present in the `target` folder
+4. The fat jar (`cassandra-data-migrator-5.x.x.jar`) file should now be present in the `target` folder
 
 # Contributors
 Checkout all our wonderful contributors [here](./CONTRIBUTING.md#contributors).

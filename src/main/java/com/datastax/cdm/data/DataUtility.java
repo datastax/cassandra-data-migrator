@@ -25,6 +25,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -39,6 +42,7 @@ public class DataUtility {
     public static final Logger logger = LoggerFactory.getLogger(DataUtility.class.getName());
 
     protected static final String SCB_FILE_NAME = "_temp_cdm_scb_do_not_touch.zip";
+    protected static final int SCB_DELETE_DELAY = 5;
 
     public static boolean diff(Object obj1, Object obj2) {
         if (obj1 == null && obj2 == null) {
@@ -157,15 +161,27 @@ public class DataUtility {
         return "Unknown";
     }
 
+    public static void deleteGeneratedSCB(long runId, int waitSeconds) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                File originFile = new File(PKFactory.Side.ORIGIN + "_" + Long.toString(runId) + SCB_FILE_NAME);
+                File targetFile = new File(PKFactory.Side.TARGET + "_" + Long.toString(runId) + SCB_FILE_NAME);
+
+                if (originFile.exists() || targetFile.exists()) {
+                    LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(waitSeconds));
+                    if (originFile.exists())
+                        originFile.delete();
+                    if (targetFile.exists())
+                        targetFile.delete();
+                }
+            } catch (Exception e) {
+                logger.error("Unable to delete generated SCB files: {}", e.getMessage());
+            }
+        });
+    }
+
     public static void deleteGeneratedSCB(long runId) {
-        File file = new File(PKFactory.Side.ORIGIN + "_" + Long.toString(runId) + SCB_FILE_NAME);
-        if (file.exists()) {
-            file.delete();
-        }
-        file = new File(PKFactory.Side.TARGET + "_" + Long.toString(runId) + SCB_FILE_NAME);
-        if (file.exists()) {
-            file.delete();
-        }
+        deleteGeneratedSCB(runId, SCB_DELETE_DELAY);
     }
 
     public static File generateSCB(String host, String port, String trustStorePassword, String trustStorePath,

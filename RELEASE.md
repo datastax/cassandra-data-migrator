@@ -1,4 +1,7 @@
 # Release Notes
+## [5.1.2] - 2024-11-26
+- Bug fix: SCB file on some Spark worker nodes may get deleted before the connection is established, which may cause connection exception on that worker node. Added a static async SCB delete delay to address such issues.
+
 ## [5.1.1] - 2024-11-22
 - Bug fix: Writetime filter does not work as expected when custom writetimestamp is also used (issue #327).
 - Removed deprecated properties `printStatsAfter` and `printStatsPerPart`. Run metrics should now be tracked using the `trackRun` feature instead.
