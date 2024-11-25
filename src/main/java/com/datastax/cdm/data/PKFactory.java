@@ -106,8 +106,16 @@ public class PKFactory {
         Long originWriteTimeStamp = null;
         Integer originTTL = null;
         if (FeatureFactory.isEnabled(writetimeTTLFeature)) {
-            originWriteTimeStamp = writetimeTTLFeature.getLargestWriteTimeStamp(originRow);
-            originTTL = writetimeTTLFeature.getLargestTTL(originRow);
+            if (writetimeTTLFeature.getCustomWritetime() > 0) {
+                originWriteTimeStamp = writetimeTTLFeature.getCustomWritetime();
+            } else {
+                originWriteTimeStamp = writetimeTTLFeature.getLargestWriteTimeStamp(originRow);
+            }
+            if (writetimeTTLFeature.getCustomTTL() > 0) {
+                originTTL = writetimeTTLFeature.getCustomTTL().intValue();
+            } else {
+                originTTL = writetimeTTLFeature.getLargestTTL(originRow);
+            }
         }
         if (explodeMapTargetKeyColumnIndex < 0) {
             return new EnhancedPK(this, newValues, getPKClasses(Side.TARGET), originTTL, originWriteTimeStamp);

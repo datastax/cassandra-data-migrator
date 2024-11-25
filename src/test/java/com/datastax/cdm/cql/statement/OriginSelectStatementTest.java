@@ -62,19 +62,19 @@ public class OriginSelectStatementTest extends CommonMocks {
 
         assertAll(
                 () -> {
-                    when(record.getPk().getWriteTimestamp()).thenReturn(1500L);
+                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(1500L);
                     assertFalse(originSelectStatement.shouldFilterRecord(record), "timestamp is range");
                 },
                 () -> {
-                    when(record.getPk().getWriteTimestamp()).thenReturn(500L);
+                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(500L);
                     assertTrue(originSelectStatement.shouldFilterRecord(record), "timestamp below range");
                 },
                 () -> {
-                    when(record.getPk().getWriteTimestamp()).thenReturn(2500L);
+                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(2500L);
                     assertTrue(originSelectStatement.shouldFilterRecord(record), "timestamp above range");
                 },
                 () -> {
-                    when(record.getPk().getWriteTimestamp()).thenReturn(null);
+                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(null);
                     assertFalse(originSelectStatement.shouldFilterRecord(record), "null timestamp");
                 }
         );

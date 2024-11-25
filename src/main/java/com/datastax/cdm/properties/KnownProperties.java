@@ -123,8 +123,6 @@ public class KnownProperties {
     public static final String READ_CL = "spark.cdm.perfops.consistency.read";
     public static final String WRITE_CL = "spark.cdm.perfops.consistency.write";
     public static final String PERF_FETCH_SIZE = "spark.cdm.perfops.fetchSizeInRows";
-    public static final String PRINT_STATS_AFTER = "spark.cdm.perfops.printStatsAfter";
-    public static final String PRINT_STATS_PER_PART = "spark.cdm.perfops.printStatsPerPart";
 
     static {
         types.put(AUTOCORRECT_MISSING, PropertyType.BOOLEAN);
@@ -153,10 +151,6 @@ public class KnownProperties {
         defaults.put(READ_CL, "LOCAL_QUORUM");
         types.put(WRITE_CL, PropertyType.STRING);
         defaults.put(WRITE_CL, "LOCAL_QUORUM");
-        types.put(PRINT_STATS_AFTER, PropertyType.NUMBER);
-        defaults.put(PRINT_STATS_AFTER, "100000");
-        types.put(PRINT_STATS_PER_PART, PropertyType.BOOLEAN);
-        defaults.put(PRINT_STATS_PER_PART, "false");
         types.put(PERF_FETCH_SIZE, PropertyType.NUMBER);
         defaults.put(PERF_FETCH_SIZE, "1000");
     }

@@ -234,10 +234,7 @@ public class WritetimeTTL extends AbstractFeature {
 
     public Long getLargestWriteTimeStamp(Row row) {
         if (logDebug)
-            logger.debug("getLargestWriteTimeStamp: customWritetime={}, writetimeSelectColumnIndexes={}",
-                    customWritetime, writetimeSelectColumnIndexes);
-        if (this.customWritetime > 0)
-            return this.customWritetime;
+            logger.debug("getLargestWriteTimeStamp: writetimeSelectColumnIndexes={}", writetimeSelectColumnIndexes);
         if (null == this.writetimeSelectColumnIndexes || this.writetimeSelectColumnIndexes.isEmpty())
             return null;
 
@@ -262,9 +259,7 @@ public class WritetimeTTL extends AbstractFeature {
 
     public Integer getLargestTTL(Row row) {
         if (logDebug)
-            logger.debug("getLargestTTL: customTTL={}, ttlSelectColumnIndexes={}", customTTL, ttlSelectColumnIndexes);
-        if (this.customTTL > 0)
-            return this.customTTL.intValue();
+            logger.debug("getLargestTTL: ttlSelectColumnIndexes={}", ttlSelectColumnIndexes);
         if (null == this.ttlSelectColumnIndexes || this.ttlSelectColumnIndexes.isEmpty())
             return null;
 
@@ -317,7 +312,7 @@ public class WritetimeTTL extends AbstractFeature {
     }
 
     private void validateWritetimeColumns(CqlTable originTable) {
-        if (writetimeNames == null || writetimeNames.isEmpty() || customWritetime > 0) {
+        if (writetimeNames == null || writetimeNames.isEmpty()) {
             return;
         }
 
