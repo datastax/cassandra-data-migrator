@@ -31,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -171,7 +173,9 @@ public class DataUtilityTest extends CommonMocks {
         File file = new File(PKFactory.Side.ORIGIN + "_" + Long.toString(0) + DataUtility.SCB_FILE_NAME);
         assertTrue(file.exists());
 
-        DataUtility.deleteGeneratedSCB(0);
+        DataUtility.deleteGeneratedSCB(0, 0);
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+
         assertFalse(file.exists());
     }
 
@@ -183,7 +187,9 @@ public class DataUtilityTest extends CommonMocks {
         File file = new File(PKFactory.Side.TARGET + "_" + Long.toString(0) + DataUtility.SCB_FILE_NAME);
         assertTrue(file.exists());
 
-        DataUtility.deleteGeneratedSCB(0);
+        DataUtility.deleteGeneratedSCB(0, 0);
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+
         assertFalse(file.exists());
     }
 }

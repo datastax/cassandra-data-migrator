@@ -45,7 +45,7 @@ public class ConnectionFetcherTest extends CommonMocks {
         commonSetupWithoutDefaultClassVariables();
         MockitoAnnotations.openMocks(this);
 
-        cf = new ConnectionFetcher(conf, propertyHelper);
+        cf = new ConnectionFetcher(propertyHelper);
     }
 
     @Test

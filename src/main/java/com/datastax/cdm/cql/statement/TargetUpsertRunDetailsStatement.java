@@ -66,10 +66,13 @@ public class TargetUpsertRunDetailsStatement {
         // TODO: Remove this code block after a few releases, its only added for backward compatibility
         try {
             this.session.execute("ALTER TABLE " + cdmKsTabInfo + " ADD status TEXT");
+        } catch (Exception e) { // ignore if column already exists
+            logger.debug("Column 'status' already exists in table {}", cdmKsTabInfo);
+        }
+        try {
             this.session.execute("ALTER TABLE " + cdmKsTabDetails + " ADD run_info TEXT");
-        } catch (Exception e) {
-            // ignore if column already exists
-            logger.trace("Column 'status' already exists in table {}", cdmKsTabInfo);
+        } catch (Exception e) { // ignore if column already exists
+            logger.debug("Column 'run_info' already exists in table {}", cdmKsTabDetails);
         }
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo

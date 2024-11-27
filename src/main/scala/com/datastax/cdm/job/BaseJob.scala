@@ -17,7 +17,7 @@ package com.datastax.cdm.job
 
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
@@ -40,7 +40,6 @@ abstract class BaseJob[T: ClassTag] extends App {
 
   var spark: SparkSession = _
   var sContext: SparkContext = _
-  var sc: SparkConf = _
   var propertyHelper: PropertyHelper = _
 
   var consistencyLevel: String = _
@@ -69,8 +68,7 @@ abstract class BaseJob[T: ClassTag] extends App {
       .appName(jobName)
       .getOrCreate()
     sContext = spark.sparkContext
-    sc = sContext.getConf
-    propertyHelper = PropertyHelper.getInstance(sc);
+    propertyHelper = PropertyHelper.getInstance(sContext.getConf);
 
     runId = propertyHelper.getLong(KnownProperties.RUN_ID)
     prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
@@ -79,9 +77,9 @@ abstract class BaseJob[T: ClassTag] extends App {
       runId = System.nanoTime();
     }
     consistencyLevel = propertyHelper.getString(KnownProperties.READ_CL)
-    connectionFetcher = new ConnectionFetcher(sc, propertyHelper)
-    originConnection = connectionFetcher.getConnection(Side.ORIGIN, consistencyLevel, runId)
-    targetConnection = connectionFetcher.getConnection(Side.TARGET, consistencyLevel, runId)
+    connectionFetcher = new ConnectionFetcher(propertyHelper)
+    originConnection = connectionFetcher.getConnection(sContext.getConf, Side.ORIGIN, consistencyLevel, runId)
+    targetConnection = connectionFetcher.getConnection(sContext.getConf, Side.TARGET, consistencyLevel, runId)
 
     val hasRandomPartitioner: Boolean = {
       val partitionerName = originConnection.withSessionDo(_.getMetadata.getTokenMap.get().getPartitionerName)
