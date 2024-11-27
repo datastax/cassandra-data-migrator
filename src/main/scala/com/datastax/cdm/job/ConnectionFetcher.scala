@@ -23,7 +23,7 @@ import com.datastax.cdm.data.DataUtility.generateSCB
 import com.datastax.cdm.data.PKFactory.Side
 
 // TODO: CDM-31 - add localDC configuration support
-class ConnectionFetcher(config: SparkConf, propertyHelper: IPropertyHelper) extends Serializable {
+class ConnectionFetcher(propertyHelper: IPropertyHelper) extends Serializable {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def getConnectionDetails(side: Side): ConnectionDetails = {
@@ -63,7 +63,7 @@ class ConnectionFetcher(config: SparkConf, propertyHelper: IPropertyHelper) exte
     }
   }
 
-  def getConnection(side: Side, consistencyLevel: String, runId: Long): CassandraConnector = {
+  def getConnection(config: SparkConf, side: Side, consistencyLevel: String, runId: Long): CassandraConnector = {
     val connectionDetails = getConnectionDetails(side)
 
     logger.info("PARAM --  SSL Enabled: "+connectionDetails.sslEnabled);
