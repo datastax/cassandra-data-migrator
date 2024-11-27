@@ -1,4 +1,7 @@
 # Release Notes
+## [5.1.3] - 2024-11-27
+- Bug fix: Fixed connection issue caused when using different types of origin and target clusters (e.g. Cassandra/DSE with host/port and Astra with SCB).
+
 ## [5.1.2] - 2024-11-26
 - Bug fix: SCB file on some Spark worker nodes may get deleted before the connection is established, which may cause connection exception on that worker node. Added a static async SCB delete delay to address such issues.
 

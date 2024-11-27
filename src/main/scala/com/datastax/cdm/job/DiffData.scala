@@ -17,7 +17,7 @@ package com.datastax.cdm.job
 
 import com.datastax.cdm.feature.TrackRun
 import com.datastax.cdm.data.PKFactory.Side
-import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+import com.datastax.cdm.properties.KnownProperties
 import com.datastax.cdm.job.IJobSessionFactory.JobType
 
 object DiffData extends BasePartitionJob {
@@ -34,6 +34,8 @@ object DiffData extends BasePartitionJob {
       var ma = new CDMMetricsAccumulator(jobType)
       sContext.register(ma, "CDMMetricsAccumulator")
       
+      val bcOriginConfig = sContext.broadcast(sContext.getConf)
+      val bcTargetConfig = sContext.broadcast(sContext.getConf)      
       val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
       val bcPropHelper = sContext.broadcast(propertyHelper)
       val bcJobFactory = sContext.broadcast(jobFactory)
@@ -42,8 +44,8 @@ object DiffData extends BasePartitionJob {
 
       slices.foreach(slice => {
         if (null == originConnection) {
-    		originConnection = bcConnectionFetcher.value.getConnection(Side.ORIGIN, bcPropHelper.value.getString(KnownProperties.READ_CL), bcRunId.value)
-    		targetConnection = bcConnectionFetcher.value.getConnection(Side.TARGET, bcPropHelper.value.getString(KnownProperties.READ_CL), bcRunId.value)
+    		originConnection = bcConnectionFetcher.value.getConnection(bcOriginConfig.value, Side.ORIGIN, bcPropHelper.value.getString(KnownProperties.READ_CL), bcRunId.value)
+    		targetConnection = bcConnectionFetcher.value.getConnection(bcTargetConfig.value, Side.TARGET, bcPropHelper.value.getString(KnownProperties.READ_CL), bcRunId.value)
             trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, bcKeyspaceTableValue.value))
         }
         originConnection.withSessionDo(originSession =>

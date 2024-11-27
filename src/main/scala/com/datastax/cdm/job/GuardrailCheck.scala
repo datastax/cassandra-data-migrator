@@ -16,7 +16,7 @@
 package com.datastax.cdm.job
 
 import com.datastax.cdm.data.PKFactory.Side
-import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
+import com.datastax.cdm.properties.KnownProperties
 import com.datastax.cdm.job.IJobSessionFactory.JobType
 
 object GuardrailCheck extends BasePartitionJob {
@@ -32,13 +32,14 @@ object GuardrailCheck extends BasePartitionJob {
       var ma = new CDMMetricsAccumulator(jobType)
       sContext.register(ma, "CDMMetricsAccumulator")
       
+      val bcOriginConfig = sContext.broadcast(sContext.getConf)
       val bcConnectionFetcher = sContext.broadcast(connectionFetcher)
       val bcPropHelper = sContext.broadcast(propertyHelper)
       val bcJobFactory = sContext.broadcast(jobFactory)
 
       slices.foreach(slice => {
         if (null == originConnection) {
-    		originConnection = bcConnectionFetcher.value.getConnection(Side.ORIGIN, bcPropHelper.value.getString(KnownProperties.READ_CL), 0)
+    		originConnection = bcConnectionFetcher.value.getConnection(bcOriginConfig.value, Side.ORIGIN, bcPropHelper.value.getString(KnownProperties.READ_CL), 0)
         }
         originConnection.withSessionDo(originSession =>
             bcJobFactory.value.getInstance(originSession, null, bcPropHelper.value)
