@@ -101,11 +101,13 @@ public class TargetUpsertRunDetailsStatement {
                 .execute(boundSelectInfoStatement.setString("table_name", tableName).setLong("run_id", prevRunId));
         Row cdmRunStatus = rsInfo.one();
         if (cdmRunStatus == null) {
-            return Collections.emptyList();
+            throw new RunNotStartedException(
+                    "###################### Run NOT FOUND for Previous RunId: " + prevRunId + ", starting new run!");
         } else {
             String status = cdmRunStatus.getString("status");
             if (TrackRun.RUN_STATUS.NOT_STARTED.toString().equals(status)) {
-                throw new RunNotStartedException("Run not started for run_id: " + prevRunId);
+                throw new RunNotStartedException("###################### Run NOT STARTED for Previous RunId: "
+                        + prevRunId + ", starting new run!");
             }
         }
 
