@@ -1,4 +1,8 @@
 # Release Notes
+
+## [5.1.4] - 2024-12-04
+- Bug fix: Any run started with a `previousRunId` that is not found in the `cdm_run_info` table (for whatever reason), will be executed as a fresh new run instead of doing nothing.
+
 ## [5.1.3] - 2024-11-27
 - Bug fix: Fixed connection issue caused when using different types of origin and target clusters (e.g. Cassandra/DSE with host/port and Astra with SCB).
 

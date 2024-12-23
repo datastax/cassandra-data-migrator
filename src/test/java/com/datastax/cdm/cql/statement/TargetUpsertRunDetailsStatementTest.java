@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import com.datastax.cdm.cql.CommonMocks;
+import com.datastax.cdm.feature.TrackRun;
 import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
@@ -72,15 +73,43 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
     }
 
     @Test
-    public void getPendingPartitions_nothingPending() throws RunNotStartedException {
-        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
-        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(0, JobType.MIGRATE));
-        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(1, JobType.MIGRATE));
+    public void incorrectKsTable() {
+        assertThrows(RuntimeException.class, () -> new TargetUpsertRunDetailsStatement(cqlSession, "table1"));
     }
 
     @Test
-    public void incorrectKsTable() throws RunNotStartedException {
-        assertThrows(RuntimeException.class, () -> new TargetUpsertRunDetailsStatement(cqlSession, "table1"));
+    public void getPendingPartitions_noPrevRun() throws RunNotStartedException {
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(0, JobType.MIGRATE));
+    }
+
+    @Test
+    public void getPendingPartitions_noPrevRunFound() {
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        assertThrows(RunNotStartedException.class,
+                () -> targetUpsertRunDetailsStatement.getPendingPartitions(1, JobType.MIGRATE));
+    }
+
+    @Test
+    public void getPendingPartitions_prevRunNotStarted() {
+        when(rs.one()).thenReturn(row1);
+        when(row1.getString("status")).thenReturn(TrackRun.RUN_STATUS.NOT_STARTED.toString());
+
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        assertThrows(RunNotStartedException.class,
+                () -> targetUpsertRunDetailsStatement.getPendingPartitions(123, JobType.MIGRATE));
+    }
+
+    @Test
+    public void getPendingPartitions_prevRunNoPartsPending() throws RunNotStartedException {
+        when(rs.one()).thenReturn(row1);
+        when(row1.getString("status")).thenReturn(TrackRun.RUN_STATUS.ENDED.toString());
+        Iterator mockIterator = mock(Iterator.class);
+        when(rs.iterator()).thenReturn(mockIterator);
+        when(mockIterator.hasNext()).thenReturn(false);
+
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(123, JobType.MIGRATE));
     }
 
     @Test
