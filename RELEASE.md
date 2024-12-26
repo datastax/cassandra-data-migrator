@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.2.0] - 2025-xx-xx
+- Upgraded to use Spark `3.5.4`.
+
 ## [5.1.4] - 2024-12-04
 - Bug fix: Any run started with a `previousRunId` that is not found in the `cdm_run_info` table (for whatever reason), will be executed as a fresh new run instead of doing nothing.
 
