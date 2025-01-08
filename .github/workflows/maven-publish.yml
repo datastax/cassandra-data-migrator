@@ -38,8 +38,9 @@ jobs:
   clean:
     name: Cleanup Packages
     runs-on: ubuntu-latest
+    needs: build
     steps:
-      - name: Delete 4.x Package Versions
+      - name: Delete 4.x & 5.x Package Versions
         uses: actions/delete-package-versions@v5
         with:
           package-name: 'datastax.cdm.cassandra-data-migrator'
