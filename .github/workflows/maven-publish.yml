@@ -46,6 +46,7 @@ jobs:
           package-name: 'datastax.cdm.cassandra-data-migrator'
           package-type: 'maven'
           min-versions-to-keep: 7
+          ignore-versions: '^4\.6\.1$'
       - name: Delete 3.x Package Versions
         uses: actions/delete-package-versions@v5
         with:
