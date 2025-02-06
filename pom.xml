@@ -8,7 +8,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<scala.version>2.13.15</scala.version>
+		<scala.version>2.13.16</scala.version>
 		<scala.main.version>2.13</scala.main.version>
 		<spark.version>3.5.4</spark.version>
 		<connector.version>3.5.1</connector.version>
