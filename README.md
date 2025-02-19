@@ -15,7 +15,9 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
     - All migration tools (`cassandra-data-migrator` + `dsbulk` + `cqlsh`) would be available in the `/assets/` folder of the container
 
 ## Install as a JAR file
-- Download the latest jar file from the GitHub [packages area here](https://github.com/datastax/cassandra-data-migrator/packages/1832128)
+- Download the latest jar file ![GitHub release (with filter)](https://img.shields.io/github/v/release/datastax/cassandra-data-migrator?label=latest%20release&color=green&link=!%5BGitHub%20release%20(with%20filter)%5D(https%3A%2F%2Fimg.shields.io%2Fgithub%2Fv%2Frelease%2Fdatastax%2Fcassandra-data-migrator%3Flabel%3Dlatest%2520release%26color%3Dgreen)) using one of the approaches below,
+  - `curl -L0 https://github.com/datastax/cassandra-data-migrator/releases/download/x.y.z/cassandra-data-migrator-x.y.z.jar --output cassandra-data-migrator-x.y.z.jar` (OR)
+  - Download from [packages area here](https://github.com/datastax/cassandra-data-migrator/packages/1832128)
 
 ### Prerequisite
 - **Java11** (minimum) as Spark binaries are compiled with it.
