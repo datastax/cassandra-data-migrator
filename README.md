@@ -35,8 +35,11 @@ tar -xvzf spark-3.5.4-bin-hadoop3-scala2.13.tgz
 > [!CAUTION]
 > If the above Spark and Scala version does not match, you may see an exception like below when running the CDM jobs,
 ```
-Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.releaseFence()V
+Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.releaseFence()
 ```
+
+> [!NOTE]
+> If you only have `Scala version 2.12.x` available in your environment, you can update [these two lines in pom.xml](https://github.com/datastax/cassandra-data-migrator/blob/main/pom.xml#L11) with the specific `Scala 2.12.x` version, build the jar locally as [shown here](https://github.com/datastax/cassandra-data-migrator?tab=readme-ov-file#building-jar-for-local-development) and use that CDM jar instead. 
 
 > [!NOTE]
 > When deploying CDM on a Spark cluster, replace the params `--master "local[*]"` with `--master "spark://master-host:port"` and remove any params (e.g. `--driver-memory`, `--executor-memory`, etc.) related to a single VM run 
