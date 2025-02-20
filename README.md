@@ -35,7 +35,7 @@ tar -xvzf spark-3.5.4-bin-hadoop3-scala2.13.tgz
 > [!CAUTION]
 > If the above Spark and Scala version does not match, you may see an exception like below when running the CDM jobs,
 ```
-Exception in thread "main" java.lang.NoSuchMethodError: scala.runtime.Statics.releaseFence()
+Exception in thread "main" java.lang.NoSuchMethodError: 'void scala.runtime.Statics.releaseFence()'
 ```
 
 > [!NOTE]
