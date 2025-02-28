@@ -1,7 +1,7 @@
 # Release Notes
 
 ## [5.2.0] - 2025-xx-xx
-- Upgraded to use Spark `3.5.4`.
+- Upgraded to use Spark `3.5.5`.
 - Cassandra Docker image tag is now set to `cassandra:5`.
 
 ## [5.1.4] - 2024-12-04
