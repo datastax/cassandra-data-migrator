@@ -10,7 +10,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<scala.version>2.13.16</scala.version>
 		<scala.main.version>2.13</scala.main.version>
-		<spark.version>3.5.4</spark.version>
+		<spark.version>3.5.5</spark.version>
 		<connector.version>3.5.1</connector.version>
 		<cassandra.version>5.0-rc1</cassandra.version>
 		<junit.version>5.9.1</junit.version>
