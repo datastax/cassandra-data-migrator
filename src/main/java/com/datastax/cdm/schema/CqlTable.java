@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -470,7 +471,9 @@ public class CqlTable extends BaseTable {
             }
         }
         String columnName = extractColumnName;
+        List<String> skipColumns = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_SKIP);
         this.cqlAllColumns = tableMetadata.getColumns().values().stream().filter(md -> !this.cqlAllColumns.contains(md))
+                .filter(md -> CollectionUtils.isEmpty(skipColumns) || !skipColumns.contains(md.getName().asCql(true)))
                 .filter(md -> !extractJsonExclusive || md.getName().asCql(true).endsWith(columnName))
                 .collect(Collectors.toCollection(() -> this.cqlAllColumns));
 
