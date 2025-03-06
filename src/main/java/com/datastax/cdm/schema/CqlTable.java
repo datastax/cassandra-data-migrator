@@ -471,7 +471,7 @@ public class CqlTable extends BaseTable {
             }
         }
         String columnName = extractColumnName;
-        List<String> skipColumns = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_SKIP);
+        List<String> skipColumns = propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES_TO_SKIP);
         this.cqlAllColumns = tableMetadata.getColumns().values().stream().filter(md -> !this.cqlAllColumns.contains(md))
                 .filter(md -> CollectionUtils.isEmpty(skipColumns) || !skipColumns.contains(md.getName().asCql(true)))
                 .filter(md -> !extractJsonExclusive || md.getName().asCql(true).endsWith(columnName))
