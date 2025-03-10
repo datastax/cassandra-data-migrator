@@ -16,6 +16,7 @@
 package com.datastax.cdm.schema;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,4 +40,12 @@ class CqlTableTest extends CommonMocks {
         assertEquals(CqlTable.mapToConsistencyLevel("all"), ConsistencyLevel.ALL);
     }
 
+    @Test
+    void testformatName() {
+        assertNull(CqlTable.formatName(null));
+        assertEquals("", CqlTable.formatName(""));
+        assertEquals("\"KS123ks.T123able\"", CqlTable.formatName("KS123ks.T123able"));
+        assertEquals("\"Ks.Table\"", CqlTable.formatName("\"Ks.Table\""));
+        assertEquals("\"ks.table\"", CqlTable.formatName("ks.table"));
+    }
 }
