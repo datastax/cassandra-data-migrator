@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.2.1] - 2025-xx-xx
+- Implemented [`column.skip`](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm-detailed.properties#L97) feature
+
 ## [5.2.0] - 2025-xx-xx
 - Upgraded to use Spark `3.5.5`.
 - Cassandra Docker image tag is now set to `cassandra:5`.
