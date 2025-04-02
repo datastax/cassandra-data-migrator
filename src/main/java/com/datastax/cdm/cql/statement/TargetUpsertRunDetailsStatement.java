@@ -76,15 +76,15 @@ public class TargetUpsertRunDetailsStatement {
         }
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
-                + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, dateof(now()), ?)");
+                + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, totimestamp(now()), ?)");
         boundInitStatement = bindStatement("INSERT INTO " + cdmKsTabDetails
                 + " (table_name, run_id, token_min, token_max, status) VALUES (?, ?, ?, ?, ?)");
         boundEndInfoStatement = bindStatement("UPDATE " + cdmKsTabInfo
-                + " SET end_time = dateof(now()), run_info = ?, status = ? WHERE table_name = ? AND run_id = ?");
+                + " SET end_time = totimestamp(now()), run_info = ?, status = ? WHERE table_name = ? AND run_id = ?");
         boundUpdateStatement = bindStatement("UPDATE " + cdmKsTabDetails
                 + " SET status = ?, run_info = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
         boundUpdateStartStatement = bindStatement("UPDATE " + cdmKsTabDetails
-                + " SET start_time = dateof(now()), status = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
+                + " SET start_time = totimestamp(now()), status = ? WHERE table_name = ? AND run_id = ? AND token_min = ?");
         boundSelectInfoStatement = bindStatement(
                 "SELECT status FROM " + cdmKsTabInfo + " WHERE table_name = ? AND run_id = ?");
         boundSelectStatement = bindStatement("SELECT token_min, token_max FROM " + cdmKsTabDetails

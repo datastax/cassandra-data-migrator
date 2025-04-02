@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.2.2] - 2025-04-02
+- Replaced deprecated (not supported in Cassandra 5.0.3+) function `dateof()` with `totimestamp()`
+
 ## [5.2.1] - 2025-03-10
 - Implemented [`column.skip`](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm-detailed.properties#L97) feature
 
