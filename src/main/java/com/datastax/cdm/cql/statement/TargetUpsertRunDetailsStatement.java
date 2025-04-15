@@ -113,10 +113,16 @@ public class TargetUpsertRunDetailsStatement {
         }
 
         final List<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString(), jobType));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString(), jobType));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString(), jobType));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.DIFF.toString(), jobType));
+        // Use an array of statuses for iteration
+        String[] statuses = {
+            TrackRun.RUN_STATUS.NOT_STARTED.toString(),
+            TrackRun.RUN_STATUS.STARTED.toString(),
+            TrackRun.RUN_STATUS.FAIL.toString(),
+            TrackRun.RUN_STATUS.DIFF.toString()
+        };
+        for (String status : statuses) {
+            pendingParts.addAll(getPartitionsByStatus(prevRunId, status, jobType));
+        }
         Collections.shuffle(pendingParts);
         Collections.shuffle(pendingParts);
 
