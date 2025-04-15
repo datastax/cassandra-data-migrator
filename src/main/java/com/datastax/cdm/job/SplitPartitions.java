@@ -35,8 +35,6 @@ public class SplitPartitions {
         List<PartitionRange> partitions = getSubPartitions(numSplits, min, max, coveragePercent, jobType);
         Collections.shuffle(partitions);
         Collections.shuffle(partitions);
-        Collections.shuffle(partitions);
-        Collections.shuffle(partitions);
         return partitions;
     }
 

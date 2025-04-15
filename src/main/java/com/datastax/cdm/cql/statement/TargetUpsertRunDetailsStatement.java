@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,11 +112,19 @@ public class TargetUpsertRunDetailsStatement {
             }
         }
 
-        final Collection<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.NOT_STARTED.toString(), jobType));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.STARTED.toString(), jobType));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.FAIL.toString(), jobType));
-        pendingParts.addAll(getPartitionsByStatus(prevRunId, TrackRun.RUN_STATUS.DIFF.toString(), jobType));
+        final List<PartitionRange> pendingParts = new ArrayList<PartitionRange>();
+        // Use an array of statuses for iteration
+        String[] statuses = {
+            TrackRun.RUN_STATUS.NOT_STARTED.toString(),
+            TrackRun.RUN_STATUS.STARTED.toString(),
+            TrackRun.RUN_STATUS.FAIL.toString(),
+            TrackRun.RUN_STATUS.DIFF.toString()
+        };
+        for (String status : statuses) {
+            pendingParts.addAll(getPartitionsByStatus(prevRunId, status, jobType));
+        }
+        Collections.shuffle(pendingParts);
+        Collections.shuffle(pendingParts);
 
         return pendingParts;
     }
