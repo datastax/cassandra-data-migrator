@@ -1,7 +1,7 @@
 # Release Notes
 
 ## [5.2.3] - 2025-04-15
-- Randomized the pending token-range list returned by the `trackRun` feature (when rerunning a previously incomplete job) for better load distribution across Cluster.
+- Randomized the pending token-range list returned by the `trackRun` feature (when rerunning a previously incomplete job) for better load distribution across the cluster.
 
 ## [5.2.2] - 2025-04-02
 - Replaced deprecated (not supported in Cassandra 5.0.3+) function `dateof()` with `totimestamp()`
