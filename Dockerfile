@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install
 
 # Copy CDM jar & template files
 ARG USER_HOME_DIR="/root"
-ENV MAVEN_HOME /usr/share/maven
-ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+ENV MAVEN_HOME=/usr/share/maven
+ENV MAVEN_CONFIG="$USER_HOME_DIR/.m2"
 COPY ./src /assets/src
 COPY ./pom.xml /assets/pom.xml
 COPY ./src/resources/cdm.properties /assets/
