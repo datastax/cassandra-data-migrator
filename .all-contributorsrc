@@ -158,6 +158,17 @@
         "userTesting",
         "doc"
       ]
+    },
+    {
+      "login": "Skunnyk",
+      "name": "Skunnyk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3627062?v=4",
+      "profile": "https://blog.alteroot.org",
+      "contributions": [
+        "bug",
+        "test",
+        "question"
+      ]
     }
   ],
   "commitType": "docs"
