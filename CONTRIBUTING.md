@@ -153,6 +153,7 @@ For recognizing contributions, please follow [this documentation](https://allcon
     </tr>
     <tr>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/arvy"><img src="https://avatars.githubusercontent.com/u/4861274?v=4?s=50" width="50px;" alt="Arvydas Jonusonis"/><br /><sub><b>Arvydas Jonusonis</b></sub></a><br /><a href="#userTesting-arvy" title="User Testing">📓</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=arvy" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="16.66%"><a href="https://blog.alteroot.org"><img src="https://avatars.githubusercontent.com/u/3627062?v=4?s=50" width="50px;" alt="Skunnyk"/><br /><sub><b>Skunnyk</b></sub></a><br /><a href="https://github.com/datastax/cassandra-data-migrator/issues?q=author%3ASkunnyk" title="Bug reports">🐛</a> <a href="https://github.com/datastax/cassandra-data-migrator/commits?author=Skunnyk" title="Tests">⚠️</a> <a href="#question-Skunnyk" title="Answering Questions">💬</a></td>
     </tr>
   </tbody>
 </table>
