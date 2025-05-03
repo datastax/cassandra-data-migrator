@@ -16,17 +16,23 @@
 package com.datastax.cdm.data;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -45,6 +51,9 @@ class AstraDevOpsClientTest {
 
     @Mock
     private HttpResponse<String> httpResponse;
+
+    @Mock
+    private HttpResponse<InputStream> httpResponseStream;
 
     private AstraDevOpsClient client;
 
@@ -197,5 +206,301 @@ class AstraDevOpsClientTest {
         assertEquals("https://example.com/bundle.zip", url);
     }
 
-    // More tests for extractDownloadUrl with different SCB types can be added here
+    @Test
+    void testExtractDownloadUrlRegionType() throws Exception {
+        // Setup
+        String jsonResponse = "{ \"downloadURLs\": ["
+                + "{ \"region\": \"us-east-1\", \"downloadURL\": \"https://us-east-1.example.com/bundle.zip\" },"
+                + "{ \"region\": \"us-west-2\", \"downloadURL\": \"https://us-west-2.example.com/bundle.zip\" },"
+                + "{ \"region\": \"eu-central-1\", \"downloadURL\": \"https://eu-central-1.example.com/bundle.zip\" }"
+                + "]}";
+
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn("us-west-2");
+
+        // Use reflection to access the private method
+        Method extractDownloadUrlMethod = AstraDevOpsClient.class.getDeclaredMethod("extractDownloadUrl", String.class,
+                String.class, PKFactory.Side.class);
+        extractDownloadUrlMethod.setAccessible(true);
+
+        // Test
+        String url = (String) extractDownloadUrlMethod.invoke(client, jsonResponse, "region", PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertEquals("https://us-west-2.example.com/bundle.zip", url);
+    }
+
+    @Test
+    void testExtractDownloadUrlRegionTypeWithMissingRegion() throws Exception {
+        // Setup
+        String jsonResponse = "{ \"downloadURLs\": ["
+                + "{ \"region\": \"us-east-1\", \"downloadURL\": \"https://us-east-1.example.com/bundle.zip\" },"
+                + "{ \"region\": \"us-west-2\", \"downloadURL\": \"https://us-west-2.example.com/bundle.zip\" }" + "]}";
+
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn(null);
+
+        // Use reflection to access the private method
+        Method extractDownloadUrlMethod = AstraDevOpsClient.class.getDeclaredMethod("extractDownloadUrl", String.class,
+                String.class, PKFactory.Side.class);
+        extractDownloadUrlMethod.setAccessible(true);
+
+        // Test
+        String url = (String) extractDownloadUrlMethod.invoke(client, jsonResponse, "region", PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNull(url);
+    }
+
+    @Test
+    void testExtractDownloadUrlRegionTypeWithNoMatchingRegion() throws Exception {
+        // Setup
+        String jsonResponse = "{ \"downloadURLs\": ["
+                + "{ \"region\": \"us-east-1\", \"downloadURL\": \"https://us-east-1.example.com/bundle.zip\" },"
+                + "{ \"region\": \"us-west-2\", \"downloadURL\": \"https://us-west-2.example.com/bundle.zip\" }" + "]}";
+
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn("ap-south-1");
+
+        // Use reflection to access the private method
+        Method extractDownloadUrlMethod = AstraDevOpsClient.class.getDeclaredMethod("extractDownloadUrl", String.class,
+                String.class, PKFactory.Side.class);
+        extractDownloadUrlMethod.setAccessible(true);
+
+        // Test
+        String url = (String) extractDownloadUrlMethod.invoke(client, jsonResponse, "region", PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNull(url);
+    }
+
+    @Test
+    void testExtractDownloadUrlCustomDomainType() throws Exception {
+        // Setup
+        String jsonResponse = "{ \"customDomainBundles\": ["
+                + "{ \"domain\": \"db1.example.com\", \"downloadURL\": \"https://db1.example.com/bundle.zip\" },"
+                + "{ \"domain\": \"db2.example.com\", \"downloadURL\": \"https://db2.example.com/bundle.zip\" }" + "]}";
+
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_CUSTOM_DOMAIN)).thenReturn("db2.example.com");
+
+        // Use reflection to access the private method
+        Method extractDownloadUrlMethod = AstraDevOpsClient.class.getDeclaredMethod("extractDownloadUrl", String.class,
+                String.class, PKFactory.Side.class);
+        extractDownloadUrlMethod.setAccessible(true);
+
+        // Test
+        String url = (String) extractDownloadUrlMethod.invoke(client, jsonResponse, "custom", PKFactory.Side.TARGET);
+
+        // Verify
+        assertEquals("https://db2.example.com/bundle.zip", url);
+    }
+
+    @Test
+    void testExtractDownloadUrlCustomDomainTypeWithMissingDomain() throws Exception {
+        // Setup
+        String jsonResponse = "{ \"customDomainBundles\": ["
+                + "{ \"domain\": \"db1.example.com\", \"downloadURL\": \"https://db1.example.com/bundle.zip\" },"
+                + "{ \"domain\": \"db2.example.com\", \"downloadURL\": \"https://db2.example.com/bundle.zip\" }" + "]}";
+
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_CUSTOM_DOMAIN)).thenReturn(null);
+
+        // Use reflection to access the private method
+        Method extractDownloadUrlMethod = AstraDevOpsClient.class.getDeclaredMethod("extractDownloadUrl", String.class,
+                String.class, PKFactory.Side.class);
+        extractDownloadUrlMethod.setAccessible(true);
+
+        // Test
+        String url = (String) extractDownloadUrlMethod.invoke(client, jsonResponse, "custom", PKFactory.Side.TARGET);
+
+        // Verify
+        assertNull(url);
+    }
+
+    @Test
+    void testExtractDownloadUrlUnknownType() throws Exception {
+        // Setup
+        String jsonResponse = "{ \"downloadURL\": \"https://example.com/bundle.zip\" }";
+
+        // Use reflection to access the private method
+        Method extractDownloadUrlMethod = AstraDevOpsClient.class.getDeclaredMethod("extractDownloadUrl", String.class,
+                String.class, PKFactory.Side.class);
+        extractDownloadUrlMethod.setAccessible(true);
+
+        // Test
+        String url = (String) extractDownloadUrlMethod.invoke(client, jsonResponse, "unknown", PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNull(url);
+    }
+
+    @Test
+    void testFetchSecureBundleUrlInfo() throws Exception {
+        // Mock the HTTP response
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn("{ \"downloadURL\": \"https://example.com/bundle.zip\" }");
+
+        // Mock the HTTP client to return our mocked response
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofString()))).thenReturn(httpResponse);
+
+        // Use reflection to access the private method
+        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod(
+                "fetchSecureBundleUrlInfo", String.class, String.class, boolean.class);
+        fetchSecureBundleUrlInfoMethod.setAccessible(true);
+
+        // Test
+        String jsonResponse = (String) fetchSecureBundleUrlInfoMethod.invoke(client, "test-token", "test-db-id", false);
+
+        // Verify
+        assertEquals("{ \"downloadURL\": \"https://example.com/bundle.zip\" }", jsonResponse);
+
+        // Verify the correct URL was used
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(requestCaptor.capture(), eq(HttpResponse.BodyHandlers.ofString()));
+
+        HttpRequest capturedRequest = requestCaptor.getValue();
+        assertEquals(URI.create("https://api.astra.datastax.com/v2/databases/test-db-id/secureBundleURL"),
+                capturedRequest.uri());
+        assertTrue(capturedRequest.headers().firstValue("Authorization").isPresent());
+        assertEquals("Bearer test-token", capturedRequest.headers().firstValue("Authorization").get());
+    }
+
+    @Test
+    void testFetchSecureBundleUrlInfoWithRegionalFlag() throws Exception {
+        // Mock the HTTP response
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn("{ \"downloadURLs\": [] }");
+
+        // Mock the HTTP client to return our mocked response
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofString()))).thenReturn(httpResponse);
+
+        // Use reflection to access the private method
+        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod(
+                "fetchSecureBundleUrlInfo", String.class, String.class, boolean.class);
+        fetchSecureBundleUrlInfoMethod.setAccessible(true);
+
+        // Test
+        String jsonResponse = (String) fetchSecureBundleUrlInfoMethod.invoke(client, "test-token", "test-db-id", true);
+
+        // Verify
+        assertEquals("{ \"downloadURLs\": [] }", jsonResponse);
+
+        // Verify the correct URL was used with all=true parameter
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(requestCaptor.capture(), eq(HttpResponse.BodyHandlers.ofString()));
+
+        HttpRequest capturedRequest = requestCaptor.getValue();
+        assertEquals(URI.create("https://api.astra.datastax.com/v2/databases/test-db-id/secureBundleURL?all=true"),
+                capturedRequest.uri());
+    }
+
+    @Test
+    void testFetchSecureBundleUrlInfoError() throws Exception {
+        // Mock the HTTP response for an error
+        when(httpResponse.statusCode()).thenReturn(401);
+        when(httpResponse.body()).thenReturn("{ \"error\": \"Unauthorized\" }");
+
+        // Mock the HTTP client to return our mocked response
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofString()))).thenReturn(httpResponse);
+
+        // Use reflection to access the private method
+        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod(
+                "fetchSecureBundleUrlInfo", String.class, String.class, boolean.class);
+        fetchSecureBundleUrlInfoMethod.setAccessible(true);
+
+        // Test
+        String jsonResponse = (String) fetchSecureBundleUrlInfoMethod.invoke(client, "invalid-token", "test-db-id", false);
+
+        // Verify
+        assertNull(jsonResponse);
+    }
+
+    @Test
+    void testDownloadBundleFile() throws Exception {
+        // Setup
+        byte[] mockData = new byte[100]; // Mock some binary data
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(mockData);
+
+        // Mock the HTTP response
+        when(httpResponseStream.statusCode()).thenReturn(200);
+        when(httpResponseStream.body()).thenReturn(inputStream);
+
+        // Mock the HTTP client to return our mocked response
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()))).thenReturn(httpResponseStream);
+
+        // Use reflection to access the private method
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod("downloadBundleFile", String.class,
+                PKFactory.Side.class);
+        downloadBundleFileMethod.setAccessible(true);
+
+        // Test
+        String filePath = (String) downloadBundleFileMethod.invoke(client, "https://example.com/bundle.zip",
+                PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNotNull(filePath);
+        assertTrue(filePath.contains("origin-secure-bundle.zip"));
+
+        // Verify the correct URL was used
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(requestCaptor.capture(), eq(HttpResponse.BodyHandlers.ofInputStream()));
+
+        HttpRequest capturedRequest = requestCaptor.getValue();
+        assertEquals(URI.create("https://example.com/bundle.zip"), capturedRequest.uri());
+    }
+
+    @Test
+    void testDownloadBundleFileHttpError() throws Exception {
+        // Setup
+
+        // Mock the HTTP response with an error status
+        when(httpResponseStream.statusCode()).thenReturn(404);
+
+        // Mock the HTTP client to return our mocked response
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()))).thenReturn(httpResponseStream);
+
+        // Use reflection to access the private method
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod(
+                "downloadBundleFile", String.class, PKFactory.Side.class);
+        downloadBundleFileMethod.setAccessible(true);
+
+        try {
+            downloadBundleFileMethod.invoke(client, "https://example.com/not-found.zip", PKFactory.Side.ORIGIN);
+            fail("Expected an exception to be thrown");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            // Extract the actual exception that was wrapped
+            assertTrue(e.getCause() instanceof IOException);
+            assertEquals("Failed to download secure bundle. Status code: 404", e.getCause().getMessage());
+        }
+    }
+
+    @Test
+    void testDownloadSecureBundleSuccess() throws Exception {
+        // Setup - mock all the components for a successful download
+
+        // Step 1: Mock the API response for fetching the SCB URL
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn("{ \"downloadURL\": \"https://example.com/bundle.zip\" }");
+
+        // Step 2: Mock the binary download
+        byte[] mockData = new byte[100]; // Mock some binary data
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(mockData);
+
+        // Mock the HTTP response
+        when(httpResponseStream.statusCode()).thenReturn(200);
+        when(httpResponseStream.body()).thenReturn(inputStream);
+
+        // Configure the HTTP client to return responses based on different handler types
+        // We need to use doReturn().when() syntax here to avoid NullPointerException in the matcher
+        doReturn(httpResponse).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofString()));
+        doReturn(httpResponseStream).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()));
+
+        // Mock the property helper
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn("test-db-id");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_TYPE)).thenReturn("default");
+
+        // Test
+        String filePath = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNotNull(filePath);
+        assertTrue(filePath.contains("origin-secure-bundle.zip"));
+    }
 }

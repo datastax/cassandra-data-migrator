@@ -284,8 +284,7 @@ public class AstraDevOpsClient {
 
             if (rootNode.has("customDomainBundles") && rootNode.get("customDomainBundles").isArray()) {
                 for (JsonNode customNode : rootNode.get("customDomainBundles")) {
-                    if (customNode.has("sniDomain")
-                            && customDomain.equalsIgnoreCase(customNode.get("sniDomain").asText())
+                    if (customNode.has("domain") && customDomain.equalsIgnoreCase(customNode.get("domain").asText())
                             && customNode.has("downloadURL")) {
 
                         return customNode.get("downloadURL").asText();
