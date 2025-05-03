@@ -51,6 +51,7 @@ public class KnownProperties {
     // ==========================================================================
     // Astra DevOps API Parameters
     // ==========================================================================
+    // Note: CONNECT_ORIGIN_PASSWORD and CONNECT_TARGET_PASSWORD properties are used for Astra tokens
     public static final String ORIGIN_ASTRA_TOKEN = "spark.cdm.connect.origin.astra.token";
     public static final String ORIGIN_ASTRA_DATABASE_ID = "spark.cdm.connect.origin.astra.database.id";
     public static final String ORIGIN_ASTRA_AUTO_DOWNLOAD_SCB = "spark.cdm.connect.origin.astra.auto.download.scb";

@@ -113,7 +113,7 @@ public class AstraDevOpsClient {
     }
 
     /**
-     * Gets the Astra token for the specified side.
+     * Gets the Astra token for the specified side. Uses the database password as the token for Astra.
      *
      * @param side
      *            The side (ORIGIN or TARGET)
@@ -121,8 +121,8 @@ public class AstraDevOpsClient {
      * @return The Astra token
      */
     private String getAstraToken(PKFactory.Side side) {
-        String property = PKFactory.Side.ORIGIN.equals(side) ? KnownProperties.ORIGIN_ASTRA_TOKEN
-                : KnownProperties.TARGET_ASTRA_TOKEN;
+        String property = PKFactory.Side.ORIGIN.equals(side) ? KnownProperties.CONNECT_ORIGIN_PASSWORD
+                : KnownProperties.CONNECT_TARGET_PASSWORD;
 
         return propertyHelper.getAsString(property);
     }

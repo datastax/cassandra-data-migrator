@@ -71,33 +71,33 @@ class AstraDevOpsClientTest {
     @Test
     void testDownloadSecureBundleWithNullToken() throws IOException {
         // Setup
-        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN)).thenReturn(null);
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn(null);
 
         // Test
         String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
 
         // Verify
         assertNull(result);
-        verify(propertyHelper).getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN);
+        verify(propertyHelper).getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD);
     }
 
     @Test
     void testDownloadSecureBundleWithEmptyToken() throws IOException {
         // Setup
-        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN)).thenReturn("");
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("");
 
         // Test
         String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
 
         // Verify
         assertNull(result);
-        verify(propertyHelper).getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN);
+        verify(propertyHelper).getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD);
     }
 
     @Test
     void testDownloadSecureBundleWithNullDatabaseId() throws IOException {
         // Setup
-        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("test-token");
         when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn(null);
 
         // Test
@@ -105,14 +105,14 @@ class AstraDevOpsClientTest {
 
         // Verify
         assertNull(result);
-        verify(propertyHelper).getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN);
+        verify(propertyHelper).getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD);
         verify(propertyHelper).getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID);
     }
 
     @Test
     void testGetAstraToken() throws Exception {
         // Setup
-        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("test-token");
 
         // Use reflection to access the private method
         Method getAstraTokenMethod = AstraDevOpsClient.class.getDeclaredMethod("getAstraToken", PKFactory.Side.class);
@@ -492,7 +492,7 @@ class AstraDevOpsClientTest {
         doReturn(httpResponseStream).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()));
 
         // Mock the property helper
-        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_TOKEN)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("test-token");
         when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn("test-db-id");
         when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_TYPE)).thenReturn("default");
 
@@ -502,5 +502,163 @@ class AstraDevOpsClientTest {
         // Verify
         assertNotNull(filePath);
         assertTrue(filePath.contains("origin-secure-bundle.zip"));
+    }
+
+    @Test
+    void testDownloadBundleFileWithIOException() throws Exception {
+        // Mock the HTTP client to throw IOException when sending the request
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream())))
+            .thenThrow(new IOException("Network error"));
+
+        // Use reflection to access the private method
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod(
+                "downloadBundleFile", String.class, PKFactory.Side.class);
+        downloadBundleFileMethod.setAccessible(true);
+
+        try {
+            // Test - should throw an IOException
+            downloadBundleFileMethod.invoke(client, "https://example.com/bundle.zip", PKFactory.Side.ORIGIN);
+            fail("Expected an exception to be thrown");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            // Extract the actual exception that was wrapped
+            assertTrue(e.getCause() instanceof IOException);
+            assertEquals("Network error", e.getCause().getMessage());
+        }
+    }
+
+    @Test
+    void testDownloadSecureBundleWithEmptyJsonResponse() throws Exception {
+        // Setup
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn("{}");
+
+        // Configure the HTTP client to return our mocked response
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofString()))).thenReturn(httpResponse);
+
+        // Mock the property helper
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn("test-db-id");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_TYPE)).thenReturn("default");
+
+        // Test
+        String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNull(result);
+    }
+
+    @Test
+    void testDownloadSecureBundleWithRegionalSCB() throws Exception {
+        // Setup - mock all the components for a successful download with regional SCB
+
+        // Step 1: Mock the API response for fetching the SCB URL with regional data
+        String jsonResponse = "{ \"downloadURLs\": ["
+                + "{ \"region\": \"us-east-1\", \"downloadURL\": \"https://us-east-1.example.com/bundle.zip\" },"
+                + "{ \"region\": \"us-west-2\", \"downloadURL\": \"https://us-west-2.example.com/bundle.zip\" },"
+                + "{ \"region\": \"eu-central-1\", \"downloadURL\": \"https://eu-central-1.example.com/bundle.zip\" }"
+                + "]}";
+
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn(jsonResponse);
+
+        // Step 2: Mock the binary download
+        byte[] mockData = new byte[100]; // Mock some binary data
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(mockData);
+
+        // Mock the HTTP response
+        when(httpResponseStream.statusCode()).thenReturn(200);
+        when(httpResponseStream.body()).thenReturn(inputStream);
+
+        // Configure the HTTP client to return responses based on different handler types
+        doReturn(httpResponse).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofString()));
+        doReturn(httpResponseStream).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()));
+
+        // Mock the property helper
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn("test-db-id");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_TYPE)).thenReturn("region");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn("us-west-2");
+
+        // Test
+        String filePath = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
+
+        // Verify
+        assertNotNull(filePath);
+        assertTrue(filePath.contains("origin-secure-bundle.zip"));
+
+        // Verify that the URL request included all=true parameter
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient, atLeastOnce()).send(requestCaptor.capture(), eq(HttpResponse.BodyHandlers.ofString()));
+
+        boolean foundAllParam = false;
+        for (HttpRequest capturedRequest : requestCaptor.getAllValues()) {
+            if (capturedRequest.uri().toString().contains("all=true")) {
+                foundAllParam = true;
+                break;
+            }
+        }
+        assertTrue(foundAllParam, "The request URL should include all=true parameter for regional SCB");
+    }
+
+    @Test
+    void testDownloadSecureBundleWithCustomDomainSCB() throws Exception {
+        // Setup - mock all the components for a successful download with custom domain SCB
+
+        // Step 1: Mock the API response for fetching the SCB URL with custom domain data
+        String jsonResponse = "{ \"customDomainBundles\": ["
+                + "{ \"domain\": \"db1.example.com\", \"downloadURL\": \"https://db1.example.com/bundle.zip\" },"
+                + "{ \"domain\": \"my-custom-domain.example.com\", \"downloadURL\": \"https://my-custom-domain.example.com/bundle.zip\" }"
+                + "]}";
+
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn(jsonResponse);
+
+        // Step 2: Mock the binary download
+        byte[] mockData = new byte[100]; // Mock some binary data
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(mockData);
+
+        // Mock the HTTP response
+        when(httpResponseStream.statusCode()).thenReturn(200);
+        when(httpResponseStream.body()).thenReturn(inputStream);
+
+        // Configure the HTTP client to return responses based on different handler types
+        doReturn(httpResponse).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofString()));
+        doReturn(httpResponseStream).when(httpClient).send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()));
+
+        // Mock the property helper
+        when(propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_PASSWORD)).thenReturn("test-token");
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_DATABASE_ID)).thenReturn("test-db-id");
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_TYPE)).thenReturn("custom");
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_CUSTOM_DOMAIN))
+                .thenReturn("my-custom-domain.example.com");
+
+        // Test
+        String filePath = client.downloadSecureBundle(PKFactory.Side.TARGET);
+
+        // Verify
+        assertNotNull(filePath);
+        assertTrue(filePath.contains("target-secure-bundle.zip"));
+    }
+
+    @Test
+    void testDownloadBundleFileInterrupted() throws Exception {
+        // Mock the HTTP client to throw InterruptedException when sending the request
+        when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream())))
+            .thenThrow(new InterruptedException("Download interrupted"));
+
+        // Use reflection to access the private method
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod(
+                "downloadBundleFile", String.class, PKFactory.Side.class);
+        downloadBundleFileMethod.setAccessible(true);
+
+        try {
+            // Test - should throw an InterruptedException wrapped in an InvocationTargetException
+            downloadBundleFileMethod.invoke(client, "https://example.com/bundle.zip", PKFactory.Side.ORIGIN);
+            fail("Expected an exception to be thrown");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            // Extract the actual exception that was wrapped
+            assertTrue(e.getCause() instanceof InterruptedException);
+            assertEquals("Download interrupted", e.getCause().getMessage());
+        }
     }
 }
