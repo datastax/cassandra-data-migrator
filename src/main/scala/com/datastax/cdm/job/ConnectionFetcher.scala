@@ -20,13 +20,49 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 import org.slf4j.{Logger, LoggerFactory}
 import com.datastax.cdm.data.DataUtility.generateSCB
+import com.datastax.cdm.data.{AstraDevOpsClient, PKFactory}
 import com.datastax.cdm.data.PKFactory.Side
 
 // TODO: CDM-31 - add localDC configuration support
-class ConnectionFetcher(propertyHelper: IPropertyHelper) extends Serializable {
+class ConnectionFetcher(propertyHelper: IPropertyHelper, testAstraClient: AstraDevOpsClient = null) extends Serializable {
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)
+  
+  // Return injected client for testing, or create a new one
+  private def getAstraClient(): AstraDevOpsClient = {
+    if (testAstraClient != null) testAstraClient else new AstraDevOpsClient(propertyHelper)
+  }
 
   def getConnectionDetails(side: Side): ConnectionDetails = {
+    // Check if auto-download is enabled for this side
+    val autoDownloadEnabled = if (Side.ORIGIN.equals(side)) {
+      propertyHelper.getBoolean(KnownProperties.ORIGIN_ASTRA_AUTO_DOWNLOAD_SCB)
+    } else {
+      propertyHelper.getBoolean(KnownProperties.TARGET_ASTRA_AUTO_DOWNLOAD_SCB)
+    }
+    
+    // If auto-download is enabled, try to download the secure bundle
+    if (autoDownloadEnabled) {
+      try {
+        val astraClient = getAstraClient()
+        val downloadedScbPath = astraClient.downloadSecureBundle(side)
+        
+        if (downloadedScbPath != null && !downloadedScbPath.isEmpty) {
+          logger.info(s"Successfully auto-downloaded secure bundle for $side: $downloadedScbPath")
+          
+          // Update the property helper with the downloaded SCB path
+          if (Side.ORIGIN.equals(side)) {
+            propertyHelper.setProperty(KnownProperties.CONNECT_ORIGIN_SCB, downloadedScbPath)
+          } else {
+            propertyHelper.setProperty(KnownProperties.CONNECT_TARGET_SCB, downloadedScbPath)
+          }
+        }
+      } catch {
+        case e: Exception => 
+          logger.warn(s"Failed to auto-download secure bundle for $side: ${e.getMessage}")
+          logger.debug("Auto-download failure details", e)
+      }
+    }
+    
     if (Side.ORIGIN.equals(side)) {
       ConnectionDetails(
         propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_SCB),
