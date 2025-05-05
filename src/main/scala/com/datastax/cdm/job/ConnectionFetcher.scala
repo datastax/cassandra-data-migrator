@@ -33,17 +33,14 @@ class ConnectionFetcher(propertyHelper: IPropertyHelper, testAstraClient: AstraD
   }
 
   def getConnectionDetails(side: Side): ConnectionDetails = {
-    // Check if auto-download is enabled for this side
-    val autoDownloadEnabled = if (Side.ORIGIN.equals(side)) {
-      propertyHelper.getBoolean(KnownProperties.ORIGIN_ASTRA_AUTO_DOWNLOAD_SCB)
-    } else {
-      propertyHelper.getBoolean(KnownProperties.TARGET_ASTRA_AUTO_DOWNLOAD_SCB)
-    }
+    val astraClient = getAstraClient()
     
     // If auto-download is enabled, try to download the secure bundle
-    if (autoDownloadEnabled) {
+    val astraDbId = astraClient.getAstraDatabaseId(side)
+    val astraDbRegion = astraClient.getRegion(side)
+    if (astraDbId != null && !astraDbId.isEmpty && astraDbRegion != null && !astraDbRegion.isEmpty) {
+      logger.info(s"Auto-downloading secure connect bundle for $side $astraDbId $astraDbRegion")
       try {
-        val astraClient = getAstraClient()
         val downloadedScbPath = astraClient.downloadSecureBundle(side)
         
         if (downloadedScbPath != null && !downloadedScbPath.isEmpty) {

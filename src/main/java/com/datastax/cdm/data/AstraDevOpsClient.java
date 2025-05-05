@@ -46,7 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class AstraDevOpsClient {
     private static final Logger logger = LoggerFactory.getLogger(AstraDevOpsClient.class.getName());
     private static final String ASTRA_API_BASE_URL = "https://api.astra.datastax.com";
-    private static final String SCB_API_PATH = "/v2/databases/%s/secureBundleURL";
+    private static final String SCB_API_PATH = "/v2/databases/%s/secureBundleURL?all=true";
     private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(30);
 
     private final IPropertyHelper propertyHelper;
@@ -79,6 +79,7 @@ public class AstraDevOpsClient {
     public String downloadSecureBundle(PKFactory.Side side) throws IOException {
         String token = getAstraToken(side);
         String databaseId = getAstraDatabaseId(side);
+        String dbRegion = getRegion(side);
         String scbType = getScbType(side);
 
         if (token == null || token.isEmpty() || databaseId == null || databaseId.isEmpty()) {
@@ -86,18 +87,18 @@ public class AstraDevOpsClient {
             return null;
         }
 
-        logger.info("Auto-downloading secure connect bundle for {} database ID: {}, type: {}", side, databaseId,
-                scbType);
+        logger.info("Auto-downloading secure connect bundle for {} database ID: {}, type: {}, region: {}", side,
+                databaseId, scbType, dbRegion != null ? dbRegion : "default");
 
         try {
-            String jsonResponse = fetchSecureBundleUrlInfo(token, databaseId, "region".equals(scbType));
+            String jsonResponse = fetchSecureBundleUrlInfo(token, databaseId);
 
             if (jsonResponse == null) {
                 logger.error("Failed to fetch secure bundle URL info for {}", side);
                 return null;
             }
 
-            String downloadUrl = extractDownloadUrl(jsonResponse, scbType, side);
+            String downloadUrl = extractDownloadUrl(jsonResponse, scbType, side, dbRegion);
 
             if (downloadUrl == null) {
                 logger.error("Could not extract download URL for {} bundle type: {}", side, scbType);
@@ -135,7 +136,7 @@ public class AstraDevOpsClient {
      *
      * @return The Astra database ID
      */
-    private String getAstraDatabaseId(PKFactory.Side side) {
+    public String getAstraDatabaseId(PKFactory.Side side) {
         String property = PKFactory.Side.ORIGIN.equals(side) ? KnownProperties.ORIGIN_ASTRA_DATABASE_ID
                 : KnownProperties.TARGET_ASTRA_DATABASE_ID;
 
@@ -165,7 +166,7 @@ public class AstraDevOpsClient {
      *
      * @return The region name
      */
-    private String getRegion(PKFactory.Side side) {
+    public String getRegion(PKFactory.Side side) {
         String property = PKFactory.Side.ORIGIN.equals(side) ? KnownProperties.ORIGIN_ASTRA_SCB_REGION
                 : KnownProperties.TARGET_ASTRA_SCB_REGION;
 
@@ -194,8 +195,6 @@ public class AstraDevOpsClient {
      *            The Astra token
      * @param databaseId
      *            The database ID
-     * @param fetchAll
-     *            Whether to fetch all regional bundles
      *
      * @return The JSON response as a string
      *
@@ -204,14 +203,9 @@ public class AstraDevOpsClient {
      * @throws InterruptedException
      *             If the API call is interrupted
      */
-    private String fetchSecureBundleUrlInfo(String token, String databaseId, boolean fetchAll)
-            throws IOException, InterruptedException {
+    private String fetchSecureBundleUrlInfo(String token, String databaseId) throws IOException, InterruptedException {
 
         String apiUrl = ASTRA_API_BASE_URL + String.format(SCB_API_PATH, databaseId);
-
-        if (fetchAll) {
-            apiUrl += "?all=true";
-        }
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl))
                 .header("Authorization", "Bearer " + token).header("Content-Type", "application/json")
@@ -237,41 +231,56 @@ public class AstraDevOpsClient {
      *            The SCB type
      * @param side
      *            The side (ORIGIN or TARGET)
+     * @param dbRegion
+     *            The database region
      *
      * @return The download URL
      *
      * @throws IOException
      *             If an error occurs parsing the response
      */
-    private String extractDownloadUrl(String jsonResponse, String scbType, PKFactory.Side side) throws IOException {
+    private String extractDownloadUrl(String jsonResponse, String scbType, PKFactory.Side side, String dbRegion)
+            throws IOException {
         JsonNode rootNode = objectMapper.readTree(jsonResponse);
+
+        if (!rootNode.isArray()) {
+            logger.error("Expected array response but got {}", rootNode.getNodeType());
+            return null;
+        }
+
+        // Find the correct datacenter node based on the region
+        JsonNode matchingDatacenter = null;
+
+        // If region is specified, find the datacenter with that region
+        if (dbRegion != null && !dbRegion.isEmpty()) {
+            for (JsonNode datacenterNode : rootNode) {
+                if (datacenterNode.has("region") && dbRegion.equalsIgnoreCase(datacenterNode.get("region").asText())) {
+                    matchingDatacenter = datacenterNode;
+                    break;
+                }
+            }
+
+            if (matchingDatacenter == null) {
+                logger.error("Could not find datacenter for region: {}", dbRegion);
+                return null;
+            }
+        } else {
+            // No specific region, use the first datacenter
+            if (rootNode.size() > 0) {
+                matchingDatacenter = rootNode.get(0);
+            } else {
+                logger.error("Response contains no datacenters");
+                return null;
+            }
+        }
 
         switch (scbType.toLowerCase()) {
         case "default":
-            // Default bundle URL extraction
-            if (rootNode.has("downloadURL")) {
-                return rootNode.get("downloadURL").asText();
+            // Default bundle URL extraction - use the matched datacenter
+            if (matchingDatacenter.has("downloadURL")) {
+                return matchingDatacenter.get("downloadURL").asText();
             }
-            break;
-
-        case "region":
-            // Regional bundle URL extraction
-            String region = getRegion(side);
-            if (region == null || region.isEmpty()) {
-                logger.error("Region is required for SCB type 'region' but was not specified");
-                return null;
-            }
-
-            if (rootNode.has("downloadURLs") && rootNode.get("downloadURLs").isArray()) {
-                for (JsonNode regionNode : rootNode.get("downloadURLs")) {
-                    if (regionNode.has("region") && region.equalsIgnoreCase(regionNode.get("region").asText())
-                            && regionNode.has("downloadURL")) {
-
-                        return regionNode.get("downloadURL").asText();
-                    }
-                }
-                logger.error("Could not find download URL for region: {}", region);
-            }
+            logger.error("Could not find default download URL in datacenter");
             break;
 
         case "custom":
@@ -282,15 +291,21 @@ public class AstraDevOpsClient {
                 return null;
             }
 
-            if (rootNode.has("customDomainBundles") && rootNode.get("customDomainBundles").isArray()) {
-                for (JsonNode customNode : rootNode.get("customDomainBundles")) {
+            if (matchingDatacenter.has("customDomainBundles")
+                    && matchingDatacenter.get("customDomainBundles").isArray()) {
+
+                for (JsonNode customNode : matchingDatacenter.get("customDomainBundles")) {
                     if (customNode.has("domain") && customDomain.equalsIgnoreCase(customNode.get("domain").asText())
                             && customNode.has("downloadURL")) {
 
                         return customNode.get("downloadURL").asText();
                     }
                 }
-                logger.error("Could not find download URL for custom domain: {}", customDomain);
+
+                logger.error("Could not find downloadURL for custom domain: {} in the selected region {}", customDomain,
+                        dbRegion);
+            } else {
+                logger.error("No customDomainBundles found in the selected region {}", dbRegion);
             }
             break;
 

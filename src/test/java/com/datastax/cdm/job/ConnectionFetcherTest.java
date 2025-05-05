@@ -63,9 +63,11 @@ public class ConnectionFetcherTest extends CommonMocks {
         when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_HOST)).thenReturn("origin_host");
         when(propertyHelper.getAsString(KnownProperties.CONNECT_TARGET_HOST)).thenReturn("target_host");
 
-        // Default - auto-download disabled for both ORIGIN and TARGET
-        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_ASTRA_AUTO_DOWNLOAD_SCB)).thenReturn(false);
-        when(propertyHelper.getBoolean(KnownProperties.TARGET_ASTRA_AUTO_DOWNLOAD_SCB)).thenReturn(false);
+        // Default - auto-download disabled for both ORIGIN and TARGET by not setting database ID and region
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn(null);
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn(null);
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_DATABASE_ID)).thenReturn(null);
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_REGION)).thenReturn(null);
     }
 
     @Test
@@ -94,8 +96,11 @@ public class ConnectionFetcherTest extends CommonMocks {
 
     @Test
     public void getConnectionDetailsOriginWithAutoDownloadEnabled() throws Exception {
-        // Setup
-        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_ASTRA_AUTO_DOWNLOAD_SCB)).thenReturn(true);
+        // Setup - auto-download enabled by setting both database ID and region
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn("origin-db-id");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn("us-east-1");
+        when(astraClient.getAstraDatabaseId(PKFactory.Side.ORIGIN)).thenReturn("origin-db-id");
+        when(astraClient.getRegion(PKFactory.Side.ORIGIN)).thenReturn("us-east-1");
         when(astraClient.downloadSecureBundle(PKFactory.Side.ORIGIN)).thenReturn("/path/to/downloaded/bundle.zip");
 
         // Create ConnectionFetcher with mocked AstraDevOpsClient
@@ -110,8 +115,11 @@ public class ConnectionFetcherTest extends CommonMocks {
 
     @Test
     public void getConnectionDetailsTargetWithAutoDownloadEnabled() throws Exception {
-        // Setup
-        when(propertyHelper.getBoolean(KnownProperties.TARGET_ASTRA_AUTO_DOWNLOAD_SCB)).thenReturn(true);
+        // Setup - auto-download enabled by setting both database ID and region
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_DATABASE_ID)).thenReturn("target-db-id");
+        when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_REGION)).thenReturn("eu-west-1");
+        when(astraClient.getAstraDatabaseId(PKFactory.Side.TARGET)).thenReturn("target-db-id");
+        when(astraClient.getRegion(PKFactory.Side.TARGET)).thenReturn("eu-west-1");
         when(astraClient.downloadSecureBundle(PKFactory.Side.TARGET)).thenReturn("/path/to/downloaded/target-bundle.zip");
 
         // Create ConnectionFetcher with mocked AstraDevOpsClient
@@ -126,8 +134,13 @@ public class ConnectionFetcherTest extends CommonMocks {
 
     @Test
     public void getConnectionDetailsWithAutoDownloadFailure() throws Exception {
-        // Setup
-        when(propertyHelper.getBoolean(KnownProperties.ORIGIN_ASTRA_AUTO_DOWNLOAD_SCB)).thenReturn(true);
+        // Setup - auto-download enabled by setting both database ID and region
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn("origin-db-id");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn("us-east-1");
+        when(astraClient.getAstraDatabaseId(PKFactory.Side.ORIGIN)).thenReturn("origin-db-id");
+        when(astraClient.getRegion(PKFactory.Side.ORIGIN)).thenReturn("us-east-1");
+
+        // But the download fails
         when(astraClient.downloadSecureBundle(PKFactory.Side.ORIGIN)).thenThrow(new RuntimeException("Download failed"));
 
         // Create ConnectionFetcher with mocked AstraDevOpsClient
