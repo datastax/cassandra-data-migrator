@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.3.0] - 2025-05-05
+- Auto-download Astra DB Secure Connect Bundle (SCB) when connecting to Astra DB.
+
 ## [5.2.3] - 2025-04-15
 - Randomized the pending token-range list returned by the `trackRun` feature (when rerunning a previously incomplete job) for better load distribution across the cluster.
 
