@@ -21,8 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
-
 import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -110,7 +108,7 @@ public class ConnectionFetcherTest extends CommonMocks {
         cf.getConnectionDetails(PKFactory.Side.ORIGIN);
 
         // Verify the SCB path was updated in the property helper
-        verify(propertyHelper).setProperty(KnownProperties.CONNECT_ORIGIN_SCB, "/path/to/downloaded/bundle.zip");
+        verify(propertyHelper).setProperty(KnownProperties.CONNECT_ORIGIN_SCB, "file:///path/to/downloaded/bundle.zip");
     }
 
     @Test
@@ -129,7 +127,7 @@ public class ConnectionFetcherTest extends CommonMocks {
         cf.getConnectionDetails(PKFactory.Side.TARGET);
 
         // Verify the SCB path was updated in the property helper
-        verify(propertyHelper).setProperty(KnownProperties.CONNECT_TARGET_SCB, "/path/to/downloaded/target-bundle.zip");
+        verify(propertyHelper).setProperty(KnownProperties.CONNECT_TARGET_SCB, "file:///path/to/downloaded/target-bundle.zip");
     }
 
     @Test

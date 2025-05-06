@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.data;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,10 +24,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -204,9 +200,7 @@ public class AstraDevOpsClient {
      *             If the API call is interrupted
      */
     private String fetchSecureBundleUrlInfo(String token, String databaseId) throws IOException, InterruptedException {
-
         String apiUrl = ASTRA_API_BASE_URL + String.format(SCB_API_PATH, databaseId);
-
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl))
                 .header("Authorization", "Bearer " + token).header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.noBody()).timeout(HTTP_TIMEOUT).build();

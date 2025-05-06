@@ -41,7 +41,7 @@ class ConnectionFetcher(propertyHelper: IPropertyHelper, testAstraClient: AstraD
     if (astraDbId != null && !astraDbId.isEmpty && astraDbRegion != null && !astraDbRegion.isEmpty) {
       logger.info(s"Auto-downloading secure connect bundle for $side $astraDbId $astraDbRegion")
       try {
-        val downloadedScbPath = astraClient.downloadSecureBundle(side)
+        val downloadedScbPath = "file://" + astraClient.downloadSecureBundle(side)
         
         if (downloadedScbPath != null && !downloadedScbPath.isEmpty) {
           logger.info(s"Successfully auto-downloaded secure bundle for $side: $downloadedScbPath")
