@@ -72,15 +72,15 @@ public class AstraDevOpsClient {
      * @throws IOException
      *             If an error occurs during the download process
      */
-    public String downloadSecureBundle(PKFactory.Side side) throws IOException {
+    public String downloadSecureBundle(PKFactory.Side side) throws Exception {
         String token = getAstraToken(side);
         String databaseId = getAstraDatabaseId(side);
         String dbRegion = getRegion(side);
         String scbType = getScbType(side);
 
         if (token == null || token.isEmpty() || databaseId == null || databaseId.isEmpty()) {
-            logger.warn("Missing required Astra parameters for {} (token or database ID)", side);
-            return null;
+            logger.error("Missing required Astra parameters for {} (token or database ID)", side);
+            throw new Exception("Failed to download secure bundle");
         }
 
         logger.info("Auto-downloading secure connect bundle for {} database ID: {}, type: {}, region: {}", side,
@@ -91,14 +91,14 @@ public class AstraDevOpsClient {
 
             if (jsonResponse == null) {
                 logger.error("Failed to fetch secure bundle URL info for {}", side);
-                return null;
+                throw new Exception("Failed to download secure bundle");
             }
 
             String downloadUrl = extractDownloadUrl(jsonResponse, scbType, side, dbRegion);
 
             if (downloadUrl == null) {
                 logger.error("Could not extract download URL for {} bundle type: {}", side, scbType);
-                return null;
+                throw new Exception("Failed to download secure bundle");
             }
 
             return downloadBundleFile(downloadUrl, side);
