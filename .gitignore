@@ -13,3 +13,5 @@ SIT/**/output/*
 .settings/*
 src/main/main.iml
 src/test/test.iml
+
+**/.claude/settings.local.json

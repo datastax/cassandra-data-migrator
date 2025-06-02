@@ -48,6 +48,20 @@ public class KnownProperties {
     public static final String CONNECT_TARGET_USERNAME = "spark.cdm.connect.target.username";
     public static final String CONNECT_TARGET_PASSWORD = "spark.cdm.connect.target.password";
 
+    // ==========================================================================
+    // Astra DevOps API Parameters
+    // ==========================================================================
+    // Note: CONNECT_ORIGIN_PASSWORD and CONNECT_TARGET_PASSWORD properties are used for Astra tokens
+    public static final String ORIGIN_ASTRA_DATABASE_ID = "spark.cdm.connect.origin.astra.database.id";
+    public static final String ORIGIN_ASTRA_SCB_TYPE = "spark.cdm.connect.origin.astra.scb.type";
+    public static final String ORIGIN_ASTRA_SCB_REGION = "spark.cdm.connect.origin.astra.scb.region";
+    public static final String ORIGIN_ASTRA_SCB_CUSTOM_DOMAIN = "spark.cdm.connect.origin.astra.scb.custom.domain";
+
+    public static final String TARGET_ASTRA_DATABASE_ID = "spark.cdm.connect.target.astra.database.id";
+    public static final String TARGET_ASTRA_SCB_TYPE = "spark.cdm.connect.target.astra.scb.type";
+    public static final String TARGET_ASTRA_SCB_REGION = "spark.cdm.connect.target.astra.scb.region";
+    public static final String TARGET_ASTRA_SCB_CUSTOM_DOMAIN = "spark.cdm.connect.target.astra.scb.custom.domain";
+
     static {
         types.put(CONNECT_ORIGIN_HOST, PropertyType.STRING);
         defaults.put(CONNECT_ORIGIN_HOST, "localhost");
@@ -68,6 +82,19 @@ public class KnownProperties {
         defaults.put(CONNECT_TARGET_USERNAME, "cassandra");
         types.put(CONNECT_TARGET_PASSWORD, PropertyType.STRING);
         defaults.put(CONNECT_TARGET_PASSWORD, "cassandra");
+
+        // Astra DevOps API parameters
+        types.put(ORIGIN_ASTRA_DATABASE_ID, PropertyType.STRING);
+        types.put(ORIGIN_ASTRA_SCB_TYPE, PropertyType.STRING);
+        defaults.put(ORIGIN_ASTRA_SCB_TYPE, "default");
+        types.put(ORIGIN_ASTRA_SCB_REGION, PropertyType.STRING);
+        types.put(ORIGIN_ASTRA_SCB_CUSTOM_DOMAIN, PropertyType.STRING);
+
+        types.put(TARGET_ASTRA_DATABASE_ID, PropertyType.STRING);
+        types.put(TARGET_ASTRA_SCB_TYPE, PropertyType.STRING);
+        defaults.put(TARGET_ASTRA_SCB_TYPE, "default");
+        types.put(TARGET_ASTRA_SCB_REGION, PropertyType.STRING);
+        types.put(TARGET_ASTRA_SCB_CUSTOM_DOMAIN, PropertyType.STRING);
     }
 
     // ==========================================================================
