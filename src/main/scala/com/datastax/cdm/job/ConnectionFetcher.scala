@@ -55,8 +55,8 @@ class ConnectionFetcher(propertyHelper: IPropertyHelper, testAstraClient: AstraD
         }
       } catch {
         case e: Exception => 
-          logger.warn(s"Failed to auto-download secure bundle for $side: ${e.getMessage}")
-          logger.debug("Auto-download failure details", e)
+          logger.error(s"Failed to auto-download secure bundle for $side: ${e.getMessage}")
+          logger.error("Auto-download failure details", e)
       }
     }
     

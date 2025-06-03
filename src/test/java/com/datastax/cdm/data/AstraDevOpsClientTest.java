@@ -38,7 +38,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class AstraDevOpsClientTest {
@@ -69,42 +68,39 @@ class AstraDevOpsClientTest {
     }
 
     @Test
-    void testDownloadSecureBundleWithNullToken() throws IOException {
+    void testDownloadSecureBundleWithNullToken() throws Exception {
         // Setup
         when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn(null);
 
         // Test
-        String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
+        assertThrows(Exception.class, () -> client.downloadSecureBundle(PKFactory.Side.ORIGIN));
 
         // Verify
-        assertNull(result);
         verify(propertyHelper).getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD);
     }
 
     @Test
-    void testDownloadSecureBundleWithEmptyToken() throws IOException {
+    void testDownloadSecureBundleWithEmptyToken() throws Exception {
         // Setup
         when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("");
 
         // Test
-        String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
+        assertThrows(Exception.class, () -> client.downloadSecureBundle(PKFactory.Side.ORIGIN));
 
         // Verify
-        assertNull(result);
         verify(propertyHelper).getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD);
     }
 
     @Test
-    void testDownloadSecureBundleWithNullDatabaseId() throws IOException {
+    void testDownloadSecureBundleWithNullDatabaseId() throws Exception {
         // Setup
         when(propertyHelper.getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD)).thenReturn("test-token");
         when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID)).thenReturn(null);
 
         // Test
-        String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
+        assertThrows(Exception.class, () -> client.downloadSecureBundle(PKFactory.Side.ORIGIN));
 
         // Verify
-        assertNull(result);
         verify(propertyHelper).getAsString(KnownProperties.CONNECT_ORIGIN_PASSWORD);
         verify(propertyHelper).getAsString(KnownProperties.ORIGIN_ASTRA_DATABASE_ID);
     }
@@ -527,10 +523,7 @@ class AstraDevOpsClientTest {
         when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_REGION)).thenReturn(null);
 
         // Test
-        String result = client.downloadSecureBundle(PKFactory.Side.ORIGIN);
-
-        // Verify
-        assertNull(result);
+        assertThrows(Exception.class, () -> client.downloadSecureBundle(PKFactory.Side.ORIGIN));
     }
 
     @Test
