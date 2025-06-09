@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.3.1] - 2025-06-03
+- Upgrade Spark version to [`3.5.6`](https://spark.apache.org/releases/spark-release-3-5-6.html).
+
 ## [5.3.0] - 2025-05-05
 - Auto-download Astra DB Secure Connect Bundle (SCB) when connecting to Astra DB.
 
