@@ -3,7 +3,7 @@
 
 	<groupId>datastax.cdm</groupId>
 	<artifactId>cassandra-data-migrator</artifactId>
-	<version>5.2.4-SNAPSHOT</version>
+	<version>5.3.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -12,7 +12,7 @@
 		<scala.main.version>2.13</scala.main.version>
 		<spark.version>4.0.0</spark.version>
 		<connector.version>3.5.1</connector.version>
-		<cassandra.version>5.0-rc1</cassandra.version>
+		<cassandra.version>5.0.4</cassandra.version>
 		<junit.version>5.9.1</junit.version>
 		<mockito.version>4.11.0</mockito.version>
 		<java-driver.version>4.19.0</java-driver.version>
