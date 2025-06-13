@@ -35,6 +35,12 @@ public class TargetInsertStatementTest extends CommonMocks {
     public void setup() {
         commonSetup();
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+        // Ensure prepareStatement().bind() returns the boundStatement mock
+        when(targetInsertStatement.prepareStatement()).thenReturn(preparedStatement);
+        when(preparedStatement.bind()).thenReturn(boundStatement);
+        // Chain set and unset to return boundStatement
+        when(boundStatement.set(anyInt(), any(), any(Class.class))).thenReturn(boundStatement);
+        when(boundStatement.unset(anyInt())).thenReturn(boundStatement);
     }
 
     @Test
@@ -215,6 +221,20 @@ public class TargetInsertStatementTest extends CommonMocks {
         BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
         assertNotNull(result);
         verify(boundStatement, times(targetColumnNames.size())).set(anyInt(), any(), any(Class.class));
+    }
+
+    @Test
+    public void bind_nullToUnset_true() {
+        // Simulate a null value from origin
+        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenReturn(null);
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).unset(anyInt());
     }
 
 }
