@@ -179,6 +179,40 @@ public class TargetUpsertStatementTest extends CommonMocks {
         assertEquals(" USING TIMESTAMP ?", targetUpsertStatement.usingTTLTimestamp());
     }
 
+    @Test
+    public void checkBindInputs_successfulPath() {
+        // Should not throw any exception
+        assertDoesNotThrow(() -> targetUpsertStatement.checkBindInputs(1, 1L, null, null));
+    }
+
+    @Test
+    public void checkBindInputs_synchronizedBlock() {
+        // First call sets haveCheckedBindInputsOnce, second call should return early
+        assertDoesNotThrow(() -> targetUpsertStatement.checkBindInputs(1, 1L, null, null));
+        assertDoesNotThrow(() -> targetUpsertStatement.checkBindInputs(1, 1L, null, null));
+    }
+
+    @Test
+    public void bindRecord_validRecord_delegatesToBind() {
+        // Arrange: Use a spy to verify bind is called
+        TargetUpsertStatement spyStatement = spy(targetUpsertStatement);
+        doReturn(mock(BoundStatement.class)).when(spyStatement).bind(any(), any(), any(), any(), any(), any());
+        when(record.getPk()).thenReturn(pk);
+        when(record.getOriginRow()).thenReturn(originRow);
+        when(record.getTargetRow()).thenReturn(targetRow);
+        when(pk.getTTL()).thenReturn(1);
+        when(pk.getWriteTimestamp()).thenReturn(1L);
+        when(pk.getExplodeMapKey()).thenReturn(null);
+        when(pk.getExplodeMapValue()).thenReturn(null);
+
+        // Act
+        BoundStatement result = spyStatement.bindRecord(record);
+
+        // Assert
+        assertNotNull(result);
+        verify(spyStatement).bind(originRow, targetRow, 1, 1L, null, null);
+    }
+
     protected class TestTargetUpsertStatement extends TargetUpsertStatement {
         public TestTargetUpsertStatement(IPropertyHelper h, EnhancedSession s, String statement) {
             super(h, s);

@@ -54,6 +54,7 @@ public class TargetInsertStatement extends TargetUpsertStatement {
         int currentBindIndex = 0;
         Object bindValue = null;
 
+        boolean nullToUnset = propertyHelper.getBoolean(KnownProperties.TRANSFORM_NULL_TO_UNSET);
         if (logDebug)
             logger.debug("bind using conversions: {}", cqlTable.getOtherCqlTable().getConversions());
         for (int targetIndex = 0; targetIndex < targetColumnTypes.size(); targetIndex++) {
@@ -76,7 +77,12 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                     bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                boundStatement = boundStatement.set(currentBindIndex++, bindValue, cqlTable.getBindClass(targetIndex));
+                if (bindValue == null && nullToUnset) {
+                    boundStatement = boundStatement.unset(currentBindIndex++);
+                } else {
+                    boundStatement = boundStatement.set(currentBindIndex++, bindValue,
+                            cqlTable.getBindClass(targetIndex));
+                }
             } catch (Exception e) {
                 logger.error(
                         "Error trying to bind value: {} of class: {} to column: {} of targetDataType: {}/{} at column index: {} and bind index: {} of statement: {}",

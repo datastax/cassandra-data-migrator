@@ -39,6 +39,12 @@ public class TargetUpdateStatementTest extends CommonMocks {
         // UPDATE is needed by counters, though the class should handle non-counter updates
         commonSetup(false, false, true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
+        // Ensure prepareStatement().bind() returns the boundStatement mock
+        when(targetUpdateStatement.prepareStatement()).thenReturn(preparedStatement);
+        when(preparedStatement.bind()).thenReturn(boundStatement);
+        // Chain set and unset to return boundStatement
+        when(boundStatement.set(anyInt(), any(), any(Class.class))).thenReturn(boundStatement);
+        when(boundStatement.unset(anyInt())).thenReturn(boundStatement);
 
         updateCQLBeginning = "UPDATE " + targetKeyspaceTableName;
 
@@ -193,6 +199,38 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenThrow(new RuntimeException("Error binding value"));
 
         assertThrows(RuntimeException.class, () -> targetUpdateStatement.bind(originRow, targetRow, null,null,null,null));
+    }
+
+    @Test
+    public void bind_nullToUnset_true() {
+        // Arrange
+        when(propertyHelper.getBoolean(com.datastax.cdm.properties.KnownProperties.TRANSFORM_NULL_TO_UNSET)).thenReturn(true);
+        // Simulate a null value from origin
+        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenReturn(null);
+        targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).unset(anyInt());
+    }
+
+    @Test
+    public void bind_nullToUnset_false() {
+        // Arrange
+        when(propertyHelper.getBoolean(com.datastax.cdm.properties.KnownProperties.TRANSFORM_NULL_TO_UNSET)).thenReturn(false);
+        // Simulate a null value from origin
+        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenReturn(null);
+        targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).set(anyInt(), isNull(), any(Class.class));
     }
 
 }
