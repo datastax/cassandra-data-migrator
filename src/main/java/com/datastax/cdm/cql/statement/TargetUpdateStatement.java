@@ -26,7 +26,6 @@ import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.properties.IPropertyHelper;
-import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 
@@ -60,7 +59,6 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
             boundStatement = boundStatement.set(currentBindIndex++, writeTime, Long.class);
         }
 
-        boolean nullToUnset = propertyHelper.getBoolean(KnownProperties.TRANSFORM_NULL_TO_UNSET);
         Object originValue, targetValue;
         Object bindValueTarget = null;
         for (int targetIndex : columnIndexesToBind) {
@@ -70,12 +68,7 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                 if (usingCounter && counterIndexes.contains(targetIndex)) {
                     originValue = cqlTable.getOtherCqlTable().getData(originIndex, originRow);
                     if (null == originValue) {
-                        if (nullToUnset) {
-                            boundStatement = boundStatement.unset(currentBindIndex++);
-                        } else {
-                            boundStatement = boundStatement.set(currentBindIndex++, null,
-                                    cqlTable.getBindClass(targetIndex));
-                        }
+                        currentBindIndex++;
                         continue;
                     }
                     targetValue = (null == targetRow ? 0L : cqlTable.getData(targetIndex, targetRow));
@@ -94,7 +87,8 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     bindValueTarget = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (bindValueTarget == null && nullToUnset) {
+                if (null == bindValueTarget
+                        || bindValueTarget instanceof String && ((String) bindValueTarget).isEmpty()) {
                     boundStatement = boundStatement.unset(currentBindIndex++);
                 } else {
                     boundStatement = boundStatement.set(currentBindIndex++, bindValueTarget,

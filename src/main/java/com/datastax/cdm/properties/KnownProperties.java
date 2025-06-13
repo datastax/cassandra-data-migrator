@@ -195,7 +195,6 @@ public class KnownProperties {
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT = "spark.cdm.transform.codecs.timestamp.string.format";
     public static final String TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE = "spark.cdm.transform.codecs.timestamp.string.zone";
     public static final String TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE = "spark.cdm.transform.map.remove.null.value";
-    public static final String TRANSFORM_NULL_TO_UNSET = "spark.cdm.transform.null.to.unset";
 
     static {
         types.put(TRANSFORM_REPLACE_MISSING_TS, PropertyType.NUMBER);
@@ -212,8 +211,6 @@ public class KnownProperties {
         defaults.put(TRANSFORM_CODECS_TIMESTAMP_STRING_FORMAT_ZONE, "UTC");
         types.put(TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE, PropertyType.BOOLEAN);
         defaults.put(TRANSFORM_MAP_REMOVE_KEY_WITH_NO_VALUE, "false");
-        types.put(TRANSFORM_NULL_TO_UNSET, PropertyType.BOOLEAN);
-        defaults.put(TRANSFORM_NULL_TO_UNSET, "false");
     }
 
     // ==========================================================================

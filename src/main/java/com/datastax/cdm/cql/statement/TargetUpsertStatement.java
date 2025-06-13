@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Null-to-Unset Feature:
- * When migrating data, nulls read from the origin cluster are now written as unset values on the target cluster.
- * This avoids writing tombstones and preserves unset semantics in Cassandra.
- */
-
 package com.datastax.cdm.cql.statement;
 
 import java.util.ArrayList;
@@ -96,7 +90,6 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     }
 
     public BoundStatement bindRecord(Record record) {
-        // Null-to-Unset: Nulls in the record will be written as unset values on the target cluster.
         if (null == record)
             throw new RuntimeException("record is null");
 

@@ -225,8 +225,6 @@ public class TargetInsertStatementTest extends CommonMocks {
 
     @Test
     public void bind_nullToUnset_true() {
-        // Arrange
-        when(propertyHelper.getBoolean(com.datastax.cdm.properties.KnownProperties.TRANSFORM_NULL_TO_UNSET)).thenReturn(true);
         // Simulate a null value from origin
         when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenReturn(null);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
@@ -237,22 +235,6 @@ public class TargetInsertStatementTest extends CommonMocks {
         // Assert
         assertNotNull(result);
         verify(boundStatement, atLeastOnce()).unset(anyInt());
-    }
-
-    @Test
-    public void bind_nullToUnset_false() {
-        // Arrange
-        when(propertyHelper.getBoolean(com.datastax.cdm.properties.KnownProperties.TRANSFORM_NULL_TO_UNSET)).thenReturn(false);
-        // Simulate a null value from origin
-        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenReturn(null);
-        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
-
-        // Act
-        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
-
-        // Assert
-        assertNotNull(result);
-        verify(boundStatement, atLeastOnce()).set(anyInt(), isNull(), any(Class.class));
     }
 
 }
