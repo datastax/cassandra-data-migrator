@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.4.0] - 2025-06-16
+- Use `UNSET` value for null fields (including empty texts) to avoid creating (or carrying forward) tombstones during row creation.
+
 ## [5.3.1] - 2025-06-03
 - Upgrade Spark version to [`3.5.6`](https://spark.apache.org/releases/spark-release-3-5-6.html).
 
