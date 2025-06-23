@@ -197,7 +197,8 @@ public class DiffJobSession extends CopyJobSession {
     }
 
     private boolean diffAndClear(List<Record> recordsToDiff, JobCounter jobCounter) {
-        boolean isDiff = recordsToDiff.stream().map(r -> diff(r, jobCounter)).filter(b -> b == true).count() > 0;
+        // Use anyMatch for short-circuit evaluation instead of filtering and counting
+        boolean isDiff = recordsToDiff.stream().anyMatch(r -> diff(r, jobCounter));
         recordsToDiff.clear();
         return isDiff;
     }
@@ -247,8 +248,31 @@ public class DiffJobSession extends CopyJobSession {
         Row originRow = record.getOriginRow();
         Row targetRow = record.getTargetRow();
 
-        StringBuffer diffData = new StringBuffer();
-        IntStream.range(0, targetColumnNames.size()).parallel().forEach(targetIndex -> {
+        // Use a thread-safe StringBuilder for collecting differences
+        final StringBuilder diffData = new StringBuilder();
+
+        // Pre-filter columns that need to be compared to avoid unnecessary processing
+        final List<Integer> columnsToProcess = new ArrayList<>();
+        for (int i = 0; i < targetColumnNames.size(); i++) {
+            if (!constantColumnIndexes.contains(i)) {
+                columnsToProcess.add(i);
+            }
+        }
+
+        // Determine optimal parallelism based on column count
+        final int columnCount = columnsToProcess.size();
+        final int availableProcessors = Runtime.getRuntime().availableProcessors();
+        final boolean useParallel = columnCount > 10; // Only use parallel for tables with more than 10 columns
+
+        // Choose appropriate stream type based on column count
+        IntStream stream = IntStream.range(0, columnsToProcess.size());
+        if (useParallel) {
+            stream = stream.parallel();
+        }
+
+        // Use synchronized block to avoid contention on the StringBuilder
+        stream.forEach(i -> {
+            int targetIndex = columnsToProcess.get(i);
             String previousLabel = ThreadContext.get(THREAD_CONTEXT_LABEL);
             try {
                 ThreadContext.put(THREAD_CONTEXT_LABEL, pk + ":" + targetColumnNames.get(targetIndex));
@@ -256,13 +280,7 @@ public class DiffJobSession extends CopyJobSession {
                 int originIndex = -2; // this to distinguish default from indexOf result
                 Object targetAsOriginType = null;
                 try {
-                    if (constantColumnIndexes.contains(targetIndex)) {
-                        if (logTrace)
-                            logger.trace("PK {}, targetIndex {} skipping constant column {}", pk, targetIndex,
-                                    targetColumnNames.get(targetIndex));
-                        return; // nothing to compare in origin
-                    }
-
+                    // Already filtered out constant columns
                     targetAsOriginType = targetSession.getCqlTable().getAndConvertData(targetIndex, targetRow);
                     if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
                         if (!overwriteTarget && null != targetAsOriginType) {
@@ -306,17 +324,26 @@ public class DiffJobSession extends CopyJobSession {
                                 originIndex < 0 ? "null"
                                         : originSession.getCqlTable().getColumnNames(false).get(originIndex),
                                 targetAsOriginType, origin);
+
+                    StringBuilder diffEntry = new StringBuilder();
                     if (null != origin && DataUtility.diff(origin, targetAsOriginType)) {
                         String originContent = CqlData
                                 .getFormattedContent(CqlData.toType(originColumnTypes.get(originIndex)), origin);
                         String targetContent = CqlData.getFormattedContent(
                                 CqlData.toType(targetColumnTypes.get(targetIndex)), targetAsOriginType);
-                        diffData.append("Target column:").append(targetColumnNames.get(targetIndex)).append("-origin[")
+                        diffEntry.append("Target column:").append(targetColumnNames.get(targetIndex)).append("-origin[")
                                 .append(originContent).append("]").append("-target[").append(targetContent)
                                 .append("]; ");
                     } else if (null == origin && null != targetAsOriginType) {
-                        diffData.append("Target column:").append(targetColumnNames.get(targetIndex))
+                        diffEntry.append("Target column:").append(targetColumnNames.get(targetIndex))
                                 .append(" origin is null, target is ").append(targetAsOriginType).append("; ");
+                    }
+
+                    // Synchronize on StringBuilder to avoid thread conflicts
+                    if (diffEntry.length() > 0) {
+                        synchronized (diffData) {
+                            diffData.append(diffEntry);
+                        }
                     }
                 } catch (Exception e) {
                     String exceptionName;
@@ -326,14 +353,18 @@ public class DiffJobSession extends CopyJobSession {
                     } else {
                         exceptionName = e + "@" + myClassMethodLine;
                     }
-                    diffData.append("Target column:").append(targetColumnNames.get(targetIndex)).append(" Exception ")
-                            .append(exceptionName).append(" targetIndex:").append(targetIndex).append(" originIndex:")
-                            .append(originIndex).append("; ");
+
+                    synchronized (diffData) {
+                        diffData.append("Target column:").append(targetColumnNames.get(targetIndex))
+                                .append(" Exception ").append(exceptionName).append(" targetIndex:").append(targetIndex)
+                                .append(" originIndex:").append(originIndex).append("; ");
+                    }
                 }
             } finally {
                 ThreadContext.put(THREAD_CONTEXT_LABEL, previousLabel);
             }
         });
+
         return diffData.toString();
     }
 
