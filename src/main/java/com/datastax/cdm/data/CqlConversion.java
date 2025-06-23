@@ -18,6 +18,8 @@ package com.datastax.cdm.data;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -352,24 +354,70 @@ public class CqlConversion {
         }
 
         // If all elements in conversionTypeList are either NONE or UNKNOWN, then return the original value
-        if (conversionTypeList.stream().allMatch(t -> Type.NONE.equals(t) || Type.UNSUPPORTED.equals(t)))
+        // Avoid stream operation for simple check
+        boolean allNoneOrUnsupported = true;
+        for (Type t : conversionTypeList) {
+            if (!Type.NONE.equals(t) && !Type.UNSUPPORTED.equals(t)) {
+                allNoneOrUnsupported = false;
+                break;
+            }
+        }
+        if (allNoneOrUnsupported) {
             return value;
+        }
 
         switch (collectionType) {
         case LIST:
-            return ((List<?>) value).stream().map(v -> convert_ONE(conversionTypeList.get(0), v,
-                    fromDataTypeList.get(0), toDataTypeList.get(0), codecRegistry)).collect(Collectors.toList());
+            // Pre-allocate result list with proper capacity to avoid resizing
+            List<?> sourceList = (List<?>) value;
+            List<Object> resultList = new ArrayList<>(sourceList.size());
+            Type elementConversionType = conversionTypeList.get(0);
+            DataType fromElementType = fromDataTypeList.get(0);
+            DataType toElementType = toDataTypeList.get(0);
+
+            // Direct iteration is more efficient than stream for simpler operations
+            for (Object element : sourceList) {
+                resultList.add(
+                        convert_ONE(elementConversionType, element, fromElementType, toElementType, codecRegistry));
+            }
+            return resultList;
+
         case SET:
-            return ((Set<?>) value).stream().map(v -> convert_ONE(conversionTypeList.get(0), v, fromDataTypeList.get(0),
-                    toDataTypeList.get(0), codecRegistry)).collect(Collectors.toSet());
+            // For sets, we need to maintain uniqueness
+            Set<?> sourceSet = (Set<?>) value;
+            Set<Object> resultSet = new HashSet<>(Math.max((int) (sourceSet.size() / .75f) + 1, 16)); // Proper
+                                                                                                      // pre-sizing
+            elementConversionType = conversionTypeList.get(0);
+            fromElementType = fromDataTypeList.get(0);
+            toElementType = toDataTypeList.get(0);
+
+            for (Object element : sourceSet) {
+                resultSet.add(
+                        convert_ONE(elementConversionType, element, fromElementType, toElementType, codecRegistry));
+            }
+            return resultSet;
+
         case MAP:
             // There are two conversion types in the element list: one for keys and one for values
-            return ((Map<?, ?>) value).entrySet().stream()
-                    .collect(Collectors.toMap(
-                            entry -> convert_ONE(conversionTypeList.get(0), entry.getKey(), fromDataTypeList.get(0),
-                                    toDataTypeList.get(0), codecRegistry),
-                            entry -> convert_ONE(conversionTypeList.get(1), entry.getValue(), fromDataTypeList.get(1),
-                                    toDataTypeList.get(1), codecRegistry)));
+            Map<?, ?> sourceMap = (Map<?, ?>) value;
+            Map<Object, Object> resultMap = new HashMap<>(Math.max((int) (sourceMap.size() / .75f) + 1, 16)); // Proper
+                                                                                                              // capacity
+
+            Type keyConversionType = conversionTypeList.get(0);
+            Type valueConversionType = conversionTypeList.get(1);
+            DataType fromKeyType = fromDataTypeList.get(0);
+            DataType toKeyType = toDataTypeList.get(0);
+            DataType fromValueType = fromDataTypeList.get(1);
+            DataType toValueType = toDataTypeList.get(1);
+
+            for (Map.Entry<?, ?> entry : sourceMap.entrySet()) {
+                Object convertedKey = convert_ONE(keyConversionType, entry.getKey(), fromKeyType, toKeyType,
+                        codecRegistry);
+                Object convertedValue = convert_ONE(valueConversionType, entry.getValue(), fromValueType, toValueType,
+                        codecRegistry);
+                resultMap.put(convertedKey, convertedValue);
+            }
+            return resultMap;
         }
         return value;
     }
