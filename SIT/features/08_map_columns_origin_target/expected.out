@@ -1,0 +1,8 @@
+
+ key_a | val_a  | val_c
+-------+--------+-------
+     1 | valueA |  null
+     2 | valueB |  null
+     3 | valueC |  null
+
+(3 rows)
