@@ -81,9 +81,11 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     originIndex = extractJsonFeature.getOriginColumnIndex();
                     bindValueTarget = extractJsonFeature.extract(originRow.getString(originIndex));
                 } else {
-                    if (originIndex < 0)
-                        // we don't have data to bind for this column; continue to the next targetIndex
+                    if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
+                    {
+                        currentBindIndex++;
                         continue;
+                    }
                     bindValueTarget = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 

@@ -72,7 +72,10 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                 } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
+                    {
+                        currentBindIndex++;
                         continue;
+                    }
                     bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
