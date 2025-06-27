@@ -290,12 +290,6 @@ public class DiffJobSession extends CopyJobSession {
                                         pk, targetIndex, targetColumnNames.get(targetIndex), origin);
                         } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
                             originIndex = extractJsonFeature.getOriginColumnIndex();
-                        } else {
-                            throw new RuntimeException("Target column \"" + targetColumnNames.get(targetIndex)
-                                    + "\" at index " + targetIndex
-                                    + " cannot be found on Origin, and is neither a constant column (indexes:"
-                                    + constantColumnIndexes + ") nor an explode map column (keyIndex:"
-                                    + explodeMapKeyIndex + ", valueIndex:" + explodeMapValueIndex + ")");
                         }
                     }
 

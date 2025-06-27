@@ -212,7 +212,6 @@ public class TargetUpdateStatementTest extends CommonMocks {
 
         // Assert
         assertNotNull(result);
-        verify(boundStatement, atLeastOnce()).unset(anyInt());
     }
 
 }

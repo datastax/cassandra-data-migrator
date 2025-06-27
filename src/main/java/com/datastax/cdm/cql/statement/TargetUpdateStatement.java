@@ -81,19 +81,20 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     originIndex = extractJsonFeature.getOriginColumnIndex();
                     bindValueTarget = extractJsonFeature.extract(originRow.getString(originIndex));
                 } else {
-                    if (originIndex < 0)
-                        // we don't have data to bind for this column; continue to the next targetIndex
+                    if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
+                    {
+                        currentBindIndex++;
                         continue;
+                    }
                     bindValueTarget = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (null == bindValueTarget
-                        || bindValueTarget instanceof String && ((String) bindValueTarget).isEmpty()) {
-                    boundStatement = boundStatement.unset(currentBindIndex++);
-                } else {
-                    boundStatement = boundStatement.set(currentBindIndex++, bindValueTarget,
+                if (!(null == bindValueTarget
+                        || (bindValueTarget instanceof String && ((String) bindValueTarget).isEmpty()))) {
+                    boundStatement = boundStatement.set(currentBindIndex, bindValueTarget,
                             cqlTable.getBindClass(targetIndex));
                 }
+                currentBindIndex++;
             } catch (Exception e) {
                 logger.error("Error trying to bind value:" + bindValueTarget + " to column:"
                         + targetColumnNames.get(targetIndex) + " of targetDataType:"

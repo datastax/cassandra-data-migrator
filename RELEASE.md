@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.4.1] - 2025-06-26
+- Bug fix: Fixed auto column mapping bug when `target` table has more columns than `origin`.
+
 ## [5.4.0] - 2025-06-16
 - Use `UNSET` value for null fields (including empty texts) to avoid creating (or carrying forward) tombstones during row creation.
 

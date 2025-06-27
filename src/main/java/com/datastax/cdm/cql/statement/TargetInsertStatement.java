@@ -72,16 +72,18 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                 } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
+                    {
+                        currentBindIndex++;
                         continue;
+                    }
                     bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (null == bindValue || bindValue instanceof String && ((String) bindValue).isEmpty()) {
-                    boundStatement = boundStatement.unset(currentBindIndex++);
-                } else {
-                    boundStatement = boundStatement.set(currentBindIndex++, bindValue,
+                if (!(null == bindValue || (bindValue instanceof String && ((String) bindValue).isEmpty()))) {
+                    boundStatement = boundStatement.set(currentBindIndex, bindValue,
                             cqlTable.getBindClass(targetIndex));
                 }
+                currentBindIndex++;
             } catch (Exception e) {
                 logger.error(
                         "Error trying to bind value: {} of class: {} to column: {} of targetDataType: {}/{} at column index: {} and bind index: {} of statement: {}",

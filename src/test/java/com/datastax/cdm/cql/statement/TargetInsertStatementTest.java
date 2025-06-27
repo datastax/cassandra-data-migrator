@@ -234,7 +234,6 @@ public class TargetInsertStatementTest extends CommonMocks {
 
         // Assert
         assertNotNull(result);
-        verify(boundStatement, atLeastOnce()).unset(anyInt());
     }
 
 }
