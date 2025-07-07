@@ -163,23 +163,20 @@ public class DiffJobSession extends CopyJobSession {
                 hasDiff.set(true);
             }
 
+            jobCounter.increment(JobCounter.CounterType.PARTITIONS_PASSED);
+            jobCounter.flush();
             if (hasDiff.get() && null != trackRunFeature) {
                 if (jobCounter.getCount(JobCounter.CounterType.MISSING) == jobCounter
                         .getCount(JobCounter.CounterType.CORRECTED_MISSING)
                         && jobCounter.getCount(JobCounter.CounterType.MISMATCH) == jobCounter
                                 .getCount(JobCounter.CounterType.CORRECTED_MISMATCH)) {
-                    jobCounter.flush();
                     trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF_CORRECTED,
                             jobCounter.getMetrics());
                 } else {
-                    jobCounter.flush();
                     trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.DIFF, jobCounter.getMetrics());
                 }
             } else if (null != trackRunFeature) {
-                jobCounter.flush();
                 trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.PASS, jobCounter.getMetrics());
-            } else {
-                jobCounter.flush();
             }
         } catch (Exception e) {
             jobCounter.increment(JobCounter.CounterType.ERROR,
@@ -187,6 +184,7 @@ public class DiffJobSession extends CopyJobSession {
                             - jobCounter.getCount(JobCounter.CounterType.MISSING)
                             - jobCounter.getCount(JobCounter.CounterType.MISMATCH)
                             - jobCounter.getCount(JobCounter.CounterType.SKIPPED));
+            jobCounter.increment(JobCounter.CounterType.PARTITIONS_FAILED);
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
             logger.error("Error stats " + jobCounter.getMetrics(true));

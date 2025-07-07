@@ -86,12 +86,14 @@ public class JobCounterTest {
     public void printMetricsMigrate() {
         jobCounter = new JobCounter(JobType.MIGRATE);
 
-        String expected = "Read: 10; Write: 7; Skipped: 1; Error: 2";
+        String expected = "Read: 10; Write: 7; Skipped: 1; Error: 2; Partitions Passed: 3; Partitions Failed: 2";
         jobCounter.increment(JobCounter.CounterType.READ, 10);
         jobCounter.increment(JobCounter.CounterType.WRITE, 7);
         jobCounter.increment(JobCounter.CounterType.ERROR, 2);
         jobCounter.increment(JobCounter.CounterType.SKIPPED, 1);
         jobCounter.increment(JobCounter.CounterType.UNFLUSHED, 3);
+        jobCounter.increment(JobCounter.CounterType.PARTITIONS_PASSED, 3);
+        jobCounter.increment(JobCounter.CounterType.PARTITIONS_FAILED, 2);
         jobCounter.flush();
         // You may use mocking to capture logger outputs
         jobCounter.printMetrics(0, trackRun);
@@ -103,11 +105,13 @@ public class JobCounterTest {
     public void printMetricsValidate() {
         jobCounter = new JobCounter(JobType.VALIDATE);
 
-        String expected = "Read: 5; Mismatch: 0; Corrected Mismatch: 0; Missing: 7; Corrected Missing: 7; Valid: 0; Skipped: 0; Error: 72";
+        String expected = "Read: 5; Mismatch: 0; Corrected Mismatch: 0; Missing: 7; Corrected Missing: 7; Valid: 0; Skipped: 0; Error: 72; Partitions Passed: 4; Partitions Failed: 1";
         jobCounter.increment(JobCounter.CounterType.READ, 5);
         jobCounter.increment(JobCounter.CounterType.CORRECTED_MISSING, 7);
         jobCounter.increment(JobCounter.CounterType.ERROR, 72);
         jobCounter.increment(JobCounter.CounterType.MISSING, 7);
+        jobCounter.increment(JobCounter.CounterType.PARTITIONS_PASSED, 4);
+        jobCounter.increment(JobCounter.CounterType.PARTITIONS_FAILED, 1);
         jobCounter.flush();
         // You may use mocking to capture logger outputs
         jobCounter.printMetrics(0, trackRun);
