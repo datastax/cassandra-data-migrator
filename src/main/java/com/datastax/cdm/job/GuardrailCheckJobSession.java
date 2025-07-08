@@ -64,7 +64,9 @@ public class GuardrailCheckJobSession extends AbstractJobSession<PartitionRange>
                     jobCounter.increment(JobCounter.CounterType.VALID);
                 }
             }
+            jobCounter.increment(JobCounter.CounterType.PARTITIONS_PASSED);
         } catch (Exception e) {
+            jobCounter.increment(JobCounter.CounterType.PARTITIONS_FAILED);
             logger.error("Error occurred ", e);
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max);

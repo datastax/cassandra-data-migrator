@@ -30,7 +30,8 @@ public class JobCounter implements Serializable {
     private static final long serialVersionUID = 7016816604237020549L;
 
     public enum CounterType {
-        READ, WRITE, MISMATCH, CORRECTED_MISMATCH, MISSING, CORRECTED_MISSING, VALID, SKIPPED, LARGE, ERROR, UNFLUSHED
+        READ, WRITE, MISMATCH, CORRECTED_MISMATCH, MISSING, CORRECTED_MISSING, VALID, SKIPPED, LARGE, ERROR, UNFLUSHED,
+        PARTITIONS_PASSED, PARTITIONS_FAILED
     }
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -40,15 +41,17 @@ public class JobCounter implements Serializable {
         switch (jobType) {
         case MIGRATE:
             setRegisteredTypes(CounterType.READ, CounterType.WRITE, CounterType.SKIPPED, CounterType.ERROR,
-                    CounterType.UNFLUSHED);
+                    CounterType.UNFLUSHED, CounterType.PARTITIONS_PASSED, CounterType.PARTITIONS_FAILED);
             break;
         case VALIDATE:
             setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.MISMATCH,
                     CounterType.CORRECTED_MISMATCH, CounterType.MISSING, CounterType.CORRECTED_MISSING,
-                    CounterType.SKIPPED, CounterType.ERROR);
+                    CounterType.SKIPPED, CounterType.ERROR, CounterType.PARTITIONS_PASSED,
+                    CounterType.PARTITIONS_FAILED);
             break;
         case GUARDRAIL:
-            setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.SKIPPED, CounterType.LARGE);
+            setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.SKIPPED, CounterType.LARGE,
+                    CounterType.PARTITIONS_PASSED, CounterType.PARTITIONS_FAILED);
             break;
         }
     }
@@ -156,8 +159,12 @@ public class JobCounter implements Serializable {
                 if (type == CounterType.UNFLUSHED) {
                     continue;
                 }
-                logger.info("Final " + printFriendlyCase(type.name()) + " Record Count: {}",
-                        counterMap.get(type).getCount());
+                if (type == CounterType.PARTITIONS_PASSED || type == CounterType.PARTITIONS_FAILED) {
+                    logger.info("Final " + printFriendlyCase(type.name()) + ": {}", counterMap.get(type).getCount());
+                } else {
+                    logger.info("Final " + printFriendlyCase(type.name()) + " Record Count: {}",
+                            counterMap.get(type).getCount());
+                }
             }
         }
         logger.info("################################################################################################");

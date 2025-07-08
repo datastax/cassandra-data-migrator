@@ -2,3 +2,5 @@ Read Record Count: 4
 Valid Record Count: 1
 Skipped Record Count: 0
 Large Record Count: 3
+Partitions Passed: 1
+Partitions Failed: 0

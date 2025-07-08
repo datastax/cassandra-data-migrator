@@ -113,6 +113,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
             flushAndClearWrites(batch, writeResults);
             jobCounter.increment(JobCounter.CounterType.WRITE,
                     jobCounter.getCount(JobCounter.CounterType.UNFLUSHED, true));
+            jobCounter.increment(JobCounter.CounterType.PARTITIONS_PASSED);
             jobCounter.reset(JobCounter.CounterType.UNFLUSHED);
             jobCounter.flush();
             if (null != trackRunFeature) {
@@ -123,6 +124,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
                     jobCounter.getCount(JobCounter.CounterType.READ, true)
                             - jobCounter.getCount(JobCounter.CounterType.WRITE, true)
                             - jobCounter.getCount(JobCounter.CounterType.SKIPPED, true));
+            jobCounter.increment(JobCounter.CounterType.PARTITIONS_FAILED);
             logger.error("Error with PartitionRange -- ThreadID: {} Processing min: {} max: {}",
                     Thread.currentThread().getId(), min, max, e);
             logger.error("Error stats " + jobCounter.getMetrics(true));

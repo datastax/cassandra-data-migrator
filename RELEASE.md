@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.5.0] - 2025-07-07
+- Logged metrics will now report how many Partition-Ranges out of the configured [`numParts`](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm-detailed.properties#L230) passed or failed.
+
 ## [5.4.1] - 2025-06-26
 - Bug fix: Fixed auto column mapping bug when `target` table has more columns than `origin`.
 
