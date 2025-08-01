@@ -108,8 +108,8 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
         if (this.filterColumnEnabled) {
             String col = (String) cqlTable.getData(this.filterColumnIndex, record.getOriginRow());
             if (null != col && this.filterColumnString.equalsIgnoreCase(col.trim())) {
-                if (logger.isInfoEnabled())
-                    logger.info("Filter Column removing: {}", record.getPk());
+                if (logger.isTraceEnabled())
+                    logger.trace("Filter Column removing: {}", record.getPk());
                 return true;
             }
         }
@@ -121,8 +121,8 @@ public abstract class OriginSelectStatement extends BaseCdmStatement {
                 return false;
             }
             if (originWriteTimeStamp < minWriteTimeStampFilter || originWriteTimeStamp > maxWriteTimeStampFilter) {
-                if (logger.isInfoEnabled())
-                    logger.info("Timestamp filter removing record with primary key: {} with write timestamp: {}",
+                if (logger.isTraceEnabled())
+                    logger.trace("Timestamp filter removing record with primary key: {} with write timestamp: {}",
                             record.getPk(), originWriteTimeStamp);
                 return true;
             }
