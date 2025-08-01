@@ -1,5 +1,9 @@
 # Release Notes
 
+## [5.5.1] - 2025-08-01
+- Fixed issue related to empty text fields not getting migrated (introduced in 5.4.0). `Null` fields will still be skipped, however not empty strings.
+- Filtered rows will now be logged at LOG4J `TRACE` level to avoid filling the logs. Users can enabled `TRACE` level logging if such logs are needed.
+
 ## [5.5.0] - 2025-07-07
 - Logged metrics will now report how many Partition-Ranges out of the configured [`numParts`](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm-detailed.properties#L230) passed or failed.
 

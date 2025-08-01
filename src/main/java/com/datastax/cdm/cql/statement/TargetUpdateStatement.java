@@ -89,8 +89,7 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     bindValueTarget = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (!(null == bindValueTarget
-                        || (bindValueTarget instanceof String && ((String) bindValueTarget).isEmpty()))) {
+                if (!(null == bindValueTarget)) {
                     boundStatement = boundStatement.set(currentBindIndex, bindValueTarget,
                             cqlTable.getBindClass(targetIndex));
                 }
