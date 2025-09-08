@@ -78,7 +78,8 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
                 for (Feature f : featureMap.values()) {
                     if (!f.initializeAndValidate(cqlTableOrigin, cqlTableTarget)) {
                         allFeaturesValid = false;
-                        logger.error("Feature {} is not valid.  Please check the configuration.", f.getClass().getName());
+                        logger.error("Feature {} is not valid.  Please check the configuration.",
+                                f.getClass().getName());
                     }
                 }
 
@@ -99,9 +100,12 @@ public abstract class AbstractJobSession<T> extends BaseJobSession {
             }
         } catch (ClusterConfigurationException e) {
             logger.error("Cluster configuration error may be present & detected: {}", e.getMessage());
-            logger.error("Please check your Cassandra cluster for token overlap issues. This usually happens when multiple nodes in the cluster were started simultaneously when the cluster was originally built.");
-            logger.error("You can verify this by running 'nodetool describering <keyspace>' and checking for overlapping token ranges.");
-            logger.error("In general, to fix token overlap in a cluster: 1) Rebuild the entire cluster by removing nodes 2) Re-add nodes one at a time 3) Run nodetool cleanup on each node 4) Verify with 'nodetool describering <keyspace>'");
+            logger.error(
+                    "Please check your Cassandra cluster for token overlap issues. This usually happens when multiple nodes in the cluster were started simultaneously when the cluster was originally built.");
+            logger.error(
+                    "You can verify this by running 'nodetool describering <keyspace>' and checking for overlapping token ranges.");
+            logger.error(
+                    "In general, to fix token overlap in a cluster: 1) Rebuild the entire cluster by removing nodes 2) Re-add nodes one at a time 3) Run nodetool cleanup on each node 4) Verify with 'nodetool describering <keyspace>'");
             throw e;
         }
     }

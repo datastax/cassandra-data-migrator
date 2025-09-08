@@ -46,8 +46,8 @@ import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.metadata.TokenMap;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.TokenMap;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
@@ -435,22 +435,24 @@ public class CqlTable extends BaseTable {
 
     private void setCqlMetadata(CqlSession cqlSession) {
         Metadata metadata = fetchMetadataFromSession(cqlSession);
-        
+
         // Check for token overlap in the specific keyspace
-        if (hasTokenOverlap(cqlSession, this.keyspaceName)) {
-            throw new ClusterConfigurationException(
-                "Token overlap detected in keyspace '" + this.keyspaceName + "'. This usually happens when multiple nodes " +
-                "were started simultaneously. To fix: 1) Restart nodes one at a time 2) Run 'nodetool cleanup' " +
-                "on each node 3) Verify with 'nodetool describering " + this.keyspaceName + "'.");
+        // Only run this check if the keyspace name is provided
+        if (this.keyspaceName != null && !this.keyspaceName.isEmpty()
+                && hasTokenOverlap(cqlSession, this.keyspaceName)) {
+            throw new ClusterConfigurationException("Token overlap detected in keyspace '" + this.keyspaceName
+                    + "'. This usually happens when multiple nodes "
+                    + "were started simultaneously. To fix: 1) Restart nodes one at a time 2) Run 'nodetool cleanup' "
+                    + "on each node 3) Verify with 'nodetool describering " + this.keyspaceName + "'.");
         }
-        
+
         // Add proper Optional handling for token map
         Optional<TokenMap> tokenMapOpt = metadata.getTokenMap();
         if (!tokenMapOpt.isPresent()) {
             throw new ClusterConfigurationException(
-                "Token map is not available. This could indicate a cluster configuration issue.");
+                    "Token map is not available. This could indicate a cluster configuration issue.");
         }
-        
+
         try {
             String partitionerName = tokenMapOpt.get().getPartitionerName();
             if (null != partitionerName && partitionerName.endsWith("RandomPartitioner"))
@@ -458,9 +460,9 @@ public class CqlTable extends BaseTable {
             else
                 this.hasRandomPartitioner = false;
         } catch (Exception e) {
-            throw new ClusterConfigurationException(
-                "Error accessing token map: " + e.getMessage() + 
-                ". This may indicate token overlap in the Cassandra cluster. Check your cluster configuration.", e);
+            throw new ClusterConfigurationException("Error accessing token map: " + e.getMessage()
+                    + ". This may indicate token overlap in the Cassandra cluster. Check your cluster configuration.",
+                    e);
         }
 
         Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(formatName(this.keyspaceName));
@@ -588,78 +590,99 @@ public class CqlTable extends BaseTable {
 
         return retVal;
     }
-    
+
     /**
      * Checks if the specified keyspace has token overlap issues by querying the system.size_estimates table.
-     * 
-     * @param cqlSession The CQL session to use for executing the query
-     * @param keyspaceName The name of the keyspace to check
+     *
+     * @param cqlSession
+     *            The CQL session to use for executing the query
+     * @param keyspaceName
+     *            The name of the keyspace to check
+     *
      * @return true if token overlap is detected, false otherwise
      */
     private boolean hasTokenOverlap(CqlSession cqlSession, String keyspaceName) {
+        // Return false if either the session or keyspace name is null
+        if (cqlSession == null || keyspaceName == null || keyspaceName.isEmpty()) {
+            return false;
+        }
+
         try {
             // Execute query to check for token ranges for the specific keyspace
             String query = "SELECT start_token, end_token FROM system.size_estimates WHERE keyspace_name = ?";
             ResultSet rs = cqlSession.execute(query, keyspaceName);
-            
+
+            // Add null check for ResultSet to handle potential driver issues
+            if (rs == null) {
+                logger.warn("Unable to query system.size_estimates for keyspace {}: ResultSet is null", keyspaceName);
+                return false;
+            }
+
             // Create a list to store token ranges for the keyspace
             List<TokenRange> ranges = new ArrayList<>();
-            
+
             // Process the results
             for (Row row : rs) {
                 BigInteger startToken = new BigInteger(row.getString("start_token"));
                 BigInteger endToken = new BigInteger(row.getString("end_token"));
                 ranges.add(new TokenRange(startToken, endToken));
             }
-            
+
             // Check for overlaps
             if (hasOverlappingTokens(ranges)) {
                 logger.error("Token overlap detected in keyspace: {}", keyspaceName);
                 return true;
             }
-            
+
             return false;
         } catch (Exception e) {
             logger.warn("Could not check for token overlap in keyspace {}: {}", keyspaceName, e.getMessage());
             return false;
         }
     }
-    
+
     /**
      * Determines if there are overlapping token ranges in the provided list.
-     * 
-     * @param ranges List of token ranges to check
+     *
+     * @param ranges
+     *            List of token ranges to check
+     *
      * @return true if any ranges overlap, false otherwise
      */
     private boolean hasOverlappingTokens(List<TokenRange> ranges) {
+        // Return false if ranges is null or empty (no overlap possible)
+        if (ranges == null || ranges.isEmpty() || ranges.size() < 2) {
+            return false;
+        }
+
         // Sort ranges by start token
         Collections.sort(ranges);
-        
+
         // Check for overlaps
         for (int i = 0; i < ranges.size() - 1; i++) {
             TokenRange current = ranges.get(i);
             TokenRange next = ranges.get(i + 1);
-            
+
             if (current.endToken.compareTo(next.startToken) > 0) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Helper class to represent a token range with Comparable implementation for sorting.
      */
     private static class TokenRange implements Comparable<TokenRange> {
         BigInteger startToken;
         BigInteger endToken;
-        
+
         TokenRange(BigInteger startToken, BigInteger endToken) {
             this.startToken = startToken;
             this.endToken = endToken;
         }
-        
+
         @Override
         public int compareTo(TokenRange other) {
             return this.startToken.compareTo(other.startToken);

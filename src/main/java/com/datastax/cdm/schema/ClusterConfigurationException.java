@@ -16,25 +16,28 @@
 package com.datastax.cdm.schema;
 
 /**
- * Exception thrown when there are issues with the Cassandra cluster configuration,
- * such as token overlap problems or other metadata-related issues.
+ * Exception thrown when there are issues with the Cassandra cluster configuration, such as token overlap problems or
+ * other metadata-related issues.
  */
 public class ClusterConfigurationException extends RuntimeException {
-    
+
     /**
      * Constructs a new exception with the specified detail message.
      *
-     * @param message the detail message
+     * @param message
+     *            the detail message
      */
     public ClusterConfigurationException(String message) {
         super(message);
     }
-    
+
     /**
      * Constructs a new exception with the specified detail message and cause.
      *
-     * @param message the detail message
-     * @param cause the cause of the exception
+     * @param message
+     *            the detail message
+     * @param cause
+     *            the cause of the exception
      */
     public ClusterConfigurationException(String message, Throwable cause) {
         super(message, cause);
