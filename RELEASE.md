@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.6.0] - 2025-09-30
+- Implemented feature `spark.cdm.trackRun.autoRerun` to auto-discover the details of the last failed job and resume from that point onwards. Note: The resume a previous failed job feature was already part of CDM, this feature just removes the need to pass a `previousRunId` if it happens to be the last run-id. This change helps with automation and convinience.
+
 ## [5.5.1] - 2025-08-01
 - Fixed issue related to empty text fields not getting migrated (introduced in 5.4.0). `Null` fields will still be skipped, however not empty strings.
 - Filtered rows will now be logged at LOG4J `TRACE` level to avoid filling the logs. Users can enabled `TRACE` level logging if such logs are needed.

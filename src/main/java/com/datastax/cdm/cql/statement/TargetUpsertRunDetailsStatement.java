@@ -39,6 +39,7 @@ public class TargetUpsertRunDetailsStatement {
     private String keyspaceName;
     private String tableName;
     private BoundStatement boundInitInfoStatement;
+    private BoundStatement boundPrevRunIdStatement;
     private BoundStatement boundInitStatement;
     private BoundStatement boundEndInfoStatement;
     private BoundStatement boundUpdateStatement;
@@ -78,6 +79,9 @@ public class TargetUpsertRunDetailsStatement {
 
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
                 + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, totimestamp(now()), ?)");
+        // Add statement to get the latest run id for a table
+        boundPrevRunIdStatement = bindStatement("SELECT run_id, status FROM " + cdmKsTabInfo
+                + " WHERE table_name = ? and run_type = ? ORDER BY run_id DESC LIMIT 1 ALLOW FILTERING");
         boundInitStatement = bindStatement("INSERT INTO " + cdmKsTabDetails
                 + " (table_name, run_id, token_min, token_max, status) VALUES (?, ?, ?, ?, ?)");
         boundEndInfoStatement = bindStatement("UPDATE " + cdmKsTabInfo
@@ -90,6 +94,20 @@ public class TargetUpsertRunDetailsStatement {
                 "SELECT status FROM " + cdmKsTabInfo + " WHERE table_name = ? AND run_id = ?");
         boundSelectStatement = bindStatement("SELECT token_min, token_max FROM " + cdmKsTabDetails
                 + " WHERE table_name = ? AND run_id = ? AND status = ? ALLOW FILTERING");
+    }
+
+    public long getPreviousRunId(JobType jobType) {
+        ResultSet rs = session.execute(
+                boundPrevRunIdStatement.setString("table_name", tableName).setString("run_type", jobType.toString()));
+        Row row = rs.one();
+        if (row != null && !TrackRun.RUN_STATUS.ENDED.toString().equals(row.getString("status"))) {
+            long prevRunId = row.getLong("run_id");
+            logger.info("###################### Previous Run Id for table {} is: {} ######################", tableName,
+                    prevRunId);
+            return prevRunId;
+        }
+
+        return 0;
     }
 
     public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType)
