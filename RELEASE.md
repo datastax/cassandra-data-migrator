@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.6.0] - 2025-09-10
+- Added support for handling token collision scenario in the cluster and present users with an appropriate error message.
+
 ## [5.5.1] - 2025-08-01
 - Fixed issue related to empty text fields not getting migrated (introduced in 5.4.0). `Null` fields will still be skipped, however not empty strings.
 - Filtered rows will now be logged at LOG4J `TRACE` level to avoid filling the logs. Users can enabled `TRACE` level logging if such logs are needed.
