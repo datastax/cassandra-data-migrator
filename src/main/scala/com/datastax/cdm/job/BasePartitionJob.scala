@@ -37,6 +37,11 @@ abstract class BasePartitionJob extends BaseJob[PartitionRange] {
     if (trackRun) {
       trackRunFeature = targetConnection.withSessionDo(targetSession => new TrackRun(targetSession, keyspaceTableValue))
     }
+
+    var autoRerun: Option[Boolean] = Option(propertyHelper.getBoolean(KnownProperties.AUTO_RERUN))
+    if (prevRunId == 0 && autoRerun.exists(identity)) {
+      prevRunId = trackRunFeature.getPreviousRunId(jobType);
+    }
     
     if (prevRunId != 0) {
       try {

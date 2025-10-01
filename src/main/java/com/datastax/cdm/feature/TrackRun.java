@@ -39,6 +39,10 @@ public class TrackRun {
         this.runStatement = new TargetUpsertRunDetailsStatement(session, keyspaceTable);
     }
 
+    public long getPreviousRunId(JobType jobType) {
+        return runStatement.getPreviousRunId(jobType);
+    }
+
     public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType)
             throws RunNotStartedException {
         Collection<PartitionRange> pendingParts = runStatement.getPendingPartitions(prevRunId, jobType);

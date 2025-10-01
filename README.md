@@ -115,7 +115,17 @@ spark.cdm.autocorrect.mismatch                    false|true
 > The validation job will never delete records from target i.e. it only adds or updates data on target
 
 # Rerun (previously incomplete) Migration or Validation 
-- You can rerun/resume a Migration or Validation job to complete a previous run that could have stopped (or completed with some errors) for any reasons. This mode will skip any token-ranges from the previous run that were migrated (or validated) successfully. This is done by passing the `spark.cdm.trackRun.previousRunId` param as shown below
+- You can rerun/resume the last Migration or Validation job that stopped (or completed with some errors) for any reasons by setting `spark.cdm.trackRun.autoRerun` to `true` (default is `false`) as shown below. This will auto-discover the progress of the last job and will resume from that point i.e. it will skip any token-ranges from the previous run that were migrated (or validated) successfully.
+
+```
+spark-submit --properties-file cdm.properties \
+ --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
+ --conf spark.cdm.trackRun.autoRerun=true \
+ --master "local[*]" --driver-memory 25G --executor-memory 25G \
+ --class com.datastax.cdm.job.<Migrate|DiffData> cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
+```
+
+- You can also resume a specific earlier job (not the last one) that stopped (or completed with some errors) for any reasons by passing a specific `spark.cdm.trackRun.previousRunId` as shown below
 
 ```
 spark-submit --properties-file cdm.properties \
