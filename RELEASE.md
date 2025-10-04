@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.6.1] - 2025-10-04
+- Improved logging.
+
 ## [5.6.0] - 2025-09-30
 - Implemented feature `spark.cdm.trackRun.autoRerun` to auto-discover the details of the last failed job and resume from that point onwards. Note: Resuming a previous failed job feature was already part of CDM, this feature just removes the need to pass a `previousRunId` if it happens to be the last run-id. This change helps with automation and convinience.
 
