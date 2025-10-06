@@ -102,7 +102,8 @@ public class CqlTable extends BaseTable {
         if (null == this.columnNames || this.columnNames.isEmpty()) {
             if (null == this.cqlAllColumns || this.cqlAllColumns.isEmpty()) {
                 throw new IllegalArgumentException(
-                        "No columns defined for table " + this.keyspaceName + "." + this.tableName);
+                        "No columns defined for table " + this.keyspaceName + "." + this.tableName +
+                                " on " + (isOrigin ? "origin" : "target"));
             }
             this.columnNames = this.cqlAllColumns.stream().map(columnMetadata -> columnMetadata.getName().asInternal())
                     .collect(Collectors.toList());
@@ -333,7 +334,8 @@ public class CqlTable extends BaseTable {
         } catch (IllegalArgumentException | CodecNotFoundException | NullPointerException e) {
             throw new IllegalArgumentException(
                     "Unable to encode object " + object + " of Class/DataType " + object.getClass().getName() + "/"
-                            + getDataType(index) + " for column " + this.columnNames.get(index),
+                            + getDataType(index) + " for column " + this.columnNames.get(index) +
+                            " on " + (isOrigin ? "origin" : "target") + " table " + this.keyspaceName + "." + this.tableName,
                     e);
         }
     }
@@ -385,14 +387,14 @@ public class CqlTable extends BaseTable {
                 return Instant.ofEpochMilli(defaultForMissingTimestamp);
             } else {
                 logger.error(
-                        "This index {} corresponds to That index {}, which is a primary key column and cannot be null. Consider setting {}.",
-                        thisIndex, otherIndex, KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
+                        "{}: This index {} corresponds to That index {}, which is a primary key column and cannot be null. Consider setting {}.",
+                        isOrigin ? "origin" : "target", thisIndex, otherIndex, KnownProperties.TRANSFORM_REPLACE_MISSING_TS);
                 return null;
             }
         }
 
-        logger.error("This index {} corresponds to That index {}, which is a primary key column and cannot be null.",
-                thisIndex, otherIndex);
+        logger.error("{}: This index {} corresponds to That index {}, which is a primary key column and cannot be null.",
+                isOrigin ? "origin" : "target", thisIndex, otherIndex);
         return null;
     }
 
@@ -440,13 +442,15 @@ public class CqlTable extends BaseTable {
 
         Optional<KeyspaceMetadata> keyspaceMetadataOpt = metadata.getKeyspace(formatName(this.keyspaceName));
         if (!keyspaceMetadataOpt.isPresent()) {
-            throw new IllegalArgumentException("Keyspace not found: " + this.keyspaceName);
+            throw new IllegalArgumentException(
+                    "Keyspace not found on " + (isOrigin ? "origin" : "target") + ": " + this.keyspaceName);
         }
         KeyspaceMetadata keyspaceMetadata = keyspaceMetadataOpt.get();
 
         Optional<TableMetadata> tableMetadataOpt = keyspaceMetadata.getTable(formatName(this.tableName));
         if (!tableMetadataOpt.isPresent()) {
-            throw new IllegalArgumentException("Table not found: " + tableName);
+            throw new IllegalArgumentException(
+                    "Table not found on " + (isOrigin ? "origin" : "target") + ": " + this.keyspaceName + "." + this.tableName);
         }
         TableMetadata tableMetadata = tableMetadataOpt.get();
 

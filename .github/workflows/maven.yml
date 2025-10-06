@@ -23,7 +23,7 @@ jobs:
   build:
     strategy:
       matrix:
-        jdk: [ 11, 17, 21 ]
+        jdk: [ 11, 17, 21, 25 ]
         os: [ ubuntu-latest ]
 
     runs-on: ${{ matrix.os }}
