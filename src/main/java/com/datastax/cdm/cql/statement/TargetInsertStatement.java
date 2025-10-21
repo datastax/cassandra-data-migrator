@@ -73,6 +73,34 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
                     {
+
+                        // Custom code to backfill partition key
+                        String targetColName = targetColumnNames.get(targetIndex);
+                        boolean originHasYearMonth = cqlTable.getOtherCqlTable().indexOf("year_month") >= 0;
+                        if ("year_month".equals(targetColName) && !originHasYearMonth) {
+                            int tsIdx = cqlTable.getOtherCqlTable().indexOf("usage_start_date_time"); // origin column
+                                                                                                      // index
+                            if (tsIdx >= 0 && !originRow.isNull(tsIdx)) {
+                                java.time.Instant ts = originRow.get(tsIdx, java.time.Instant.class);
+                                java.time.ZonedDateTime z = java.time.ZonedDateTime.ofInstant(ts,
+                                        java.time.ZoneOffset.UTC);
+                                String ym = String.format("%04d_%02d", z.getYear(), z.getMonthValue()); // yyyy_mm
+                                bindValue = ym;
+
+                                // bind the key
+                                boundStatement = boundStatement.set(currentBindIndex, bindValue,
+                                        cqlTable.getBindClass(targetIndex));
+                                // logger.info("Franklin: derived target '{}' from origin usage_start_date_time -> {}",
+                                // targetColName, ym);
+
+                                currentBindIndex++;
+                                continue; // handled this column
+                            } else {
+                                throw new RuntimeException(
+                                        "year_month required but origin usage_start_date_time not available");
+                            }
+                        }
+                        // end of partition code
                         currentBindIndex++;
                         continue;
                     }

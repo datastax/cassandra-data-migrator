@@ -99,6 +99,29 @@ public class PKFactory {
 
     public EnhancedPK getTargetPK(Row originRow) {
         List<Object> newValues = getTargetPKValuesFromOriginColumnLookupMethod(originRow, targetDefaultValues);
+        // backfill target PK 'year_month' from origin 'usage_start_date_time'
+        try {
+            java.util.List<String> allPkNames = targetTable.getPKNames(false);
+            int ymIdx = allPkNames.indexOf("year_month");
+            boolean originHasYearMonth = originTable.indexOf("year_month") >= 0;
+
+            if (ymIdx >= 0 && !originHasYearMonth) {
+                Object curr = (ymIdx < newValues.size()) ? newValues.get(ymIdx) : null;
+                if (curr == null) {
+                    int tsIdx = originTable.indexOf("usage_start_date_time");
+                    if (tsIdx >= 0 && !originRow.isNull(tsIdx)) {
+                        java.time.Instant ts = originRow.get(tsIdx, java.time.Instant.class);
+                        java.time.ZonedDateTime z = java.time.ZonedDateTime.ofInstant(ts, java.time.ZoneOffset.UTC);
+                        String ym = String.format("%04d_%02d", z.getYear(), z.getMonthValue()); // yyyy_mm
+                        newValues.set(ymIdx, ym);
+                        // logger.info("Backfilled target PK 'year_month' from origin usage_start_date_time: {}", ym);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.info("Unable to backfill 'year_month' from origin usage_start_date_time: {}", e.getMessage());
+        }
+
         if (logDebug)
             logger.debug("getTargetPK: newValues: {}; {}; explodeMapTargetKeyColumnIndex={}", newValues,
                     null == writetimeTTLFeature ? WritetimeTTL.class.getSimpleName() + ":null" : writetimeTTLFeature,
@@ -260,6 +283,13 @@ public class PKFactory {
             int originIndex = targetTable
                     .getCorrespondingIndex(targetTable.indexOf(targetTable.getPKNames(false).get(i)));
             Object value = originTable.getAndConvertData(originIndex, originRow);
+            // PK assignment
+            // String targetPkName = targetTable.getPKNames(false).get(i);
+            // String originColName = (originIndex >= 0 && originIndex < originRow.getColumnDefinitions().size())
+            // ? originRow.getColumnDefinitions().get(originIndex).getName().toString() : "<unknown>";
+            // logger.info("Franklin: PK map: targetPK='{}' <= origin[{}:{}] value={}", targetPkName, originIndex,
+            // originColName, value);
+
             newValues.set(i, value);
         }
         return newValues;
