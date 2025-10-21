@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.6.2] - 2025-10-21
+- Bug fix: This fix address the gap in feature `spark.cdm.trackRun.autoRerun` where it did not pick the previous-run-id when the previous run completed (did not fail) but had failed token-ranges. It considered such runs a successful, but now with this fix, it will find the failed token-ranges from a successful run and resume those in the new run.
+
 ## [5.6.1] - 2025-10-04
 - Improved logging.
 

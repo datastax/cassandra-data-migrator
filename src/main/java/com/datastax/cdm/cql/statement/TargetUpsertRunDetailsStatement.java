@@ -65,22 +65,10 @@ public class TargetUpsertRunDetailsStatement {
         this.session.execute("CREATE TABLE IF NOT EXISTS " + cdmKsTabDetails
                 + " (table_name TEXT, run_id BIGINT, start_time TIMESTAMP, token_min BIGINT, token_max BIGINT, status TEXT, run_info TEXT, PRIMARY KEY ((table_name, run_id), token_min))");
 
-        // TODO: Remove this code block after a few releases, its only added for backward compatibility
-        try {
-            this.session.execute("ALTER TABLE " + cdmKsTabInfo + " ADD status TEXT");
-        } catch (Exception e) { // ignore if column already exists
-            logger.debug("Column 'status' already exists in table {}", cdmKsTabInfo);
-        }
-        try {
-            this.session.execute("ALTER TABLE " + cdmKsTabDetails + " ADD run_info TEXT");
-        } catch (Exception e) { // ignore if column already exists
-            logger.debug("Column 'run_info' already exists in table {}", cdmKsTabDetails);
-        }
-
         boundInitInfoStatement = bindStatement("INSERT INTO " + cdmKsTabInfo
                 + " (table_name, run_id, run_type, prev_run_id, start_time, status) VALUES (?, ?, ?, ?, totimestamp(now()), ?)");
         // Add statement to get the latest run id for a table
-        boundPrevRunIdStatement = bindStatement("SELECT run_id, status FROM " + cdmKsTabInfo
+        boundPrevRunIdStatement = bindStatement("SELECT run_id, run_info, status FROM " + cdmKsTabInfo
                 + " WHERE table_name = ? and run_type = ? ORDER BY run_id DESC LIMIT 1 ALLOW FILTERING");
         boundInitStatement = bindStatement("INSERT INTO " + cdmKsTabDetails
                 + " (table_name, run_id, token_min, token_max, status) VALUES (?, ?, ?, ?, ?)");
@@ -99,15 +87,46 @@ public class TargetUpsertRunDetailsStatement {
     public long getPreviousRunId(JobType jobType) {
         ResultSet rs = session.execute(
                 boundPrevRunIdStatement.setString("table_name", tableName).setString("run_type", jobType.toString()));
+        long prevRunId = 0;
         Row row = rs.one();
-        if (row != null && !TrackRun.RUN_STATUS.ENDED.toString().equals(row.getString("status"))) {
-            long prevRunId = row.getLong("run_id");
-            logger.info("###################### Previous Run Id for table {} is: {} ######################", tableName,
-                    prevRunId);
-            return prevRunId;
+        if (row != null && (runHasNotEnded(row) || runHasFailedPartitions(row))) {
+            prevRunId = row.getLong("run_id");
+            logger.info(
+                    "###################### Previous Run {} for table {} did not fully succeed, resuming from that point ######################",
+                    prevRunId, tableName);
         }
 
-        return 0;
+        return prevRunId;
+    }
+
+    private boolean runHasNotEnded(Row row) {
+        if (row == null || row.isNull("status")) {
+            return false;
+        }
+        String status = row.getString("status");
+        return !TrackRun.RUN_STATUS.ENDED.toString().equals(status);
+    }
+
+    private boolean runHasFailedPartitions(Row row) {
+        if (row == null || row.isNull("run_info")) {
+            return false;
+        }
+        String runInfo = row.getString("run_info");
+        String[] parts = runInfo.split(";");
+        for (String part : parts) {
+            part = part.trim();
+            if (part.startsWith("Partitions Failed:")) {
+                String[] kv = part.split(":");
+                if (kv.length == 2) {
+                    int failedParts = Integer.parseInt(kv[1].trim());
+                    if (failedParts > 0) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType)
