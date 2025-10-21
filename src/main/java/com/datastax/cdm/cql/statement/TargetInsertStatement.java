@@ -84,7 +84,7 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                                 java.time.Instant ts = originRow.get(tsIdx, java.time.Instant.class);
                                 java.time.ZonedDateTime z = java.time.ZonedDateTime.ofInstant(ts,
                                         java.time.ZoneOffset.UTC);
-                                String ym = String.format("%04d_%02d", z.getYear(), z.getMonthValue()); // yyyy_mm
+                                String ym = String.format("%04d%02d", z.getYear(), z.getMonthValue()); // yyyymm
                                 bindValue = ym;
 
                                 // bind the key
