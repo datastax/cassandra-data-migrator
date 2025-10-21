@@ -271,6 +271,16 @@ public class WritetimeTTL extends AbstractFeature {
             // Only use our computed TTL if it's positive
             if (ttlFromUsage > 0) {
                 return ttlFromUsage;
+            } else {
+                // If negative or zero → set TTL to one month from now
+                int oneMonthSeconds = (int) java.time.Duration
+                        .between(java.time.Instant.now(),
+                                java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC).plusMonths(1).toInstant())
+                        .getSeconds();
+                //logger.info("Franklin, Computed TTL <= 0 ({}). Setting TTL to one month from now: {} seconds",
+                //        ttlFromUsage, oneMonthSeconds);
+
+                return oneMonthSeconds;
             }
         }
 
@@ -293,8 +303,9 @@ public class WritetimeTTL extends AbstractFeature {
 
         long ttlSeconds = java.time.Duration.between(java.time.Instant.now(), expiry.toInstant()).getSeconds();
 
-        //logger.info("Franklin, TTL computed: start={}, ttlMonths={}, expiry={}, TTL={} seconds", start, months, expiry,
-        //        ttlSeconds);
+        // logger.info("Franklin, TTL computed: start={}, ttlMonths={}, expiry={}, TTL={} seconds", start, months,
+        // expiry,
+        // ttlSeconds);
 
         return (int) ttlSeconds;
     }
