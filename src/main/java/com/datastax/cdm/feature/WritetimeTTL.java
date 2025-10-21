@@ -260,12 +260,43 @@ public class WritetimeTTL extends AbstractFeature {
     public Integer getLargestTTL(Row row) {
         if (logDebug)
             logger.debug("getLargestTTL: ttlSelectColumnIndexes={}", ttlSelectColumnIndexes);
+
+        int ttlMonths = Integer
+                .parseInt(System.getProperty("cdm.ttl.months", System.getenv().getOrDefault("CDM_TTL_MONTHS", "0")));
+
+        // if ttlMonths is set then derive it from custom call
+        if (ttlMonths > 0 && row.getColumnDefinitions().contains("usage_start_date_time")
+                && !row.isNull("usage_start_date_time")) {
+            int ttlFromUsage = computeTTLFromUsageStart(row, ttlMonths);
+            // Only use our computed TTL if it's positive
+            if (ttlFromUsage > 0) {
+                return ttlFromUsage;
+            }
+        }
+
         if (null == this.ttlSelectColumnIndexes || this.ttlSelectColumnIndexes.isEmpty())
             return null;
 
         OptionalInt max = (allowCollectionsForWritetimeTTL) ? getMaxTTLForCollections(row) : getMaxTTL(row);
 
         return max.isPresent() ? max.getAsInt() : 0;
+    }
+
+    // Compute TTL in seconds as (usage_start_date_time + months) - now.
+    // Returns 0 if the calculated value is negative (expiry in the past).
+    private int computeTTLFromUsageStart(Row row, int months) {
+        java.time.Instant start = row.getInstant("usage_start_date_time");
+
+        // expiry = start + months
+        java.time.ZonedDateTime expiry = java.time.ZonedDateTime.ofInstant(start, java.time.ZoneOffset.UTC)
+                .plusMonths(months);
+
+        long ttlSeconds = java.time.Duration.between(java.time.Instant.now(), expiry.toInstant()).getSeconds();
+
+        //logger.info("Franklin, TTL computed: start={}, ttlMonths={}, expiry={}, TTL={} seconds", start, months, expiry,
+        //        ttlSeconds);
+
+        return (int) ttlSeconds;
     }
 
     private OptionalInt getMaxTTLForCollections(Row row) {
