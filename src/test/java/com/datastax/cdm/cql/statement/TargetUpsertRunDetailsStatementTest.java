@@ -134,4 +134,32 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         // This test is incorrect, but needs to be troubleshot & fixed. The actual code works, but the test does not
         assertEquals(0, parts.size());
     }
+
+    @Test
+    public void getPreviousRunId() {
+        when(rs.one()).thenReturn(row1);
+        when(row1.getLong("run_id")).thenReturn(555l);
+
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        long runId = targetUpsertRunDetailsStatement.getPreviousRunId(JobType.MIGRATE);
+        assertEquals(555l, runId);
+    }
+    
+    @Test
+    public void getPreviousRunId_noRun() {
+        when(rs.one()).thenReturn(null);
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        long runId = targetUpsertRunDetailsStatement.getPreviousRunId(JobType.MIGRATE);
+        assertEquals(0l, runId);
+    }
+
+    @Test
+    public void getPreviousRunId_noRunId() {
+        when(rs.one()).thenReturn(row1);
+        when(row1.getLong("run_id")).thenReturn(0l);
+        targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
+        long runId = targetUpsertRunDetailsStatement.getPreviousRunId(JobType.MIGRATE);
+        assertEquals(0l, runId);
+        
+
 }
