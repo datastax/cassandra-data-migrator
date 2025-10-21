@@ -144,7 +144,7 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         long runId = targetUpsertRunDetailsStatement.getPreviousRunId(JobType.MIGRATE);
         assertEquals(555l, runId);
     }
-    
+
     @Test
     public void getPreviousRunId_noRun() {
         when(rs.one()).thenReturn(null);
@@ -160,6 +160,6 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
         long runId = targetUpsertRunDetailsStatement.getPreviousRunId(JobType.MIGRATE);
         assertEquals(0l, runId);
-        
+    }
 
 }
