@@ -55,7 +55,7 @@ public class TargetUpsertRunDetailsStatement {
         if (ksTab.length != 2) {
             throw new RuntimeException("Invalid keyspace.table format: " + keyspaceTable);
         }
-        this.keyspaceName = ksTab[0];
+        this.keyspaceName = "\"" + ksTab[0] + "\"";
         this.tableName = ksTab[1];
         String cdmKsTabInfo = this.keyspaceName + ".cdm_run_info";
         String cdmKsTabDetails = this.keyspaceName + ".cdm_run_details";
