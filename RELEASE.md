@@ -1,5 +1,10 @@
 # Release Notes
 
+## [5.6.3] - 2025-11-17
+- Upgrade Spark version to [`3.5.7`](https://spark.apache.org/releases/spark-release-3-5-7.html).
+- Upgrade junit version to `5.14.1` & cassandra version in test to `5.0.6`.
+- Fixed issue where the keyspace name has mixed case and the `trackRun` feature was leveraged (#401).
+
 ## [5.6.2] - 2025-10-21
 - Bug fix: This fix address the gap in feature `spark.cdm.trackRun.autoRerun` where it did not pick the previous-run-id when the previous run completed (did not fail) but had failed token-ranges. It considered such runs a successful, but now with this fix, it will find the failed token-ranges from a successful run and resume those in the new run.
 
@@ -38,7 +43,7 @@
 - Implemented [`column.skip`](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm-detailed.properties#L97) feature
 
 ## [5.2.0] - 2025-02-28
-- Upgraded to use Spark `3.5.5`.
+- Upgraded to use Spark [`3.5.5`](https://spark.apache.org/releases/spark-release-3-5-5.html).
 - Cassandra Docker image tag is now set to `cassandra:5`.
 
 ## [5.1.4] - 2024-12-04
