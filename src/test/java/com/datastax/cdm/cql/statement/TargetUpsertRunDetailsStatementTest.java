@@ -65,7 +65,12 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         // UPDATE is needed by counters, though the class should handle non-counter updates
         commonSetup(false, false, true);
         when(cqlSession.prepare(anyString())).thenReturn(preparedStatement);
+
+        // Make sure BOTH zero-arg and vararg usages are covered
         when(preparedStatement.bind(any())).thenReturn(boundStatement);
+        when(preparedStatement.bind(any(Object[].class))).thenReturn(boundStatement);
+
+        // Fluent BoundStatement stubbing
         when(boundStatement.setTimeout(any(Duration.class))).thenReturn(boundStatement);
         when(boundStatement.setString(anyString(), anyString())).thenReturn(boundStatement);
         when(boundStatement.setLong(anyString(), any(Long.class))).thenReturn(boundStatement);
