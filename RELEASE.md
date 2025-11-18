@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.7.0] - 2025-11-19
+- Implemented feature `spark.cdm.trackRun.rerunMultiplier` to help improve success rate of a rerun.
+
 ## [5.6.3] - 2025-11-17
 - Upgrade Spark version to [`3.5.7`](https://spark.apache.org/releases/spark-release-3-5-7.html).
 - Upgrade junit version to `5.14.1` & cassandra version in test to `5.0.6`.

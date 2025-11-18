@@ -45,7 +45,8 @@ abstract class BasePartitionJob extends BaseJob[PartitionRange] {
     
     if (prevRunId != 0) {
       try {
-        trackRunFeature.getPendingPartitions(prevRunId, jobType)
+        var rerunMultiplier: Int = propertyHelper.getInteger(KnownProperties.RERUN_MULTIPLIER)
+        trackRunFeature.getPendingPartitions(prevRunId, jobType, rerunMultiplier)
       } catch {
         case e: RunNotStartedException => {
           abstractLogger.warn(e.getMessage)
