@@ -326,7 +326,7 @@
 				<artifactId>apache-rat-plugin</artifactId>
 				<version>0.17</version>
 				<configuration>
-					<excludesFile>rat-excludes.txt</excludesFile>
+					<inputExcludeFile>rat-excludes.txt</inputExcludeFile>
 				</configuration>
 				<executions>
 					<execution>
