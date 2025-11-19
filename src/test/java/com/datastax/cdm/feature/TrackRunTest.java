@@ -21,18 +21,13 @@ import java.util.Collection;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 
 import com.datastax.cdm.cql.CommonMocks;
-import com.datastax.cdm.cql.statement.TargetUpsertRunDetailsStatement;
 import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
 
 class TrackRunTest extends CommonMocks {
-
-    @Mock
-    private TargetUpsertRunDetailsStatement runStatement;
 
     TrackRun trackRun;
 
