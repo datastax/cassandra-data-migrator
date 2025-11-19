@@ -16,37 +16,27 @@
 package com.datastax.cdm.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 import java.util.Collection;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 
 import com.datastax.cdm.cql.CommonMocks;
 import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.BoundStatement;
 
 class TrackRunTest extends CommonMocks {
 
-    @Mock
-    CqlSession cqlSession;
-
-    @Mock
-    BoundStatement bStatement;
+    TrackRun trackRun;
 
     @BeforeEach
-    public void setup() {
-        // UPDATE is needed by counters, though the class should handle non-counter updates
+    public void setup() throws RunNotStartedException {
+        // UPDATE is needed by counters, though the class should handle non-counter
+        // updates
         commonSetup(false, false, true);
-        when(cqlSession.prepare(anyString())).thenReturn(preparedStatement);
-        when(preparedStatement.bind(any())).thenReturn(bStatement);
+        trackRun = new TrackRun(originCqlSession, "ks.table");
     }
 
     @Test
@@ -59,10 +49,25 @@ class TrackRunTest extends CommonMocks {
     }
 
     @Test
-    void init() throws RunNotStartedException {
-        TrackRun trackRun = new TrackRun(cqlSession, "keyspace.table");
-        Collection<PartitionRange> parts = trackRun.getPendingPartitions(0, JobType.MIGRATE);
+    void getPendingPartitions() throws RunNotStartedException {
+        Collection<PartitionRange> parts = trackRun.getPendingPartitions(0L, JobType.MIGRATE, 1);
         assertEquals(0, parts.size());
+    }
+
+    @Test
+    void getPendingPartitionsRerun() throws RunNotStartedException {
+        Collection<PartitionRange> parts = trackRun.getPendingPartitionsWithMultiplier(JobType.MIGRATE, 4,
+                createPartitionRanges());
+        assertEquals(8, parts.size());
+    }
+
+    private Collection<PartitionRange> createPartitionRanges() {
+        Collection<PartitionRange> parts = new java.util.ArrayList<>();
+        parts.add(new PartitionRange(java.math.BigInteger.valueOf(0), java.math.BigInteger.valueOf(100),
+                JobType.MIGRATE));
+        parts.add(new PartitionRange(java.math.BigInteger.valueOf(101), java.math.BigInteger.valueOf(200),
+                JobType.MIGRATE));
+        return parts;
     }
 
 }

@@ -51,7 +51,8 @@ public class KnownProperties {
     // ==========================================================================
     // Astra DevOps API Parameters
     // ==========================================================================
-    // Note: CONNECT_ORIGIN_PASSWORD and CONNECT_TARGET_PASSWORD properties are used for Astra tokens
+    // Note: CONNECT_ORIGIN_PASSWORD and CONNECT_TARGET_PASSWORD properties are used
+    // for Astra tokens
     public static final String ORIGIN_ASTRA_DATABASE_ID = "spark.cdm.connect.origin.astra.database.id";
     public static final String ORIGIN_ASTRA_SCB_TYPE = "spark.cdm.connect.origin.astra.scb.type";
     public static final String ORIGIN_ASTRA_SCB_REGION = "spark.cdm.connect.origin.astra.scb.region";
@@ -142,6 +143,7 @@ public class KnownProperties {
     public static final String AUTOCORRECT_MISSING_COUNTER = "spark.cdm.autocorrect.missing.counter"; // false
     public static final String TRACK_RUN = "spark.cdm.trackRun";
     public static final String AUTO_RERUN = "spark.cdm.trackRun.autoRerun"; // false
+    public static final String RERUN_MULTIPLIER = "spark.cdm.trackRun.rerunMultiplier"; // 1
     public static final String RUN_ID = "spark.cdm.trackRun.runId";
     public static final String PREV_RUN_ID = "spark.cdm.trackRun.previousRunId";
 
@@ -165,6 +167,8 @@ public class KnownProperties {
         defaults.put(TRACK_RUN, "false");
         types.put(AUTO_RERUN, PropertyType.BOOLEAN);
         defaults.put(AUTO_RERUN, "false");
+        types.put(RERUN_MULTIPLIER, PropertyType.NUMBER);
+        defaults.put(RERUN_MULTIPLIER, "1");
         types.put(RUN_ID, PropertyType.NUMBER);
         defaults.put(RUN_ID, "0");
         types.put(PREV_RUN_ID, PropertyType.NUMBER);

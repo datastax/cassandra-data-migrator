@@ -72,7 +72,8 @@ abstract class BaseJob[T: ClassTag] extends App {
 
     runId = propertyHelper.getLong(KnownProperties.RUN_ID)
     prevRunId = propertyHelper.getLong(KnownProperties.PREV_RUN_ID)
-    trackRun = if (0 != prevRunId || 0 != runId) true else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
+    trackRun = if (0 != prevRunId || 0 != runId || propertyHelper.getBoolean(KnownProperties.AUTO_RERUN)) true 
+                  else propertyHelper.getBoolean(KnownProperties.TRACK_RUN)
     if (trackRun == true && runId == 0) {
       runId = System.nanoTime();
     }

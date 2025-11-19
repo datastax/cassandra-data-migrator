@@ -16,6 +16,7 @@
 package com.datastax.cdm.feature;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import com.datastax.cdm.cql.statement.TargetUpsertRunDetailsStatement;
 import com.datastax.cdm.job.IJobSessionFactory.JobType;
 import com.datastax.cdm.job.PartitionRange;
 import com.datastax.cdm.job.RunNotStartedException;
+import com.datastax.cdm.job.SplitPartitions;
 import com.datastax.oss.driver.api.core.CqlSession;
 
 public class TrackRun {
@@ -43,12 +45,29 @@ public class TrackRun {
         return runStatement.getPreviousRunId(jobType);
     }
 
-    public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType)
+    public Collection<PartitionRange> getPendingPartitions(long prevRunId, JobType jobType, int rerunMultiplier)
             throws RunNotStartedException {
         Collection<PartitionRange> pendingParts = runStatement.getPendingPartitions(prevRunId, jobType);
         logger.info("###################### {} partitions pending from previous run id {} ######################",
                 pendingParts.size(), prevRunId);
+        if (!pendingParts.isEmpty() && rerunMultiplier > 1) {
+            return getPendingPartitionsWithMultiplier(jobType, rerunMultiplier, pendingParts);
+        }
         return pendingParts;
+    }
+
+    protected Collection<PartitionRange> getPendingPartitionsWithMultiplier(JobType jobType, int rerunMultiplier,
+            Collection<PartitionRange> pendingParts) {
+        logger.info("###################### RerunMultiplier enabled with a value of {} ######################",
+                rerunMultiplier);
+        Collection<PartitionRange> partsWithMultiplier = new ArrayList<>();
+        for (PartitionRange part : pendingParts) {
+            partsWithMultiplier.addAll(SplitPartitions.getRandomSubPartitions(rerunMultiplier, part.getMin(),
+                    part.getMax(), 100, jobType));
+        }
+        logger.info("###################### {} partitions pending to process in this run ######################",
+                partsWithMultiplier.size());
+        return partsWithMultiplier;
     }
 
     public void initCdmRun(long runId, long prevRunId, Collection<PartitionRange> parts, JobType jobType) {

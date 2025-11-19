@@ -154,6 +154,7 @@ spark-submit --properties-file cdm.properties \
     - Including counter table [Counter tables](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_using/useCountersConcept.html)
 - Rerun/Resume a previous job that may have stopped for any reason (killed, had exceptions, etc.)
     - If you rerun a `validation` job, it will include any token-ranges that had differences in the previous run 
+    - If reruns are repeatedly failing, you can use the [`rerunMultiplier`](./src/resources/cdm-detailed.properties#227) feature to help improve the chances of success.
 - Preserve [writetimes](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__retrieving-the-datetime-a-write-occurred-p) and [TTLs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlSelect.html#cqlSelect__ref-select-ttl-p)
 - Supports migration/validation of advanced DataTypes ([Sets](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__set), [Lists](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__list), [Maps](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__map), [UDTs](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/refDataTypes.html#refDataTypes__udt))
 - Filter records from `Origin` using `writetime` and/or CQL conditions and/or a list of token-ranges
