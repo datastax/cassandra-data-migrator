@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.7.1] - TBD
+- Upgraded Java driver to `4.19.2` to consume fixes upstream for addressing the issue described at [CASSJAVA-116](https://issues.apache.org/jira/browse/CASSJAVA-116) issue.
+
 ## [5.7.0] - 2025-11-19
 - Implemented feature `spark.cdm.trackRun.rerunMultiplier` to help improve success rate of a rerun.
 
