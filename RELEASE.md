@@ -1,6 +1,7 @@
 # Release Notes
 
-## [5.7.1] - TBD
+## [5.7.1] - 2025-12-15
+- Fix batch write consistency [issue #257](https://github.com/datastax/cassandra-data-migrator/issues/257).
 - Upgraded Java driver to `4.19.2` to consume fixes upstream for addressing the issue described at [CASSJAVA-116](https://issues.apache.org/jira/browse/CASSJAVA-116) issue.
 
 ## [5.7.0] - 2025-11-19
