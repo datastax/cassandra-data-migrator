@@ -16,6 +16,7 @@
 package com.datastax.cdm.job;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
@@ -48,6 +49,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
+    private BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
         super(originSession, targetSession, propHelper);
@@ -55,6 +57,8 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
         batchSize = this.originSession.getCqlTable().getBatchSize();
+        batch.setConsistencyLevel(this.targetSession.getCqlTable().getWriteConsistencyLevel())
+                .setTimeout(Duration.ofSeconds(10));
 
         logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
         logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
@@ -68,7 +72,6 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         if (null != trackRunFeature)
             trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.STARTED, "");
 
-        BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
         JobCounter jobCounter = range.getJobCounter();
 
         try {
