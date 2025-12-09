@@ -104,23 +104,57 @@ public class CqlTable extends BaseTable {
                 throw new IllegalArgumentException("No columns defined for table " + this.keyspaceName + "."
                         + this.tableName + " on " + (isOrigin ? "origin" : "target"));
             }
-            this.columnNames = this.cqlAllColumns.stream().map(columnMetadata -> columnMetadata.getName().asInternal())
-                    .collect(Collectors.toList());
+            // Replace stream operations with direct list operations for better performance
+            this.columnNames = new ArrayList<>(this.cqlAllColumns.size());
+            for (ColumnMetadata columnMetadata : this.cqlAllColumns) {
+                this.columnNames.add(columnMetadata.getName().asInternal());
+            }
         }
-        this.columnCqlTypes = columnNames.stream().map(columnName -> this.columnNameToCqlTypeMap.get(columnName))
-                .collect(Collectors.toList());
-        this.bindClasses = columnCqlTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList());
 
-        this.partitionKeyNames = cqlPartitionKey.stream().map(columnMetadata -> columnMetadata.getName().asInternal())
-                .collect(Collectors.toList());
-        this.pkNames = cqlPrimaryKey.stream().map(columnMetadata -> columnMetadata.getName().asInternal())
-                .collect(Collectors.toList());
-        List<DataType> pkTypes = cqlPrimaryKey.stream().map(ColumnMetadata::getType).collect(Collectors.toList());
-        this.pkClasses = pkTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList());
-        this.pkIndexes = pkNames.stream().map(columnNames::indexOf).collect(Collectors.toList());
+        // Pre-allocate collections with proper capacity
+        this.columnCqlTypes = new ArrayList<>(columnNames.size());
+        for (String columnName : columnNames) {
+            this.columnCqlTypes.add(this.columnNameToCqlTypeMap.get(columnName));
+        }
 
-        this.counterIndexes = IntStream.range(0, columnCqlTypes.size())
-                .filter(i -> columnCqlTypes.get(i).equals(DataTypes.COUNTER)).boxed().collect(Collectors.toList());
+        this.bindClasses = new ArrayList<>(columnCqlTypes.size());
+        for (DataType dataType : columnCqlTypes) {
+            this.bindClasses.add(CqlData.getBindClass(dataType));
+        }
+
+        // Replace stream operations for partition key names
+        this.partitionKeyNames = new ArrayList<>(cqlPartitionKey.size());
+        for (ColumnMetadata columnMetadata : cqlPartitionKey) {
+            this.partitionKeyNames.add(columnMetadata.getName().asInternal());
+        }
+
+        // Replace stream operations for primary key names
+        this.pkNames = new ArrayList<>(cqlPrimaryKey.size());
+        List<DataType> pkTypes = new ArrayList<>(cqlPrimaryKey.size());
+        for (ColumnMetadata columnMetadata : cqlPrimaryKey) {
+            this.pkNames.add(columnMetadata.getName().asInternal());
+            pkTypes.add(columnMetadata.getType());
+        }
+
+        // Replace stream operations for primary key classes
+        this.pkClasses = new ArrayList<>(pkTypes.size());
+        for (DataType dataType : pkTypes) {
+            this.pkClasses.add(CqlData.getBindClass(dataType));
+        }
+
+        // Replace stream operations for primary key indexes
+        this.pkIndexes = new ArrayList<>(pkNames.size());
+        for (String pkName : pkNames) {
+            this.pkIndexes.add(columnNames.indexOf(pkName));
+        }
+
+        // Replace IntStream with direct iteration for counter indexes
+        this.counterIndexes = new ArrayList<>();
+        for (int i = 0; i < columnCqlTypes.size(); i++) {
+            if (columnCqlTypes.get(i).equals(DataTypes.COUNTER)) {
+                this.counterIndexes.add(i);
+            }
+        }
         this.isCounterTable = !this.counterIndexes.isEmpty();
 
         this.readConsistencyLevel = mapToConsistencyLevel(propertyHelper.getString(KnownProperties.READ_CL));
@@ -484,13 +518,19 @@ public class CqlTable extends BaseTable {
 
         boolean allowCollectionsForWritetimeTTL = propertyHelper
                 .getBoolean(KnownProperties.ALLOW_COLL_FOR_WRITETIME_TTL_CALC);
-        this.writetimeTTLColumns = tableMetadata.getColumns().values().stream()
-                .filter(columnMetadata -> canColumnHaveTTLorWritetime(tableMetadata, columnMetadata,
-                        allowCollectionsForWritetimeTTL))
-                .map(ColumnMetadata::getName).map(CqlIdentifier::asInternal).collect(Collectors.toList());
+        // Replace stream operations with direct filtering for writetime/TTL columns
+        this.writetimeTTLColumns = new ArrayList<>();
+        for (ColumnMetadata columnMetadata : tableMetadata.getColumns().values()) {
+            if (canColumnHaveTTLorWritetime(tableMetadata, columnMetadata, allowCollectionsForWritetimeTTL)) {
+                this.writetimeTTLColumns.add(columnMetadata.getName().asInternal());
+            }
+        }
 
-        this.columnNameToCqlTypeMap = this.cqlAllColumns.stream().collect(
-                Collectors.toMap(columnMetadata -> columnMetadata.getName().asInternal(), ColumnMetadata::getType));
+        // Replace stream with direct HashMap population
+        this.columnNameToCqlTypeMap = new HashMap<>(this.cqlAllColumns.size());
+        for (ColumnMetadata columnMetadata : this.cqlAllColumns) {
+            this.columnNameToCqlTypeMap.put(columnMetadata.getName().asInternal(), columnMetadata.getType());
+        }
     }
 
     private boolean canColumnHaveTTLorWritetime(TableMetadata tableMetadata, ColumnMetadata columnMetadata,
