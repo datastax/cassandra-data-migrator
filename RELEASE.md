@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.7.2] - 2026-01-05
+- Optimized CDM dependencies and reduced jar size by 25%.
+
 ## [5.7.1] - 2025-12-15
 - Fix batch write consistency [issue #257](https://github.com/datastax/cassandra-data-migrator/issues/257).
 - Upgraded Java driver to `4.19.2` to consume fixes upstream for addressing the issue described at [CASSJAVA-116](https://issues.apache.org/jira/browse/CASSJAVA-116) issue.
