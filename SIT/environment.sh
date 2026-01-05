@@ -240,7 +240,7 @@ _Setup() {
     # docker build -t ${dockerContainerVersion} ..
 
     _info "Starting Docker container ${DOCKER_CASS}"
-    docker run --name ${DOCKER_CDM} --network ${NETWORK_NAME} --ip ${SUBNET}.3 -e "CASS_USERNAME=${CASS_USERNAME}" -e "CASS_PASSWORD=${CASS_PASSWORD}" -e "CASS_CLUSTER=${DOCKER_CASS}" -d ${dockerContainerVersion}
+    docker run --platform linux/amd64 --name ${DOCKER_CDM} --network ${NETWORK_NAME} --ip ${SUBNET}.3 -e "CASS_USERNAME=${CASS_USERNAME}" -e "CASS_PASSWORD=${CASS_PASSWORD}" -e "CASS_CLUSTER=${DOCKER_CASS}" -d ${dockerContainerVersion}
     attempt=1
     while [[ $attempt -le 12 && "$(_testDockerCDM)" != "yes" ]]; do
       _info "waiting for CDM to start, attempt $attempt"
