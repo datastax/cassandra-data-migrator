@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.7.3] - 2026-01-15
+- Vulnerability fixes for netty and commons-lang3
+
 ## [5.7.2] - 2026-01-05
 - Optimized CDM dependencies and reduced jar size by 25%.
 
