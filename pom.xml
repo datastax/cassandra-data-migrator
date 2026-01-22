@@ -116,14 +116,14 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-transport-native-kqueue</artifactId>
-			<version>4.1.130.Final</version>
+			<version>4.2.9.Final</version>
 			<classifier>osx-aarch_64</classifier>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-transport-native-kqueue</artifactId>
-			<version>4.1.130.Final</version>
+			<version>4.2.9.Final</version>
 			<classifier>osx-x86_64</classifier>
 			<scope>provided</scope>
 		</dependency>
