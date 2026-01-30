@@ -1,6 +1,6 @@
 # Release Notes
 
-## [5.7.3] - 2026-01-15
+## [5.7.3] - 2026-01-30
 - Vulnerability fixes for netty and commons-lang3
 
 ## [5.7.2] - 2026-01-05
