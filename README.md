@@ -173,6 +173,11 @@ spark-submit --properties-file cdm.properties \
 - Track run information (start-time, end-time, run-metrics, status, etc.) in tables (`cdm_run_info` and `cdm_run_details`) on the target keyspace
 
 # Things to know
+
+> [!TIP]
+> If you want to pass in additional [Cassandra Java Driver configs](https://github.com/apache/cassandra-java-driver/blob/4.x/core/src/main/resources/reference.conf), you can leverage it as below
+> `--conf spark.driver.extraJavaOptions="-Ddatastax-java-driver.advanced.connection.pool.remote.size=5`
+
 - Each run (Migration or Validation) can be tracked (when enabled). You can find summary and details of the same in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.
 - CDM does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
 - CDM ignores using collection and UDT fields for `ttl` & `writetime` calculations by default for performance reasons. If you want to include such fields, set `spark.cdm.schema.ttlwritetime.calc.useCollections` param to `true`.
