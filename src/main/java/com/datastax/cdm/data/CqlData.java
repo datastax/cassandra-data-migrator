@@ -173,7 +173,7 @@ public class CqlData {
      *
      * @return true if the value is a non-null empty collection (List, Set, or Map)
      */
-    public static boolean isEmptyCollection(Object value) {
+    protected static boolean isEmptyCollection(Object value) {
         if (value == null) {
             return false;
         }
