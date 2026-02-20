@@ -79,7 +79,12 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                     bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (!(null == bindValue)) {
+                if (com.datastax.cdm.data.CqlData.shouldUnsetValue(bindValue)) {
+                    if (logDebug)
+                        logger.debug("Unsetting column {} at bind index {} to avoid tombstone",
+                                targetColumnNames.get(targetIndex), currentBindIndex);
+                    boundStatement = boundStatement.unset(currentBindIndex);
+                } else {
                     boundStatement = boundStatement.set(currentBindIndex, bindValue,
                             cqlTable.getBindClass(targetIndex));
                 }

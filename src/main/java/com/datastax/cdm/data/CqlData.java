@@ -165,6 +165,40 @@ public class CqlData {
         }
     }
 
+    /**
+     * Checks if a collection value is empty (but not null).
+     *
+     * @param value
+     *            the value to check
+     *
+     * @return true if the value is a non-null empty collection (List, Set, or Map)
+     */
+    public static boolean isEmptyCollection(Object value) {
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof java.util.Collection) {
+            return ((java.util.Collection<?>) value).isEmpty();
+        }
+        if (value instanceof java.util.Map) {
+            return ((java.util.Map<?, ?>) value).isEmpty();
+        }
+        return false;
+    }
+
+    /**
+     * Determines if a value should be unset in a BoundStatement to avoid creating tombstones. This includes null values
+     * and empty collections.
+     *
+     * @param value
+     *            the value to check
+     *
+     * @return true if the value should be unset (null or empty collection)
+     */
+    public static boolean shouldUnsetValue(Object value) {
+        return value == null || isEmptyCollection(value);
+    }
+
     public static String getFormattedContent(Type type, Object value) {
         if (null == value) {
             return "";

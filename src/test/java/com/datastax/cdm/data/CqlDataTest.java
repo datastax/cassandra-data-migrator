@@ -163,4 +163,94 @@ public class CqlDataTest {
         when(udtValue.getFormattedContents()).thenReturn("{udt}");
         assertEquals("{udt}", CqlData.getFormattedContent(CqlData.Type.UDT, udtValue));
     }
+
+    @Test
+    public void testIsEmptyCollection_Null() {
+        assertFalse(CqlData.isEmptyCollection(null));
+    }
+
+    @Test
+    public void testIsEmptyCollection_EmptyList() {
+        assertTrue(CqlData.isEmptyCollection(Collections.emptyList()));
+    }
+
+    @Test
+    public void testIsEmptyCollection_EmptySet() {
+        assertTrue(CqlData.isEmptyCollection(Collections.emptySet()));
+    }
+
+    @Test
+    public void testIsEmptyCollection_EmptyMap() {
+        assertTrue(CqlData.isEmptyCollection(Collections.emptyMap()));
+    }
+
+    @Test
+    public void testIsEmptyCollection_NonEmptyList() {
+        assertFalse(CqlData.isEmptyCollection(Arrays.asList("a", "b")));
+    }
+
+    @Test
+    public void testIsEmptyCollection_NonEmptySet() {
+        assertFalse(CqlData.isEmptyCollection(Collections.singleton("a")));
+    }
+
+    @Test
+    public void testIsEmptyCollection_NonEmptyMap() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key", "value");
+        assertFalse(CqlData.isEmptyCollection(map));
+    }
+
+    @Test
+    public void testIsEmptyCollection_PrimitiveValue() {
+        assertFalse(CqlData.isEmptyCollection("string"));
+        assertFalse(CqlData.isEmptyCollection(123));
+        assertFalse(CqlData.isEmptyCollection(true));
+    }
+
+    @Test
+    public void testShouldUnsetValue_Null() {
+        assertTrue(CqlData.shouldUnsetValue(null));
+    }
+
+    @Test
+    public void testShouldUnsetValue_EmptyList() {
+        assertTrue(CqlData.shouldUnsetValue(Collections.emptyList()));
+    }
+
+    @Test
+    public void testShouldUnsetValue_EmptySet() {
+        assertTrue(CqlData.shouldUnsetValue(Collections.emptySet()));
+    }
+
+    @Test
+    public void testShouldUnsetValue_EmptyMap() {
+        assertTrue(CqlData.shouldUnsetValue(Collections.emptyMap()));
+    }
+
+    @Test
+    public void testShouldUnsetValue_NonEmptyList() {
+        assertFalse(CqlData.shouldUnsetValue(Arrays.asList("a", "b")));
+    }
+
+    @Test
+    public void testShouldUnsetValue_NonEmptySet() {
+        assertFalse(CqlData.shouldUnsetValue(Collections.singleton("a")));
+    }
+
+    @Test
+    public void testShouldUnsetValue_NonEmptyMap() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key", "value");
+        assertFalse(CqlData.shouldUnsetValue(map));
+    }
+
+    @Test
+    public void testShouldUnsetValue_PrimitiveValue() {
+        assertFalse(CqlData.shouldUnsetValue("string"));
+        assertFalse(CqlData.shouldUnsetValue(123));
+        assertFalse(CqlData.shouldUnsetValue(true));
+        assertFalse(CqlData.shouldUnsetValue(0));
+        assertFalse(CqlData.shouldUnsetValue(""));
+    }
 }
