@@ -13,6 +13,12 @@
 #
 
 #!/bin/bash
+
+# This script is called from test.sh which has already sourced common.sh and initialized the runtime
+# The CONTAINER_RUNTIME_CMD and CONTAINER_CASS variables are already set in the environment
+
 # We need TTL to go down by at least 1 second, e.g. make 60000 to 59999
 sleep 1
-docker exec ${DOCKER_CASS} /bin/bash -c "cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql | tr -d ' ' | cut -c1-46"
+
+# Use the container runtime command that was already initialized by test.sh
+${CONTAINER_RUNTIME_CMD:-podman} exec ${CONTAINER_CASS:-${DOCKER_CASS}} /bin/bash -c "cqlsh -u $CASS_USERNAME -p $CASS_PASSWORD -f $testDir/expected.cql | tr -d ' ' | cut -c1-46"
