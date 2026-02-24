@@ -97,8 +97,8 @@ spark-submit --properties-file cdm.properties \
 ```
 spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
---conf spark.executor.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
---conf spark.driver.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
+--conf spark.executor.extraJavaOptions='-Dlog4j2.configurationFile=log4j2.properties' \
+--conf spark.driver.extraJavaOptions='-Dlog4j2.configurationFile=log4j2.properties' \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
@@ -177,6 +177,9 @@ spark-submit --properties-file cdm.properties \
 > [!TIP]
 > If you want to pass in additional [Cassandra Java Driver configs](https://github.com/apache/cassandra-java-driver/blob/4.x/core/src/main/resources/reference.conf), you can leverage it as below
 > `--conf spark.driver.extraJavaOptions="-Ddatastax-java-driver.advanced.connection.pool.remote.size=5`
+
+> [!TIP]
+> If you want to log `DEBUG` level statements for troubleshooting, you can pass in `--conf spark.driver.extraJavaOptions='-Dlog4j2.level=DEBUG -Dlog4j2.rootLogger.level=DEBUG' --conf spark.executor.extraJavaOptions='-Dlog4j2.level=DEBUG -Dlog4j2.rootLogger.level=DEBUG'`
 
 - Each run (Migration or Validation) can be tracked (when enabled). You can find summary and details of the same in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.
 - CDM does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.
