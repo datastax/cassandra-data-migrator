@@ -134,8 +134,9 @@ public class EnhancedPK {
             Object value = values.get(i);
             if (null != value)
                 continue;
-            if (i == factory.getExplodeMapTargetPKIndex())
-                continue; // this is an unexploded PK
+            // Allow null for explode map key column when PK has not been exploded yet
+            if (canExplode() && i == factory.getExplodeMapTargetPKIndex())
+                continue; // this is an unexploded PK with null at explode map key position
 
             messages.add(String.format("ERROR: Null value for position %d", i));
             errorState = true;
