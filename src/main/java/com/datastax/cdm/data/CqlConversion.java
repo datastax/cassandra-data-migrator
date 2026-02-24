@@ -273,7 +273,7 @@ public class CqlConversion {
                     "Value is not of type " + fromClass.getName() + " but of type " + value.getClass().getName());
         }
 
-        TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(toDataType, fromClass);
+        TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(fromDataType, fromClass);
         if (fromCodec == null) {
             throw new IllegalArgumentException("No codec found in codecRegistry for Java type " + fromClass.getName()
                     + " to CQL type " + toDataType);
