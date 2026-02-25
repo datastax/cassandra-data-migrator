@@ -34,9 +34,12 @@ fi
 # Common environment and functions
 . common.sh
 
+# Initialize container runtime
+_initContainerRuntime
+
 _captureOutput() {
-  _info "Copying ${DOCKER_CDM}:/${testDir} into ${testDir}/output/"
-  docker cp ${DOCKER_CDM}:/${testDir} ${testDir}/output/
+  _info "Copying ${CONTAINER_CDM}:/${testDir} into ${testDir}/output/"
+  _containerCp ${CONTAINER_CDM}:/${testDir} ${testDir}/output/
   
   _info "Moving ${testDir}/output/$(basename ${testDir})/*.out TO ${testDir}/output/"
   find ${testDir}/output/$(basename ${testDir})/ -type f -name "*.out" | xargs -I{} mv {} ${testDir}/output/
@@ -85,9 +88,9 @@ for testDir in $(ls -d ${PHASE}/*); do
 done
 
 # The .jar file is expected to be present
-docker exec ${DOCKER_CDM} bash -c "ls -d ${CDM_JAR} >/dev/null 2>&1"
+_containerExec ${CONTAINER_CDM} bash -c "ls -d ${CDM_JAR} >/dev/null 2>&1"
 if [ $? -ne 0 ]; then
-  _error "Required file ${CDM_JAR} is not installed in Docker container ${DOCKER_CDM}"
+  _error "Required file ${CDM_JAR} is not installed in container ${CONTAINER_CDM}"
   errors=1
 fi
 
@@ -95,15 +98,15 @@ if [ $errors -ne 0 ]; then
   _fatal "One or more required files is missing. See above ERROR(s) for details."
 fi
 
-# Copy all the files for the phase to both Docker containers
+# Copy all the files for the phase to both containers
 echo
 echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-echo " Copying phase files into Docker containers"
+echo " Copying phase files into containers"
 echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-for dockerContainer in ${DOCKER_CASS} ${DOCKER_CDM}; do
-  docker exec ${dockerContainer} rm -rf /${PHASE}
-  docker cp ${PHASE} ${dockerContainer}:/${PHASE}
-  docker exec ${dockerContainer} chmod -R 755 ./${PHASE}/*/*.sh
+for containerName in ${CONTAINER_CASS} ${CONTAINER_CDM}; do
+  _containerExec ${containerName} rm -rf /${PHASE}
+  _containerCp ${PHASE} ${containerName}:/${PHASE}
+  _containerExec ${containerName} chmod -R 755 ./${PHASE}/*/*.sh
 done
 
 echo
@@ -113,8 +116,8 @@ echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
-  _info ${testDir} Setup tables and data 
-  docker exec ${DOCKER_CASS} bash -c "cqlsh -u ${CASS_USERNAME} -p ${CASS_PASSWORD} -f ${testDir}/setup.cql" > ${testDir}/output/setup.out 2>${testDir}/output/setup.err
+  _info ${testDir} Setup tables and data
+  _containerExec ${CONTAINER_CASS} bash -c "cqlsh -u ${CASS_USERNAME} -p ${CASS_PASSWORD} -f ${testDir}/setup.cql" > ${testDir}/output/setup.out 2>${testDir}/output/setup.err
   if [ $? -ne 0 ]; then
     _error "${testDir}/setup.cql failed, see $testDir/output/setup.out and $testDir/output/setup.err"
     errors=1
@@ -133,11 +136,11 @@ errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
   _info ${testDir} Executing test
-  docker exec ${DOCKER_CDM} bash -e -c "${testDir}/execute.sh /${testDir}" > ${testDir}/output/execute.out 2>${testDir}/output/execute.err
+  _containerExec ${CONTAINER_CDM} bash -e -c "${testDir}/execute.sh /${testDir}" > ${testDir}/output/execute.out 2>${testDir}/output/execute.err
   if [ $? -ne 0 ]; then
     _error "${testDir}/execute.sh failed, see $testDir/output/execute.out and $testDir/output/execute.err"
     echo "=-=-=-=-=-=-=- Container Directory Listing -=-=-=-=-=-=-=-"
-    echo "$(docker exec ${DOCKER_CDM} ls -laR ${testDir})"
+    echo "$(_containerExec ${CONTAINER_CDM} ls -laR ${testDir})"
     echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-==-=-=-=-=-=-=-=-=-=-=-=-"
     _captureOutput
     errors=1
@@ -155,16 +158,16 @@ errors=0
 for testDir in $(ls -d ${PHASE}/*); do
   export testDir
   if [ -x ${testDir}/alternateCheckResults.sh ]; then
-    _info ${testDir} Running Alternate Check Expected Results 
+    _info ${testDir} Running Alternate Check Expected Results
     # This provides a mechanism that allows a more nuanced means of generating actual.out
     # as not every assertion can be based on a simple "dump from cqlsh"
     ${testDir}/alternateCheckResults.sh > $testDir/output/actual.out 2>$testDir/output/actual.err
-  else 
-    _info ${testDir} Check Expected Results 
-    docker exec ${DOCKER_CASS} bash -c "cqlsh -u ${CASS_USERNAME} -p ${CASS_PASSWORD} -f ${testDir}/expected.cql" > ${testDir}/output/actual.out 2>${testDir}/output/actual.err
+  else
+    _info ${testDir} Check Expected Results
+    _containerExec ${CONTAINER_CASS} bash -c "cqlsh -u ${CASS_USERNAME} -p ${CASS_PASSWORD} -f ${testDir}/expected.cql" > ${testDir}/output/actual.out 2>${testDir}/output/actual.err
   fi
   if [ $? -ne 0 ]; then
-    _error "${testDir}/expected.cql failed, see $testDir/output/actual.out $testDir/output/and actual.err"
+    _error "${testDir}/expected.cql failed, see $testDir/output/actual.out and $testDir/output/actual.err"
     _captureOutput
     errors=1
     continue

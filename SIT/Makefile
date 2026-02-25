@@ -1,4 +1,8 @@
 
+# Container runtime configuration
+CONTAINER_RUNTIME ?= auto
+RUNTIME_FLAG = $(if $(filter-out auto,$(CONTAINER_RUNTIME)),-r $(CONTAINER_RUNTIME),)
+
 all: setup test_smoke_cmd test_regression_cmd test_features_cmd env_teardown
 
 setup: build env_setup
@@ -31,11 +35,24 @@ test_local_cmd:
 
 env_setup:
 	chmod -R 777 ./*.sh
-	./environment.sh -m setup -j ../target/cassandra-data-migrator*.jar
+	./environment.sh -m setup -j ../target/cassandra-data-migrator*.jar $(RUNTIME_FLAG)
 env_reset:
-	./environment.sh -m reset -j ../target/cassandra-data-migrator*.jar
+	./environment.sh -m reset -j ../target/cassandra-data-migrator*.jar $(RUNTIME_FLAG)
 env_validate:
-	./environment.sh -m validate
+	./environment.sh -m validate $(RUNTIME_FLAG)
 env_teardown:
-	./environment.sh -m teardown
+	./environment.sh -m teardown $(RUNTIME_FLAG)
+
+# Convenience targets for explicit runtime selection
+setup_podman: CONTAINER_RUNTIME=podman
+setup_podman: setup
+
+setup_docker: CONTAINER_RUNTIME=docker
+setup_docker: setup
+
+test_podman: CONTAINER_RUNTIME=podman
+test_podman: test
+
+test_docker: CONTAINER_RUNTIME=docker
+test_docker: test
 
