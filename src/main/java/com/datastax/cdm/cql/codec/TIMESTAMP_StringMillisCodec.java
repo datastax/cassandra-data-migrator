@@ -55,8 +55,22 @@ public class TIMESTAMP_StringMillisCodec extends AbstractBaseCodec<String> {
 
     @Override
     public String decode(ByteBuffer bytes, @NotNull ProtocolVersion protocolVersion) {
-        Instant instantValue = TypeCodecs.TIMESTAMP.decode(bytes, protocolVersion);
-        return instantValue == null ? null : String.valueOf(instantValue.toEpochMilli());
+        if (bytes == null || bytes.remaining() == 0) {
+            return null;
+        }
+
+        // Handle two cases:
+        // 1. Direct use: bytes are 8-byte timestamp (from TIMESTAMP column)
+        // 2. Codec conversion: bytes are UTF-8 text (from TEXT column via CqlConversion)
+        if (bytes.remaining() == 8) {
+            // Case 1: 8 bytes = timestamp, decode as Instant
+            Instant instantValue = TypeCodecs.TIMESTAMP.decode(bytes, protocolVersion);
+            return instantValue == null ? null : String.valueOf(instantValue.toEpochMilli());
+        } else {
+            // Case 2: Variable length = UTF-8 text, decode as string
+            String stringValue = TypeCodecs.TEXT.decode(bytes, protocolVersion);
+            return stringValue;
+        }
     }
 
     @Override

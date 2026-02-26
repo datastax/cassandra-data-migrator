@@ -1,5 +1,9 @@
 # Release Notes
 
+## [5.7.4] - 2026-02-24
+- Leverage unset to avoid ingesting tombstones at the target cluster by default.
+- Upgrade Spark version to [`3.5.8`](https://spark.apache.org/releases/spark-release-3-5-8.html).
+
 ## [5.7.3] - 2026-01-30
 - Vulnerability fixes for netty and commons-lang3
 

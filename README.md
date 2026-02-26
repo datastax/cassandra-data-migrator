@@ -8,7 +8,7 @@
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 > [!IMPORTANT]
-> Please note this job has been tested with spark version [3.5.7](https://archive.apache.org/dist/spark/spark-3.5.7/)
+> Please note this job has been tested with spark version [3.5.8](https://archive.apache.org/dist/spark/spark-3.5.8/)
 
 ## Install as a Container
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
@@ -22,14 +22,14 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 ### Prerequisite
 - **Java11** (minimum) as Spark binaries are compiled with it.
 - **Spark `3.5.x` with Scala `2.13` and Hadoop `3.3`**
-    - Typically installed using [this binary](https://archive.apache.org/dist/spark/spark-3.5.7/spark-3.5.7-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. This simple setup is recommended for most one-time migrations.
+    - Typically installed using [this binary](https://archive.apache.org/dist/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. This simple setup is recommended for most one-time migrations.
     - However we recommend using a Spark Cluster or a Spark Serverless platform like `Databricks` or `Google Dataproc` (that supports the above mentioned versions) for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
     
 Spark can be installed by running the following: -
 
 ```
-wget https://archive.apache.org/dist/spark/spark-3.5.7/spark-3.5.7-bin-hadoop3-scala2.13.tgz
-tar -xvzf spark-3.5.7-bin-hadoop3-scala2.13.tgz
+wget https://archive.apache.org/dist/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz
+tar -xvzf spark-3.5.8-bin-hadoop3-scala2.13.tgz
 ```
 
 > [!CAUTION]
@@ -97,8 +97,8 @@ spark-submit --properties-file cdm.properties \
 ```
 spark-submit --properties-file cdm.properties \
 --conf spark.cdm.schema.origin.keyspaceTable="<keyspacename>.<tablename>" \
---conf spark.executor.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
---conf spark.driver.extraJavaOptions='-Dlog4j.configurationFile=log4j2.properties' \ 
+--conf spark.executor.extraJavaOptions='-Dlog4j2.configurationFile=log4j2.properties' \
+--conf spark.driver.extraJavaOptions='-Dlog4j2.configurationFile=log4j2.properties' \
 --master "local[*]" --driver-memory 25G --executor-memory 25G \
 --class com.datastax.cdm.job.DiffData cassandra-data-migrator-5.x.x.jar &> logfile_name_$(date +%Y%m%d_%H_%M).txt
 ```
@@ -177,6 +177,9 @@ spark-submit --properties-file cdm.properties \
 > [!TIP]
 > If you want to pass in additional [Cassandra Java Driver configs](https://github.com/apache/cassandra-java-driver/blob/4.x/core/src/main/resources/reference.conf), you can leverage it as below
 > `--conf spark.driver.extraJavaOptions="-Ddatastax-java-driver.advanced.connection.pool.remote.size=5`
+
+> [!TIP]
+> If you want to log `DEBUG` level statements for troubleshooting, you can pass in `--conf spark.driver.extraJavaOptions='-Dlog4j2.level=DEBUG -Dlog4j2.rootLogger.level=DEBUG' --conf spark.executor.extraJavaOptions='-Dlog4j2.level=DEBUG -Dlog4j2.rootLogger.level=DEBUG'`
 
 - Each run (Migration or Validation) can be tracked (when enabled). You can find summary and details of the same in tables `cdm_run_info` and `cdm_run_details` in the target keyspace.
 - CDM does not migrate `ttl` & `writetime` at the field-level (for optimization reasons). It instead finds the field with the highest `ttl` & the field with the highest `writetime` within an `origin` row and uses those values on the entire `target` row.

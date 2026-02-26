@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.data.EnhancedPK;
 import com.datastax.cdm.data.PKFactory;
 import com.datastax.cdm.properties.IPropertyHelper;
@@ -89,7 +90,12 @@ public class TargetUpdateStatement extends TargetUpsertStatement {
                     bindValueTarget = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (!(null == bindValueTarget)) {
+                if (CqlData.shouldUnsetValue(bindValueTarget)) {
+                    if (logger.isDebugEnabled())
+                        logger.debug("Unsetting column {} at bind index {} to avoid tombstone",
+                                targetColumnNames.get(targetIndex), currentBindIndex);
+                    boundStatement = boundStatement.unset(currentBindIndex);
+                } else {
                     boundStatement = boundStatement.set(currentBindIndex, bindValueTarget,
                             cqlTable.getBindClass(targetIndex));
                 }

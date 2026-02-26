@@ -46,9 +46,15 @@ public class EnhancedPK {
 
     public EnhancedPK(PKFactory factory, List<Object> values, List<Class> classes, Integer ttl, Long writeTimestamp,
             Object explodeMapKey, Object explodeMapValue) {
+        this(factory, values, classes, ttl, writeTimestamp, explodeMapKey, explodeMapValue, null);
+    }
+
+    private EnhancedPK(PKFactory factory, List<Object> values, List<Class> classes, Integer ttl, Long writeTimestamp,
+            Object explodeMapKey, Object explodeMapValue, Map<Object, Object> explodeMap) {
         if (logDebug) {
-            logger.debug("EnhancedPK: values={}, ttl={}, writeTimestamp={}, explodeMapKey={}, explodeMapValue={}",
-                    values, ttl, writeTimestamp, explodeMapKey, explodeMapValue);
+            logger.debug(
+                    "EnhancedPK: values={}, ttl={}, writeTimestamp={}, explodeMapKey={}, explodeMapValue={}, explodeMap={}",
+                    values, ttl, writeTimestamp, explodeMapKey, explodeMapValue, explodeMap);
         }
         this.factory = factory;
         this.values = (null == explodeMapValue ? values : new ArrayList<>(values)); // copy the list when we will modify
@@ -59,6 +65,7 @@ public class EnhancedPK {
         this.ttl = ttl;
         this.explodeMapKey = explodeMapKey;
         this.explodeMapValue = explodeMapValue;
+        this.explodeMap = explodeMap; // Set explodeMap BEFORE validation
 
         if (null != explodeMapKey) {
             this.values.set(factory.getExplodeMapTargetPKIndex(), explodeMapKey);
@@ -68,13 +75,12 @@ public class EnhancedPK {
     }
 
     public EnhancedPK(PKFactory factory, List<Object> values, List<Class> classes, Integer ttl, Long writeTimestamp) {
-        this(factory, values, classes, ttl, writeTimestamp, null, null);
+        this(factory, values, classes, ttl, writeTimestamp, null, null, null);
     }
 
     public EnhancedPK(PKFactory factory, List<Object> values, List<Class> classes, Integer ttl, Long writeTimestamp,
             Map<Object, Object> explodeMap) {
-        this(factory, values, classes, ttl, writeTimestamp, null, null);
-        this.explodeMap = explodeMap;
+        this(factory, values, classes, ttl, writeTimestamp, null, null, explodeMap);
     }
 
     public List<EnhancedPK> explode(ExplodeMap explodeMapFeature) {
@@ -134,9 +140,12 @@ public class EnhancedPK {
             Object value = values.get(i);
             if (null != value)
                 continue;
-            if (i == factory.getExplodeMapTargetPKIndex())
-                continue; // this is an unexploded PK
+            // Allow null for explode map key column when PK has not been exploded yet
+            if (canExplode() && i == factory.getExplodeMapTargetPKIndex())
+                continue; // this is an unexploded PK with null at explode map key position
 
+            if (null == this.messages)
+                this.messages = new ArrayList<>();
             messages.add(String.format("ERROR: Null value for position %d", i));
             errorState = true;
         }

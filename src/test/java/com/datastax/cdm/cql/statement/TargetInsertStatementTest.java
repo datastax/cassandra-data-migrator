@@ -236,4 +236,111 @@ public class TargetInsertStatementTest extends CommonMocks {
         assertNotNull(result);
     }
 
+    @Test
+    public void bind_withNullValue_shouldCallUnset() {
+        // Setup: return null for one column
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(null);
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).unset(anyInt());
+    }
+
+    @Test
+    public void bind_withEmptyList_shouldCallUnset() {
+        // Setup: return empty list for one column
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(Collections.emptyList());
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).unset(anyInt());
+    }
+
+    @Test
+    public void bind_withEmptySet_shouldCallUnset() {
+        // Setup: return empty set for one column
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(Collections.emptySet());
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).unset(anyInt());
+    }
+
+    @Test
+    public void bind_withEmptyMap_shouldCallUnset() {
+        // Setup: return empty map for one column
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(Collections.emptyMap());
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).unset(anyInt());
+    }
+
+    @Test
+    public void bind_withNonEmptyList_shouldCallSet() {
+        // Setup: return non-empty list for one column
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(Arrays.asList("a", "b"));
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).set(anyInt(), any(), any(Class.class));
+    }
+
+    @Test
+    public void bind_withNonEmptySet_shouldCallSet() {
+        // Setup: return non-empty set for one column
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(Collections.singleton("value"));
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).set(anyInt(), any(), any(Class.class));
+    }
+
+    @Test
+    public void bind_withNonEmptyMap_shouldCallSet() {
+        // Setup: return non-empty map for one column
+        Map<String, String> map = new HashMap<>();
+        map.put("key", "value");
+        when(targetTable.getCorrespondingIndex(0)).thenReturn(0);
+        when(originTable.getAndConvertData(0, originRow)).thenReturn(map);
+        targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
+
+        // Act
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        verify(boundStatement, atLeastOnce()).set(anyInt(), any(), any(Class.class));
+    }
+
 }

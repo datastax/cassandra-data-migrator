@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.cdm.cql.EnhancedSession;
+import com.datastax.cdm.data.CqlData;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.cdm.properties.PropertyHelper;
@@ -54,32 +55,61 @@ public class TargetInsertStatement extends TargetUpsertStatement {
         int currentBindIndex = 0;
         Object bindValue = null;
 
-        if (logDebug)
+        if (logDebug) {
             logger.debug("bind using conversions: {}", cqlTable.getOtherCqlTable().getConversions());
+            logger.debug("Target columns: {}", targetColumnNames);
+            logger.debug("ExplodeMap key index: {}, value index: {}", explodeMapKeyIndex, explodeMapValueIndex);
+        }
         for (int targetIndex = 0; targetIndex < targetColumnTypes.size(); targetIndex++) {
             if (!bindColumnIndexes.contains(targetIndex)) {
                 // this happens with constant columns, for example
+                if (logDebug)
+                    logger.debug("Skipping target index {} ({}): not in bindColumnIndexes", targetIndex,
+                            targetIndex < targetColumnNames.size() ? targetColumnNames.get(targetIndex) : "unknown");
                 continue;
             }
             try {
                 if (targetIndex == explodeMapKeyIndex) {
                     bindValue = explodeMapKey;
+                    if (logDebug)
+                        logger.debug("Binding ExplodeMap key at target index {} ({}): {}", targetIndex,
+                                targetColumnNames.get(targetIndex), bindValue);
                 } else if (targetIndex == explodeMapValueIndex) {
                     bindValue = explodeMapValue;
+                    if (logDebug)
+                        logger.debug("Binding ExplodeMap value at target index {} ({}): {}", targetIndex,
+                                targetColumnNames.get(targetIndex), bindValue);
                 } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
                     int originIndex = extractJsonFeature.getOriginColumnIndex();
                     bindValue = extractJsonFeature.extract(originRow.getString(originIndex));
+                    if (logDebug)
+                        logger.debug("Binding ExtractJson at target index {} ({}): {}", targetIndex,
+                                targetColumnNames.get(targetIndex), bindValue);
                 } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
-                    if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
-                    {
-                        currentBindIndex++;
-                        continue;
+                    if (logDebug)
+                        logger.debug("Target index {} ({}) maps to origin index {}", targetIndex,
+                                targetColumnNames.get(targetIndex), originIndex);
+                    if (originIndex < 0) {
+                        // No origin data for this target column - set to null to trigger unset logic
+                        bindValue = null;
+                        if (logDebug)
+                            logger.debug("No origin data for target index {} ({}): will unset to avoid tombstone",
+                                    targetIndex, targetColumnNames.get(targetIndex));
+                    } else {
+                        bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                        if (logDebug)
+                            logger.debug("Binding origin data at target index {} ({}) from origin index {}: {}",
+                                    targetIndex, targetColumnNames.get(targetIndex), originIndex, bindValue);
                     }
-                    bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
                 }
 
-                if (!(null == bindValue)) {
+                if (CqlData.shouldUnsetValue(bindValue)) {
+                    if (logDebug)
+                        logger.debug("Unsetting column {} at bind index {} to avoid tombstone",
+                                targetColumnNames.get(targetIndex), currentBindIndex);
+                    boundStatement = boundStatement.unset(currentBindIndex);
+                } else {
                     boundStatement = boundStatement.set(currentBindIndex, bindValue,
                             cqlTable.getBindClass(targetIndex));
                 }
