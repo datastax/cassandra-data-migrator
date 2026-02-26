@@ -14,6 +14,7 @@ Dockerfile
 scripts/*
 test-backup/feature/*
 src/resources/log4j.xml
+SIT/README.md
 SIT/*/*/*.assert
 SIT/*/*/*.out
 SIT/*/*/*.txt
@@ -33,3 +34,4 @@ PERF/testing.txt
 PERF/cdm-v4.properties
 PERF/cgpt.yaml
 PERF/cql-iot.yaml
+docs/*
