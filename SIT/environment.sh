@@ -244,7 +244,7 @@ _Setup() {
     _info "Pulling latest container image for ${containerVersion}"
     _containerPull ${containerVersion}
     # _info "Building latest container image for ${containerVersion}"
-    # _containerBuild -t ${containerVersion} ..
+    # _containerBuild --no-cache -t ${containerVersion} ..
 
     _info "Starting CDM container ${CONTAINER_CDM}"
     _containerRun --name ${CONTAINER_CDM} --network ${NETWORK_NAME} --ip ${SUBNET}.3 -e "CASS_USERNAME=${CASS_USERNAME}" -e "CASS_PASSWORD=${CASS_PASSWORD}" -e "CASS_CLUSTER=${CONTAINER_CASS}" -d ${containerVersion}

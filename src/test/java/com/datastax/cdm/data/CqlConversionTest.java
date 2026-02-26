@@ -360,4 +360,150 @@ class CqlConversionTest {
         assertEquals(CqlConversion.Type.NONE, conversion.getConversionTypeList().get(2)); // value no conversion
     }
 
+    // ========== Direct Codec Conversion Tests ==========
+
+    @Test
+    void testConvertTextToTimestampUsingDirectCodec() {
+        // This test verifies the TEXT→TIMESTAMP conversion using TEXTMillis_InstantCodec
+        // The direct codec path allows TEXT data to be converted to Instant without going through
+        // the standard encode/decode ByteBuffer pattern that would fail with UTF-8 text bytes
+
+        @SuppressWarnings("unchecked")
+        TypeCodec<String> textCodec = mock(TypeCodec.class);
+        @SuppressWarnings("unchecked")
+        TypeCodec<java.time.Instant> directCodec = mock(TypeCodec.class);
+        @SuppressWarnings("unchecked")
+        TypeCodec<java.time.Instant> timestampCodec = mock(TypeCodec.class);
+
+        // Setup codecs for construction phase
+        lenient().when(codecRegistry.codecFor(DataTypes.TEXT)).thenReturn((TypeCodec) textCodec);
+        lenient().when(codecRegistry.codecFor(DataTypes.TIMESTAMP)).thenReturn((TypeCodec) timestampCodec);
+
+        // Setup TEXT codec for (TEXT, String)
+        when(codecRegistry.codecFor(eq(DataTypes.TEXT), eq(String.class))).thenReturn((TypeCodec) textCodec);
+        when(textCodec.getJavaType()).thenReturn(GenericType.STRING);
+
+        // Setup direct codec for (TEXT, Instant) - this is the key for the fix
+        lenient().when(codecRegistry.codecFor(eq(DataTypes.TEXT), eq(java.time.Instant.class)))
+                .thenReturn((TypeCodec) directCodec);
+        lenient().when(directCodec.getJavaType()).thenReturn(GenericType.INSTANT);
+
+        // Setup TIMESTAMP codec for (TIMESTAMP, Instant)
+        lenient().when(codecRegistry.codecFor(eq(DataTypes.TIMESTAMP), eq(java.time.Instant.class)))
+                .thenReturn((TypeCodec) timestampCodec);
+        lenient().when(timestampCodec.getJavaType()).thenReturn(GenericType.INSTANT);
+
+        // Mock encode behavior for TEXT codec - encodes string to UTF-8 bytes
+        when(textCodec.encode(anyString(), any())).thenAnswer(invocation -> {
+            String value = invocation.getArgument(0);
+            byte[] bytes = value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            return ByteBuffer.wrap(bytes);
+        });
+
+        // Mock decode behavior for direct codec - parses milliseconds string to Instant
+        when(directCodec.decode(any(ByteBuffer.class), any())).thenAnswer(invocation -> {
+            ByteBuffer buffer = invocation.getArgument(0);
+            String millisStr = java.nio.charset.StandardCharsets.UTF_8.decode(buffer.duplicate()).toString();
+            long millis = Long.parseLong(millisStr);
+            return java.time.Instant.ofEpochMilli(millis);
+        });
+
+        CqlConversion conversion = new CqlConversion(DataTypes.TEXT, DataTypes.TIMESTAMP, codecRegistry);
+
+        // Test conversion of milliseconds string to Instant
+        String inputMillis = "1087383600000"; // 2004-06-15T15:00:00Z
+        Object result = conversion.convert(inputMillis);
+
+        assertNotNull(result);
+        assertTrue(result instanceof java.time.Instant);
+        java.time.Instant resultInstant = (java.time.Instant) result;
+        assertEquals(1087383600000L, resultInstant.toEpochMilli());
+        assertEquals(CqlConversion.Type.CODEC, conversion.getConversionTypeList().get(0));
+
+        // Verify that the direct codec was used
+        verify(directCodec, times(1)).decode(any(ByteBuffer.class), any());
+    }
+
+    @Test
+    void testConvertTextToTimestampFallbackToStandardConversion() {
+        // This test verifies that when no direct codec is available, the standard conversion is used
+
+        @SuppressWarnings("unchecked")
+        TypeCodec<String> textCodec = mock(TypeCodec.class);
+        @SuppressWarnings("unchecked")
+        TypeCodec<java.time.Instant> timestampCodec = mock(TypeCodec.class);
+
+        // Setup codecs for construction phase
+        lenient().when(codecRegistry.codecFor(DataTypes.TEXT)).thenReturn((TypeCodec) textCodec);
+        lenient().when(codecRegistry.codecFor(DataTypes.TIMESTAMP)).thenReturn((TypeCodec) timestampCodec);
+
+        // Setup TEXT codec for (TEXT, String)
+        when(codecRegistry.codecFor(eq(DataTypes.TEXT), eq(String.class))).thenReturn((TypeCodec) textCodec);
+        when(textCodec.getJavaType()).thenReturn(GenericType.STRING);
+
+        // No direct codec available - codecFor(TEXT, Instant) throws exception
+        when(codecRegistry.codecFor(eq(DataTypes.TEXT), eq(java.time.Instant.class)))
+                .thenThrow(new IllegalArgumentException("No codec found"));
+
+        // Setup TIMESTAMP codec for (TIMESTAMP, Instant)
+        when(codecRegistry.codecFor(eq(DataTypes.TIMESTAMP), eq(java.time.Instant.class)))
+                .thenReturn((TypeCodec) timestampCodec);
+        when(timestampCodec.getJavaType()).thenReturn(GenericType.INSTANT);
+
+        // Mock encode behavior for TEXT codec
+        when(textCodec.encode(anyString(), any())).thenAnswer(invocation -> {
+            String value = invocation.getArgument(0);
+            // In real scenario, this would encode to UTF-8 bytes
+            return ByteBuffer.wrap(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        });
+
+        // Mock decode behavior for TIMESTAMP codec - in real scenario this would fail with UTF-8 bytes
+        // but for this test we'll make it work to verify the fallback path is taken
+        when(timestampCodec.decode(any(ByteBuffer.class), any())).thenAnswer(invocation -> {
+            ByteBuffer buffer = invocation.getArgument(0);
+            String millisStr = java.nio.charset.StandardCharsets.UTF_8.decode(buffer.duplicate()).toString();
+            long millis = Long.parseLong(millisStr);
+            return java.time.Instant.ofEpochMilli(millis);
+        });
+
+        CqlConversion conversion = new CqlConversion(DataTypes.TEXT, DataTypes.TIMESTAMP, codecRegistry);
+
+        String inputMillis = "1087383600000";
+        Object result = conversion.convert(inputMillis);
+
+        assertNotNull(result);
+        assertTrue(result instanceof java.time.Instant);
+
+        // Verify that standard conversion path was used (both codecs called)
+        verify(textCodec, times(1)).encode(anyString(), any());
+        verify(timestampCodec, times(1)).decode(any(ByteBuffer.class), any());
+    }
+
+    @Test
+    void testConvertTextToTimestampWithNullValue() {
+        // Test that null values are handled correctly in direct codec conversion
+
+        @SuppressWarnings("unchecked")
+        TypeCodec<String> textCodec = mock(TypeCodec.class);
+        @SuppressWarnings("unchecked")
+        TypeCodec<java.time.Instant> directCodec = mock(TypeCodec.class);
+
+        // Setup codecs for construction phase
+        lenient().when(codecRegistry.codecFor(DataTypes.TEXT)).thenReturn((TypeCodec) textCodec);
+        lenient().when(codecRegistry.codecFor(DataTypes.TIMESTAMP)).thenReturn((TypeCodec) directCodec);
+
+        lenient().when(codecRegistry.codecFor(eq(DataTypes.TEXT), eq(String.class))).thenReturn((TypeCodec) textCodec);
+        lenient().when(codecRegistry.codecFor(eq(DataTypes.TEXT), eq(java.time.Instant.class)))
+                .thenReturn((TypeCodec) directCodec);
+        lenient().when(textCodec.getJavaType()).thenReturn(GenericType.STRING);
+        lenient().when(directCodec.getJavaType()).thenReturn(GenericType.INSTANT);
+
+        lenient().when(textCodec.encode(isNull(), any())).thenReturn(null);
+        lenient().when(directCodec.decode(isNull(), any())).thenReturn(null);
+
+        CqlConversion conversion = new CqlConversion(DataTypes.TEXT, DataTypes.TIMESTAMP, codecRegistry);
+
+        Object result = conversion.convert(null);
+        assertNull(result);
+    }
 }

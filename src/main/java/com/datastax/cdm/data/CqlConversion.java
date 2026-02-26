@@ -268,6 +268,11 @@ public class CqlConversion {
         if (logger.isDebugEnabled())
             logger.debug("convert_CODEC value {} from {} to {}", value, fromClass, toClass);
 
+        // Handle null values
+        if (value == null) {
+            return null;
+        }
+
         if (!fromClass.isAssignableFrom(value.getClass())) {
             throw new IllegalArgumentException(
                     "Value is not of type " + fromClass.getName() + " but of type " + value.getClass().getName());
@@ -275,23 +280,27 @@ public class CqlConversion {
 
         // First, try to find a direct codec that can convert from fromDataType to toClass
         // This handles cases like TEXT→Instant where TEXTMillis_InstantCodec can do the conversion directly
-        TypeCodec<Object> directCodec = null;
-        try {
-            directCodec = (TypeCodec<Object>) codecRegistry.codecFor(fromDataType, toClass);
-            if (directCodec != null) {
+        // Only attempt this optimization when actually converting between different types
+        if (!fromDataType.equals(toDataType)) {
+            TypeCodec<Object> directCodec = null;
+            try {
+                directCodec = (TypeCodec<Object>) codecRegistry.codecFor(fromDataType, toClass);
+                if (directCodec != null) {
+                    if (logger.isDebugEnabled())
+                        logger.debug("Found direct codec for conversion: {} from {} to {}",
+                                directCodec.getClass().getSimpleName(), fromDataType, toClass);
+                    // Use the direct codec to decode the value
+                    // First encode with the fromCodec, then decode with directCodec
+                    TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(fromDataType, fromClass);
+                    ByteBuffer encoded = fromCodec.encode(value, PROTOCOL_VERSION);
+                    return directCodec.decode(encoded, PROTOCOL_VERSION);
+                }
+            } catch (Exception e) {
+                // No direct codec found, fall through to standard conversion
                 if (logger.isDebugEnabled())
-                    logger.debug("Found direct codec for conversion: {} from {} to {}",
-                            directCodec.getClass().getSimpleName(), fromDataType, toClass);
-                // Use the direct codec to decode the value
-                // First encode with the fromCodec, then decode with directCodec
-                TypeCodec<Object> fromCodec = (TypeCodec<Object>) codecRegistry.codecFor(fromDataType, fromClass);
-                ByteBuffer encoded = fromCodec.encode(value, PROTOCOL_VERSION);
-                return directCodec.decode(encoded, PROTOCOL_VERSION);
+                    logger.debug("No direct codec found for {} to {}, using standard conversion", fromDataType,
+                            toClass);
             }
-        } catch (Exception e) {
-            // No direct codec found, fall through to standard conversion
-            if (logger.isDebugEnabled())
-                logger.debug("No direct codec found for {} to {}, using standard conversion", fromDataType, toClass);
         }
 
         // Standard conversion: encode with fromCodec, decode with toCodec

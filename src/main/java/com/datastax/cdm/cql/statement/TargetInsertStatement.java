@@ -90,17 +90,18 @@ public class TargetInsertStatement extends TargetUpsertStatement {
                     if (logDebug)
                         logger.debug("Target index {} ({}) maps to origin index {}", targetIndex,
                                 targetColumnNames.get(targetIndex), originIndex);
-                    if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
-                    {
+                    if (originIndex < 0) {
+                        // No origin data for this target column - set to null to trigger unset logic
+                        bindValue = null;
                         if (logDebug)
-                            logger.debug("Skipping target index {} ({}): no corresponding origin column (index={})",
-                                    targetIndex, targetColumnNames.get(targetIndex), originIndex);
-                        continue;
+                            logger.debug("No origin data for target index {} ({}): will unset to avoid tombstone",
+                                    targetIndex, targetColumnNames.get(targetIndex));
+                    } else {
+                        bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                        if (logDebug)
+                            logger.debug("Binding origin data at target index {} ({}) from origin index {}: {}",
+                                    targetIndex, targetColumnNames.get(targetIndex), originIndex, bindValue);
                     }
-                    bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
-                    if (logDebug)
-                        logger.debug("Binding origin data at target index {} ({}) from origin index {}: {}",
-                                targetIndex, targetColumnNames.get(targetIndex), originIndex, bindValue);
                 }
 
                 if (CqlData.shouldUnsetValue(bindValue)) {
