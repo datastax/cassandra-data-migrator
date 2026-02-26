@@ -55,29 +55,52 @@ public class TargetInsertStatement extends TargetUpsertStatement {
         int currentBindIndex = 0;
         Object bindValue = null;
 
-        if (logDebug)
+        if (logDebug) {
             logger.debug("bind using conversions: {}", cqlTable.getOtherCqlTable().getConversions());
+            logger.debug("Target columns: {}", targetColumnNames);
+            logger.debug("ExplodeMap key index: {}, value index: {}", explodeMapKeyIndex, explodeMapValueIndex);
+        }
         for (int targetIndex = 0; targetIndex < targetColumnTypes.size(); targetIndex++) {
             if (!bindColumnIndexes.contains(targetIndex)) {
                 // this happens with constant columns, for example
+                if (logDebug)
+                    logger.debug("Skipping target index {} ({}): not in bindColumnIndexes", targetIndex,
+                            targetIndex < targetColumnNames.size() ? targetColumnNames.get(targetIndex) : "unknown");
                 continue;
             }
             try {
                 if (targetIndex == explodeMapKeyIndex) {
                     bindValue = explodeMapKey;
+                    if (logDebug)
+                        logger.debug("Binding ExplodeMap key at target index {} ({}): {}", targetIndex,
+                                targetColumnNames.get(targetIndex), bindValue);
                 } else if (targetIndex == explodeMapValueIndex) {
                     bindValue = explodeMapValue;
+                    if (logDebug)
+                        logger.debug("Binding ExplodeMap value at target index {} ({}): {}", targetIndex,
+                                targetColumnNames.get(targetIndex), bindValue);
                 } else if (targetIndex == extractJsonFeature.getTargetColumnIndex()) {
                     int originIndex = extractJsonFeature.getOriginColumnIndex();
                     bindValue = extractJsonFeature.extract(originRow.getString(originIndex));
+                    if (logDebug)
+                        logger.debug("Binding ExtractJson at target index {} ({}): {}", targetIndex,
+                                targetColumnNames.get(targetIndex), bindValue);
                 } else {
                     int originIndex = cqlTable.getCorrespondingIndex(targetIndex);
+                    if (logDebug)
+                        logger.debug("Target index {} ({}) maps to origin index {}", targetIndex,
+                                targetColumnNames.get(targetIndex), originIndex);
                     if (originIndex < 0) // we don't have data to bind for this column; continue to the next targetIndex
                     {
-                        currentBindIndex++;
+                        if (logDebug)
+                            logger.debug("Skipping target index {} ({}): no corresponding origin column (index={})",
+                                    targetIndex, targetColumnNames.get(targetIndex), originIndex);
                         continue;
                     }
                     bindValue = cqlTable.getOtherCqlTable().getAndConvertData(originIndex, originRow);
+                    if (logDebug)
+                        logger.debug("Binding origin data at target index {} ({}) from origin index {}: {}",
+                                targetIndex, targetColumnNames.get(targetIndex), originIndex, bindValue);
                 }
 
                 if (CqlData.shouldUnsetValue(bindValue)) {

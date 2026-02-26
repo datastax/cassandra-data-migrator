@@ -97,8 +97,10 @@ fi
 
 spark-submit --properties-file "${PROPERTIES}" \
   --master "local[*]" \
-  --conf "spark.driver.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \
-  --conf "spark.executor.extraJavaOptions=-Dlog4j.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \
+  --conf "spark.driver.extraJavaOptions=-Dlog4j2.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \
+  --conf "spark.executor.extraJavaOptions=-Dlog4j2.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \
   --class ${CLASS} \
   /local/cassandra-data-migrator.jar
 
+# Use below to generate DEBUG logs during tests
+# --conf "spark.driver.extraJavaOptions=-Dlog4j2.level=DEBUG -Dlog4j2.rootLogger.level=DEBUG -Dlog4j2.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \

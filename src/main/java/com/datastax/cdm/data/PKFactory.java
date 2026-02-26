@@ -33,6 +33,8 @@ import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.cdm.schema.CqlTable;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 
 public class PKFactory {
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -53,6 +55,7 @@ public class PKFactory {
     private final List<Integer> targetPKIndexesToBind;
     private final List<LookupMethod> targetPKLookupMethods;
     private final List<Object> targetDefaultValues;
+    private final List<String> targetDefaultValueStrings; // Raw string values for WHERE clause generation
     private final String targetWhereClause;
 
     private final List<Integer> originPKIndexesToBind;
@@ -72,9 +75,11 @@ public class PKFactory {
 
         this.targetPKLookupMethods = new ArrayList<>();
         this.targetDefaultValues = new ArrayList<>();
+        this.targetDefaultValueStrings = new ArrayList<>();
         for (int i = 0; i < targetTable.getPKNames(false).size(); i++) {
             targetPKLookupMethods.add(null);
             targetDefaultValues.add(null);
+            targetDefaultValueStrings.add(null);
         }
 
         this.originPKLookupMethods = new ArrayList<>();
@@ -155,7 +160,7 @@ public class PKFactory {
             for (int i = 0; i < pkNames.size(); i++) {
                 LookupMethod method = targetPKLookupMethods.get(i);
                 String name = pkNames.get(i);
-                Object defaultValue = targetDefaultValues.get(i);
+                String defaultValueString = targetDefaultValueStrings.get(i);
 
                 if (null == method)
                     continue;
@@ -167,10 +172,10 @@ public class PKFactory {
                     sb.append(name).append("=?");
                     break;
                 case CONSTANT_COLUMN:
-                    if (null != defaultValue) {
+                    if (null != defaultValueString) {
                         if (sb.length() > 0)
                             sb.append(" AND ");
-                        sb.append(name).append("=").append(defaultValue);
+                        sb.append(name).append("=").append(defaultValueString);
                     }
                     break;
                 }
@@ -299,7 +304,15 @@ public class PKFactory {
                 String columnName = constantColumnNames.get(i);
                 int targetPKIndex = targetTable.getPKNames(false).indexOf(columnName);
                 if (targetPKIndex >= 0) {
-                    this.targetDefaultValues.set(targetPKIndex, constantColumnValues.get(i));
+                    // Parse the constant column value into the proper object type
+                    // This is critical when constant columns are part of the PK and used with features like ExplodeMap
+                    DataType dataType = targetTable.getDataType(columnName);
+                    TypeCodec<Object> codec = targetTable.getCodecRegistry().codecFor(dataType);
+                    Object parsedValue = codec.parse(constantColumnValues.get(i));
+
+                    this.targetDefaultValues.set(targetPKIndex, parsedValue);
+                    this.targetDefaultValueStrings.set(targetPKIndex, constantColumnValues.get(i)); // Keep raw string
+                                                                                                    // for WHERE clause
                     this.targetPKLookupMethods.set(targetPKIndex, LookupMethod.CONSTANT_COLUMN);
                     this.targetTable.getPKClasses().set(targetPKIndex, constantColumnBindClasses.get(i));
                 }
