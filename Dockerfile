@@ -6,7 +6,7 @@ RUN mkdir -p /assets/ && cd /assets && \
     tar -xzf ./dsbulk.tar.gz && \
     rm ./dsbulk.tar.gz && \
     mv /assets/dsbulk-* /assets/dsbulk  && \
-    curl -OL https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz && \
+    curl -L https://downloads.datastax.com/labs/cqlsh-astra-20230710-vectortype-bin.tar.gz --output cqlsh-astra.tar.gz && \
     tar -xzf ./cqlsh-astra.tar.gz && \
     rm ./cqlsh-astra.tar.gz && \
     curl -OL https://archive.apache.org/dist/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz && \
