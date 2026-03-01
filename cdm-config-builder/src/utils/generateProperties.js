@@ -571,4 +571,3 @@ export function generateProperties(formState) {
   return lines.join('\n');
 }
 
-// Made with Bob

@@ -124,4 +124,3 @@ export function SchemaSection({
   );
 }
 
-// Made with Bob

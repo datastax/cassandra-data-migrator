@@ -81,4 +81,3 @@ export function PropertiesPreview({ content }) {
   );
 }
 
-// Made with Bob

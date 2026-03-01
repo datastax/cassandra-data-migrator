@@ -200,4 +200,3 @@ function isBuiltinType(typeStr) {
   return BUILTIN_TYPES.has(base);
 }
 
-// Made with Bob

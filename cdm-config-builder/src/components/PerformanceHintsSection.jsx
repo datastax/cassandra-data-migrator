@@ -126,4 +126,3 @@ export function PerformanceHintsSection({
   );
 }
 
-// Made with Bob

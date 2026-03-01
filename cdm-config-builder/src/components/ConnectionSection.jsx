@@ -105,14 +105,6 @@ function ClusterConnectionFields({ prefix, label, values, onChange }) {
                   invalidText="Must be a valid UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
                   required
                 />
-                <TextInput
-                  id={field('ScbRegion')}
-                  labelText="SCB Region"
-                  placeholder="us-east-1"
-                  value={val('ScbRegion')}
-                  onChange={handle('ScbRegion')}
-                  required
-                />
                 <Select
                   id={field('ScbType')}
                   labelText="SCB Type"
@@ -125,6 +117,14 @@ function ClusterConnectionFields({ prefix, label, values, onChange }) {
                 </Select>
                 {scbType === 'custom' && (
                   <>
+                    <TextInput
+                      id={field('ScbRegion')}
+                      labelText="SCB Region"
+                      placeholder="us-east-1"
+                      value={val('ScbRegion')}
+                      onChange={handle('ScbRegion')}
+                      required
+                    />
                     <TextInput
                       id={field('ScbCustomDomain')}
                       labelText="SCB Custom Domain"
@@ -197,4 +197,3 @@ export function ConnectionSection({ values, onChange }) {
   );
 }
 
-// Made with Bob

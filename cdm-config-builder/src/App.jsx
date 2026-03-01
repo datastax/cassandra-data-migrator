@@ -168,4 +168,3 @@ export default function App() {
   );
 }
 
-// Made with Bob

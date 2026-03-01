@@ -66,7 +66,13 @@ cdm-config-builder/
     └── utils/
         ├── parseCqlSchema.js             # CQL DDL parser
         ├── bestPracticesRules.js         # Performance tuning rules engine
-        └── generateProperties.js        # cdm.properties file generator
+        └── generateProperties.js         # cdm.properties file generator
+    └── test/
+        ├── ConnectionSection.test.jsx
+        ├── bestPracticesRules.test.js
+        ├── generateProperties.test.js
+        ├── parseCqlSchema.test.js
+        └── setup.js
 ```
 
 ## How It Works

@@ -14,4 +14,3 @@ export function FormSection({ title, description, children, className = '' }) {
   );
 }
 
-// Made with Bob
