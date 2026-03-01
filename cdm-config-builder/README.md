@@ -10,6 +10,7 @@ A React application using the [IBM Carbon Design System](https://carbondesignsys
 - **Live preview** — the generated `cdm.properties` file updates in real time as you fill out the form
 - **Inline comments** — every generated property includes an explanation of why it was set to that value
 - **Download & Copy** — save the file as `cdm.properties` or copy to clipboard with one click
+- **Dark / Light theme** — toggle between themes via the header button; preference is persisted in `localStorage` and respects the OS `prefers-color-scheme` setting
 
 ## Prerequisites
 
@@ -48,31 +49,35 @@ npm run preview
 
 ```
 cdm-config-builder/
-├── index.html
+├── index.html                            # Anti-FOUC theme script + React mount point
 ├── package.json
 ├── vite.config.js
 ├── README.md
 └── src/
     ├── main.jsx                          # React entry point
     ├── App.jsx                           # Root component, form state, layout
-    ├── App.scss                          # Carbon + custom styles
+    ├── App.scss                          # Carbon + custom styles + CSS theme tokens
+    ├── context/
+    │   └── ThemeContext.jsx              # ThemeProvider + useTheme hook (localStorage, prefers-color-scheme)
     ├── components/
     │   ├── FormSection.jsx               # Reusable Carbon Tile section wrapper
     │   ├── SchemaSection.jsx             # CQL CREATE TABLE inputs
     │   ├── ConnectionSection.jsx         # Origin/target host, port, SCB, credentials
     │   ├── PerformanceHintsSection.jsx   # Row count, table size, data types, toggles
     │   ├── AdvancedFeaturesSection.jsx   # ExplodeMap, ConstantColumns, ExtractJson
-    │   └── PropertiesPreview.jsx         # Live preview panel + Download/Copy buttons
+    │   ├── PropertiesPreview.jsx         # Live preview panel + Download/Copy buttons
+    │   └── ThemeToggleButton.jsx         # Sun/Moon SVG icons for the header theme toggle
     └── utils/
-        ├── parseCqlSchema.js             # CQL DDL parser
-        ├── bestPracticesRules.js         # Performance tuning rules engine
-        └── generateProperties.js         # cdm.properties file generator
+    │   ├── parseCqlSchema.js             # CQL DDL parser
+    │   ├── bestPracticesRules.js         # Performance tuning rules engine
+    │   └── generateProperties.js         # cdm.properties file generator
     └── test/
-        ├── ConnectionSection.test.jsx
-        ├── bestPracticesRules.test.js
-        ├── generateProperties.test.js
-        ├── parseCqlSchema.test.js
-        └── setup.js
+    │   ├── theme.test.jsx                # ThemeContext + icon component tests
+    │   ├── ConnectionSection.test.jsx
+    │   ├── bestPracticesRules.test.js
+    │   ├── generateProperties.test.js
+    │   ├── parseCqlSchema.test.js
+    │   └── setup.js
 ```
 
 ## How It Works

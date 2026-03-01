@@ -1,6 +1,103 @@
 // Import Carbon styles
 @use '@carbon/react';
 
+// ── CSS Custom Properties: Light Theme (default) ──────────────────────────────
+:root,
+[data-theme='light'] {
+  // Backgrounds
+  --cdm-bg-primary:    #f4f4f4;
+  --cdm-bg-secondary:  #ffffff;
+  --cdm-surface:       #e0e0e0;
+  --cdm-surface-hover: #d1d1d1;
+
+  // Text
+  --cdm-text-primary:   #161616;
+  --cdm-text-secondary: #525252;
+  --cdm-text-muted:     #8d8d8d;
+  --cdm-text-on-color:  #ffffff;
+
+  // Borders
+  --cdm-border:        #c6c6c6;
+  --cdm-border-strong: #8d8d8d;
+
+  // Accent / interactive
+  --cdm-accent:        #0f62fe;
+  --cdm-accent-hover:  #0353e9;
+  --cdm-focus-ring:    #0f62fe;
+
+  // Badges
+  --cdm-badge-bg:      #e0e0e0;
+  --cdm-badge-text:    #161616;
+
+  // Code / preview panel
+  --cdm-code-bg:       #f4f4f4;
+  --cdm-code-header:   #e0e0e0;
+  --cdm-code-border:   #c6c6c6;
+  --cdm-code-text:     #161616;
+
+  // Feature block
+  --cdm-feature-bg:    #ffffff;
+  --cdm-feature-accent:#0f62fe;
+
+  // Shadows
+  --cdm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --cdm-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+  // Theme toggle button
+  --cdm-toggle-bg:       transparent;
+  --cdm-toggle-color:    #161616;
+  --cdm-toggle-hover-bg: rgba(0, 0, 0, 0.08);
+  --cdm-toggle-active-bg:rgba(0, 0, 0, 0.14);
+}
+
+// ── CSS Custom Properties: Dark Theme ─────────────────────────────────────────
+[data-theme='dark'] {
+  // Backgrounds
+  --cdm-bg-primary:    #161616;
+  --cdm-bg-secondary:  #262626;
+  --cdm-surface:       #393939;
+  --cdm-surface-hover: #474747;
+
+  // Text
+  --cdm-text-primary:   #f4f4f4;
+  --cdm-text-secondary: #c6c6c6;
+  --cdm-text-muted:     #8d8d8d;
+  --cdm-text-on-color:  #ffffff;
+
+  // Borders
+  --cdm-border:        #525252;
+  --cdm-border-strong: #6f6f6f;
+
+  // Accent / interactive
+  --cdm-accent:        #4589ff;
+  --cdm-accent-hover:  #74a9ff;
+  --cdm-focus-ring:    #4589ff;
+
+  // Badges
+  --cdm-badge-bg:      #393939;
+  --cdm-badge-text:    #f4f4f4;
+
+  // Code / preview panel
+  --cdm-code-bg:       #161616;
+  --cdm-code-header:   #262626;
+  --cdm-code-border:   #525252;
+  --cdm-code-text:     #f4f4f4;
+
+  // Feature block
+  --cdm-feature-bg:    #262626;
+  --cdm-feature-accent:#4589ff;
+
+  // Shadows
+  --cdm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --cdm-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.5);
+
+  // Theme toggle button
+  --cdm-toggle-bg:       transparent;
+  --cdm-toggle-color:    #f4f4f4;
+  --cdm-toggle-hover-bg: rgba(255, 255, 255, 0.1);
+  --cdm-toggle-active-bg:rgba(255, 255, 255, 0.18);
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 
 .app-content {
@@ -35,12 +132,12 @@
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
-    color: var(--cds-text-primary);
+    color: var(--cdm-text-primary);
   }
 
   &__description {
     font-size: 0.875rem;
-    color: var(--cds-text-secondary);
+    color: var(--cdm-text-secondary);
     margin-bottom: 1.25rem;
     line-height: 1.5;
   }
@@ -66,31 +163,32 @@
   border-radius: 1rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background-color: var(--cds-layer-02);
-  color: var(--cds-text-primary);
-  border: 1px solid var(--cds-border-subtle-01);
+  background-color: var(--cdm-badge-bg);
+  color: var(--cdm-badge-text);
+  border: 1px solid var(--cdm-border);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 
   &--info {
     background-color: var(--cds-background-brand);
-    color: var(--cds-text-on-color);
+    color: var(--cdm-text-on-color);
     border-color: transparent;
   }
 
   &--success {
     background-color: var(--cds-support-success);
-    color: var(--cds-text-on-color);
+    color: var(--cdm-text-on-color);
     border-color: transparent;
   }
 
   &--warning {
     background-color: var(--cds-support-warning);
-    color: var(--cds-text-primary);
+    color: var(--cdm-text-primary);
     border-color: transparent;
   }
 
   &--neutral {
-    background-color: var(--cds-layer-accent-01);
-    color: var(--cds-text-primary);
+    background-color: var(--cdm-surface);
+    color: var(--cdm-text-primary);
     border-color: transparent;
   }
 }
@@ -100,16 +198,17 @@
 .feature-block {
   &__description {
     font-size: 0.8125rem;
-    color: var(--cds-text-secondary);
+    color: var(--cdm-text-secondary);
     margin-top: -0.5rem;
     line-height: 1.5;
   }
 
   &__fields {
     padding: 1rem;
-    background-color: var(--cds-layer-02);
-    border-left: 3px solid var(--cds-interactive);
+    background-color: var(--cdm-feature-bg);
+    border-left: 3px solid var(--cdm-feature-accent);
     border-radius: 0 4px 4px 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 }
 
@@ -139,25 +238,27 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--cds-layer-01);
-  border: 1px solid var(--cds-border-subtle-01);
+  background-color: var(--cdm-code-bg);
+  border: 1px solid var(--cdm-code-border);
   border-radius: 4px;
   overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background-color: var(--cds-layer-02);
-    border-bottom: 1px solid var(--cds-border-subtle-01);
+    background-color: var(--cdm-code-header);
+    border-bottom: 1px solid var(--cdm-code-border);
     flex-shrink: 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 
   &__title {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--cds-text-primary);
+    color: var(--cdm-text-primary);
     margin: 0;
   }
 
@@ -172,10 +273,48 @@
     font-family: 'IBM Plex Mono', 'Courier New', monospace;
     font-size: 0.75rem;
     line-height: 1.6;
-    color: var(--cds-text-primary);
+    color: var(--cdm-code-text);
     white-space: pre;
     margin: 0;
     tab-size: 2;
+    transition: color 0.2s ease;
   }
+}
+
+// ── Theme Toggle Button (inside Carbon HeaderGlobalAction) ────────────────────
+
+// HeaderGlobalAction renders its own <button>; we style the icon inside it.
+.theme-toggle-action {
+  // Smooth icon animation on hover/active
+  svg {
+    transition: transform 0.25s ease, opacity 0.2s ease;
+  }
+
+  &:hover svg {
+    transform: rotate(20deg) scale(1.1);
+  }
+
+  &:active svg {
+    transform: scale(0.88);
+    opacity: 0.8;
+  }
+}
+
+// ── Global transition for smooth theme switching ───────────────────────────────
+
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+// Exclude transitions from elements where they'd cause layout jank
+input,
+textarea,
+select,
+button {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, outline;
 }
 

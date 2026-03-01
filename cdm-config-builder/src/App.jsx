@@ -2,6 +2,8 @@ import { useMemo, useCallback, useReducer } from 'react';
 import {
   Header,
   HeaderName,
+  HeaderGlobalBar,
+  HeaderGlobalAction,
   Content,
   Grid,
   Column,
@@ -13,6 +15,8 @@ import { ConnectionSection } from './components/ConnectionSection.jsx';
 import { PerformanceHintsSection } from './components/PerformanceHintsSection.jsx';
 import { AdvancedFeaturesSection } from './components/AdvancedFeaturesSection.jsx';
 import { PropertiesPreview } from './components/PropertiesPreview.jsx';
+import { SunIcon, MoonIcon } from './components/ThemeToggleButton.jsx';
+import { ThemeProvider, useTheme } from './context/ThemeContext.jsx';
 
 import { parseCqlSchema } from './utils/parseCqlSchema.js';
 import { generateProperties } from './utils/generateProperties.js';
@@ -76,8 +80,11 @@ function formReducer(state, { field, value }) {
   return { ...state, [field]: value };
 }
 
-// ── App ───────────────────────────────────────────────────────────────────────
-export default function App() {
+// ── Inner App (needs ThemeProvider in scope) ──────────────────────────────────
+function AppInner() {
+  const { theme, toggleTheme } = useTheme();
+  const carbonTheme = theme === 'dark' ? 'g100' : 'g10';
+
   const [formState, dispatch] = useReducer(formReducer, INITIAL_STATE);
 
   // Single onChange handler — (fieldName, value) => void
@@ -108,10 +115,20 @@ export default function App() {
   );
 
   return (
-    <Theme theme="g10">
+    <Theme theme={carbonTheme}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <Header aria-label="CDM Config Builder">
         <HeaderName prefix="DataStax">CDM Config Builder</HeaderName>
+        <HeaderGlobalBar>
+          <HeaderGlobalAction
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            tooltipAlignment="end"
+            onClick={toggleTheme}
+            className="theme-toggle-action"
+          >
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </HeaderGlobalAction>
+        </HeaderGlobalBar>
       </Header>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
@@ -165,6 +182,15 @@ export default function App() {
         </Grid>
       </Content>
     </Theme>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
   );
 }
 
