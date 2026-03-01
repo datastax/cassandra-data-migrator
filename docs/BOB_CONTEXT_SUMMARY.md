@@ -1,6 +1,7 @@
 # Cassandra Data Migrator (CDM) - Architecture & Context Summary
 
 **Version**: 5.7.4-SNAPSHOT | **Stack**: Java 11, Scala 2.13, Spark 3.5.8, Cassandra Java Driver 4.19.2
+**Last Updated**: 2026-03-01 (Full architecture review + CDM Config Builder added)
 
 ---
 
@@ -522,4 +523,56 @@ isEnabled()                     → checked before applying feature logic
 
 ---
 
-**Last Updated**: 2026-03-01 (Full architecture review)
+## 16. CDM Config Builder (React App)
+
+A standalone React application in `cdm-config-builder/` that generates `cdm.properties` files via a guided UI.
+
+**Stack**: Vite + React 18 + IBM Carbon Design System (`@carbon/react`) + Sass
+
+**Run locally:**
+```bash
+cd cdm-config-builder
+npm install
+npm run dev   # → http://localhost:5173
+```
+
+### Architecture
+
+```
+cdm-config-builder/src/
+├── main.jsx                          # React entry point
+├── App.jsx                           # Root: useReducer state, useMemo for parsed schema + generated output
+├── App.scss                          # Carbon @use + custom layout/component styles
+├── components/
+│   ├── FormSection.jsx               # Reusable Carbon Tile section wrapper (DRY base)
+│   ├── SchemaSection.jsx             # CQL CREATE TABLE TextArea inputs + parse badges
+│   ├── ConnectionSection.jsx         # Origin/target host|SCB, port, credentials (RadioButtonGroup)
+│   ├── PerformanceHintsSection.jsx   # NumberInput (rows, GB), MultiSelect (data types), Toggles
+│   ├── AdvancedFeaturesSection.jsx   # ExplodeMap, ConstantColumns, ExtractJson (FeatureBlock pattern)
+│   └── PropertiesPreview.jsx         # Sticky live preview panel + Download + Copy buttons
+└── utils/
+    ├── parseCqlSchema.js             # Regex CQL DDL parser → keyspace, table, PK, column types
+    ├── bestPracticesRules.js         # Rules engine: inputs → {props, comments} overrides
+    └── generateProperties.js        # Assembles final .properties string with inline comments
+```
+
+### Key Design Patterns
+
+- **Single `onChange(field, value)` handler** — all form sections share one callback, dispatched to `useReducer`
+- **`FormSection` wrapper** — all sections use the same Carbon `Tile` + heading + description pattern
+- **`FeatureBlock` pattern** — toggle-gated feature fields (ExplodeMap, ConstantColumns, ExtractJson) share a reusable wrapper
+- **`useMemo` for derived state** — `originSchema`, `targetSchema`, and `propertiesContent` are all memoized
+- **Best practices rules engine** — pure function `applyBestPractices({originSchema, targetSchema, rowCount, tableSizeGB, dataTypes})` returns `{props, comments}` used by the generator
+
+### Best Practices Applied
+
+| Condition | Property | Value |
+|-----------|----------|-------|
+| Table size > 0 GB | `numParts` | `ceil(sizeGB × 1024 ÷ 10)` |
+| Row count > 100M | `numParts` | ≥ 50,000 |
+| LOBs present | `batchSize` | 1, `fetchSizeInRows` = 100 |
+| PK = partition key | `batchSize` | 1 |
+| Avg row > 20KB | `batchSize` | 1 |
+| Collections-only non-PK | `ttlwritetime.calc.useCollections` | true |
+| Counter table | `autocorrect.missing.counter` | false + warning comment |
+| Table > 1TB | — | Spark cluster recommendation comment |
