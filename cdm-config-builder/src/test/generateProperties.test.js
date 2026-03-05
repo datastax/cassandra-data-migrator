@@ -345,4 +345,3 @@ describe('generateProperties', () => {
     expect(output).toContain('# End of generated cdm.properties');
   });
 });
-

@@ -98,7 +98,11 @@ describe('applyBestPractices', () => {
   it('sets batchSize=20 for very small rows', () => {
     // 1GB / 10M rows = 0.1KB per row < 1KB, not partition-key-only
     const schema = baseSchema({ isPartitionKeyOnly: false });
-    const { props } = applyBestPractices({ originSchema: schema, tableSizeGB: 1, rowCount: 10_000_000 });
+    const { props } = applyBestPractices({
+      originSchema: schema,
+      tableSizeGB: 1,
+      rowCount: 10_000_000,
+    });
     expect(props['spark.cdm.perfops.batchSize']).toBe(20);
   });
 
@@ -165,7 +169,7 @@ describe('applyBestPractices', () => {
       columns: [
         { name: 'id', type: 'uuid' },
         { name: 'tags', type: 'set<text>' },
-        { name: 'description', type: 'text' },  // non-PK, non-collection
+        { name: 'description', type: 'text' }, // non-PK, non-collection
       ],
       partitionKeys: ['id'],
       clusteringKeys: [],
@@ -236,4 +240,3 @@ describe('applyBestPractices', () => {
     expect(comments['spark.cdm.trackRun']).toBeUndefined();
   });
 });
-

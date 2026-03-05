@@ -201,4 +201,3 @@ describe('parseCqlSchema', () => {
     expect(result.parseError).toBeNull();
   });
 });
-

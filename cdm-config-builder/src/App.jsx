@@ -110,7 +110,7 @@ function AppInner() {
         originSchema,
         targetSchema,
       }),
-     
+
     [formState, originSchema, targetSchema]
   );
 
@@ -134,11 +134,9 @@ function AppInner() {
       {/* ── Main content ───────────────────────────────────────────────── */}
       <Content className="app-content">
         <Grid fullWidth className="app-grid">
-
           {/* ── LEFT PANEL: Form ─────────────────────────────────────── */}
           <Column sm={4} md={8} lg={8} className="form-column">
             <div className="form-stack">
-
               <SchemaSection
                 originCql={formState.originCql}
                 targetCql={formState.targetCql}
@@ -148,10 +146,7 @@ function AppInner() {
                 onTargetChange={(v) => handleChange('targetCql', v)}
               />
 
-              <ConnectionSection
-                values={formState}
-                onChange={handleChange}
-              />
+              <ConnectionSection values={formState} onChange={handleChange} />
 
               <PerformanceHintsSection
                 rowCount={formState.rowCount}
@@ -164,11 +159,7 @@ function AppInner() {
                 onChange={handleChange}
               />
 
-              <AdvancedFeaturesSection
-                values={formState}
-                onChange={handleChange}
-              />
-
+              <AdvancedFeaturesSection values={formState} onChange={handleChange} />
             </div>
           </Column>
 
@@ -178,7 +169,6 @@ function AppInner() {
               <PropertiesPreview content={propertiesContent} />
             </div>
           </Column>
-
         </Grid>
       </Content>
     </Theme>
@@ -193,4 +183,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-

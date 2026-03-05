@@ -9,30 +9,59 @@ import { applyBestPractices } from './bestPracticesRules.js';
 export function generateProperties(formState) {
   const {
     // Connection
-    originHost, originPort, originUsername, originPassword,
-    originConnectionType, originScb, originScbMethod,
-    originAstraDatabaseId, originScbType, originScbRegion, originScbCustomDomain,
-    targetHost, targetPort, targetUsername, targetPassword,
-    targetConnectionType, targetScb, targetScbMethod,
-    targetAstraDatabaseId, targetScbType, targetScbRegion, targetScbCustomDomain,
+    originHost,
+    originPort,
+    originUsername,
+    originPassword,
+    originConnectionType,
+    originScb,
+    originScbMethod,
+    originAstraDatabaseId,
+    originScbType,
+    originScbRegion,
+    originScbCustomDomain,
+    targetHost,
+    targetPort,
+    targetUsername,
+    targetPassword,
+    targetConnectionType,
+    targetScb,
+    targetScbMethod,
+    targetAstraDatabaseId,
+    targetScbType,
+    targetScbRegion,
+    targetScbCustomDomain,
 
     // Schema
-    originSchema,   // parsed schema object
-    targetSchema,   // parsed schema object
+    originSchema, // parsed schema object
+    targetSchema, // parsed schema object
 
     // Performance hints
-    rowCount, tableSizeGB, dataTypes,
+    rowCount,
+    tableSizeGB,
+    dataTypes,
 
     // Advanced features
-    explodeMapEnabled, explodeMapOriginColumn, explodeMapTargetKeyColumn, explodeMapTargetValueColumn,
-    constantColumnsEnabled, constantColumnsNames, constantColumnsTypes, constantColumnsValues,
-    extractJsonEnabled, extractJsonOriginColumn, extractJsonPropertyMapping, extractJsonExclusive,
+    explodeMapEnabled,
+    explodeMapOriginColumn,
+    explodeMapTargetKeyColumn,
+    explodeMapTargetValueColumn,
+    constantColumnsEnabled,
+    constantColumnsNames,
+    constantColumnsTypes,
+    constantColumnsValues,
+    extractJsonEnabled,
+    extractJsonOriginColumn,
+    extractJsonPropertyMapping,
+    extractJsonExclusive,
 
     // Autocorrect
-    autocorrectMissing, autocorrectMismatch,
+    autocorrectMissing,
+    autocorrectMismatch,
 
     // TrackRun
-    trackRun, trackRunAutoRerun,
+    trackRun,
+    trackRunAutoRerun,
   } = formState;
 
   const { props: bpProps, comments: bpComments } = applyBestPractices({
@@ -91,15 +120,18 @@ export function generateProperties(formState) {
         'Astra Database UUID for auto-downloading the Secure Connect Bundle.'
       );
       const scbType = originScbType || 'default';
-      prop('spark.cdm.connect.origin.astra.scb.type', scbType,
-        "SCB type: 'default' or 'custom'.");
+      prop('spark.cdm.connect.origin.astra.scb.type', scbType, "SCB type: 'default' or 'custom'.");
       if (scbType === 'custom') {
-        prop('spark.cdm.connect.origin.astra.scb.region',
+        prop(
+          'spark.cdm.connect.origin.astra.scb.region',
           originScbRegion || 'us-east-1',
-          'Region name for the regional secure bundle (required when scb.type is custom).');
-        prop('spark.cdm.connect.origin.astra.scb.custom.domain',
+          'Region name for the regional secure bundle (required when scb.type is custom).'
+        );
+        prop(
+          'spark.cdm.connect.origin.astra.scb.custom.domain',
           originScbCustomDomain || 'your-custom-domain.example.com',
-          'Custom domain for secure connect bundles (required when scb.type is custom).');
+          'Custom domain for secure connect bundles (required when scb.type is custom).'
+        );
       }
     }
   } else {
@@ -116,7 +148,7 @@ export function generateProperties(formState) {
   }
   prop(
     'spark.cdm.connect.origin.username',
-    originConnectionType === 'scb' ? 'token' : (originUsername || 'cassandra'),
+    originConnectionType === 'scb' ? 'token' : originUsername || 'cassandra',
     originConnectionType === 'scb'
       ? 'Astra token identifier (fixed value: token).'
       : 'Username for origin authentication.'
@@ -124,8 +156,8 @@ export function generateProperties(formState) {
   prop(
     'spark.cdm.connect.origin.password',
     originConnectionType === 'scb'
-      ? (originPassword || 'AstraCS:your-token-here')
-      : (originPassword || 'cassandra'),
+      ? originPassword || 'AstraCS:your-token-here'
+      : originPassword || 'cassandra',
     originConnectionType === 'scb'
       ? 'Astra application token (starts with AstraCS:...).'
       : 'Password for origin authentication.'
@@ -149,15 +181,18 @@ export function generateProperties(formState) {
         'Astra Database UUID for auto-downloading the Secure Connect Bundle.'
       );
       const scbType = targetScbType || 'default';
-      prop('spark.cdm.connect.target.astra.scb.type', scbType,
-        "SCB type: 'default' or 'custom'.");
+      prop('spark.cdm.connect.target.astra.scb.type', scbType, "SCB type: 'default' or 'custom'.");
       if (scbType === 'custom') {
-        prop('spark.cdm.connect.target.astra.scb.region',
+        prop(
+          'spark.cdm.connect.target.astra.scb.region',
           targetScbRegion || 'us-east-1',
-          'Region name for the regional secure bundle (required when scb.type is custom).');
-        prop('spark.cdm.connect.target.astra.scb.custom.domain',
+          'Region name for the regional secure bundle (required when scb.type is custom).'
+        );
+        prop(
+          'spark.cdm.connect.target.astra.scb.custom.domain',
           targetScbCustomDomain || 'your-custom-domain.example.com',
-          'Custom domain for secure connect bundles (required when scb.type is custom).');
+          'Custom domain for secure connect bundles (required when scb.type is custom).'
+        );
       }
     }
   } else {
@@ -174,7 +209,7 @@ export function generateProperties(formState) {
   }
   prop(
     'spark.cdm.connect.target.username',
-    targetConnectionType === 'scb' ? 'token' : (targetUsername || 'cassandra'),
+    targetConnectionType === 'scb' ? 'token' : targetUsername || 'cassandra',
     targetConnectionType === 'scb'
       ? 'Astra token identifier (fixed value: token).'
       : 'Username for target authentication.'
@@ -182,8 +217,8 @@ export function generateProperties(formState) {
   prop(
     'spark.cdm.connect.target.password',
     targetConnectionType === 'scb'
-      ? (targetPassword || 'AstraCS:your-token-here')
-      : (targetPassword || 'cassandra'),
+      ? targetPassword || 'AstraCS:your-token-here'
+      : targetPassword || 'cassandra',
     targetConnectionType === 'scb'
       ? 'Astra application token (starts with AstraCS:...).'
       : 'Password for target authentication.'
@@ -271,7 +306,8 @@ export function generateProperties(formState) {
     'Enables run tracking so migrations can be resumed after interruption.\nRun details are stored in cdm_run_info and cdm_run_details tables on the target keyspace.'
   );
 
-  const trackRunComment = bpComments['spark.cdm.trackRun'] ||
+  const trackRunComment =
+    bpComments['spark.cdm.trackRun'] ||
     'When true, tracks each token-range status so the job can be resumed if interrupted.';
   prop('spark.cdm.trackRun', trackRun ? 'true' : 'false', trackRunComment);
 
@@ -352,10 +388,7 @@ export function generateProperties(formState) {
   );
 
   // ── Transformation / Codecs ───────────────────────────────────────────────
-  section(
-    'TRANSFORMATION & CODECS',
-    'Type conversion codecs and data transformation settings.'
-  );
+  section('TRANSFORMATION & CODECS', 'Type conversion codecs and data transformation settings.');
 
   if (bpComments['spark.cdm.transform.codecs']) {
     lines.push(`# ${bpComments['spark.cdm.transform.codecs']}`);
@@ -368,7 +401,7 @@ export function generateProperties(formState) {
     'spark.cdm.transform.codecs',
     '',
     'Comma-separated list: INT_STRING, DOUBLE_STRING, BIGINT_STRING, DECIMAL_STRING,\n' +
-    '#   STRING_BLOB, ASCII_BLOB, TIMESTAMP_STRING_MILLIS, TIMESTAMP_STRING_FORMAT'
+      '#   STRING_BLOB, ASCII_BLOB, TIMESTAMP_STRING_MILLIS, TIMESTAMP_STRING_FORMAT'
   );
   commentedProp(
     'spark.cdm.transform.codecs.timestamp.string.format',
@@ -394,7 +427,7 @@ export function generateProperties(formState) {
     'spark.cdm.transform.custom.writetime.incrementBy',
     '0',
     'Increment WRITETIME by this many microseconds on each re-run. ' +
-    'Useful to prevent duplicate list entries when autocorrect runs multiple times.'
+      'Useful to prevent duplicate list entries when autocorrect runs multiple times.'
   );
 
   // ── Advanced Features ─────────────────────────────────────────────────────
@@ -423,19 +456,30 @@ export function generateProperties(formState) {
     );
   } else {
     lines.push('# ExplodeMap: converts a MAP column in origin into multiple rows in target.');
-    commentedProp('spark.cdm.feature.explodeMap.origin.name', 'my_map_column',
-      'Name of the MAP column in origin to explode.');
-    commentedProp('spark.cdm.feature.explodeMap.target.name.key', 'map_key',
-      'Target PK column for map key.');
-    commentedProp('spark.cdm.feature.explodeMap.target.name.value', 'map_value',
-      'Target column for map value.');
+    commentedProp(
+      'spark.cdm.feature.explodeMap.origin.name',
+      'my_map_column',
+      'Name of the MAP column in origin to explode.'
+    );
+    commentedProp(
+      'spark.cdm.feature.explodeMap.target.name.key',
+      'map_key',
+      'Target PK column for map key.'
+    );
+    commentedProp(
+      'spark.cdm.feature.explodeMap.target.name.value',
+      'map_value',
+      'Target column for map value.'
+    );
   }
 
   lines.push('');
 
   // ConstantColumns
   if (constantColumnsEnabled && constantColumnsNames) {
-    lines.push('# ConstantColumns: inject fixed constant values into target columns not present in origin.');
+    lines.push(
+      '# ConstantColumns: inject fixed constant values into target columns not present in origin.'
+    );
     prop(
       'spark.cdm.feature.constantColumns.names',
       constantColumnsNames,
@@ -452,20 +496,33 @@ export function generateProperties(formState) {
       "Comma-separated values (use CQL syntax: 'string', 1234, true)."
     );
   } else {
-    lines.push('# ConstantColumns: inject fixed constant values into target columns not present in origin.');
-    commentedProp('spark.cdm.feature.constantColumns.names', 'col1,col2',
-      'Comma-separated target column names.');
-    commentedProp('spark.cdm.feature.constantColumns.types', 'text,int',
-      'CQL types for each constant column.');
-    commentedProp('spark.cdm.feature.constantColumns.values', "'value1',42",
-      "Values in CQL syntax: 'string', number, true/false.");
+    lines.push(
+      '# ConstantColumns: inject fixed constant values into target columns not present in origin.'
+    );
+    commentedProp(
+      'spark.cdm.feature.constantColumns.names',
+      'col1,col2',
+      'Comma-separated target column names.'
+    );
+    commentedProp(
+      'spark.cdm.feature.constantColumns.types',
+      'text,int',
+      'CQL types for each constant column.'
+    );
+    commentedProp(
+      'spark.cdm.feature.constantColumns.values',
+      "'value1',42",
+      "Values in CQL syntax: 'string', number, true/false."
+    );
   }
 
   lines.push('');
 
   // ExtractJson
   if (extractJsonEnabled && extractJsonOriginColumn) {
-    lines.push('# ExtractJson: extract a JSON property from an origin TEXT column into a target column.');
+    lines.push(
+      '# ExtractJson: extract a JSON property from an origin TEXT column into a target column.'
+    );
     prop(
       'spark.cdm.feature.extractJson.originColumn',
       extractJsonOriginColumn,
@@ -483,17 +540,31 @@ export function generateProperties(formState) {
         'When true, only the mapped columns are processed; all others are ignored.'
       );
     } else {
-      commentedProp('spark.cdm.feature.extractJson.exclusive', 'false',
-        'Set to true to process only the mapped columns.');
+      commentedProp(
+        'spark.cdm.feature.extractJson.exclusive',
+        'false',
+        'Set to true to process only the mapped columns.'
+      );
     }
   } else {
-    lines.push('# ExtractJson: extract a JSON property from an origin TEXT column into a target column.');
-    commentedProp('spark.cdm.feature.extractJson.originColumn', 'json_column',
-      'Origin TEXT column containing JSON.');
-    commentedProp('spark.cdm.feature.extractJson.propertyMapping', 'json_field:target_col',
-      'JSON property to target column mapping.');
-    commentedProp('spark.cdm.feature.extractJson.exclusive', 'false',
-      'Set to true to process only mapped columns.');
+    lines.push(
+      '# ExtractJson: extract a JSON property from an origin TEXT column into a target column.'
+    );
+    commentedProp(
+      'spark.cdm.feature.extractJson.originColumn',
+      'json_column',
+      'Origin TEXT column containing JSON.'
+    );
+    commentedProp(
+      'spark.cdm.feature.extractJson.propertyMapping',
+      'json_field:target_col',
+      'JSON property to target column mapping.'
+    );
+    commentedProp(
+      'spark.cdm.feature.extractJson.exclusive',
+      'false',
+      'Set to true to process only mapped columns.'
+    );
   }
 
   // ── Filters ───────────────────────────────────────────────────────────────
@@ -515,7 +586,7 @@ export function generateProperties(formState) {
   commentedProp(
     'spark.cdm.filter.cassandra.whereCondition',
     '',
-    'Additional CQL WHERE clause appended to origin SELECT (e.g., status = \'active\'). Use ALLOW FILTERING carefully.'
+    "Additional CQL WHERE clause appended to origin SELECT (e.g., status = 'active'). Use ALLOW FILTERING carefully."
   );
   commentedProp(
     'spark.cdm.filter.java.token.percent',
@@ -539,10 +610,22 @@ export function generateProperties(formState) {
     'Uncomment and configure if your clusters require TLS. Not needed when using Astra SCB.'
   );
 
-  commentedProp('spark.cdm.connect.origin.tls.enabled', 'false', 'Set to true to enable TLS for origin.');
-  commentedProp('spark.cdm.connect.origin.tls.trustStore.path', '', 'Path to Java truststore file.');
+  commentedProp(
+    'spark.cdm.connect.origin.tls.enabled',
+    'false',
+    'Set to true to enable TLS for origin.'
+  );
+  commentedProp(
+    'spark.cdm.connect.origin.tls.trustStore.path',
+    '',
+    'Path to Java truststore file.'
+  );
   commentedProp('spark.cdm.connect.origin.tls.trustStore.password', '', 'Truststore password.');
-  commentedProp('spark.cdm.connect.origin.tls.trustStore.type', 'JKS', 'Truststore type (JKS or PKCS12).');
+  commentedProp(
+    'spark.cdm.connect.origin.tls.trustStore.type',
+    'JKS',
+    'Truststore type (JKS or PKCS12).'
+  );
   commentedProp('spark.cdm.connect.origin.tls.keyStore.path', '', 'Path to Java keystore file.');
   commentedProp('spark.cdm.connect.origin.tls.keyStore.password', '', 'Keystore password.');
   commentedProp(
@@ -551,8 +634,16 @@ export function generateProperties(formState) {
     'Enabled TLS cipher algorithms.'
   );
   lines.push('');
-  commentedProp('spark.cdm.connect.target.tls.enabled', 'false', 'Set to true to enable TLS for target.');
-  commentedProp('spark.cdm.connect.target.tls.trustStore.path', '', 'Path to Java truststore file.');
+  commentedProp(
+    'spark.cdm.connect.target.tls.enabled',
+    'false',
+    'Set to true to enable TLS for target.'
+  );
+  commentedProp(
+    'spark.cdm.connect.target.tls.trustStore.path',
+    '',
+    'Path to Java truststore file.'
+  );
   commentedProp('spark.cdm.connect.target.tls.trustStore.password', '', 'Truststore password.');
   commentedProp('spark.cdm.connect.target.tls.trustStore.type', 'JKS', 'Truststore type.');
   commentedProp('spark.cdm.connect.target.tls.keyStore.path', '', 'Path to Java keystore file.');
@@ -568,4 +659,3 @@ export function generateProperties(formState) {
 
   return lines.join('\n');
 }
-

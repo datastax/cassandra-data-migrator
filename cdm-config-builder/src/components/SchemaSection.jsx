@@ -77,9 +77,7 @@ export function SchemaSection({
 
           {originSchema && !originSchema.parseError && (
             <div className="schema-badge-row">
-              <span className="schema-badge">
-                📋 {originSchema.keyspaceTable}
-              </span>
+              <span className="schema-badge">📋 {originSchema.keyspaceTable}</span>
               {originSchema.partitionKeys.length > 0 && (
                 <span className="schema-badge schema-badge--info">
                   PK: {originSchema.partitionKeys.join(', ')}
@@ -111,16 +109,17 @@ export function SchemaSection({
             parseError={targetSchema?.parseError}
           />
 
-          {targetSchema && !targetSchema.parseError && targetSchema.keyspaceTable !== originSchema?.keyspaceTable && (
-            <div className="schema-badge-row">
-              <span className="schema-badge schema-badge--success">
-                🎯 {targetSchema.keyspaceTable}
-              </span>
-            </div>
-          )}
+          {targetSchema &&
+            !targetSchema.parseError &&
+            targetSchema.keyspaceTable !== originSchema?.keyspaceTable && (
+              <div className="schema-badge-row">
+                <span className="schema-badge schema-badge--success">
+                  🎯 {targetSchema.keyspaceTable}
+                </span>
+              </div>
+            )}
         </Stack>
       </Form>
     </FormSection>
   );
 }
-

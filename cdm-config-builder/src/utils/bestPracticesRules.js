@@ -16,12 +16,12 @@ export function applyBestPractices({ originSchema, rowCount, tableSizeGB, dataTy
   const props = {};
   const comments = {};
 
-  const hasLOBs = dataTypes.includes('lobs') || (originSchema?.hasBlobs);
-  const hasTimestamps = dataTypes.includes('timestamps') || (originSchema?.hasTimestamps);
-  const hasNumerics = dataTypes.includes('numerics') || (originSchema?.hasNumerics);
-  const hasCollections = dataTypes.includes('collections') || (originSchema?.hasCollections);
-  const hasUDTs = dataTypes.includes('udts') || (originSchema?.hasUDTs);
-  const hasCounters = dataTypes.includes('counters') || (originSchema?.hasCounters);
+  const hasLOBs = dataTypes.includes('lobs') || originSchema?.hasBlobs;
+  const hasTimestamps = dataTypes.includes('timestamps') || originSchema?.hasTimestamps;
+  const hasNumerics = dataTypes.includes('numerics') || originSchema?.hasNumerics;
+  const hasCollections = dataTypes.includes('collections') || originSchema?.hasCollections;
+  const hasUDTs = dataTypes.includes('udts') || originSchema?.hasUDTs;
+  const hasCounters = dataTypes.includes('counters') || originSchema?.hasCounters;
 
   const isPartitionKeyOnly = originSchema?.isPartitionKeyOnly ?? false;
   const sizeGB = tableSizeGB ?? 0;
@@ -132,7 +132,8 @@ export function applyBestPractices({ originSchema, rowCount, tableSizeGB, dataTy
   comments['spark.cdm.perfops.ratelimit.origin'] = rateLimitComment;
   props['spark.cdm.perfops.ratelimit.target'] = rateLimit;
   comments['spark.cdm.perfops.ratelimit.target'] =
-    rateLimitComment + ' Set equal to origin rate limit; increase if using ExplodeMap (more target writes).';
+    rateLimitComment +
+    ' Set equal to origin rate limit; increase if using ExplodeMap (more target writes).';
 
   // ── TTL/Writetime with collections ────────────────────────────────────────
   const onlyCollectionNonPK = hasCollections && !hasNonCollectionNonPKColumns(originSchema);
@@ -196,7 +197,8 @@ function hasNonCollectionNonPKColumns(schema) {
   return schema.columns.some((col) => {
     if (pkSet.has(col.name)) return false;
     const t = col.type.toLowerCase();
-    return !t.includes('list<') && !t.includes('set<') && !t.includes('map<') && !t.includes('frozen<');
+    return (
+      !t.includes('list<') && !t.includes('set<') && !t.includes('map<') && !t.includes('frozen<')
+    );
   });
 }
-

@@ -185,7 +185,10 @@ describe('ConnectionSection', () => {
     renderSection({ originConnectionType: 'scb', originScbMethod: 'auto' }, onChange);
     const uuidInput = screen.getByLabelText('Database UUID');
     fireEvent.change(uuidInput, { target: { value: '550e8400-e29b-41d4-a716-446655440000' } });
-    expect(onChange).toHaveBeenCalledWith('originAstraDatabaseId', '550e8400-e29b-41d4-a716-446655440000');
+    expect(onChange).toHaveBeenCalledWith(
+      'originAstraDatabaseId',
+      '550e8400-e29b-41d4-a716-446655440000'
+    );
   });
 
   // ── Target cluster mirrors origin behavior ────────────────────────────────
@@ -202,4 +205,3 @@ describe('ConnectionSection', () => {
     expect(uuidInputs.length).toBeGreaterThanOrEqual(1);
   });
 });
-

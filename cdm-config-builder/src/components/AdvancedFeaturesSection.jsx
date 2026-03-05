@@ -15,14 +15,8 @@ function FeatureBlock({ id, title, description, enabled, onToggle, children }) {
         toggled={!!enabled}
         onToggle={onToggle}
       />
-      {description && !enabled && (
-        <p className="feature-block__description">{description}</p>
-      )}
-      {enabled && (
-        <div className="feature-block__fields">
-          {children}
-        </div>
-      )}
+      {description && !enabled && <p className="feature-block__description">{description}</p>}
+      {enabled && <div className="feature-block__fields">{children}</div>}
     </Stack>
   );
 }
@@ -45,7 +39,6 @@ export function AdvancedFeaturesSection({ values, onChange }) {
     >
       <Form>
         <Stack gap={7}>
-
           {/* ── ExplodeMap ─────────────────────────────────────────────── */}
           <FeatureBlock
             id="explode-map"
@@ -153,10 +146,8 @@ export function AdvancedFeaturesSection({ values, onChange }) {
               />
             </Stack>
           </FeatureBlock>
-
         </Stack>
       </Form>
     </FormSection>
   );
 }
-

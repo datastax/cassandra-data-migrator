@@ -15,10 +15,10 @@ export function parseCqlSchema(cql) {
     keyspace: '',
     table: '',
     keyspaceTable: '',
-    columns: [],           // [{ name, type }]
-    partitionKeys: [],     // column names
-    clusteringKeys: [],    // column names
-    allPrimaryKeys: [],    // partition + clustering
+    columns: [], // [{ name, type }]
+    partitionKeys: [], // column names
+    clusteringKeys: [], // column names
+    allPrimaryKeys: [], // partition + clustering
     hasCollections: false,
     hasUDTs: false,
     hasCounters: false,
@@ -139,7 +139,11 @@ export function parseCqlSchema(cql) {
 
     // Detect UDTs: column types that are not built-in and not collections
     for (const col of columnDefs) {
-      const t = col.type.toLowerCase().replace(/frozen</g, '').replace(/>/g, '').trim();
+      const t = col.type
+        .toLowerCase()
+        .replace(/frozen</g, '')
+        .replace(/>/g, '')
+        .trim();
       if (!isBuiltinType(t) && !t.includes('<')) {
         result.hasUDTs = true;
       }
@@ -189,14 +193,35 @@ function splitTopLevel(str) {
 }
 
 const BUILTIN_TYPES = new Set([
-  'ascii', 'bigint', 'blob', 'boolean', 'counter', 'date', 'decimal',
-  'double', 'duration', 'float', 'inet', 'int', 'smallint', 'text',
-  'time', 'timestamp', 'timeuuid', 'tinyint', 'uuid', 'varchar', 'varint',
-  'list', 'set', 'map', 'tuple', 'frozen',
+  'ascii',
+  'bigint',
+  'blob',
+  'boolean',
+  'counter',
+  'date',
+  'decimal',
+  'double',
+  'duration',
+  'float',
+  'inet',
+  'int',
+  'smallint',
+  'text',
+  'time',
+  'timestamp',
+  'timeuuid',
+  'tinyint',
+  'uuid',
+  'varchar',
+  'varint',
+  'list',
+  'set',
+  'map',
+  'tuple',
+  'frozen',
 ]);
 
 function isBuiltinType(typeStr) {
   const base = typeStr.split('<')[0].trim().toLowerCase();
   return BUILTIN_TYPES.has(base);
 }
-

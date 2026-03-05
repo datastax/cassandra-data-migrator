@@ -80,4 +80,3 @@ export function PropertiesPreview({ content }) {
     </div>
   );
 }
-

@@ -7,7 +7,7 @@ import {
   RadioButton,
   Select,
   SelectItem,
-  Stack
+  Stack,
 } from '@carbon/react';
 import { FormSection } from './FormSection.jsx';
 
@@ -144,7 +144,7 @@ function ClusterConnectionFields({ prefix, label, values, onChange }) {
           id={field('Username')}
           labelText="Username"
           placeholder={isAstra ? 'token' : 'cassandra'}
-          value={isAstra ? 'token' : (val('Username') || 'cassandra')}
+          value={isAstra ? 'token' : val('Username') || 'cassandra'}
           onChange={isAstra ? undefined : handle('Username')}
           readOnly={isAstra}
           required
@@ -154,7 +154,7 @@ function ClusterConnectionFields({ prefix, label, values, onChange }) {
           labelText={isAstra ? 'Password (Starting with "AstraCS:...")' : 'Password'}
           placeholder={isAstra ? 'AstraCS:...' : 'cassandra'}
           type="password"
-          value={isAstra ? val('Password') : (val('Password') || 'cassandra')}
+          value={isAstra ? val('Password') : val('Password') || 'cassandra'}
           onChange={handle('Password')}
           required
         />
@@ -195,4 +195,3 @@ export function ConnectionSection({ values, onChange }) {
     </FormSection>
   );
 }
-

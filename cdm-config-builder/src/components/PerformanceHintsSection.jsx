@@ -2,14 +2,14 @@ import { Form, NumberInput, MultiSelect, Stack, Toggle } from '@carbon/react';
 import { FormSection } from './FormSection.jsx';
 
 const DATA_TYPE_OPTIONS = [
-  { id: 'lobs',        label: 'LOBs (BLOB / large TEXT fields)' },
-  { id: 'timestamps',  label: 'Timestamps (TIMESTAMP, DATE, TIME)' },
-  { id: 'numerics',    label: 'Numerics (DECIMAL, DOUBLE, FLOAT, BIGINT)' },
+  { id: 'lobs', label: 'LOBs (BLOB / large TEXT fields)' },
+  { id: 'timestamps', label: 'Timestamps (TIMESTAMP, DATE, TIME)' },
+  { id: 'numerics', label: 'Numerics (DECIMAL, DOUBLE, FLOAT, BIGINT)' },
   { id: 'collections', label: 'Collections (LIST, SET, MAP)' },
-  { id: 'udts',        label: 'UDTs (User-Defined Types)' },
-  { id: 'counters',    label: 'Counters (counter type columns)' },
-  { id: 'frozen',      label: 'Frozen types (frozen<...>)' },
-  { id: 'geospatial',  label: 'Geospatial (DSE Point / Polygon / LineString)' },
+  { id: 'udts', label: 'UDTs (User-Defined Types)' },
+  { id: 'counters', label: 'Counters (counter type columns)' },
+  { id: 'frozen', label: 'Frozen types (frozen<...>)' },
+  { id: 'geospatial', label: 'Geospatial (DSE Point / Polygon / LineString)' },
 ];
 
 /**
@@ -77,7 +77,10 @@ export function PerformanceHintsSection({
             itemToString={(item) => item?.label ?? ''}
             initialSelectedItems={selectedDataTypes}
             onChange={({ selectedItems }) =>
-              onChange('dataTypes', selectedItems.map((i) => i.id))
+              onChange(
+                'dataTypes',
+                selectedItems.map((i) => i.id)
+              )
             }
           />
 
@@ -125,4 +128,3 @@ export function PerformanceHintsSection({
     </FormSection>
   );
 }
-

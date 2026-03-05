@@ -151,9 +151,7 @@ describe('ThemeContext', () => {
   it('throws when useTheme is used outside ThemeProvider', () => {
     // Suppress React error boundary console output
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<ThemeConsumer />)).toThrow(
-      'useTheme must be used within ThemeProvider'
-    );
+    expect(() => render(<ThemeConsumer />)).toThrow('useTheme must be used within ThemeProvider');
     consoleSpy.mockRestore();
   });
 
@@ -214,4 +212,3 @@ describe('MoonIcon', () => {
     expect(svg.getAttribute('height')).toBe('20');
   });
 });
-
