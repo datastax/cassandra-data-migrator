@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Coverage reports
+coverage/
+
+# Package files
+package-lock.json
+
+# Config files
+.eslintrc.cjs
+vite.config.js

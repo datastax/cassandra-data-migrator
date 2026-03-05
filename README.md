@@ -175,7 +175,7 @@ spark-submit --properties-file cdm.properties \
 # Things to know
 
 > [!TIP]
-> If you want to pass in additional [Cassandra Java Driver configs](https://github.com/apache/cassandra-java-driver/blob/4.x/core/src/main/resources/reference.conf), you can leverage it as below
+> If you want to pass in additional [Cassandra Java Driver configs](https://github.com/apache/cassandra-java-driver/blob/4.x/core/src/main/resources/reference.conf), you can pass in 
 > `--conf spark.driver.extraJavaOptions="-Ddatastax-java-driver.advanced.connection.pool.remote.size=5`
 
 > [!TIP]
