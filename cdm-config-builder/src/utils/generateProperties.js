@@ -19,8 +19,6 @@ export function generateProperties(formState) {
     // Schema
     originSchema,   // parsed schema object
     targetSchema,   // parsed schema object
-    originCql,
-    targetCql,
 
     // Performance hints
     rowCount, tableSizeGB, dataTypes,

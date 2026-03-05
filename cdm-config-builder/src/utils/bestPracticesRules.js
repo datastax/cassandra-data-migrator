@@ -12,7 +12,7 @@
  * @param {string[]}    inputs.dataTypes     - Selected data type flags
  * @returns {object} { properties: {key: value}, comments: {key: string} }
  */
-export function applyBestPractices({ originSchema, targetSchema, rowCount, tableSizeGB, dataTypes = [] }) {
+export function applyBestPractices({ originSchema, rowCount, tableSizeGB, dataTypes = [] }) {
   const props = {};
   const comments = {};
 
@@ -22,7 +22,6 @@ export function applyBestPractices({ originSchema, targetSchema, rowCount, table
   const hasCollections = dataTypes.includes('collections') || (originSchema?.hasCollections);
   const hasUDTs = dataTypes.includes('udts') || (originSchema?.hasUDTs);
   const hasCounters = dataTypes.includes('counters') || (originSchema?.hasCounters);
-  const hasFrozen = dataTypes.includes('frozen') || (originSchema?.hasFrozen);
 
   const isPartitionKeyOnly = originSchema?.isPartitionKeyOnly ?? false;
   const sizeGB = tableSizeGB ?? 0;

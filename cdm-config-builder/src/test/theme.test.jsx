@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, useTheme } from '../context/ThemeContext.jsx';
 import { SunIcon, MoonIcon } from '../components/ThemeToggleButton.jsx';
 

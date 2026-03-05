@@ -1,4 +1,4 @@
-import { Form, TextInput, Toggle, Stack, Select, SelectItem } from '@carbon/react';
+import { Form, TextInput, Toggle, Stack } from '@carbon/react';
 import { FormSection } from './FormSection.jsx';
 
 /**

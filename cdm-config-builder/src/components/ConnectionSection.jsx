@@ -7,8 +7,7 @@ import {
   RadioButton,
   Select,
   SelectItem,
-  Stack,
-  InlineNotification,
+  Stack
 } from '@carbon/react';
 import { FormSection } from './FormSection.jsx';
 
