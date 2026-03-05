@@ -35,3 +35,7 @@ PERF/cdm-v4.properties
 PERF/cgpt.yaml
 PERF/cql-iot.yaml
 docs/*
+cdm-config-builder/.prettierignore
+cdm-config-builder/README.md
+cdm-config-builder/node_modules/**
+cdm-config-builder/dist/**
