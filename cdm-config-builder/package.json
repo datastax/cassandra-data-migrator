@@ -4,10 +4,18 @@
   "description": "UI for generating Cassandra Data Migrator (CDM) configuration files",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint . --ext .js,.jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext .js,.jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,json,css,scss}\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
@@ -19,12 +27,21 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^9.39.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
     "jsdom": "^28.1.0",
+    "prettier": "^3.8.1",
     "sass": "^1.83.4",
     "vite": "^6.1.0",
     "vitest": "^4.0.18"
