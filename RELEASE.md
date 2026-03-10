@@ -1,5 +1,9 @@
 # Release Notes
 
+## [5.8.0] - 2026-03-10
+- feat: Introduce CDM Config Builder UI (#422)
+- Account for the Astra DB standalone CQLSH relocation from downloads site
+
 ## [5.7.4] - 2026-02-24
 - Leverage unset to avoid ingesting tombstones at the target cluster by default.
 - Upgrade Spark version to [`3.5.8`](https://spark.apache.org/releases/spark-release-3-5-8.html).
