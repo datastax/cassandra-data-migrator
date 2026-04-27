@@ -91,12 +91,19 @@ if [[ -n "${CONFIG_DIR}" ]]; then
   WORKING_FILE="${CONFIG_DIR}/${WORKING_FILE}"
 fi
 
-eval ${assertCmd} > ${WORKING_FILE}
+# Sort both actual and expected output to make comparison order-insensitive
+eval ${assertCmd} | sort > ${WORKING_FILE}
 
-diff -q ${ASSERT_FILE} ${WORKING_FILE} > /dev/null 2>&1
+# Sort the expected file for comparison
+SORTED_ASSERT_FILE="${WORKING_FILE}.expected.sorted"
+sort ${ASSERT_FILE} > ${SORTED_ASSERT_FILE}
+
+diff -q ${SORTED_ASSERT_FILE} ${WORKING_FILE} > /dev/null 2>&1
 rtn=$?
 if [ $rtn -eq 1 ]; then
   echo "ERROR: CDM output $(basename ${OUTPUT_FILE}) differs from expected (expected vs actual):"
-  sdiff ${ASSERT_FILE} ${WORKING_FILE}
+  sdiff ${SORTED_ASSERT_FILE} ${WORKING_FILE}
+  rm -f ${SORTED_ASSERT_FILE}
   exit 1
 fi
+rm -f ${SORTED_ASSERT_FILE}

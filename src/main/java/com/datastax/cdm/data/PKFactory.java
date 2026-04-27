@@ -241,15 +241,13 @@ public class PKFactory {
         if (null == record || !record.isValid())
             return new ArrayList<>(0);
 
-        List<Record> recordSet;
         if (record.getPk().canExplode()) {
-            recordSet = record.getPk().explode(explodeMapFeature).stream().filter(pk -> !pk.isError())
+            return record.getPk().explode(explodeMapFeature).stream().filter(pk -> !pk.isError())
                     .map(pk -> new Record(pk, record.getOriginRow(), record.getTargetRow()))
                     .collect(Collectors.toList());
-        } else {
-            recordSet = Arrays.asList(record);
         }
-        return recordSet;
+
+        return Arrays.asList(record);
     }
 
     public Integer getExplodeMapTargetPKIndex() {

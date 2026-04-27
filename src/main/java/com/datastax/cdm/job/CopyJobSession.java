@@ -19,6 +19,7 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import org.apache.logging.log4j.ThreadContext;
@@ -47,9 +48,9 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
     private final Integer fetchSize;
     private final Integer batchSize;
     public Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    private OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement;
     private TargetUpsertStatement targetUpsertStatement;
     private TargetSelectByPKStatement targetSelectByPKStatement;
-    private BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
 
     protected CopyJobSession(CqlSession originSession, CqlSession targetSession, PropertyHelper propHelper) {
         super(originSession, targetSession, propHelper);
@@ -57,8 +58,9 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         isCounterTable = this.originSession.getCqlTable().isCounterTable();
         fetchSize = this.originSession.getCqlTable().getFetchSizeInRows();
         batchSize = this.originSession.getCqlTable().getBatchSize();
-        batch.setConsistencyLevel(this.targetSession.getCqlTable().getWriteConsistencyLevel())
-                .setTimeout(Duration.ofSeconds(10));
+        originSelectByPartitionRangeStatement = this.originSession.getOriginSelectByPartitionRangeStatement();
+        targetSelectByPKStatement = this.targetSession.getTargetSelectByPKStatement();
+        targetUpsertStatement = this.targetSession.getTargetUpsertStatement();
 
         logger.info("CQL -- origin select: {}", this.originSession.getOriginSelectByPartitionRangeStatement().getCQL());
         logger.info("CQL -- target select: {}", this.targetSession.getTargetSelectByPKStatement().getCQL());
@@ -67,6 +69,10 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
 
     protected void processPartitionRange(PartitionRange range) {
         BigInteger min = range.getMin(), max = range.getMax();
+        BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+        batch.setConsistencyLevel(this.targetSession.getCqlTable().getWriteConsistencyLevel())
+                .setTimeout(Duration.ofSeconds(10));
+
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
         if (null != trackRunFeature)
@@ -74,12 +80,9 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
 
         JobCounter jobCounter = range.getJobCounter();
 
+        ResultSet resultSet = null;
         try {
-            OriginSelectByPartitionRangeStatement originSelectByPartitionRangeStatement = this.originSession
-                    .getOriginSelectByPartitionRangeStatement();
-            targetUpsertStatement = this.targetSession.getTargetUpsertStatement();
-            targetSelectByPKStatement = this.targetSession.getTargetSelectByPKStatement();
-            ResultSet resultSet = originSelectByPartitionRangeStatement
+            resultSet = originSelectByPartitionRangeStatement
                     .execute(originSelectByPartitionRangeStatement.bind(min, max));
             Collection<CompletionStage<AsyncResultSet>> writeResults = new ArrayList<>();
 
@@ -101,7 +104,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
                     }
 
                     rateLimiterTarget.acquire(1);
-                    batch = writeAsync(batch, writeResults, boundUpsert);
+                    writeAsync(batch, writeResults, boundUpsert);
                     jobCounter.increment(JobCounter.CounterType.UNFLUSHED);
 
                     if (jobCounter.getCount(JobCounter.CounterType.UNFLUSHED) > fetchSize) {
@@ -135,6 +138,8 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
             if (null != trackRunFeature) {
                 trackRunFeature.updateCdmRun(runId, min, TrackRun.RUN_STATUS.FAIL, jobCounter.getMetrics());
             }
+        } finally {
+            ThreadContext.remove(THREAD_CONTEXT_LABEL);
         }
     }
 
@@ -157,18 +162,16 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         return targetUpsertStatement.bindRecord(r);
     }
 
-    private BatchStatement writeAsync(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults,
+    private void writeAsync(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults,
             BoundStatement boundUpsert) {
         if (batchSize > 1) {
             batch = batch.add(boundUpsert);
             if (batch.size() >= batchSize) {
                 writeResults.add(targetUpsertStatement.executeAsync(batch));
-                return BatchStatement.newInstance(BatchType.UNLOGGED);
+                batch.clear();
             }
-            return batch;
         } else {
             writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
-            return batch;
         }
     }
 
