@@ -56,6 +56,10 @@ public class Record {
         return originRow;
     }
 
+    public void setOriginRow(Row row) {
+        this.originRow = row;
+    }
+
     public Row getTargetRow() {
         if (null == targetRow && null != targetFutureRow) {
             AsyncResultSet asyncResultSet = targetFutureRow.toCompletableFuture().join();
@@ -64,8 +68,8 @@ public class Record {
         return targetRow;
     }
 
-    public void setTargetRow(Row targetRow) {
-        this.targetRow = targetRow;
+    public void setTargetRow(Row row) {
+        this.targetRow = row;
     }
 
     public void setAsyncTargetRow(CompletionStage<AsyncResultSet> targetFutureRow) {
