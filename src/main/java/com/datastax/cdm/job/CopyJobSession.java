@@ -75,9 +75,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
 
     protected void processPartitionRange(PartitionRange range) {
         BigInteger min = range.getMin(), max = range.getMax();
-        BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED)
-                .setConsistencyLevel(this.targetSession.getCqlTable().getWriteConsistencyLevel())
-                .setTimeout(Duration.ofSeconds(10));
+        BatchStatement batch = createNewBatch();
 
         ThreadContext.put(THREAD_CONTEXT_LABEL, getThreadLabel(min, max));
         logger.info("ThreadID: {} Processing min: {} max: {}", Thread.currentThread().getId(), min, max);
@@ -157,16 +155,24 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         // Process completed futures immediately to release memory early
         List<CompletionStage<AsyncResultSet>> remaining = new ArrayList<>();
         for (CompletionStage<AsyncResultSet> future : writeResults) {
-            // Use getNow() to check completion
-            AsyncResultSet result = future.toCompletableFuture().getNow(null);
-            if (result == null) {
+            var completableFuture = future.toCompletableFuture();
+
+            // Check completion status without blocking or throwing
+            if (!completableFuture.isDone()) {
                 // Future not complete yet, keep it for final wait
                 remaining.add(future);
+            } else if (completableFuture.isCompletedExceptionally()) {
+                try {
+                    completableFuture.join(); // This will throw the exception
+                } catch (Exception e) {
+                    throw new RuntimeException("Async write operation failed", e);
+                }
             } else {
-                result.one();
+                completableFuture.join().one();
                 // Future can now be GC'd after this iteration
             }
         }
+        writeResults.clear();
 
         // Wait for any remaining incomplete futures (small subset of the original collection)
         for (CompletionStage<AsyncResultSet> future : remaining) {
@@ -176,8 +182,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
                 throw new RuntimeException("Async write operation failed during final flush", e);
             }
         }
-
-        writeResults.clear();
+        remaining.clear();
     }
 
     private BoundStatement bind(Record r) {
@@ -197,15 +202,19 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
             batch = batch.add(boundUpsert);
             if (batch.size() >= batchSize) {
                 writeResults.add(targetUpsertStatement.executeAsync(batch));
-                return BatchStatement.newInstance(BatchType.UNLOGGED)
-                        .setConsistencyLevel(this.targetSession.getCqlTable().getWriteConsistencyLevel())
-                        .setTimeout(Duration.ofSeconds(10));
+                return createNewBatch();
             }
             return batch;
         } else {
             writeResults.add(targetUpsertStatement.executeAsync(boundUpsert));
             return batch;
         }
+    }
+
+    private BatchStatement createNewBatch() {
+        return BatchStatement.newInstance(BatchType.UNLOGGED)
+                .setConsistencyLevel(this.targetSession.getCqlTable().getWriteConsistencyLevel())
+                .setTimeout(Duration.ofSeconds(10));
     }
 
 }
