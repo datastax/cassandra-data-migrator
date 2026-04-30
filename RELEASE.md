@@ -1,5 +1,8 @@
 # Release Notes
 
+## [5.8.1] - 2026-04-28
+- Minor code refactor for efficient memory use
+
 ## [5.8.0] - 2026-03-10
 - feat: Introduce CDM Config Builder UI (#422)
 - Account for the Astra DB standalone CQLSH relocation from downloads site

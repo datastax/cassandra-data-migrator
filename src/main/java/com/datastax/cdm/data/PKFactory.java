@@ -17,6 +17,7 @@ package com.datastax.cdm.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -239,7 +240,7 @@ public class PKFactory {
 
     public List<Record> toValidRecordList(Record record) {
         if (null == record || !record.isValid())
-            return new ArrayList<>(0);
+            return Collections.emptyList();
 
         List<Record> recordSet;
         if (record.getPk().canExplode()) {
