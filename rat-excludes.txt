@@ -42,3 +42,4 @@ cdm-config-builder/dist/**
 cdm-config-builder/*.json
 cdm-config-builder/*.js
 cdm-config-builder/*.html
+cdm_logs/*

@@ -27,7 +27,7 @@ import com.datastax.cdm.job.IJobSessionFactory.JobType
 import java.math.BigInteger
 import java.util
 import scala.reflect.ClassTag
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 // http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
