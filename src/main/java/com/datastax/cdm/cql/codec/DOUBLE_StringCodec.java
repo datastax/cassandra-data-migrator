@@ -19,14 +19,14 @@ import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 
-import org.jetbrains.annotations.NotNull;
-
 import com.datastax.cdm.properties.PropertyHelper;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+
+import jakarta.validation.constraints.NotNull;
 
 // This works with decimal-formatted doubles in strings, but not
 // with the default scientific notation. A separate codec is needed

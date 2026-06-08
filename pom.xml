@@ -3,23 +3,22 @@
 
 	<groupId>datastax.cdm</groupId>
 	<artifactId>cassandra-data-migrator</artifactId>
-	<version>5.8.2-SNAPSHOT</version>
+	<version>6.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<scala.version>2.13.18</scala.version>
 		<scala.main.version>2.13</scala.main.version>
-		<spark.version>3.5.8</spark.version>
+		<spark.version>4.1.2</spark.version>
 		<connector.version>3.5.1</connector.version>
-		<cassandra.version>5.0.6</cassandra.version>
+		<cassandra.version>5.0.8</cassandra.version>
 		<junit.version>5.14.1</junit.version>
 		<mockito.version>5.20.0</mockito.version>
 		<java-driver.version>4.19.2</java-driver.version>
-		<log4j.version>2.25.3</log4j.version>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
-		<maven.compiler.release>11</maven.compiler.release>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+		<maven.compiler.release>17</maven.compiler.release>
 		<netty.version>4.2.9.Final</netty.version>
 	</properties>
 
@@ -164,16 +163,6 @@
 			<version>${java-driver.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-to-slf4j</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
 		<dependency>
 			<scope>runtime</scope>
 			<groupId>com.esri.geometry</groupId>

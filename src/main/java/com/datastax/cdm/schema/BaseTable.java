@@ -17,14 +17,14 @@ package com.datastax.cdm.schema;
 
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.StringUtils;
 
 import com.datastax.cdm.data.CqlConversion;
 import com.datastax.cdm.properties.IPropertyHelper;
 import com.datastax.cdm.properties.KnownProperties;
 import com.datastax.oss.driver.api.core.type.DataType;
+
+import jakarta.validation.constraints.NotNull;
 
 public class BaseTable implements Table {
     protected final IPropertyHelper propertyHelper;
