@@ -39,3 +39,6 @@ cdm-config-builder/.prettierignore
 cdm-config-builder/README.md
 cdm-config-builder/node_modules/**
 cdm-config-builder/dist/**
+cdm-config-builder/*.json
+cdm-config-builder/*.js
+cdm-config-builder/*.html

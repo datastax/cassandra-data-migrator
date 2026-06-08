@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>datastax.cdm</groupId>
@@ -200,6 +202,18 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>log4j-over-slf4j</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.perfkit.sjk.parsers</groupId>
+					<artifactId>sjk-jfr5</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.perfkit.sjk.parsers</groupId>
+					<artifactId>sjk-jfr6</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.perfkit.sjk.parsers</groupId>
+					<artifactId>sjk-nps</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<!-- Force Guava 18 on Test CP, Required for Cassandra -->
@@ -352,7 +366,7 @@
 			<plugin>
 				<groupId>org.apache.rat</groupId>
 				<artifactId>apache-rat-plugin</artifactId>
-				<version>0.17</version>
+				<version>0.18</version>
 				<configuration>
 					<inputExcludeFile>rat-excludes.txt</inputExcludeFile>
 				</configuration>
@@ -368,7 +382,7 @@
 			<plugin>
 				<groupId>net.revelc.code</groupId>
 				<artifactId>impsort-maven-plugin</artifactId>
-				<version>1.9.0</version><!-- can't upgrade until moving to Java 17 -->
+				<version>1.13.0</version>
 				<configuration>
 					<groups>java.,javax.,org.,com.</groups>
 					<staticGroups>java,*</staticGroups>
@@ -384,7 +398,7 @@
 			<plugin>
 				<groupId>net.revelc.code.formatter</groupId>
 				<artifactId>formatter-maven-plugin</artifactId>
-				<version>2.23.0</version><!-- can't upgrade until moving to Java 17 -->
+				<version>2.29.0</version>
 				<configuration>
 					<compilerSource>11</compilerSource>
 					<compilerCompliance>11</compilerCompliance>
