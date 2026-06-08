@@ -127,7 +127,8 @@ class AstraDevOpsClientTest {
         when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_DATABASE_ID)).thenReturn("test-db-id");
 
         // Use reflection to access the private method
-        Method getAstraDatabaseIdMethod = AstraDevOpsClient.class.getDeclaredMethod("getAstraDatabaseId", PKFactory.Side.class);
+        Method getAstraDatabaseIdMethod = AstraDevOpsClient.class.getDeclaredMethod("getAstraDatabaseId",
+                PKFactory.Side.class);
         getAstraDatabaseIdMethod.setAccessible(true);
 
         // Test
@@ -172,10 +173,12 @@ class AstraDevOpsClientTest {
     @Test
     void testGetCustomDomain() throws Exception {
         // Setup
-        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_CUSTOM_DOMAIN)).thenReturn("custom.domain.com");
+        when(propertyHelper.getAsString(KnownProperties.ORIGIN_ASTRA_SCB_CUSTOM_DOMAIN))
+                .thenReturn("custom.domain.com");
 
         // Use reflection to access the private method
-        Method getCustomDomainMethod = AstraDevOpsClient.class.getDeclaredMethod("getCustomDomain", PKFactory.Side.class);
+        Method getCustomDomainMethod = AstraDevOpsClient.class.getDeclaredMethod("getCustomDomain",
+                PKFactory.Side.class);
         getCustomDomainMethod.setAccessible(true);
 
         // Test
@@ -349,8 +352,8 @@ class AstraDevOpsClientTest {
         when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofString()))).thenReturn(httpResponse);
 
         // Use reflection to access the private method
-        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod(
-                "fetchSecureBundleUrlInfo", String.class, String.class);
+        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod("fetchSecureBundleUrlInfo",
+                String.class, String.class);
         fetchSecureBundleUrlInfoMethod.setAccessible(true);
 
         // Test
@@ -380,8 +383,8 @@ class AstraDevOpsClientTest {
         when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofString()))).thenReturn(httpResponse);
 
         // Use reflection to access the private method
-        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod(
-                "fetchSecureBundleUrlInfo", String.class, String.class);
+        Method fetchSecureBundleUrlInfoMethod = AstraDevOpsClient.class.getDeclaredMethod("fetchSecureBundleUrlInfo",
+                String.class, String.class);
         fetchSecureBundleUrlInfoMethod.setAccessible(true);
 
         // Test
@@ -436,8 +439,8 @@ class AstraDevOpsClientTest {
         when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream()))).thenReturn(httpResponseStream);
 
         // Use reflection to access the private method
-        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod(
-                "downloadBundleFile", String.class, PKFactory.Side.class);
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod("downloadBundleFile", String.class,
+                PKFactory.Side.class);
         downloadBundleFileMethod.setAccessible(true);
 
         try {
@@ -489,11 +492,11 @@ class AstraDevOpsClientTest {
     void testDownloadBundleFileWithIOException() throws Exception {
         // Mock the HTTP client to throw IOException when sending the request
         when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream())))
-            .thenThrow(new IOException("Network error"));
+                .thenThrow(new IOException("Network error"));
 
         // Use reflection to access the private method
-        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod(
-                "downloadBundleFile", String.class, PKFactory.Side.class);
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod("downloadBundleFile", String.class,
+                PKFactory.Side.class);
         downloadBundleFileMethod.setAccessible(true);
 
         try {
@@ -626,11 +629,11 @@ class AstraDevOpsClientTest {
     void testDownloadBundleFileInterrupted() throws Exception {
         // Mock the HTTP client to throw InterruptedException when sending the request
         when(httpClient.send(any(), eq(HttpResponse.BodyHandlers.ofInputStream())))
-            .thenThrow(new InterruptedException("Download interrupted"));
+                .thenThrow(new InterruptedException("Download interrupted"));
 
         // Use reflection to access the private method
-        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod(
-                "downloadBundleFile", String.class, PKFactory.Side.class);
+        Method downloadBundleFileMethod = AstraDevOpsClient.class.getDeclaredMethod("downloadBundleFile", String.class,
+                PKFactory.Side.class);
         downloadBundleFileMethod.setAccessible(true);
 
         try {

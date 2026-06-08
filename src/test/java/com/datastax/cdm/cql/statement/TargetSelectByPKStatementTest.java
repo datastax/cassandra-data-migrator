@@ -92,7 +92,8 @@ public class TargetSelectByPKStatementTest extends CommonMocks {
 
     @Test
     public void getRecord_nullBoundStatement() {
-        when(pkFactory.bindWhereClause(any(PKFactory.Side.class), any(EnhancedPK.class), eq(boundStatement), anyInt())).thenReturn(null);
+        when(pkFactory.bindWhereClause(any(PKFactory.Side.class), any(EnhancedPK.class), eq(boundStatement), anyInt()))
+                .thenReturn(null);
         assertNull(targetSelectByPKStatement.getRecord(pk));
     }
 
@@ -110,7 +111,8 @@ public class TargetSelectByPKStatementTest extends CommonMocks {
 
     @Test
     public void getAsyncResult_nullBoundStatement() {
-        when(pkFactory.bindWhereClause(any(PKFactory.Side.class), any(EnhancedPK.class), eq(boundStatement), anyInt())).thenReturn(null);
+        when(pkFactory.bindWhereClause(any(PKFactory.Side.class), any(EnhancedPK.class), eq(boundStatement), anyInt()))
+                .thenReturn(null);
         assertNull(targetSelectByPKStatement.getAsyncResult(pk));
     }
 

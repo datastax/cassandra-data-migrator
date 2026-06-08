@@ -148,20 +148,20 @@ public class CqlData {
     public static List<DataType> extractDataTypesFromCollection(DataType dataType) {
         CqlData.Type type = CqlData.toType(dataType);
         switch (type) {
-        case UDT:
-            return Collections.singletonList(dataType);
-        case LIST:
-            return Collections.singletonList(((ListType) dataType).getElementType());
-        case SET:
-            return Collections.singletonList(((SetType) dataType).getElementType());
-        case MAP:
-            return Arrays.asList(((MapType) dataType).getKeyType(), ((MapType) dataType).getValueType());
-        case TUPLE:
-            return ((TupleType) dataType).getComponentTypes();
-        case VECTOR:
-            return Collections.singletonList(((VectorType) dataType).getElementType());
-        default:
-            return null;
+            case UDT:
+                return Collections.singletonList(dataType);
+            case LIST:
+                return Collections.singletonList(((ListType) dataType).getElementType());
+            case SET:
+                return Collections.singletonList(((SetType) dataType).getElementType());
+            case MAP:
+                return Arrays.asList(((MapType) dataType).getKeyType(), ((MapType) dataType).getValueType());
+            case TUPLE:
+                return ((TupleType) dataType).getComponentTypes();
+            case VECTOR:
+                return Collections.singletonList(((VectorType) dataType).getElementType());
+            default:
+                return null;
         }
     }
 
@@ -207,23 +207,23 @@ public class CqlData {
         String closeBracket;
         try {
             switch (type) {
-            case UDT:
-                return ((UdtValue) value).getFormattedContents();
-            case LIST:
-            case VECTOR:
-                openBracket = "[";
-                closeBracket = "]";
-                break;
-            case SET:
-            case MAP:
-                openBracket = "{";
-                closeBracket = "}";
-                break;
-            case PRIMITIVE:
-            case UNKNOWN:
-            case TUPLE:
-            default:
-                return value.toString();
+                case UDT:
+                    return ((UdtValue) value).getFormattedContents();
+                case LIST:
+                case VECTOR:
+                    openBracket = "[";
+                    closeBracket = "]";
+                    break;
+                case SET:
+                case MAP:
+                    openBracket = "{";
+                    closeBracket = "}";
+                    break;
+                case PRIMITIVE:
+                case UNKNOWN:
+                case TUPLE:
+                default:
+                    return value.toString();
             }
 
             List<Object> objects = DataUtility.extractObjectsFromCollection(value);

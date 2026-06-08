@@ -60,10 +60,9 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasTTLColumns()).thenReturn(true);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        String expectedStatement = "INSERT INTO " + targetKeyspaceTableName +
-                " (" + String.join(",", targetColumnNames) + ")" +
-                " VALUES (" + String.join(",", Collections.nCopies(targetColumnNames.size(), "?")) + ")" +
-                " USING TTL ?";
+        String expectedStatement = "INSERT INTO " + targetKeyspaceTableName + " (" + String.join(",", targetColumnNames)
+                + ")" + " VALUES (" + String.join(",", Collections.nCopies(targetColumnNames.size(), "?")) + ")"
+                + " USING TTL ?";
 
         assertEquals(expectedStatement, targetInsertStatement.getCQL());
     }
@@ -74,10 +73,9 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        String expectedStatement = "INSERT INTO " + targetKeyspaceTableName +
-                " (" + String.join(",", targetColumnNames) + ")" +
-                " VALUES (" + String.join(",", Collections.nCopies(targetColumnNames.size(), "?")) + ")" +
-                " USING TIMESTAMP ?";
+        String expectedStatement = "INSERT INTO " + targetKeyspaceTableName + " (" + String.join(",", targetColumnNames)
+                + ")" + " VALUES (" + String.join(",", Collections.nCopies(targetColumnNames.size(), "?")) + ")"
+                + " USING TIMESTAMP ?";
 
         assertEquals(expectedStatement, targetInsertStatement.getCQL());
     }
@@ -89,10 +87,9 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        String expectedStatement = "INSERT INTO " + targetKeyspaceTableName +
-                " (" + String.join(",", targetColumnNames) + ")" +
-                " VALUES (" + String.join(",", Collections.nCopies(targetColumnNames.size(), "?")) + ")" +
-                " USING TTL ? AND TIMESTAMP ?";
+        String expectedStatement = "INSERT INTO " + targetKeyspaceTableName + " (" + String.join(",", targetColumnNames)
+                + ")" + " VALUES (" + String.join(",", Collections.nCopies(targetColumnNames.size(), "?")) + ")"
+                + " USING TTL ? AND TIMESTAMP ?";
 
         assertEquals(expectedStatement, targetInsertStatement.getCQL());
     }
@@ -125,9 +122,9 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasTTLColumns()).thenReturn(true);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, 3600,null,null,null);
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, 3600, null, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()+1)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() + 1)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
@@ -136,9 +133,9 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null,10000L,null,null);
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, null, 10000L, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()+1)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() + 1)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
@@ -148,9 +145,9 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, 3600,10000L,null,null);
+        BoundStatement result = targetInsertStatement.bind(originRow, targetRow, 3600, 10000L, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()+2)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() + 2)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
@@ -200,16 +197,19 @@ public class TargetInsertStatementTest extends CommonMocks {
         when(targetTable.getCounterIndexes()).thenReturn(Collections.singletonList(0));
         targetInsertStatement = new TargetInsertStatement(propertyHelper, targetSession);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetInsertStatement.bind(originRow, targetRow, 3600, 123456789L, explodeMapKey, explodeMapValue));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetInsertStatement.bind(originRow,
+                targetRow, 3600, 123456789L, explodeMapKey, explodeMapValue));
         assertEquals("Cannot INSERT onto a counter table, use UPDATE instead", exception.getMessage());
     }
 
     @Test
     public void bind_withExceptionWhenBindingValue() {
         when(targetTable.getCorrespondingIndex(anyInt())).thenReturn(0);
-        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenThrow(new RuntimeException("Error binding value"));
+        when(originTable.getAndConvertData(anyInt(), eq(originRow)))
+                .thenThrow(new RuntimeException("Error binding value"));
 
-        assertThrows(RuntimeException.class, () -> targetInsertStatement.bind(originRow, targetRow, 3600, 123456789L, explodeMapKey, explodeMapValue));
+        assertThrows(RuntimeException.class, () -> targetInsertStatement.bind(originRow, targetRow, 3600, 123456789L,
+                explodeMapKey, explodeMapValue));
     }
 
     @Test

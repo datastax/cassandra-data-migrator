@@ -118,7 +118,8 @@ public class ConnectionFetcherTest extends CommonMocks {
         when(propertyHelper.getAsString(KnownProperties.TARGET_ASTRA_SCB_REGION)).thenReturn("eu-west-1");
         when(astraClient.getAstraDatabaseId(PKFactory.Side.TARGET)).thenReturn("target-db-id");
         when(astraClient.getRegion(PKFactory.Side.TARGET)).thenReturn("eu-west-1");
-        when(astraClient.downloadSecureBundle(PKFactory.Side.TARGET)).thenReturn("/path/to/downloaded/target-bundle.zip");
+        when(astraClient.downloadSecureBundle(PKFactory.Side.TARGET))
+                .thenReturn("/path/to/downloaded/target-bundle.zip");
 
         // Create ConnectionFetcher with mocked AstraDevOpsClient
         cf = new ConnectionFetcher(propertyHelper, astraClient);
@@ -127,7 +128,8 @@ public class ConnectionFetcherTest extends CommonMocks {
         cf.getConnectionDetails(PKFactory.Side.TARGET);
 
         // Verify the SCB path was updated in the property helper
-        verify(propertyHelper).setProperty(KnownProperties.CONNECT_TARGET_SCB, "file:///path/to/downloaded/target-bundle.zip");
+        verify(propertyHelper).setProperty(KnownProperties.CONNECT_TARGET_SCB,
+                "file:///path/to/downloaded/target-bundle.zip");
     }
 
     @Test
@@ -139,7 +141,8 @@ public class ConnectionFetcherTest extends CommonMocks {
         when(astraClient.getRegion(PKFactory.Side.ORIGIN)).thenReturn("us-east-1");
 
         // But the download fails
-        when(astraClient.downloadSecureBundle(PKFactory.Side.ORIGIN)).thenThrow(new RuntimeException("Download failed"));
+        when(astraClient.downloadSecureBundle(PKFactory.Side.ORIGIN))
+                .thenThrow(new RuntimeException("Download failed"));
 
         // Create ConnectionFetcher with mocked AstraDevOpsClient
         cf = new ConnectionFetcher(propertyHelper, astraClient);

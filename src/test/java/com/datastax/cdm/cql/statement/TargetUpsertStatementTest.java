@@ -62,7 +62,8 @@ public class TargetUpsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasTTLColumns()).thenReturn(true);
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetUpsertStatement.checkBindInputs(null, null, null, null));
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> targetUpsertStatement.checkBindInputs(null, null, null, null));
         assertTrue(exception.getMessage().endsWith("but no TTL value was provided"));
     }
 
@@ -72,7 +73,8 @@ public class TargetUpsertStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
 
         targetUpsertStatement = new TestTargetUpsertStatement(propertyHelper, targetSession);
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> targetUpsertStatement.checkBindInputs(null, null, null, null));
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> targetUpsertStatement.checkBindInputs(null, null, null, null));
         assertTrue(exception.getMessage().endsWith("but no WriteTime value was provided"));
     }
 

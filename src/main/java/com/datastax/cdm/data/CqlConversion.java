@@ -94,19 +94,19 @@ public class CqlConversion {
         // The first element on the conversionTypeList tells us what conversion the top-level object requires
         Type conversionType = conversionTypeList.get(0);
         switch (conversionType) {
-        case NONE:
-        case UNSUPPORTED:
-            return inputData;
-        case CODEC:
-        case UDT:
-            return convert_ONE(conversionType, inputData, fromDataTypeList.get(0), toDataTypeList.get(0),
-                    codecRegistry);
-        case LIST:
-        case SET:
-        case MAP:
-            return convert_COLLECTION(conversionType, inputData,
-                    conversionTypeList.subList(1, conversionTypeList.size()), fromDataTypeList, toDataTypeList,
-                    codecRegistry);
+            case NONE:
+            case UNSUPPORTED:
+                return inputData;
+            case CODEC:
+            case UDT:
+                return convert_ONE(conversionType, inputData, fromDataTypeList.get(0), toDataTypeList.get(0),
+                        codecRegistry);
+            case LIST:
+            case SET:
+            case MAP:
+                return convert_COLLECTION(conversionType, inputData,
+                        conversionTypeList.subList(1, conversionTypeList.size()), fromDataTypeList, toDataTypeList,
+                        codecRegistry);
         }
         logger.warn("Conversion.convert() - Unknown conversion type: {}", conversionType);
         return inputData;
@@ -203,19 +203,19 @@ public class CqlConversion {
             // The rest will be the conversion types for the elements of the collection
             List<Type> rtn = new ArrayList<>();
             switch (fromType) {
-            case LIST:
-                rtn.add(Type.LIST);
-                break;
-            case SET:
-                rtn.add(Type.SET);
-                break;
-            case MAP:
-                rtn.add(Type.MAP);
-                break;
-            default:
-                logger.warn("calcConversionTypeForCollections requires collection type to be LIST, SET, or MAP: {}",
-                        fromDataType.asCql(true, true));
-                return Collections.singletonList(Type.UNSUPPORTED);
+                case LIST:
+                    rtn.add(Type.LIST);
+                    break;
+                case SET:
+                    rtn.add(Type.SET);
+                    break;
+                case MAP:
+                    rtn.add(Type.MAP);
+                    break;
+                default:
+                    logger.warn("calcConversionTypeForCollections requires collection type to be LIST, SET, or MAP: {}",
+                            fromDataType.asCql(true, true));
+                    return Collections.singletonList(Type.UNSUPPORTED);
             }
 
             for (int i = 0; i < fromElementTypes.size(); i++) {
@@ -247,13 +247,13 @@ public class CqlConversion {
             logger.debug("convert_ONE conversionType {} inputData {} fromDataType {} toDataType {}", conversionType,
                     inputData, fromDataType, toDataType);
         switch (conversionType) {
-        case NONE:
-        case UNSUPPORTED:
-            return inputData;
-        case CODEC:
-            return convert_CODEC(inputData, fromDataType, toDataType, codecRegistry);
-        case UDT:
-            return convert_UDT((UdtValue) inputData, (UserDefinedType) fromDataType, (UserDefinedType) toDataType);
+            case NONE:
+            case UNSUPPORTED:
+                return inputData;
+            case CODEC:
+                return convert_CODEC(inputData, fromDataType, toDataType, codecRegistry);
+            case UDT:
+                return convert_UDT((UdtValue) inputData, (UserDefinedType) fromDataType, (UserDefinedType) toDataType);
         }
         return inputData;
     }
@@ -387,20 +387,20 @@ public class CqlConversion {
             return value;
 
         switch (collectionType) {
-        case LIST:
-            return ((List<?>) value).stream().map(v -> convert_ONE(conversionTypeList.get(0), v,
-                    fromDataTypeList.get(0), toDataTypeList.get(0), codecRegistry)).collect(Collectors.toList());
-        case SET:
-            return ((Set<?>) value).stream().map(v -> convert_ONE(conversionTypeList.get(0), v, fromDataTypeList.get(0),
-                    toDataTypeList.get(0), codecRegistry)).collect(Collectors.toSet());
-        case MAP:
-            // There are two conversion types in the element list: one for keys and one for values
-            return ((Map<?, ?>) value).entrySet().stream()
-                    .collect(Collectors.toMap(
-                            entry -> convert_ONE(conversionTypeList.get(0), entry.getKey(), fromDataTypeList.get(0),
-                                    toDataTypeList.get(0), codecRegistry),
-                            entry -> convert_ONE(conversionTypeList.get(1), entry.getValue(), fromDataTypeList.get(1),
-                                    toDataTypeList.get(1), codecRegistry)));
+            case LIST:
+                return ((List<?>) value).stream().map(v -> convert_ONE(conversionTypeList.get(0), v,
+                        fromDataTypeList.get(0), toDataTypeList.get(0), codecRegistry)).collect(Collectors.toList());
+            case SET:
+                return ((Set<?>) value).stream().map(v -> convert_ONE(conversionTypeList.get(0), v,
+                        fromDataTypeList.get(0), toDataTypeList.get(0), codecRegistry)).collect(Collectors.toSet());
+            case MAP:
+                // There are two conversion types in the element list: one for keys and one for values
+                return ((Map<?, ?>) value).entrySet().stream()
+                        .collect(Collectors.toMap(
+                                entry -> convert_ONE(conversionTypeList.get(0), entry.getKey(), fromDataTypeList.get(0),
+                                        toDataTypeList.get(0), codecRegistry),
+                                entry -> convert_ONE(conversionTypeList.get(1), entry.getValue(),
+                                        fromDataTypeList.get(1), toDataTypeList.get(1), codecRegistry)));
         }
         return value;
     }

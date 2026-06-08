@@ -141,8 +141,7 @@ public class ExplodeMapTest {
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_KEY_COLUMN_NAME)).thenReturn("");
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME)).thenReturn("");
 
-        assertAll(
-                () -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
+        assertAll(() -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
                 () -> assertTrue(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"),
                 () -> assertFalse(feature.isEnabled(), "feature should be disabled"),
 
@@ -153,8 +152,7 @@ public class ExplodeMapTest {
                 () -> assertEquals(-1, feature.getKeyColumnIndex(), "key index"),
 
                 () -> assertEquals("", feature.getValueColumnName(), "value name"),
-                () -> assertEquals(-1, feature.getValueColumnIndex(), "value index")
-        );
+                () -> assertEquals(-1, feature.getValueColumnIndex(), "value index"));
     }
 
     @Test
@@ -183,16 +181,15 @@ public class ExplodeMapTest {
         boolean enabledBeforeValidation = feature.isEnabled();
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
 
-        assertAll(
-                () -> assertTrue(enabledBeforeValidation, "feature was enabled"),
+        assertAll(() -> assertTrue(enabledBeforeValidation, "feature was enabled"),
                 () -> assertFalse(valid, "configuration is not valid"),
-                () -> assertFalse(feature.isEnabled(), "feature should now be disabled")
-                );
+                () -> assertFalse(feature.isEnabled(), "feature should now be disabled"));
     }
 
     @Test
     public void testMissingMapColumnInOriginTable() {
-        when(originTable.extendColumns(Collections.singletonList(standardMapColumnName))).thenReturn(Collections.singletonList(null));
+        when(originTable.extendColumns(Collections.singletonList(standardMapColumnName)))
+                .thenReturn(Collections.singletonList(null));
         feature.loadProperties(propertyHelper);
 
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
@@ -201,7 +198,8 @@ public class ExplodeMapTest {
 
     @Test
     public void testMissingKeyColumnInTargetTable() {
-        when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName,standardValueColumnName))).thenReturn(Arrays.asList(null,CqlData.getBindClass(standardTargetTypes.get(3))));
+        when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName, standardValueColumnName)))
+                .thenReturn(Arrays.asList(null, CqlData.getBindClass(standardTargetTypes.get(3))));
         feature.loadProperties(propertyHelper);
 
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
@@ -210,7 +208,8 @@ public class ExplodeMapTest {
 
     @Test
     public void testMissingValueColumnInTargetTable() {
-        when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName,standardValueColumnName))).thenReturn(Arrays.asList(CqlData.getBindClass(standardTargetTypes.get(2)), null));
+        when(targetTable.extendColumns(Arrays.asList(standardKeyColumnName, standardValueColumnName)))
+                .thenReturn(Arrays.asList(CqlData.getBindClass(standardTargetTypes.get(2)), null));
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
@@ -221,28 +220,22 @@ public class ExplodeMapTest {
     @Test
     public void testMissingOriginColumn() {
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_ORIGIN_COLUMN_NAME)).thenReturn("");
-        assertAll(
-                () -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
-                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate")
-        );
+        assertAll(() -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
+                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"));
     }
 
     @Test
     public void testMissingKeyColumn() {
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_KEY_COLUMN_NAME)).thenReturn("");
-        assertAll(
-                () -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
-                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate")
-        );
+        assertAll(() -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
+                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"));
     }
 
     @Test
     public void testMissingValueColumn() {
         when(propertyHelper.getString(KnownProperties.EXPLODE_MAP_TARGET_VALUE_COLUMN_NAME)).thenReturn("");
-        assertAll(
-                () -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
-                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate")
-        );
+        assertAll(() -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
+                () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"));
     }
 
     @Test

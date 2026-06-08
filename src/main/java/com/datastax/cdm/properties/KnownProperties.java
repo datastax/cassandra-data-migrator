@@ -390,31 +390,31 @@ public class KnownProperties {
 
     public static Object asType(PropertyType propertyType, String propertyValue) {
         switch (propertyType) {
-        case STRING:
-            return propertyValue;
-        case STRING_LIST:
-            return Arrays.asList(propertyValue.split(","));
-        case NUMBER:
-            try {
-                return Long.parseLong(propertyValue);
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        case NUMBER_LIST:
-            String[] numValues = propertyValue.split(",");
-            ArrayList<Number> numbers = new ArrayList<>(numValues.length);
-            try {
-                for (String value : numValues) {
-                    numbers.add(Long.parseLong(value));
+            case STRING:
+                return propertyValue;
+            case STRING_LIST:
+                return Arrays.asList(propertyValue.split(","));
+            case NUMBER:
+                try {
+                    return Long.parseLong(propertyValue);
+                } catch (NumberFormatException e) {
+                    return null;
                 }
-                return numbers;
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        case BOOLEAN:
-            return Boolean.parseBoolean(propertyValue);
-        default:
-            throw new IllegalArgumentException("Unhandled property type: " + propertyType);
+            case NUMBER_LIST:
+                String[] numValues = propertyValue.split(",");
+                ArrayList<Number> numbers = new ArrayList<>(numValues.length);
+                try {
+                    for (String value : numValues) {
+                        numbers.add(Long.parseLong(value));
+                    }
+                    return numbers;
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            case BOOLEAN:
+                return Boolean.parseBoolean(propertyValue);
+            default:
+                throw new IllegalArgumentException("Unhandled property type: " + propertyType);
         }
     }
 
@@ -445,53 +445,53 @@ public class KnownProperties {
 
     public static boolean validateType(PropertyType expectedType, Object value) {
         switch (expectedType) {
-        case STRING:
-            if (value instanceof String) {
-                return true;
-            }
-            break;
-        case STRING_LIST:
-            if (value instanceof List<?>) {
-                List<?> list = (List<?>) value;
-                if (list.isEmpty()) {
-                    return false;
-                } else {
-                    for (Object o : list) {
-                        if (!(o instanceof String)) {
-                            return false;
-                        }
-                    }
+            case STRING:
+                if (value instanceof String) {
                     return true;
                 }
-            }
-            break;
-        case NUMBER:
-            if (value instanceof Number) {
-                return true;
-            }
-            break;
-        case NUMBER_LIST:
-            if (value instanceof List<?>) {
-                List<?> list = (List<?>) value;
-                if (list.isEmpty()) {
-                    return false;
-                } else {
-                    for (Object o : list) {
-                        if (!(o instanceof Number)) {
-                            return false;
+                break;
+            case STRING_LIST:
+                if (value instanceof List<?>) {
+                    List<?> list = (List<?>) value;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        for (Object o : list) {
+                            if (!(o instanceof String)) {
+                                return false;
+                            }
                         }
+                        return true;
                     }
+                }
+                break;
+            case NUMBER:
+                if (value instanceof Number) {
                     return true;
                 }
-            }
-            break;
-        case BOOLEAN:
-            if (value instanceof Boolean) {
-                return true;
-            }
-            break;
-        default:
-            break;
+                break;
+            case NUMBER_LIST:
+                if (value instanceof List<?>) {
+                    List<?> list = (List<?>) value;
+                    if (list.isEmpty()) {
+                        return false;
+                    } else {
+                        for (Object o : list) {
+                            if (!(o instanceof Number)) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case BOOLEAN:
+                if (value instanceof Boolean) {
+                    return true;
+                }
+                break;
+            default:
+                break;
         }
         return false;
     }

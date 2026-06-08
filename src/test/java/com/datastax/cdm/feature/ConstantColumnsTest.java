@@ -96,14 +96,12 @@ public class ConstantColumnsTest extends CommonMocks {
         when(propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_VALUES)).thenReturn("");
         when(propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX)).thenReturn("");
 
-        assertAll(
-                () -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
+        assertAll(() -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
                 () -> assertTrue(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"),
                 () -> assertFalse(feature.isEnabled(), "feature should be disabled"),
                 () -> assertTrue(feature.getNames().isEmpty(), "empty names"),
                 () -> assertTrue(feature.getValues().isEmpty(), "empty values"),
-                () -> assertTrue(feature.getBindClasses().isEmpty(), "empty bindClasses")
-        );
+                () -> assertTrue(feature.getBindClasses().isEmpty(), "empty bindClasses"));
     }
 
     @Test
@@ -143,7 +141,8 @@ public class ConstantColumnsTest extends CommonMocks {
     public void testMissingSplitRegex() {
         when(propertyHelper.getString(KnownProperties.CONSTANT_COLUMN_SPLIT_REGEX)).thenReturn(null);
 
-        assertThrows(RuntimeException.class, () -> feature.loadProperties(propertyHelper), "Exception should be thrown for missing split regex");
+        assertThrows(RuntimeException.class, () -> feature.loadProperties(propertyHelper),
+                "Exception should be thrown for missing split regex");
     }
 
     @Test
@@ -153,33 +152,35 @@ public class ConstantColumnsTest extends CommonMocks {
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
         assertAll(
-                () -> assertFalse(valid, "validation should fail as the number of values will not match the number of names"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+                () -> assertFalse(valid,
+                        "validation should fail as the number of values will not match the number of names"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
     @Test
     public void testMissingConstantColumnInBindClasses() {
-        when(targetTable.extendColumns(constantColumns)).thenReturn(Arrays.asList(CqlData.getBindClass(constantColumnTypes.get(0)), null, CqlData.getBindClass(constantColumnTypes.get(2))));
+        when(targetTable.extendColumns(constantColumns))
+                .thenReturn(Arrays.asList(CqlData.getBindClass(constantColumnTypes.get(0)), null,
+                        CqlData.getBindClass(constantColumnTypes.get(2))));
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
-        assertAll(
-                () -> assertFalse(valid, "Validation should fail with a missing constant column in the bind classes"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+        assertAll(() -> assertFalse(valid, "Validation should fail with a missing constant column in the bind classes"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
     @Test
     public void testEmptyConstantColumnValueInBindClasses() {
-        when(targetTable.extendColumns(constantColumns)).thenReturn(Arrays.asList(CqlData.getBindClass(constantColumnTypes.get(0)), CqlData.getBindClass(constantColumnTypes.get(1)), null));
+        when(targetTable.extendColumns(constantColumns))
+                .thenReturn(Arrays.asList(CqlData.getBindClass(constantColumnTypes.get(0)),
+                        CqlData.getBindClass(constantColumnTypes.get(1)), null));
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
         assertAll(
-                () -> assertFalse(valid, "Validation should fail with an empty constant column value in the bind classes"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+                () -> assertFalse(valid,
+                        "Validation should fail with an empty constant column value in the bind classes"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
     @Test
@@ -188,10 +189,8 @@ public class ConstantColumnsTest extends CommonMocks {
 
         feature.loadProperties(propertyHelper);
         boolean valid = feature.initializeAndValidate(originTable, targetTable);
-        assertAll(
-                () -> assertFalse(valid, "Validation should fail with a constant column value that cannot be parsed"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+        assertAll(() -> assertFalse(valid, "Validation should fail with a constant column value that cannot be parsed"),
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
     @Test

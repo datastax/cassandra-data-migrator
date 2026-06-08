@@ -62,7 +62,7 @@ public class GuardrailTest extends CommonMocks {
         guardrail.loadProperties(propertyHelper);
         guardrail.initializeAndValidate(originTable, targetTable);
 
-        when(originTable.byteCount(anyInt(),any())).thenReturn(Guardrail.BASE_FACTOR+1);
+        when(originTable.byteCount(anyInt(), any())).thenReturn(Guardrail.BASE_FACTOR + 1);
 
         String guardrailChecksResult = guardrail.guardrailChecks(originRow);
         assertTrue(guardrailChecksResult.startsWith("Large columns"), "guardrailChecks");
@@ -85,10 +85,8 @@ public class GuardrailTest extends CommonMocks {
         when(propertyHelper.getNumber(KnownProperties.GUARDRAIL_COLSIZE_KB)).thenReturn(colSizeInKB);
         boolean loadPropertiesResult = guardrail.loadProperties(propertyHelper);
 
-        assertAll(
-                () -> assertTrue(loadPropertiesResult, "loadProperties"),
-                () -> assertTrue(guardrail.isEnabled(), "enabled")
-        );
+        assertAll(() -> assertTrue(loadPropertiesResult, "loadProperties"),
+                () -> assertTrue(guardrail.isEnabled(), "enabled"));
     }
 
     @Test
@@ -104,10 +102,8 @@ public class GuardrailTest extends CommonMocks {
         when(propertyHelper.getNumber(KnownProperties.GUARDRAIL_COLSIZE_KB)).thenReturn(-1);
         boolean loadPropertiesResult = guardrail.loadProperties(propertyHelper);
 
-        assertAll(
-                () -> assertFalse(loadPropertiesResult, "loadProperties"),
-                () -> assertFalse(guardrail.isEnabled(), "not enabled")
-        );
+        assertAll(() -> assertFalse(loadPropertiesResult, "loadProperties"),
+                () -> assertFalse(guardrail.isEnabled(), "not enabled"));
     }
 
     @Test

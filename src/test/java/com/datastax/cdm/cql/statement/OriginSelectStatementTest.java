@@ -60,24 +60,19 @@ public class OriginSelectStatementTest extends CommonMocks {
         when(writetimeTTLFeature.getMaxWriteTimeStampFilter()).thenReturn(2000L);
         originSelectStatement = new TestOriginSelectStatement(propertyHelper, originSession);
 
-        assertAll(
-                () -> {
-                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(1500L);
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "timestamp is range");
-                },
-                () -> {
-                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(500L);
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "timestamp below range");
-                },
-                () -> {
-                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(2500L);
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "timestamp above range");
-                },
-                () -> {
-                    when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(null);
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "null timestamp");
-                }
-        );
+        assertAll(() -> {
+            when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(1500L);
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "timestamp is range");
+        }, () -> {
+            when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(500L);
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "timestamp below range");
+        }, () -> {
+            when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(2500L);
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "timestamp above range");
+        }, () -> {
+            when(writetimeTTLFeature.getLargestWriteTimeStamp(record.getOriginRow())).thenReturn(null);
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "null timestamp");
+        });
     }
 
     @Test
@@ -89,32 +84,26 @@ public class OriginSelectStatementTest extends CommonMocks {
 
         originSelectStatement = new TestOriginSelectStatement(propertyHelper, originSession);
 
-        assertAll(
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc");
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "match string");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("  abc  ");
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "match string with whitespace");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("ABC");
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "match string but uppercase");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc123");
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "mismatch string");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("");
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "empty string");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn(null);
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "null string");
-                }
-        );
+        assertAll(() -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc");
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "match string");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow()))
+                    .thenReturn("  abc  ");
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "match string with whitespace");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("ABC");
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "match string but uppercase");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc123");
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "mismatch string");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("");
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "empty string");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn(null);
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "null string");
+        });
     }
 
     @Test
@@ -140,44 +129,37 @@ public class OriginSelectStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWriteTimestampFilter()).thenReturn(false);
         when(propertyHelper.getAsString(KnownProperties.FILTER_COLUMN_NAME)).thenReturn(filterCol);
         when(propertyHelper.getString(KnownProperties.FILTER_COLUMN_VALUE)).thenReturn("abc");
-        when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("do not filter me");
+        when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow()))
+                .thenReturn("do not filter me");
         when(record.getOriginRow()).thenReturn(originRow);
 
         originSelectStatement = new TestOriginSelectStatement(propertyHelper, originSession);
 
-        assertAll(
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc");
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "match string");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("  abc  ");
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "match string with whitespace");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("ABC");
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "match string but uppercase");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc123");
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "mismatch string");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("");
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "empty string");
-                },
-                () -> {
-                    when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn(null);
-                    assertFalse(originSelectStatement.shouldFilterRecord(record), "null string");
-                },
-                () -> {
-                    assertTrue(originSelectStatement.shouldFilterRecord(null), "null record");
-                },
-                () -> {
-                    when(record.getPk().isError()).thenReturn(true);
-                    assertTrue(originSelectStatement.shouldFilterRecord(record), "error PK");
-                }
-        );
+        assertAll(() -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc");
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "match string");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow()))
+                    .thenReturn("  abc  ");
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "match string with whitespace");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("ABC");
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "match string but uppercase");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("abc123");
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "mismatch string");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn("");
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "empty string");
+        }, () -> {
+            when(originTable.getData(originColumnNames.indexOf(filterCol), record.getOriginRow())).thenReturn(null);
+            assertFalse(originSelectStatement.shouldFilterRecord(record), "null string");
+        }, () -> {
+            assertTrue(originSelectStatement.shouldFilterRecord(null), "null record");
+        }, () -> {
+            when(record.getPk().isError()).thenReturn(true);
+            assertTrue(originSelectStatement.shouldFilterRecord(record), "error PK");
+        });
     }
 
     @Test

@@ -533,36 +533,36 @@ public class CqlTable extends BaseTable {
         ConsistencyLevel retVal = ConsistencyLevel.LOCAL_QUORUM;
         if (StringUtils.isNotEmpty(level)) {
             switch (level.toUpperCase()) {
-            case "ANY":
-                retVal = ConsistencyLevel.ANY;
-                break;
-            case "ONE":
-                retVal = ConsistencyLevel.ONE;
-                break;
-            case "TWO":
-                retVal = ConsistencyLevel.TWO;
-                break;
-            case "THREE":
-                retVal = ConsistencyLevel.THREE;
-                break;
-            case "QUORUM":
-                retVal = ConsistencyLevel.QUORUM;
-                break;
-            case "LOCAL_ONE":
-                retVal = ConsistencyLevel.LOCAL_ONE;
-                break;
-            case "EACH_QUORUM":
-                retVal = ConsistencyLevel.EACH_QUORUM;
-                break;
-            case "SERIAL":
-                retVal = ConsistencyLevel.SERIAL;
-                break;
-            case "LOCAL_SERIAL":
-                retVal = ConsistencyLevel.LOCAL_SERIAL;
-                break;
-            case "ALL":
-                retVal = ConsistencyLevel.ALL;
-                break;
+                case "ANY":
+                    retVal = ConsistencyLevel.ANY;
+                    break;
+                case "ONE":
+                    retVal = ConsistencyLevel.ONE;
+                    break;
+                case "TWO":
+                    retVal = ConsistencyLevel.TWO;
+                    break;
+                case "THREE":
+                    retVal = ConsistencyLevel.THREE;
+                    break;
+                case "QUORUM":
+                    retVal = ConsistencyLevel.QUORUM;
+                    break;
+                case "LOCAL_ONE":
+                    retVal = ConsistencyLevel.LOCAL_ONE;
+                    break;
+                case "EACH_QUORUM":
+                    retVal = ConsistencyLevel.EACH_QUORUM;
+                    break;
+                case "SERIAL":
+                    retVal = ConsistencyLevel.SERIAL;
+                    break;
+                case "LOCAL_SERIAL":
+                    retVal = ConsistencyLevel.LOCAL_SERIAL;
+                    break;
+                case "ALL":
+                    retVal = ConsistencyLevel.ALL;
+                    break;
             }
         }
 

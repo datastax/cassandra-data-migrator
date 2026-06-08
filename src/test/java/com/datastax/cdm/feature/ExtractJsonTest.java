@@ -109,11 +109,8 @@ public class ExtractJsonTest {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn(mappedTargetName);
         boolean loaded = feature.loadProperties(propertyHelper);
 
-        assertAll(
-                () -> assertTrue(loaded, "properties are loaded and valid"),
-                () -> assertTrue(feature.isEnabled()),
-                () -> assertEquals("person_age", feature.getTargetColumnName())
-        );
+        assertAll(() -> assertTrue(loaded, "properties are loaded and valid"), () -> assertTrue(feature.isEnabled()),
+                () -> assertEquals("person_age", feature.getTargetColumnName()));
     }
 
     @Test
@@ -162,15 +159,13 @@ public class ExtractJsonTest {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn("");
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn("");
 
-        assertAll(
-                () -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
+        assertAll(() -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
                 () -> assertTrue(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"),
                 () -> assertFalse(feature.isEnabled(), "feature should be disabled"),
 
                 () -> assertEquals("", feature.getTargetColumnName(), "target name"),
                 () -> assertEquals(-1, feature.getTargetColumnIndex(), "target index"),
-                () -> assertEquals(-1, feature.getOriginColumnIndex(), "origin index")
-        );
+                () -> assertEquals(-1, feature.getOriginColumnIndex(), "origin index"));
 
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn(null);
         assertEquals("", feature.getTargetColumnName(), "target name");
@@ -196,23 +191,27 @@ public class ExtractJsonTest {
 
         feature.loadProperties(propertyHelper);
 
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.initializeAndValidate(originTable, targetTable));
     }
 
     @Test
     public void initializeAndValidateExceptionTargetColumn() {
-        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING)).thenReturn("incorrect_column");
+        when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_TARGET_COLUMN_MAPPING))
+                .thenReturn("incorrect_column");
 
         feature.loadProperties(propertyHelper);
 
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.initializeAndValidate(originTable, targetTable));
     }
 
     @Test
     public void initializeAndValidateExceptionOriginIncorrect() {
         when(originTable.isOrigin()).thenReturn(false);
 
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.initializeAndValidate(originTable, targetTable));
         assertTrue(thrown.getMessage().contains("ORIGIN_TABLE is not an origin table"));
     }
 
@@ -220,7 +219,8 @@ public class ExtractJsonTest {
     public void initializeAndValidateExceptionTargetIncorrect() {
         when(targetTable.isOrigin()).thenReturn(true);
 
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> feature.initializeAndValidate(originTable, targetTable));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> feature.initializeAndValidate(originTable, targetTable));
         assertTrue(thrown.getMessage().contains("TARGET_TABLE is not a target table"));
     }
 
@@ -228,11 +228,9 @@ public class ExtractJsonTest {
     public void invalidFeature() {
         when(propertyHelper.getString(KnownProperties.EXTRACT_JSON_ORIGIN_COLUMN_NAME)).thenReturn("");
 
-        assertAll(
-                () -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
+        assertAll(() -> assertFalse(feature.loadProperties(propertyHelper), "loadProperties"),
                 () -> assertFalse(feature.initializeAndValidate(originTable, targetTable), "initializeAndValidate"),
-                () -> assertFalse(feature.isEnabled(), "feature should be disabled")
-        );
+                () -> assertFalse(feature.isEnabled(), "feature should be disabled"));
     }
 
 }
