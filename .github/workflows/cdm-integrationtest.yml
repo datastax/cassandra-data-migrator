@@ -29,6 +29,7 @@ jobs:
         working-directory: SIT
         env:
           SKIP_DOCKER_PULL: "true"
+          CONTAINER_RUNTIME: "docker"
         run: |
           echo "Building local Docker image for testing"
           docker build -t datastax/cassandra-data-migrator:latest ..
