@@ -27,6 +27,8 @@ jobs:
           cache: maven
       - name: Test SIT with cdm
         working-directory: SIT
+        env:
+          SKIP_DOCKER_PULL: "true"
         run: |
           echo "Building local Docker image for testing"
           docker build -t datastax/cassandra-data-migrator:latest ..
