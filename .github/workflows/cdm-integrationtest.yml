@@ -28,5 +28,7 @@ jobs:
       - name: Test SIT with cdm
         working-directory: SIT
         run: |
+          echo "Building local Docker image for testing"
+          docker build -t datastax/cassandra-data-migrator:latest ..
           echo "Testing SIT with cdm"
           make -f Makefile
