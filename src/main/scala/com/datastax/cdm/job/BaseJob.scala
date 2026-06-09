@@ -64,9 +64,7 @@ abstract class BaseJob[T: ClassTag] extends App {
     this.jobName = jobName
     this.jobFactory = jobFactory
 
-    spark = SparkSession.builder
-      .appName(jobName)
-      .getOrCreate()
+    spark = SparkSession.builder().appName(jobName).getOrCreate()
     sContext = spark.sparkContext
     propertyHelper = PropertyHelper.getInstance(sContext.getConf);
 
