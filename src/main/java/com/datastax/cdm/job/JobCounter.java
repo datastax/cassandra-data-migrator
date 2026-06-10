@@ -39,20 +39,20 @@ public class JobCounter implements Serializable {
 
     public JobCounter(JobType jobType) {
         switch (jobType) {
-        case MIGRATE:
-            setRegisteredTypes(CounterType.READ, CounterType.WRITE, CounterType.SKIPPED, CounterType.ERROR,
-                    CounterType.UNFLUSHED, CounterType.PARTITIONS_PASSED, CounterType.PARTITIONS_FAILED);
-            break;
-        case VALIDATE:
-            setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.MISMATCH,
-                    CounterType.CORRECTED_MISMATCH, CounterType.MISSING, CounterType.CORRECTED_MISSING,
-                    CounterType.SKIPPED, CounterType.ERROR, CounterType.PARTITIONS_PASSED,
-                    CounterType.PARTITIONS_FAILED);
-            break;
-        case GUARDRAIL:
-            setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.SKIPPED, CounterType.LARGE,
-                    CounterType.PARTITIONS_PASSED, CounterType.PARTITIONS_FAILED);
-            break;
+            case MIGRATE:
+                setRegisteredTypes(CounterType.READ, CounterType.WRITE, CounterType.SKIPPED, CounterType.ERROR,
+                        CounterType.UNFLUSHED, CounterType.PARTITIONS_PASSED, CounterType.PARTITIONS_FAILED);
+                break;
+            case VALIDATE:
+                setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.MISMATCH,
+                        CounterType.CORRECTED_MISMATCH, CounterType.MISSING, CounterType.CORRECTED_MISSING,
+                        CounterType.SKIPPED, CounterType.ERROR, CounterType.PARTITIONS_PASSED,
+                        CounterType.PARTITIONS_FAILED);
+                break;
+            case GUARDRAIL:
+                setRegisteredTypes(CounterType.READ, CounterType.VALID, CounterType.SKIPPED, CounterType.LARGE,
+                        CounterType.PARTITIONS_PASSED, CounterType.PARTITIONS_FAILED);
+                break;
         }
     }
 

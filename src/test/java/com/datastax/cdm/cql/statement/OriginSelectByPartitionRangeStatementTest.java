@@ -97,13 +97,9 @@ public class OriginSelectByPartitionRangeStatementTest extends CommonMocks {
         BigInteger providedMax = BigInteger.valueOf(67890L);
 
         originSelectByPartitionRangeStatement.bind(providedMin, providedMax);
-        assertAll(
-                () -> verify(preparedStatement).bind(
-                        providedMin,
-                        providedMax),
+        assertAll(() -> verify(preparedStatement).bind(providedMin, providedMax),
                 () -> verify(boundStatement).setConsistencyLevel(readCL),
-                () -> verify(boundStatement).setPageSize(fetchSizeInRows)
-        );
+                () -> verify(boundStatement).setPageSize(fetchSizeInRows));
     }
 
     @Test

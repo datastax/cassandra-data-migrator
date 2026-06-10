@@ -99,7 +99,7 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(writetimeTTLFeature.isEnabled()).thenReturn(true);
         when(writetimeTTLFeature.hasTTLColumns()).thenReturn(true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
-        assertEquals(updateCQLBeginning +" USING TTL ?"+ counterUpdateCQLEnding, targetUpdateStatement.getCQL());
+        assertEquals(updateCQLBeginning + " USING TTL ?" + counterUpdateCQLEnding, targetUpdateStatement.getCQL());
     }
 
     @Test
@@ -107,7 +107,8 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(writetimeTTLFeature.isEnabled()).thenReturn(true);
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
-        assertEquals(updateCQLBeginning +" USING TIMESTAMP ?"+ counterUpdateCQLEnding, targetUpdateStatement.getCQL());
+        assertEquals(updateCQLBeginning + " USING TIMESTAMP ?" + counterUpdateCQLEnding,
+                targetUpdateStatement.getCQL());
     }
 
     @Test
@@ -116,7 +117,8 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasTTLColumns()).thenReturn(true);
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
-        assertEquals(updateCQLBeginning +" USING TTL ? AND TIMESTAMP ?"+ counterUpdateCQLEnding, targetUpdateStatement.getCQL());
+        assertEquals(updateCQLBeginning + " USING TTL ? AND TIMESTAMP ?" + counterUpdateCQLEnding,
+                targetUpdateStatement.getCQL());
     }
 
     @Test
@@ -132,9 +134,9 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasTTLColumns()).thenReturn(true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, 3600,null,null,null);
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, 3600, null, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()+1)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() + 1)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
@@ -143,9 +145,9 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null,10000L,null,null);
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, null, 10000L, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()+1)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() + 1)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
@@ -155,9 +157,9 @@ public class TargetUpdateStatementTest extends CommonMocks {
         when(writetimeTTLFeature.hasWritetimeColumns()).thenReturn(true);
         targetUpdateStatement = new TargetUpdateStatement(propertyHelper, targetSession);
 
-        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, 3600,10000L,null,null);
+        BoundStatement result = targetUpdateStatement.bind(originRow, targetRow, 3600, 10000L, null, null);
         assertNotNull(result);
-        verify(boundStatement, times(targetColumnNames.size()+2)).set(anyInt(), any(), any(Class.class));
+        verify(boundStatement, times(targetColumnNames.size() + 2)).set(anyInt(), any(), any(Class.class));
     }
 
     @Test
@@ -200,9 +202,11 @@ public class TargetUpdateStatementTest extends CommonMocks {
     @Test
     public void bind_withExceptionWhenBindingValue() {
         when(targetTable.getCorrespondingIndex(anyInt())).thenReturn(0);
-        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenThrow(new RuntimeException("Error binding value"));
+        when(originTable.getAndConvertData(anyInt(), eq(originRow)))
+                .thenThrow(new RuntimeException("Error binding value"));
 
-        assertThrows(RuntimeException.class, () -> targetUpdateStatement.bind(originRow, targetRow, null,null,null,null));
+        assertThrows(RuntimeException.class,
+                () -> targetUpdateStatement.bind(originRow, targetRow, null, null, null, null));
     }
 
     @Test

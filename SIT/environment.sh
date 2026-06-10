@@ -236,13 +236,16 @@ _Setup() {
   if [ "$(_testCDMContainer)" != "yes" ]; then
     containerVersion=datastax/cassandra-data-migrator:${CDM_VERSION}
 
-    # Uncomment the below '_containerBuild' lines when making container changes to ensure you test the changes
-    # Also comment the '_containerPull' line when '_containerBuild' is uncommented.
-    # Note this ('_containerBuild') should be done only when testing container changes locally (i.e. Do not commit)
-    # If you commit the '_containerBuild' step, the build will work but it will take too long as each time it will build
-    # CDM container image instead of just downloading from DockerHub.
-    _info "Pulling latest container image for ${containerVersion}"
-    _containerPull ${containerVersion}
+    # Skip Docker pull if SKIP_DOCKER_PULL is set (used in CI when image is pre-built)
+    if [ "${SKIP_DOCKER_PULL}" != "true" ]; then
+      _info "Pulling latest container image for ${containerVersion}"
+      _containerPull ${containerVersion}
+    else
+      _info "Skipping Docker pull - using locally built image"
+    fi
+    
+    # Uncomment the below '_containerBuild' lines when making container changes to ensure you test the changes locally
+    # Note: In CI, the image is built before calling this script, so this is not needed
     # _info "Building latest container image for ${containerVersion}"
     # _containerBuild --no-cache -t ${containerVersion} ..
 

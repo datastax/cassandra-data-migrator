@@ -201,17 +201,17 @@ public final class PropertyHelper extends KnownProperties implements IPropertyHe
             return "";
         String rtn = "";
         switch (t) {
-        case STRING:
-            rtn = (String) o;
-            break;
-        case STRING_LIST:
-        case NUMBER_LIST:
-            rtn = StringUtils.join((List<?>) o, ",");
-            break;
-        case NUMBER:
-        case BOOLEAN:
-        default:
-            rtn = o.toString();
+            case STRING:
+                rtn = (String) o;
+                break;
+            case STRING_LIST:
+            case NUMBER_LIST:
+                rtn = StringUtils.join((List<?>) o, ",");
+                break;
+            case NUMBER:
+            case BOOLEAN:
+            default:
+                rtn = o.toString();
         }
         return (null == rtn) ? "" : rtn;
     }

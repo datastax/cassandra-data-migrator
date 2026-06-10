@@ -269,43 +269,43 @@ public class AstraDevOpsClient {
         }
 
         switch (scbType.toLowerCase()) {
-        case "default":
-            // Default bundle URL extraction - use the matched datacenter
-            if (matchingDatacenter.has("downloadURL")) {
-                return matchingDatacenter.get("downloadURL").asText();
-            }
-            logger.error("Could not find default download URL in datacenter");
-            break;
+            case "default":
+                // Default bundle URL extraction - use the matched datacenter
+                if (matchingDatacenter.has("downloadURL")) {
+                    return matchingDatacenter.get("downloadURL").asText();
+                }
+                logger.error("Could not find default download URL in datacenter");
+                break;
 
-        case "custom":
-            // Custom domain bundle URL extraction
-            String customDomain = getCustomDomain(side);
-            if (customDomain == null || customDomain.isEmpty()) {
-                logger.error("Custom domain is required for SCB type 'custom' but was not specified");
-                return null;
-            }
-
-            if (matchingDatacenter.has("customDomainBundles")
-                    && matchingDatacenter.get("customDomainBundles").isArray()) {
-
-                for (JsonNode customNode : matchingDatacenter.get("customDomainBundles")) {
-                    if (customNode.has("domain") && customDomain.equalsIgnoreCase(customNode.get("domain").asText())
-                            && customNode.has("downloadURL")) {
-
-                        return customNode.get("downloadURL").asText();
-                    }
+            case "custom":
+                // Custom domain bundle URL extraction
+                String customDomain = getCustomDomain(side);
+                if (customDomain == null || customDomain.isEmpty()) {
+                    logger.error("Custom domain is required for SCB type 'custom' but was not specified");
+                    return null;
                 }
 
-                logger.error("Could not find downloadURL for custom domain: {} in the selected region {}", customDomain,
-                        dbRegion);
-            } else {
-                logger.error("No customDomainBundles found in the selected region {}", dbRegion);
-            }
-            break;
+                if (matchingDatacenter.has("customDomainBundles")
+                        && matchingDatacenter.get("customDomainBundles").isArray()) {
 
-        default:
-            logger.error("Unknown SCB type: {}", scbType);
-            break;
+                    for (JsonNode customNode : matchingDatacenter.get("customDomainBundles")) {
+                        if (customNode.has("domain") && customDomain.equalsIgnoreCase(customNode.get("domain").asText())
+                                && customNode.has("downloadURL")) {
+
+                            return customNode.get("downloadURL").asText();
+                        }
+                    }
+
+                    logger.error("Could not find downloadURL for custom domain: {} in the selected region {}",
+                            customDomain, dbRegion);
+                } else {
+                    logger.error("No customDomainBundles found in the selected region {}", dbRegion);
+                }
+                break;
+
+            default:
+                logger.error("Unknown SCB type: {}", scbType);
+                break;
         }
 
         return null;
@@ -345,7 +345,8 @@ public class AstraDevOpsClient {
             throw new IOException("Failed to download secure bundle. Status code: " + downloadResponse.statusCode());
         }
 
-        try (InputStream in = downloadResponse.body(); FileOutputStream out = new FileOutputStream(filePath.toFile())) {
+        try (InputStream in = downloadResponse.body();
+                FileOutputStream out = new FileOutputStream(filePath.toFile())) {
 
             byte[] buffer = new byte[8192];
             int bytesRead;

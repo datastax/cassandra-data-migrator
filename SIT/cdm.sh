@@ -95,6 +95,11 @@ if [ ! -f /local/log4j2_docker.properties ]; then
   cd /local && jar xvf /local/cassandra-data-migrator.jar log4j2_docker.properties && cd -
 fi
 
+echo "Java version being used:"
+java -version
+echo "JAVA_HOME: $JAVA_HOME"
+which java
+
 spark-submit --properties-file "${PROPERTIES}" \
   --master "local[*]" \
   --conf "spark.driver.extraJavaOptions=-Dlog4j2.configurationFile=file:///local/log4j2_docker.properties -Dcom.datastax.cdm.log.level=DEBUG" \

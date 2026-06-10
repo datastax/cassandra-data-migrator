@@ -27,7 +27,7 @@ import com.datastax.cdm.job.IJobSessionFactory.JobType
 import java.math.BigInteger
 import java.util
 import scala.reflect.ClassTag
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 // http://www.russellspitzer.com/2016/02/16/Multiple-Clusters-SparkSql-Cassandra/
 
@@ -64,9 +64,7 @@ abstract class BaseJob[T: ClassTag] extends App {
     this.jobName = jobName
     this.jobFactory = jobFactory
 
-    spark = SparkSession.builder
-      .appName(jobName)
-      .getOrCreate()
+    spark = SparkSession.builder().appName(jobName).getOrCreate()
     sContext = spark.sparkContext
     propertyHelper = PropertyHelper.getInstance(sContext.getConf);
 

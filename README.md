@@ -8,7 +8,8 @@
 Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 > [!IMPORTANT]
-> Please note this job has been tested with spark version [3.5.8](https://archive.apache.org/dist/spark/spark-3.5.8/)
+> Please note the below listed Prerequisite to avoid CDM, Spark, Scala, Hadoop version mismatch issues
+
 
 ## Install as a Container
 - Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
@@ -19,30 +20,44 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
   - `curl -L0 https://github.com/datastax/cassandra-data-migrator/releases/download/x.y.z/cassandra-data-migrator-x.y.z.jar --output cassandra-data-migrator-x.y.z.jar` (OR)
   - Download from [packages area here](https://github.com/datastax/cassandra-data-migrator/packages/1832128)
 
-### Prerequisite
-- **Java11** (minimum) as Spark binaries are compiled with it.
-- **Spark `3.5.x` with Scala `2.13` and Hadoop `3.3`**
-    - Typically installed using [this binary](https://archive.apache.org/dist/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz) on a single VM (no cluster necessary) where you want to run this job. This simple setup is recommended for most one-time migrations.
-    - However we recommend using a Spark Cluster or a Spark Serverless platform like `Databricks` or `Google Dataproc` (that supports the above mentioned versions) for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
+### Prerequisite CDM 6.x+
+- **Java17** (minimum) as Spark 4.x binaries are compiled with it.
+- **Any Java 17+ LTS version (e.g. Java 21 or Java 25) could be used if needed**
+- **Spark version [4.1.2](https://archive.apache.org/dist/spark/spark-4.1.2/)**
+
     
 Spark can be installed by running the following: -
 
 ```
-wget https://archive.apache.org/dist/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz
-tar -xvzf spark-3.5.8-bin-hadoop3-scala2.13.tgz
+wget https://archive.apache.org/dist/spark/spark-4.1.2/spark-4.1.2-bin-hadoop3.tgz
+tar -xvzf spark-4.1.2-bin-hadoop3.tgz
+```
+
+
+### Prerequisite CDM 5.x+
+- **Java11** (minimum) as Spark 3.x binaries are compiled with it.
+- **Any Java 11+ LTS version (e.g. Java 17, Java 21 or Java 25) could be used if needed**
+- **Spark version [3.5.8](https://archive.apache.org/dist/spark/spark-3.5.8/) with Scala 2.13**
+
+    
+Spark can be installed by running the following: -
+
+```
+wget https://archive.apache.org/dist/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz 
+tar -xvzf spark-3.5.8-bin-hadoop3-scala2.13.tgz 
 ```
 
 > [!CAUTION]
-> If the above Spark and Scala version does not match, you may see an exception like below when running the CDM jobs,
+> You may see an exception like below if there are any version mismatches,
 ```
 Exception in thread "main" java.lang.NoSuchMethodError: 'void scala.runtime.Statics.releaseFence()'
 ```
 
-> [!NOTE]
-> If you only have `Scala version 2.12.x` available in your environment, you can update [these two lines in pom.xml](https://github.com/datastax/cassandra-data-migrator/blob/main/pom.xml#L11) with the specific `Scala 2.12.x` version, build the jar locally as [shown here](https://github.com/datastax/cassandra-data-migrator?tab=readme-ov-file#building-jar-for-local-development) and use that CDM jar instead. 
+**Note:**
+- Typically installed using binaries mentioned above on a single VM (no cluster necessary) where you want to run this job. This simple setup is recommended for most one-time migrations.
+- You could use a Spark Cluster or a Spark Serverless platform like `Watsonx.data` or `Databricks` or `Google Dataproc` (that supports the above mentioned versions) for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
+- When deploying CDM on a Spark cluster, replace the params `--master "local[*]"` with `--master "spark://master-host:port"` and remove any params (e.g. `--driver-memory`, `--executor-memory`, etc.) related to a single VM run 
 
-> [!NOTE]
-> When deploying CDM on a Spark cluster, replace the params `--master "local[*]"` with `--master "spark://master-host:port"` and remove any params (e.g. `--driver-memory`, `--executor-memory`, etc.) related to a single VM run 
 
 # Steps for Data-Migration:
 
@@ -204,7 +219,7 @@ Below recommendations may only be useful when migrating large tables where the d
     - `ratelimit`: Default is `20000`, but this property should usually be updated (after updating other properties) to the highest possible value that your `origin` and `target` clusters can efficiently handle.
 - Using schema manipulation features (like `constantColumns`, `explodeMap`, `extractJson`), transformation functions and/or where-filter-conditions (except partition min/max) may negatively impact performance
 - We typically recommend [this infrastructure](https://docs.datastax.com/en/data-migration/deployment-infrastructure.html#_machines) for CDM VMs and [this starter conf](https://github.com/datastax/cassandra-data-migrator/blob/main/src/resources/cdm.properties). You can then optimize the job further based on CDM params info provided above and the observed load and throughput on `Origin` and `Target` clusters
-- We recommend using a Spark Cluster or a Spark Serverless platform like `Databricks` or `Google Dataproc` for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
+- We recommend using a Spark Cluster or a Spark Serverless platform like `Watsonx.data` or `Databricks` or `Google Dataproc` for large (e.g. several terabytes) complex migrations OR when CDM is used as a long-term data-transfer utility and not a one-time job.
 
 > [!NOTE]
 > For additional performance tuning, refer to details mentioned in the [`cdm-detailed.properties` file here](./src/resources/cdm-detailed.properties)

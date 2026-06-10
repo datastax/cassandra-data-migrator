@@ -40,12 +40,9 @@ public class BaseTableTest extends CommonMocks {
         when(propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE)).thenReturn("origin_ks.origin_table");
         BaseTable bt = new BaseTable(propertyHelper, false);
 
-        assertAll(
-                () -> assertEquals(false, bt.isOrigin()),
-                () -> assertEquals("origin_ks", bt.getKeyspaceName()),
+        assertAll(() -> assertEquals(false, bt.isOrigin()), () -> assertEquals("origin_ks", bt.getKeyspaceName()),
                 () -> assertEquals("origin_table", bt.getTableName()),
-                () -> assertEquals("origin_ks.origin_table", bt.getKeyspaceTable())
-        );
+                () -> assertEquals("origin_ks.origin_table", bt.getKeyspaceTable()));
     }
 
     @Test
@@ -53,10 +50,7 @@ public class BaseTableTest extends CommonMocks {
         when(propertyHelper.getString(KnownProperties.ORIGIN_KEYSPACE_TABLE)).thenReturn("origin_table");
         BaseTable bt = new BaseTable(propertyHelper, false);
 
-        assertAll(
-                () -> assertEquals("", bt.getKeyspaceName()),
-                () -> assertEquals("origin_table", bt.getTableName())
-        );
+        assertAll(() -> assertEquals("", bt.getKeyspaceName()), () -> assertEquals("origin_table", bt.getTableName()));
     }
 
     @Test
@@ -65,10 +59,8 @@ public class BaseTableTest extends CommonMocks {
         when(propertyHelper.getString(KnownProperties.TARGET_KEYSPACE_TABLE)).thenReturn("target_ks.target_table");
         BaseTable bt = new BaseTable(propertyHelper, false);
 
-        assertAll(
-                () -> assertEquals("target_ks", bt.getKeyspaceName()),
-                () -> assertEquals("target_table", bt.getTableName())
-        );
+        assertAll(() -> assertEquals("target_ks", bt.getKeyspaceName()),
+                () -> assertEquals("target_table", bt.getTableName()));
     }
 
     @Test

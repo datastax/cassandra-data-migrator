@@ -19,6 +19,7 @@ package com.datastax.cdm.cql.statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.datastax.cdm.cql.EnhancedSession;
 import com.datastax.cdm.data.EnhancedPK;
@@ -57,7 +58,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     protected int bindIndex = 0;
     protected int explodeMapKeyIndex = -1;
     protected int explodeMapValueIndex = -1;
-    private Boolean haveCheckedBindInputsOnce = false;
+    private AtomicBoolean haveCheckedBindInputsOnce = new AtomicBoolean(false);
 
     protected ExtractJson extractJsonFeature;
 
@@ -148,7 +149,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
     }
 
     protected void checkBindInputs(Integer ttl, Long writeTime, Object explodeMapKey, Object explodeMapValue) {
-        if (haveCheckedBindInputsOnce)
+        if (haveCheckedBindInputsOnce.get())
             return;
 
         if (usingTTL && null == ttl)
@@ -177,7 +178,7 @@ public abstract class TargetUpsertStatement extends BaseCdmStatement {
         // this is the only place this variable is modified, so suppress the warning
         // noinspection SynchronizeOnNonFinalField
         synchronized (this.haveCheckedBindInputsOnce) {
-            this.haveCheckedBindInputsOnce = true;
+            this.haveCheckedBindInputsOnce = new AtomicBoolean(true);
         }
     }
 

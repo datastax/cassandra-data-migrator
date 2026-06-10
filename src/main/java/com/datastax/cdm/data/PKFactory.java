@@ -136,52 +136,52 @@ public class PKFactory {
         StringBuilder sb;
         List<String> pkNames;
         switch (side) {
-        case ORIGIN:
-            if (null != originWhereClause && !originWhereClause.isEmpty())
-                return originWhereClause;
-            sb = new StringBuilder();
-            pkNames = originTable.getPKNames(true);
-            for (int i = 0; i < pkNames.size(); i++) {
-                LookupMethod method = originPKLookupMethods.get(i);
-                String name = pkNames.get(i);
+            case ORIGIN:
+                if (null != originWhereClause && !originWhereClause.isEmpty())
+                    return originWhereClause;
+                sb = new StringBuilder();
+                pkNames = originTable.getPKNames(true);
+                for (int i = 0; i < pkNames.size(); i++) {
+                    LookupMethod method = originPKLookupMethods.get(i);
+                    String name = pkNames.get(i);
 
-                // On origin PK, we don't bind anything other than ORIGIN_COLUMN
-                if (method == LookupMethod.ORIGIN_COLUMN) {
-                    if (sb.length() > 0)
-                        sb.append(" AND ");
-                    sb.append(name).append("=?");
-                }
-            }
-            return sb.toString();
-        case TARGET:
-            if (null != targetWhereClause && !targetWhereClause.isEmpty())
-                return targetWhereClause;
-            sb = new StringBuilder();
-            pkNames = targetTable.getPKNames(true);
-            for (int i = 0; i < pkNames.size(); i++) {
-                LookupMethod method = targetPKLookupMethods.get(i);
-                String name = pkNames.get(i);
-                String defaultValueString = targetDefaultValueStrings.get(i);
-
-                if (null == method)
-                    continue;
-                switch (method) {
-                case ORIGIN_COLUMN:
-                case EXPLODE_MAP:
-                    if (sb.length() > 0)
-                        sb.append(" AND ");
-                    sb.append(name).append("=?");
-                    break;
-                case CONSTANT_COLUMN:
-                    if (null != defaultValueString) {
+                    // On origin PK, we don't bind anything other than ORIGIN_COLUMN
+                    if (method == LookupMethod.ORIGIN_COLUMN) {
                         if (sb.length() > 0)
                             sb.append(" AND ");
-                        sb.append(name).append("=").append(defaultValueString);
+                        sb.append(name).append("=?");
                     }
-                    break;
                 }
-            }
-            return sb.toString();
+                return sb.toString();
+            case TARGET:
+                if (null != targetWhereClause && !targetWhereClause.isEmpty())
+                    return targetWhereClause;
+                sb = new StringBuilder();
+                pkNames = targetTable.getPKNames(true);
+                for (int i = 0; i < pkNames.size(); i++) {
+                    LookupMethod method = targetPKLookupMethods.get(i);
+                    String name = pkNames.get(i);
+                    String defaultValueString = targetDefaultValueStrings.get(i);
+
+                    if (null == method)
+                        continue;
+                    switch (method) {
+                        case ORIGIN_COLUMN:
+                        case EXPLODE_MAP:
+                            if (sb.length() > 0)
+                                sb.append(" AND ");
+                            sb.append(name).append("=?");
+                            break;
+                        case CONSTANT_COLUMN:
+                            if (null != defaultValueString) {
+                                if (sb.length() > 0)
+                                    sb.append(" AND ");
+                                sb.append(name).append("=").append(defaultValueString);
+                            }
+                            break;
+                    }
+                }
+                return sb.toString();
         }
         return null;
     }
@@ -191,16 +191,16 @@ public class PKFactory {
         List<Integer> indexesToBind;
         CqlTable table;
         switch (side) {
-        case ORIGIN:
-            indexesToBind = originPKIndexesToBind;
-            table = originTable;
-            break;
-        case TARGET:
-            indexesToBind = targetPKIndexesToBind;
-            table = targetTable;
-            break;
-        default:
-            throw new RuntimeException("Unknown side: " + side);
+            case ORIGIN:
+                indexesToBind = originPKIndexesToBind;
+                table = originTable;
+                break;
+            case TARGET:
+                indexesToBind = targetPKIndexesToBind;
+                table = targetTable;
+                break;
+            default:
+                throw new RuntimeException("Unknown side: " + side);
         }
 
         if (pk.isError() || pk.getPKValues().size() != table.getPKClasses().size())
@@ -218,23 +218,23 @@ public class PKFactory {
 
     public List<String> getPKNames(Side side, boolean pretty) {
         switch (side) {
-        case ORIGIN:
-            return originTable.getPKNames(pretty);
-        case TARGET:
-            return targetTable.getPKNames(pretty);
-        default:
-            throw new RuntimeException("Unknown side: " + side);
+            case ORIGIN:
+                return originTable.getPKNames(pretty);
+            case TARGET:
+                return targetTable.getPKNames(pretty);
+            default:
+                throw new RuntimeException("Unknown side: " + side);
         }
     }
 
     public List<Class> getPKClasses(Side side) {
         switch (side) {
-        case ORIGIN:
-            return originTable.getPKClasses();
-        case TARGET:
-            return targetTable.getPKClasses();
-        default:
-            throw new RuntimeException("Unknown side: " + side);
+            case ORIGIN:
+                return originTable.getPKClasses();
+            case TARGET:
+                return targetTable.getPKClasses();
+            default:
+                throw new RuntimeException("Unknown side: " + side);
         }
     }
 

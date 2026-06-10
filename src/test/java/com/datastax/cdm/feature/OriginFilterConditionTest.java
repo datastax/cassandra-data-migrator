@@ -53,12 +53,10 @@ public class OriginFilterConditionTest {
     public void smokeTest_featureDisabled() {
         when(propertyHelper.getString(KnownProperties.FILTER_CQL_WHERE_CONDITION)).thenReturn(null);
 
-        assertAll(
-                () -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
-                () -> assertTrue(feature.initializeAndValidate(null,null), "initializeAndValidate"),
+        assertAll(() -> assertTrue(feature.loadProperties(propertyHelper), "loadProperties"),
+                () -> assertTrue(feature.initializeAndValidate(null, null), "initializeAndValidate"),
                 () -> assertFalse(feature.isEnabled(), "feature should be disabled"),
-                () -> assertEquals("", feature.getFilterCondition(), "empty string condition")
-        );
+                () -> assertEquals("", feature.getFilterCondition(), "empty string condition"));
     }
 
     @Test

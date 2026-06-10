@@ -295,7 +295,8 @@ public class CommonMocks {
         when(propertyHelper.getString(KnownProperties.PARTITION_MIN)).thenReturn(minPartition);
         when(propertyHelper.getString(KnownProperties.PARTITION_MAX)).thenReturn(maxPartition);
 
-        when(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES_TO_TARGET)).thenReturn(originToTargetNameList);
+        when(propertyHelper.getStringList(KnownProperties.ORIGIN_COLUMN_NAMES_TO_TARGET))
+                .thenReturn(originToTargetNameList);
     }
 
     public void setOriginTableWhens() {
@@ -305,26 +306,31 @@ public class CommonMocks {
         when(originTable.isOrigin()).thenReturn(true);
         when(originTable.getColumnNames(false)).thenReturn(originColumnNames);
         when(originTable.getColumnNames(true)).thenReturn(CqlTable.formatNames(originColumnNames));
-        when(originTable.indexOf(anyString()))
-                .thenAnswer(invocation -> {
-                    String name = invocation.getArgument(0, String.class);
-                    return originColumnNames.indexOf(name);
-                });
+        when(originTable.indexOf(anyString())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(0, String.class);
+            return originColumnNames.indexOf(name);
+        });
         when(originTable.getColumnCqlTypes()).thenReturn(originColumnTypes);
-        when(originTable.getDataType(anyString())).thenAnswer(invocation -> {String name = invocation.getArgument(0,String.class); return originColumnTypes.get(originColumnNames.indexOf(name));});
+        when(originTable.getDataType(anyString())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(0, String.class);
+            return originColumnTypes.get(originColumnNames.indexOf(name));
+        });
         when(originTable.getWritetimeTTLColumns()).thenReturn(originValueColumns);
 
         when(originTable.getOtherCqlTable()).thenReturn(targetTable);
-        when(originTable.getCorrespondingIndex(anyInt())).thenAnswer(invocation -> targetColumnNames.indexOf(originColumnNames.get(invocation.getArgument(0, Integer.class))));
-        when(originTable.getBindClass(anyInt()))
-                .thenAnswer(invocation -> {
-                    int index = invocation.getArgument(0, Integer.class);
-                    return CqlData.getBindClass(originColumnTypes.get(index));
-                });
+        when(originTable.getCorrespondingIndex(anyInt())).thenAnswer(invocation -> targetColumnNames
+                .indexOf(originColumnNames.get(invocation.getArgument(0, Integer.class))));
+        when(originTable.getBindClass(anyInt())).thenAnswer(invocation -> {
+            int index = invocation.getArgument(0, Integer.class);
+            return CqlData.getBindClass(originColumnTypes.get(index));
+        });
         when(originTable.getCounterIndexes()).thenReturn(originCounterIndexes);
-        when(originTable.getData(anyInt(), eq(originRow))).thenAnswer(invocation -> getSampleData(originColumnTypes.get(invocation.getArgument(0, Integer.class))));
-        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenAnswer(invocation -> getSampleData(originColumnTypes.get(invocation.getArgument(0, Integer.class))));
-        when(pkFactory.getWhereClause(PKFactory.Side.ORIGIN)).thenReturn(keyEqualsBindJoinedWithAND(CqlTable.formatNames(originPrimaryKey)));
+        when(originTable.getData(anyInt(), eq(originRow))).thenAnswer(
+                invocation -> getSampleData(originColumnTypes.get(invocation.getArgument(0, Integer.class))));
+        when(originTable.getAndConvertData(anyInt(), eq(originRow))).thenAnswer(
+                invocation -> getSampleData(originColumnTypes.get(invocation.getArgument(0, Integer.class))));
+        when(pkFactory.getWhereClause(PKFactory.Side.ORIGIN))
+                .thenReturn(keyEqualsBindJoinedWithAND(CqlTable.formatNames(originPrimaryKey)));
 
         when(originTable.getFeature(Featureset.EXPLODE_MAP)).thenReturn(explodeMapFeature);
         when(originTable.getFeature(Featureset.EXTRACT_JSON)).thenReturn(extractJsonFeature);
@@ -414,32 +420,39 @@ public class CommonMocks {
         when(targetTable.isOrigin()).thenReturn(false);
         when(targetTable.getColumnNames(false)).thenReturn(targetColumnNames);
         when(targetTable.getColumnNames(true)).thenReturn(CqlTable.formatNames(targetColumnNames));
-        when(targetTable.indexOf(anyString()))
-                .thenAnswer(invocation -> {
-                    String name = invocation.getArgument(0, String.class);
-                    return targetColumnNames.indexOf(name);
-                });
+        when(targetTable.indexOf(anyString())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(0, String.class);
+            return targetColumnNames.indexOf(name);
+        });
         when(targetTable.getColumnCqlTypes()).thenReturn(targetColumnTypes);
-        when(targetTable.getDataType(anyString())).thenAnswer(invocation -> {String name = invocation.getArgument(0,String.class); return targetColumnTypes.get(targetColumnNames.indexOf(name));});
+        when(targetTable.getDataType(anyString())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(0, String.class);
+            return targetColumnTypes.get(targetColumnNames.indexOf(name));
+        });
         when(targetTable.getOtherCqlTable()).thenReturn(originTable);
-        when(targetTable.getCorrespondingIndex(anyInt())).thenAnswer(invocation -> originColumnNames.indexOf(targetColumnNames.get(invocation.getArgument(0, Integer.class))));
-        when(targetTable.getBindClass(anyInt()))
-                .thenAnswer(invocation -> {
-                    int index = invocation.getArgument(0, Integer.class);
-                    return CqlData.getBindClass(targetColumnTypes.get(index));
-                });
+        when(targetTable.getCorrespondingIndex(anyInt())).thenAnswer(invocation -> originColumnNames
+                .indexOf(targetColumnNames.get(invocation.getArgument(0, Integer.class))));
+        when(targetTable.getBindClass(anyInt())).thenAnswer(invocation -> {
+            int index = invocation.getArgument(0, Integer.class);
+            return CqlData.getBindClass(targetColumnTypes.get(index));
+        });
         when(targetTable.getCounterIndexes()).thenReturn(targetCounterIndexes);
-        when(targetTable.getData(anyInt(), eq(targetRow))).thenAnswer(invocation -> getSampleData(targetColumnTypes.get(invocation.getArgument(0, Integer.class))));
-        when(targetTable.getAndConvertData(anyInt(), eq(targetRow))).thenAnswer(invocation -> getSampleData(targetColumnTypes.get(invocation.getArgument(0, Integer.class))));
-        when(pkFactory.getWhereClause(PKFactory.Side.TARGET)).thenReturn(keyEqualsBindJoinedWithAND(CqlTable.formatNames(targetPrimaryKey)));
+        when(targetTable.getData(anyInt(), eq(targetRow))).thenAnswer(
+                invocation -> getSampleData(targetColumnTypes.get(invocation.getArgument(0, Integer.class))));
+        when(targetTable.getAndConvertData(anyInt(), eq(targetRow))).thenAnswer(
+                invocation -> getSampleData(targetColumnTypes.get(invocation.getArgument(0, Integer.class))));
+        when(pkFactory.getWhereClause(PKFactory.Side.TARGET))
+                .thenReturn(keyEqualsBindJoinedWithAND(CqlTable.formatNames(targetPrimaryKey)));
 
         when(targetTable.getFeature(Featureset.CONSTANT_COLUMNS)).thenReturn(constantColumnsFeature);
         if (hasConstantColumns) {
             when(constantColumnsFeature.isEnabled()).thenReturn(true);
             when(constantColumnsFeature.getNames()).thenReturn(constantColumns);
             when(constantColumnsFeature.getValues()).thenReturn(constantColumnValues);
-            when(constantColumnsFeature.getBindClasses()).thenReturn(constantColumnTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList()));
-            when(targetTable.extendColumns(constantColumns)).thenReturn(constantColumnTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList()));
+            when(constantColumnsFeature.getBindClasses())
+                    .thenReturn(constantColumnTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList()));
+            when(targetTable.extendColumns(constantColumns))
+                    .thenReturn(constantColumnTypes.stream().map(CqlData::getBindClass).collect(Collectors.toList()));
         } else {
             when(constantColumnsFeature.isEnabled()).thenReturn(false);
             when(constantColumnsFeature.getNames()).thenReturn(Collections.emptyList());
@@ -519,7 +532,8 @@ public class CommonMocks {
         when(boundStatement.setTimeout(any())).thenReturn(boundStatement);
         when(boundStatement.setPageSize(any(Integer.class))).thenReturn(boundStatement);
 
-        when(pkFactory.bindWhereClause(any(PKFactory.Side.class), any(EnhancedPK.class), eq(boundStatement), anyInt())).thenReturn(boundStatement);
+        when(pkFactory.bindWhereClause(any(PKFactory.Side.class), any(EnhancedPK.class), eq(boundStatement), anyInt()))
+                .thenReturn(boundStatement);
     }
 
     public void setPKAndRecordWhens() {
@@ -532,62 +546,62 @@ public class CommonMocks {
     public static Object getSampleData(DataType type) {
         CqlData.Type cqlDataType = CqlData.toType(type);
         switch (cqlDataType) {
-        case PRIMITIVE:
-            if (type.equals(DataTypes.BOOLEAN))
-                return true;
-            if (type.equals(DataTypes.TINYINT))
-                return (byte) 1;
-            if (type.equals(DataTypes.SMALLINT))
-                return (short) 1;
-            if (type.equals(DataTypes.INT))
-                return 1;
-            if (type.equals(DataTypes.BIGINT))
-                return 1L;
-            if (type.equals(DataTypes.FLOAT))
-                return 1.0f;
-            if (type.equals(DataTypes.DOUBLE))
-                return 1.0d;
-            if (type.equals(DataTypes.DECIMAL))
-                return new BigDecimal(1);
-            if (type.equals(DataTypes.UUID))
-                return UUID.randomUUID();
-            if (type.equals(DataTypes.INET))
-                return InetAddress.getLoopbackAddress();
-            if (type.equals(DataTypes.TIMESTAMP))
-                return Instant.now();
-            if (type.equals(DataTypes.TIME))
-                return LocalTime.now();
-            if (type.equals(DataTypes.DATE))
-                return LocalDate.now();
-            if (type.equals(DataTypes.DURATION))
-                return Duration.ofSeconds(1);
-            if (type.equals(DataTypes.BLOB))
-                return ByteBuffer.wrap("sample_data".getBytes());
-            if (type.equals(DataTypes.ASCII))
-                return "sample_data";
-            if (type.equals(DataTypes.TEXT))
-                return "sample_data";
-            if (type.equals(DataTypes.VARINT))
-                return BigInteger.ONE;
-            if (type.equals(DataTypes.COUNTER))
-                return 1L;
-            if (type.equals(DataTypes.TIMEUUID))
-                return UUID.randomUUID();
-            break;
-        case LIST:
-            return Arrays.asList("1", "2", "3");
-        case SET:
-            return new HashSet(Arrays.asList("1", "2", "3"));
-        case MAP:
-            return new HashMap<String, String>() {
-                {
-                    put("1", "one");
-                    put("2", "two");
-                    put("3", "three");
-                }
-            };
-        case VECTOR:
-            return CqlVector.newInstance(1.1, 2.2, 3.3);
+            case PRIMITIVE:
+                if (type.equals(DataTypes.BOOLEAN))
+                    return true;
+                if (type.equals(DataTypes.TINYINT))
+                    return (byte) 1;
+                if (type.equals(DataTypes.SMALLINT))
+                    return (short) 1;
+                if (type.equals(DataTypes.INT))
+                    return 1;
+                if (type.equals(DataTypes.BIGINT))
+                    return 1L;
+                if (type.equals(DataTypes.FLOAT))
+                    return 1.0f;
+                if (type.equals(DataTypes.DOUBLE))
+                    return 1.0d;
+                if (type.equals(DataTypes.DECIMAL))
+                    return new BigDecimal(1);
+                if (type.equals(DataTypes.UUID))
+                    return UUID.randomUUID();
+                if (type.equals(DataTypes.INET))
+                    return InetAddress.getLoopbackAddress();
+                if (type.equals(DataTypes.TIMESTAMP))
+                    return Instant.now();
+                if (type.equals(DataTypes.TIME))
+                    return LocalTime.now();
+                if (type.equals(DataTypes.DATE))
+                    return LocalDate.now();
+                if (type.equals(DataTypes.DURATION))
+                    return Duration.ofSeconds(1);
+                if (type.equals(DataTypes.BLOB))
+                    return ByteBuffer.wrap("sample_data".getBytes());
+                if (type.equals(DataTypes.ASCII))
+                    return "sample_data";
+                if (type.equals(DataTypes.TEXT))
+                    return "sample_data";
+                if (type.equals(DataTypes.VARINT))
+                    return BigInteger.ONE;
+                if (type.equals(DataTypes.COUNTER))
+                    return 1L;
+                if (type.equals(DataTypes.TIMEUUID))
+                    return UUID.randomUUID();
+                break;
+            case LIST:
+                return Arrays.asList("1", "2", "3");
+            case SET:
+                return new HashSet(Arrays.asList("1", "2", "3"));
+            case MAP:
+                return new HashMap<String, String>() {
+                    {
+                        put("1", "one");
+                        put("2", "two");
+                        put("3", "three");
+                    }
+                };
+            case VECTOR:
+                return CqlVector.newInstance(1.1, 2.2, 3.3);
         }
         return "DataType " + type + " is not supported, so returning a String";
     }

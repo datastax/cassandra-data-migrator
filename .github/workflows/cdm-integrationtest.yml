@@ -14,7 +14,7 @@ jobs:
   CDM-Integration-Test:
     strategy:
       matrix:
-        jdk: [ 11, 17, 21, 25 ]
+        jdk: [ 17, 21, 25 ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -27,6 +27,11 @@ jobs:
           cache: maven
       - name: Test SIT with cdm
         working-directory: SIT
+        env:
+          SKIP_DOCKER_PULL: "true"
+          CONTAINER_RUNTIME: "docker"
         run: |
+          echo "Building local Docker image for testing"
+          docker build -t datastax/cassandra-data-migrator:latest ..
           echo "Testing SIT with cdm"
           make -f Makefile

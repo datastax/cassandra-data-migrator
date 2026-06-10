@@ -114,7 +114,8 @@ public class TargetUpsertRunDetailsStatementTest extends CommonMocks {
         when(mockIterator.hasNext()).thenReturn(false);
 
         targetUpsertRunDetailsStatement = new TargetUpsertRunDetailsStatement(cqlSession, "ks.table1");
-        assertEquals(Collections.emptyList(), targetUpsertRunDetailsStatement.getPendingPartitions(123, JobType.MIGRATE));
+        assertEquals(Collections.emptyList(),
+                targetUpsertRunDetailsStatement.getPendingPartitions(123, JobType.MIGRATE));
     }
 
     @Test
