@@ -216,7 +216,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<!-- Force Guava 18 on Test CP, Required for Cassandra -->
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
@@ -236,7 +235,7 @@
 		<developerConnection>
 			scm:git:git@github.com:datastax/cassandra-data-migrator.git</developerConnection>
 		<url>https://github.com/datastax/cassandra-data-migrator</url>
-		<tag>5.6.3</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<build>
@@ -357,7 +356,7 @@
 										<limit>
 											<counter>LINE</counter>
 											<value>MISSEDCOUNT</value>
-											<maximum>1550</maximum>
+											<maximum>1500</maximum>
 										</limit>
 									</limits>
 								</rule>
@@ -369,7 +368,7 @@
 			<plugin>
 				<groupId>org.apache.rat</groupId>
 				<artifactId>apache-rat-plugin</artifactId>
-				<version>0.18</version>
+				<version>0.19</version>
 				<configuration>
 					<inputExcludeFile>rat-excludes.txt</inputExcludeFile>
 				</configuration>
@@ -403,9 +402,9 @@
 				<artifactId>formatter-maven-plugin</artifactId>
 				<version>2.29.0</version>
 				<configuration>
-					<compilerSource>11</compilerSource>
-					<compilerCompliance>11</compilerCompliance>
-					<compilerTargetPlatform>11</compilerTargetPlatform>
+					<compilerSource>${maven.compiler.source}</compilerSource>
+					<compilerCompliance>${maven.compiler.source}</compilerCompliance>
+					<compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
 				</configuration>
 				<executions>
 					<execution>
