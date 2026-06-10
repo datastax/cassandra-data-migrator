@@ -368,7 +368,7 @@
 			<plugin>
 				<groupId>org.apache.rat</groupId>
 				<artifactId>apache-rat-plugin</artifactId>
-				<version>0.19</version>
+				<version>0.18</version>
 				<configuration>
 					<inputExcludeFile>rat-excludes.txt</inputExcludeFile>
 				</configuration>
