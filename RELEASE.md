@@ -1,5 +1,11 @@
 # Release Notes
 
+## [6.0.0] - 2026-06-10
+- Java 17 upgrade (requires Java 17 minimum) 
+- Based on Spark 4.1.x (but also works with Spark 3.5.x runtime) 
+- Moved docs from docs.datastax.com to this repo
+- Addresses several CVEs related to older dependencies
+
 ## [5.8.1] - 2026-04-28
 - Minor code refactor for efficient memory use
 
