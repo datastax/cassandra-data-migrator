@@ -1,5 +1,8 @@
 # Release Notes
 
+## [6.0.0] - 2026-06-11
+- Upgrade DSBulk to use version 1.11.1 within the CDM Docker image
+
 ## [6.0.0] - 2026-06-10
 - Java 17 upgrade (requires Java 17 minimum) 
 - Based on Spark 4.1.x (but also works with Spark 3.5.x runtime) 
