@@ -2,7 +2,9 @@ FROM eclipse-temurin:17-jdk-jammy
 
 # Download all migration dependencies
 RUN mkdir -p /assets/ && cd /assets && \
-    curl -L -o dsbulk.tar.gz https://github.com/datastax/dsbulk/releases/download/1.11.1/dsbulk-1.11.1.tar.gz && \
+    curl -s https://api.github.com/repos/datastax/dsbulk/releases/latest | \
+    jq -r '.assets[] | select(.name | endswith(".tar.gz")) | .browser_download_url' | \
+    xargs curl -L -o dsbulk.tar.gz && \
     tar -xzf ./dsbulk.tar.gz && \
     rm ./dsbulk.tar.gz && \
     mv /assets/dsbulk-* /assets/dsbulk  && \

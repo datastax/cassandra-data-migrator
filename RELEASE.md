@@ -1,7 +1,7 @@
 # Release Notes
 
 ## [6.0.1] - 2026-06-11
-- Upgrade DSBulk to use version 1.11.1 within the CDM Docker image
+- Upgrade DSBulk to use latest version from github releases (packaged with Docker image)
 
 ## [6.0.0] - 2026-06-10
 - Java 17 upgrade (requires Java 17 minimum) 
