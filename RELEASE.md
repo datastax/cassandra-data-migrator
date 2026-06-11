@@ -1,6 +1,6 @@
 # Release Notes
 
-## [6.0.0] - 2026-06-11
+## [6.0.1] - 2026-06-11
 - Upgrade DSBulk to use version 1.11.1 within the CDM Docker image
 
 ## [6.0.0] - 2026-06-10
