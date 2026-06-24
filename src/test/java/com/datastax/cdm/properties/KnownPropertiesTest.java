@@ -212,4 +212,51 @@ public class KnownPropertiesTest {
                 KnownProperties.asType(KnownProperties.PropertyType.BOOLEAN, "false")));
     }
 
+    // ---- Tests to improve mutation coverage ----
+
+    @Test
+    public void getDefault_unknownKey() {
+        assertNull(KnownProperties.getDefault("nonexistent.key"));
+    }
+
+    @Test
+    public void getDefault_typeExistsButNoDefault() {
+        assertNull(KnownProperties.getDefault(KnownProperties.TEST_STRING_NO_DEFAULT));
+    }
+
+    @Test
+    public void getDefault_stringListNoDefault() {
+        // ORIGIN_TTL_NAMES has type STRING_LIST but no default value.
+        // If the null-check on 'value' in getDefault is bypassed (mutant),
+        // asType(STRING_LIST, null) would throw NPE via null.split(",").
+        assertNull(KnownProperties.getDefault(KnownProperties.ORIGIN_TTL_NAMES));
+    }
+
+    @Test
+    public void getDefault_numberListNoDefault() {
+        // TRANSFORM_CODECS has type STRING_LIST but no default value.
+        // Similar to above: bypassing the null check would cause NPE.
+        assertNull(KnownProperties.getDefault(KnownProperties.TRANSFORM_CODECS));
+    }
+
+    @Test
+    public void validateType_StringList_notAList() {
+        assertFalse(KnownProperties.validateType(KnownProperties.PropertyType.STRING_LIST, "not a list"));
+    }
+
+    @Test
+    public void validateType_Number_notANumber() {
+        assertFalse(KnownProperties.validateType(KnownProperties.PropertyType.NUMBER, "not a number"));
+    }
+
+    @Test
+    public void validateType_NumberList_notAList() {
+        assertFalse(KnownProperties.validateType(KnownProperties.PropertyType.NUMBER_LIST, "not a list"));
+    }
+
+    @Test
+    public void validateType_Boolean_notABoolean() {
+        assertFalse(KnownProperties.validateType(KnownProperties.PropertyType.BOOLEAN, "not a boolean"));
+    }
+
 }
