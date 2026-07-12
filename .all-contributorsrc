@@ -169,6 +169,15 @@
         "test",
         "question"
       ]
+    },
+    {
+      "login": "vasiliy-mikhailov",
+      "name": "Vasiliy Mikhailov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12772852?v=4",
+      "profile": "https://github.com/vasiliy-mikhailov",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "commitType": "docs"
