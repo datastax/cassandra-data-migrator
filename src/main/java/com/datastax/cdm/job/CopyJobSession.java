@@ -111,7 +111,7 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
                     batch = writeAsync(batch, writeResults, boundUpsert);
                     jobCounter.increment(JobCounter.CounterType.UNFLUSHED);
 
-                    if (jobCounter.getCount(JobCounter.CounterType.UNFLUSHED) >= flushThreshold) {
+                    if (shouldFlush(jobCounter, flushThreshold)) {
                         flushAndClearWrites(batch, writeResults);
                         jobCounter.increment(JobCounter.CounterType.WRITE,
                                 jobCounter.getCount(JobCounter.CounterType.UNFLUSHED, true));
@@ -145,6 +145,13 @@ public class CopyJobSession extends AbstractJobSession<PartitionRange> {
         } finally {
             ThreadContext.remove(THREAD_CONTEXT_LABEL);
         }
+    }
+
+    // In-flight writes are tracked in the UNFLUSHED interim counter. Its aggregate is only advanced by
+    // jobCounter.flush() at the end of a partition range, so reading the aggregate here made the check
+    // compare 0 against the threshold for the whole range and left every row of that range in flight.
+    static boolean shouldFlush(JobCounter jobCounter, int flushThreshold) {
+        return jobCounter.getCount(JobCounter.CounterType.UNFLUSHED, true) >= flushThreshold;
     }
 
     private void flushAndClearWrites(BatchStatement batch, Collection<CompletionStage<AsyncResultSet>> writeResults) {
