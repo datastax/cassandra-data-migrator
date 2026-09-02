@@ -21,7 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -40,9 +39,6 @@ public class ConnectionFetcherTest extends CommonMocks {
 
     @Mock
     IPropertyHelper propertyHelper;
-
-    @Mock
-    private SparkConf conf;
 
     @Mock
     private AstraDevOpsClient astraClient;
