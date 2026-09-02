@@ -55,9 +55,175 @@
 			<version>${spark.version}</version>
 			<scope>provided</scope>
 			<exclusions>
+				<!-- lz4 -->
 				<exclusion>
 					<groupId>org.lz4</groupId>
 					<artifactId>lz4-java</artifactId>
+				</exclusion>
+				<!-- Hadoop -->
+				<exclusion>
+					<groupId>org.apache.hadoop</groupId>
+					<artifactId>hadoop-client-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.hadoop</groupId>
+					<artifactId>hadoop-client-runtime</artifactId>
+				</exclusion>
+				<!-- Arrow / Columnar Format -->
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-vector</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-memory-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-memory-netty</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-memory-netty-buffer-patch</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-format</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-compression</artifactId>
+				</exclusion>
+				<!-- Avro -->
+				<exclusion>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro-mapred</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro-ipc</artifactId>
+				</exclusion>
+				<!-- Parquet -->
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-common</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-encoding</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-hadoop</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-column</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-format-structures</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-jackson</artifactId>
+				</exclusion>
+				<!-- ORC -->
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-mapreduce</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-shims</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-format</artifactId>
+				</exclusion>
+				<!-- Hive -->
+				<exclusion>
+					<groupId>org.apache.hive</groupId>
+					<artifactId>hive-storage-api</artifactId>
+				</exclusion>
+				<!-- ZooKeeper -->
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper-jute</artifactId>
+				</exclusion>
+				<!-- Curator -->
+				<exclusion>
+					<groupId>org.apache.curator</groupId>
+					<artifactId>curator-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.curator</groupId>
+					<artifactId>curator-framework</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.curator</groupId>
+					<artifactId>curator-recipes</artifactId>
+				</exclusion>
+				<!-- Protobuf -->
+				<exclusion>
+					<groupId>com.google.protobuf</groupId>
+					<artifactId>protobuf-java</artifactId>
+				</exclusion>
+				<!-- Ivy -->
+				<exclusion>
+					<groupId>org.apache.ivy</groupId>
+					<artifactId>ivy</artifactId>
+				</exclusion>
+				<!-- Jersey -->
+				<exclusion>
+					<groupId>org.glassfish.jersey.core</groupId>
+					<artifactId>jersey-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.core</groupId>
+					<artifactId>jersey-common</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.core</groupId>
+					<artifactId>jersey-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.containers</groupId>
+					<artifactId>jersey-container-servlet</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.containers</groupId>
+					<artifactId>jersey-container-servlet-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.inject</groupId>
+					<artifactId>jersey-hk2</artifactId>
+				</exclusion>
+				<!-- Kryo -->
+				<exclusion>
+					<groupId>com.esotericsoftware</groupId>
+					<artifactId>kryo-shaded</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.esotericsoftware</groupId>
+					<artifactId>minlog</artifactId>
+				</exclusion>
+				<!-- Snappy -->
+				<exclusion>
+					<groupId>org.xerial.snappy</groupId>
+					<artifactId>snappy-java</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -66,6 +232,173 @@
 			<artifactId>spark-sql_${scala.main.version}</artifactId>
 			<version>${spark.version}</version>
 			<scope>provided</scope>
+			<exclusions>
+				<!-- Hadoop -->
+				<exclusion>
+					<groupId>org.apache.hadoop</groupId>
+					<artifactId>hadoop-client-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.hadoop</groupId>
+					<artifactId>hadoop-client-runtime</artifactId>
+				</exclusion>
+				<!-- Arrow / Columnar Format -->
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-vector</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-memory-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-memory-netty</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-memory-netty-buffer-patch</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-format</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.arrow</groupId>
+					<artifactId>arrow-compression</artifactId>
+				</exclusion>
+				<!-- Avro -->
+				<exclusion>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro-mapred</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro-ipc</artifactId>
+				</exclusion>
+				<!-- Parquet -->
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-common</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-encoding</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-hadoop</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-column</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-format-structures</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.parquet</groupId>
+					<artifactId>parquet-jackson</artifactId>
+				</exclusion>
+				<!-- ORC -->
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-mapreduce</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-shims</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.orc</groupId>
+					<artifactId>orc-format</artifactId>
+				</exclusion>
+				<!-- Hive -->
+				<exclusion>
+					<groupId>org.apache.hive</groupId>
+					<artifactId>hive-storage-api</artifactId>
+				</exclusion>
+				<!-- ZooKeeper -->
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper-jute</artifactId>
+				</exclusion>
+				<!-- Curator -->
+				<exclusion>
+					<groupId>org.apache.curator</groupId>
+					<artifactId>curator-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.curator</groupId>
+					<artifactId>curator-framework</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.curator</groupId>
+					<artifactId>curator-recipes</artifactId>
+				</exclusion>
+				<!-- Protobuf -->
+				<exclusion>
+					<groupId>com.google.protobuf</groupId>
+					<artifactId>protobuf-java</artifactId>
+				</exclusion>
+				<!-- Ivy -->
+				<exclusion>
+					<groupId>org.apache.ivy</groupId>
+					<artifactId>ivy</artifactId>
+				</exclusion>
+				<!-- Jersey -->
+				<exclusion>
+					<groupId>org.glassfish.jersey.core</groupId>
+					<artifactId>jersey-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.core</groupId>
+					<artifactId>jersey-common</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.core</groupId>
+					<artifactId>jersey-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.containers</groupId>
+					<artifactId>jersey-container-servlet</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.containers</groupId>
+					<artifactId>jersey-container-servlet-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.glassfish.jersey.inject</groupId>
+					<artifactId>jersey-hk2</artifactId>
+				</exclusion>
+				<!-- Kryo -->
+				<exclusion>
+					<groupId>com.esotericsoftware</groupId>
+					<artifactId>kryo-shaded</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.esotericsoftware</groupId>
+					<artifactId>minlog</artifactId>
+				</exclusion>
+				<!-- Snappy -->
+				<exclusion>
+					<groupId>org.xerial.snappy</groupId>
+					<artifactId>snappy-java</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.datastax.spark</groupId>
