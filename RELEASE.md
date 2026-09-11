@@ -1,5 +1,8 @@
 # Release Notes
 
+## [6.1.0] - 2026-09-11
+- Streamline Spark dependencies, removed Spark SQL dependency, consolidate exclusions, and update Jackson / Jakarta validation dependencies
+
 ## [6.0.1] - 2026-06-11
 - Upgrade DSBulk to use latest version from github releases (packaged with Docker image)
 

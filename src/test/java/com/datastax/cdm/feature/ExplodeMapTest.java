@@ -15,7 +15,6 @@
  */
 package com.datastax.cdm.feature;
 
-import static org.apache.hadoop.shaded.com.google.common.base.CharMatcher.any;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
