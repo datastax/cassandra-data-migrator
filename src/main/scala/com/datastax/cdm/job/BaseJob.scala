@@ -17,9 +17,9 @@ package com.datastax.cdm.job
 
 import com.datastax.cdm.properties.{KnownProperties, PropertyHelper}
 import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import com.datastax.cdm.data.PKFactory.Side
 import com.datastax.cdm.job.IJobSessionFactory.JobType
@@ -38,7 +38,6 @@ abstract class BaseJob[T: ClassTag] extends App {
   private var jobName: String = _
   var jobFactory: IJobSessionFactory[T] = _
 
-  var spark: SparkSession = _
   var sContext: SparkContext = _
   var propertyHelper: PropertyHelper = _
 
@@ -64,8 +63,8 @@ abstract class BaseJob[T: ClassTag] extends App {
     this.jobName = jobName
     this.jobFactory = jobFactory
 
-    spark = SparkSession.builder().appName(jobName).getOrCreate()
-    sContext = spark.sparkContext
+    val conf = new SparkConf().setAppName(jobName)
+    sContext = SparkContext.getOrCreate(conf)
     propertyHelper = PropertyHelper.getInstance(sContext.getConf);
 
     runId = propertyHelper.getLong(KnownProperties.RUN_ID)
@@ -109,7 +108,9 @@ abstract class BaseJob[T: ClassTag] extends App {
   def getParts(pieces: Int): util.Collection[T]
 
   protected def finish() = {
-    spark.stop()
+    if (sContext != null) {
+      sContext.stop()
+    }
     logBanner(jobName + " - Stopped")
   }
 

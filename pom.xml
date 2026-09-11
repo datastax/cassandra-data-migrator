@@ -20,6 +20,7 @@
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
 		<netty.version>4.2.15.Final</netty.version>
+		<jackson.version>2.21.2</jackson.version>
 	</properties>
 
 	<distributionManagement>
@@ -31,10 +32,8 @@
 	</distributionManagement>
 
 	<!--
-	  Centralise Spark version, scope, and shared transitive exclusions in one place.
-	  The <dependencies> entries for spark-core and spark-sql inherit all of this, so
-	  their own <exclusions> blocks can be omitted — preventing the two lists from
-	  drifting out of sync. Only lz4-java is unique to spark-core and kept there.
+	  Centralise Spark version, scope, and transitive exclusions in one place.
+	  The <dependencies> entry for spark-core inherits all of this.
 	-->
 	<dependencyManagement>
 		<dependencies>
@@ -49,174 +48,10 @@
 						<groupId>org.lz4</groupId>
 						<artifactId>lz4-java</artifactId>
 					</exclusion>
-					<!-- Hadoop -->
 					<exclusion>
-						<groupId>org.apache.hadoop</groupId>
-						<artifactId>hadoop-client-api</artifactId>
+						<groupId>at.yawk.lz4</groupId>
+						<artifactId>lz4-java</artifactId>
 					</exclusion>
-					<exclusion>
-						<groupId>org.apache.hadoop</groupId>
-						<artifactId>hadoop-client-runtime</artifactId>
-					</exclusion>
-					<!-- Arrow / Columnar Format -->
-					<exclusion>
-						<groupId>org.apache.arrow</groupId>
-						<artifactId>arrow-vector</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.arrow</groupId>
-						<artifactId>arrow-memory-core</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.arrow</groupId>
-						<artifactId>arrow-memory-netty</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.arrow</groupId>
-						<artifactId>arrow-memory-netty-buffer-patch</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.arrow</groupId>
-						<artifactId>arrow-format</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.arrow</groupId>
-						<artifactId>arrow-compression</artifactId>
-					</exclusion>
-					<!-- Avro -->
-					<exclusion>
-						<groupId>org.apache.avro</groupId>
-						<artifactId>avro</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.avro</groupId>
-						<artifactId>avro-mapred</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.avro</groupId>
-						<artifactId>avro-ipc</artifactId>
-					</exclusion>
-					<!-- Parquet -->
-					<exclusion>
-						<groupId>org.apache.parquet</groupId>
-						<artifactId>parquet-common</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.parquet</groupId>
-						<artifactId>parquet-encoding</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.parquet</groupId>
-						<artifactId>parquet-hadoop</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.parquet</groupId>
-						<artifactId>parquet-column</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.parquet</groupId>
-						<artifactId>parquet-format-structures</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.parquet</groupId>
-						<artifactId>parquet-jackson</artifactId>
-					</exclusion>
-					<!-- ORC -->
-					<exclusion>
-						<groupId>org.apache.orc</groupId>
-						<artifactId>orc-core</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.orc</groupId>
-						<artifactId>orc-mapreduce</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.orc</groupId>
-						<artifactId>orc-shims</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.orc</groupId>
-						<artifactId>orc-format</artifactId>
-					</exclusion>
-					<!-- Hive -->
-					<exclusion>
-						<groupId>org.apache.hive</groupId>
-						<artifactId>hive-storage-api</artifactId>
-					</exclusion>
-					<!-- ZooKeeper -->
-					<exclusion>
-						<groupId>org.apache.zookeeper</groupId>
-						<artifactId>zookeeper</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.zookeeper</groupId>
-						<artifactId>zookeeper-jute</artifactId>
-					</exclusion>
-					<!-- Curator -->
-					<exclusion>
-						<groupId>org.apache.curator</groupId>
-						<artifactId>curator-client</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.curator</groupId>
-						<artifactId>curator-framework</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.curator</groupId>
-						<artifactId>curator-recipes</artifactId>
-					</exclusion>
-					<!-- Protobuf -->
-					<exclusion>
-						<groupId>com.google.protobuf</groupId>
-						<artifactId>protobuf-java</artifactId>
-					</exclusion>
-					<!-- Jersey -->
-					<exclusion>
-						<groupId>org.glassfish.jersey.core</groupId>
-						<artifactId>jersey-client</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.glassfish.jersey.core</groupId>
-						<artifactId>jersey-common</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.glassfish.jersey.core</groupId>
-						<artifactId>jersey-server</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.glassfish.jersey.containers</groupId>
-						<artifactId>jersey-container-servlet</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.glassfish.jersey.containers</groupId>
-						<artifactId>jersey-container-servlet-core</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.glassfish.jersey.inject</groupId>
-						<artifactId>jersey-hk2</artifactId>
-					</exclusion>
-					<!-- Kryo -->
-					<exclusion>
-						<groupId>com.esotericsoftware</groupId>
-						<artifactId>kryo-shaded</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>com.esotericsoftware</groupId>
-						<artifactId>minlog</artifactId>
-					</exclusion>
-					<!-- Snappy -->
-					<exclusion>
-						<groupId>org.xerial.snappy</groupId>
-						<artifactId>snappy-java</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.spark</groupId>
-				<artifactId>spark-sql_${scala.main.version}</artifactId>
-				<version>${spark.version}</version>
-				<scope>provided</scope>
-				<exclusions>
 					<!-- Hadoop -->
 					<exclusion>
 						<groupId>org.apache.hadoop</groupId>
@@ -384,6 +219,12 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+			<version>3.0.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
@@ -405,11 +246,6 @@
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_${scala.main.version}</artifactId>
-		</dependency>
-		<!-- version, scope, and exclusions governed by dependencyManagement above -->
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-sql_${scala.main.version}</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.datastax.spark</groupId>
@@ -486,20 +322,12 @@
 			<groupId>org.apache.cassandra</groupId>
 			<artifactId>java-driver-mapper-runtime</artifactId>
 			<version>${java-driver.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-databind</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-core</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-annotations</artifactId>
-				</exclusion>
-			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.cassandra</groupId>
@@ -521,7 +349,7 @@
 		</dependency>
 
 		<!-- Test Dependencies -->
-		<!-- The following entries restore artifacts excluded from spark-core/spark-sql (provided scope)
+		<!-- The following entries restore artifacts excluded from spark-core (provided scope)
 		     back onto the test classpath. SparkConf$ companion object eagerly initialises Kryo and
 		     Snappy at class-load time; hadoop-client-runtime supplies FSDataInputStream used by SparkConf
 		     when loading config from HDFS. Versions are pinned to what Spark 4.2.0 ships.
