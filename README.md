@@ -12,7 +12,7 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 
 
 ## Install as a Container
-- Get the latest image that includes all dependencies from [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
+- Get the latest image that includes all dependencies from [RedHat Quay.io](https://quay.io/repository/datastax/cassandra-data-migrator)(beginning `6.1.1`) and for older releases at [DockerHub](https://hub.docker.com/r/datastax/cassandra-data-migrator)
     - All migration tools (`cassandra-data-migrator` + `dsbulk` + `cqlsh`) would be available in the `/assets/` folder of the container
 
 ## Install as a JAR file
