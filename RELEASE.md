@@ -1,5 +1,9 @@
 # Release Notes
 
+## [6.1.1] - 2026-09-17
+- Updated docs & Dockerfile for Spark `4.2.0` version
+- Introduce push to Quay.io workflow
+
 ## [6.1.0] - 2026-09-11
 - Streamline Spark dependencies, removed Spark SQL dependency, consolidate exclusions, and update Jackson / Jakarta validation dependencies
 
