@@ -9,9 +9,9 @@ RUN mkdir -p /assets/ && cd /assets && \
     curl -L https://downloads.datastax.com/labs/cqlsh-astra-20230710-vectortype-bin.tar.gz --output cqlsh-astra.tar.gz && \
     tar -xzf ./cqlsh-astra.tar.gz && \
     rm ./cqlsh-astra.tar.gz && \
-    curl -OL https://archive.apache.org/dist/spark/spark-4.1.2/spark-4.1.2-bin-hadoop3.tgz && \
-    tar -xzf ./spark-4.1.2-bin-hadoop3.tgz && \
-    rm ./spark-4.1.2-bin-hadoop3.tgz
+    curl -OL https://archive.apache.org/dist/spark/spark-4.2.0/spark-4.2.0-bin-hadoop3.tgz && \
+    tar -xzf ./spark-4.2.0-bin-hadoop3.tgz && \
+    rm ./spark-4.2.0-bin-hadoop3.tgz
 
 RUN apt-get update && apt-get install -y openssh-server vim python3 --no-install-recommends && \
     rm -rf /var/lib/apt/lists/* && \
@@ -44,7 +44,7 @@ RUN chmod +x ./get-latest-maven-version.sh && \
     rm -rf "$USER_HOME_DIR/.m2"
 
 # Add all migration tools to path
-ENV PATH="${PATH}:/assets/dsbulk/bin/:/assets/cqlsh-astra/bin/:/assets/spark-4.1.2-bin-hadoop3/bin/"
+ENV PATH="${PATH}:/assets/dsbulk/bin/:/assets/cqlsh-astra/bin/:/assets/spark-4.2.0-bin-hadoop3/bin/"
 
 EXPOSE 22
 

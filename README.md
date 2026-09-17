@@ -23,14 +23,14 @@ Migrate and Validate Tables between Origin and Target Cassandra Clusters.
 ### Prerequisite CDM 6.x+
 - **Java17** (minimum) as Spark 4.x binaries are compiled with it.
 - **Any Java 17+ LTS version (e.g. Java 21 or Java 25) could be used if needed**
-- **Spark version [4.1.2](https://archive.apache.org/dist/spark/spark-4.1.2/)**
+- **Spark version [4.2.0](https://archive.apache.org/dist/spark/spark-4.2.0/)**
 
     
 Spark can be installed by running the following: -
 
 ```
-wget https://archive.apache.org/dist/spark/spark-4.1.2/spark-4.1.2-bin-hadoop3.tgz
-tar -xvzf spark-4.1.2-bin-hadoop3.tgz
+wget https://archive.apache.org/dist/spark/spark-4.2.0/spark-4.2.0-bin-hadoop3.tgz
+tar -xvzf spark-4.2.0-bin-hadoop3.tgz
 ```
 
 
