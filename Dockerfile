@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-jammy
+FROM eclipse-temurin:25-jdk-jammy
 
 # Download all migration dependencies
 RUN mkdir -p /assets/ && cd /assets && \
