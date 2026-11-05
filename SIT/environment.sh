@@ -234,7 +234,7 @@ _Setup() {
   fi
 
   if [ "$(_testCDMContainer)" != "yes" ]; then
-    containerVersion=datastax/cassandra-data-migrator:${CDM_VERSION}
+    containerVersion=quay.io/datastax/cassandra-data-migrator:${CDM_VERSION}
 
     # Skip Docker pull if SKIP_DOCKER_PULL is set (used in CI when image is pre-built)
     if [ "${SKIP_DOCKER_PULL}" != "true" ]; then
