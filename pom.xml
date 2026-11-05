@@ -15,7 +15,7 @@
 		<cassandra.version>5.0.9</cassandra.version>
 		<junit.version>5.14.4</junit.version>
 		<mockito.version>5.23.0</mockito.version>
-		<java-driver.version>4.19.3</java-driver.version>
+		<java-driver.version>4.19.4</java-driver.version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
