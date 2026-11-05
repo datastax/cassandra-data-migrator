@@ -220,6 +220,13 @@ make test_docker
 ./environment.sh -m setup -j ../target/cassandra-data-migrator*.jar -r podman
 ```
 
+### Explicit Podman + arm64 + build locally
+```bash
+cd SIT
+podman build --platform linux/arm64 -t datastax/cassandra-data-migrator:latest ..
+SKIP_DOCKER_PULL=true SKIP_DOCKER_PULL=true make all
+```
+
 ### Individual Test Phases
 ```bash
 make test_smoke      # Smoke tests only
@@ -233,6 +240,13 @@ make env_setup      # Setup environment
 make env_reset      # Reset (keep containers, recreate data)
 make env_validate   # Check environment health
 make env_teardown   # Teardown everything
+```
+
+### Image Teardown (using Podman as example)
+```bash
+# removes containers + network
+podman rmi quay.io/datastax/cassandra-data-migrator:latest    # removes CDM image
+podman rmi cassandra:5                                        # removes Cassandra image (also pulled during setup)
 ```
 
 ## Key Design Principles

@@ -1,5 +1,11 @@
 # Release Notes
 
+## [6.2.0] - 2026-11-05
+- Upgrade Spark to `4.3.0` version
+- Upgraded Cassandra Java Driver to `4.19.4` version
+- Upgraded various GHA action versions
+- Fixes 73+ CVEs
+
 ## [6.1.1] - 2026-09-17
 - Updated docs & Dockerfile for Spark `4.2.0` version
 - Introduce push to Quay.io workflow
