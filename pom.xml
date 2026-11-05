@@ -13,14 +13,14 @@
 		<spark.version>4.3.0</spark.version>
 		<connector.version>3.5.1</connector.version>
 		<cassandra.version>5.0.9</cassandra.version>
-		<junit.version>5.14.4</junit.version>
-		<mockito.version>5.23.0</mockito.version>
+		<junit.version>6.1.3</junit.version>
+		<mockito.version>5.24.0</mockito.version>
 		<java-driver.version>4.19.4</java-driver.version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
-		<netty.version>4.2.15.Final</netty.version>
-		<jackson.version>2.21.2</jackson.version>
+		<netty.version>4.2.20.Final</netty.version>
+		<jackson.version>2.22.4</jackson.version>
 	</properties>
 
 	<distributionManagement>
@@ -387,7 +387,7 @@
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-launcher</artifactId>
-			<version>1.14.1</version>  <!-- aligned with 5.14.x -->
+			<version>6.1.3</version>  <!-- aligned with 6.1.x -->
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -447,7 +447,7 @@
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>4.9.10</version>
+				<version>4.10.0</version>
 				<configuration>
 					<scalaVersion>${scala.version}</scalaVersion>
 					<args>
@@ -468,7 +468,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.6</version>
+				<version>3.6.1</version>
 			</plugin>
 
 			<plugin>
@@ -503,7 +503,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.15.0</version>
+				<version>3.16.0</version>
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
@@ -516,7 +516,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.15</version>
+				<version>0.8.16</version>
 				<executions>
 					<execution>
 						<id>report</id>
